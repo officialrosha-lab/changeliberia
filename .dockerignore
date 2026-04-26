@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+.turbo
+**/.next
+**/dist
+**/.env
+**/.env.*
+!.env.example
+*.md
+!README.md
+.cursor
+**/*.log
+coverage
+**/test
+**/__tests__

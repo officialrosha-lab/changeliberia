@@ -1,0 +1,23 @@
+node_modules
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build outputs
+.next
+dist
+build
+
+# Turbo cache
+.turbo
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude memory
+.claude/projects

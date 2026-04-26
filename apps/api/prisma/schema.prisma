@@ -1,0 +1,1301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED_LIBERIAN
+  VERIFIED_DIASPORA
+  HIGH_TRUST
+}
+
+enum PetitionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationType {
+  OTP
+  IP_GEO
+  DEVICE
+  ID_UPLOAD
+  FRAUD
+}
+
+enum IDDocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  PHONE
+  EMAIL
+  GOOGLE
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String?            @unique
+  fullName           String
+  phone              String             @unique
+  passwordHash       String?
+  googleId           String?            @unique // Google OAuth ID
+  googleEmail        String?            // Email from Google OAuth profile
+  authProvider       AuthProvider       @default(PHONE) // Primary auth method
+  role               UserRole           @default(USER)
+  trustScore         Int                @default(0)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  badgesEarned       String             @default("[]") // JSON array of badge names
+  bio                String?
+  avatarUrl          String?
+  stripeCustomerId   String?            @unique // Stripe customer ID for this user
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Original relations
+  petitions        Petition[]
+  signatures       Signature[]
+  verificationLogs VerificationLog[]
+  idDocuments      IDDocument[]
+  devices          Device[]
+  fraudEvents      FraudEvent[]
+  petitionComments PetitionComment[]
+
+  // New relations
+  contentsCreated   Content[]
+  notifications     Notification[]
+  notificationPrefs NotificationPreference?
+  donations         Donation[]
+  auditLogs         AuditLog[]
+  contentComments   ContentComment[]
+  referralsCreated  Referral[]              @relation(name: "ReferralsCreated")
+  submissions       PetitionSubmission[]
+  payments          Payment[]               @relation("UserPayments")
+  paymentMethods    PaymentMethodRecord[]   @relation("UserPaymentMethods")
+  subscriptions     Subscription[]          @relation("UserSubscriptions")
+
+  // Facebook viral growth relations
+  badges                  SocialEngagementBadge[] @relation("UserBadges")
+  challengeParticipations ChallengeMembership[]   @relation("ChallengeParticipants")
+  pixelEvents             FacebookPixelEvent[]    @relation("FacebookPixelEvents")
+
+  // RBAC relations
+  userRoles UserRoleAssignment[] // New role-based access control
+  cmsPages  CMSPage[]            @relation("CMSPageAuthor")
+  
+  // Auth token relations
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Petition {
+  id               String               @id @default(cuid())
+  title            String
+  imageUrl         String?
+  summary          String
+  description      String
+  category         String?
+  goal             Int                  @default(1000)
+  status           PetitionStatus       @default(PENDING)
+  signaturesCount  Int                  @default(0)
+  todaySignatures  Int                  @default(0)
+  donationsEnabled Boolean              @default(false) // Admin-controlled per petition
+  donationGoal     Float?
+  totalDonations   Float                @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  creatorId        String
+  creator          User                 @relation(fields: [creatorId], references: [id])
+  signatures       Signature[]
+  updates          PetitionUpdate[]
+  comments         PetitionComment[]
+  referrals        Referral[]
+  milestones       PetitionMilestone[]
+  shareLinks       ShareLink[]
+  submissions      PetitionSubmission[]
+  payments         Payment[]            @relation("PetitionPayments")
+  subscriptions    Subscription[]       @relation("PetitionSubscriptions")
+  routingLogs      RoutingLog[]         @relation("PetitionRouting")
+
+  // Facebook viral growth relations
+  badges      SocialEngagementBadge[] @relation("PetitionBadges")
+  challenges  ShareChallenge[]        @relation("PetitionChallenges")
+  pixelEvents FacebookPixelEvent[]    @relation("FacebookPixelEvents")
+  audiences   CustomAudience[]        @relation("CustomAudiences")
+
+  @@index([status, createdAt])
+}
+
+model PetitionUpdate {
+  id         String   @id @default(cuid())
+  petitionId String
+  title      String
+  body       String
+  createdAt  DateTime @default(now())
+  petition   Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+
+  @@index([petitionId, createdAt])
+}
+
+model PetitionComment {
+  id         String   @id @default(cuid())
+  petitionId String
+  userId     String?
+  authorName String
+  body       String
+  createdAt  DateTime @default(now())
+  petition   Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([petitionId, createdAt])
+}
+
+model Signature {
+  id                 String   @id @default(cuid())
+  petitionId         String
+  userId             String?
+  name               String
+  anonymous          Boolean  @default(false)
+  trustScoreSnapshot Int      @default(0)
+  ipAddress          String?
+  deviceId           String?
+  createdAt          DateTime @default(now())
+  petition           Petition @relation(fields: [petitionId], references: [id])
+  user               User?    @relation(fields: [userId], references: [id])
+  device             Device?  @relation(fields: [deviceId], references: [id])
+
+  @@unique([petitionId, userId])
+  @@index([petitionId, createdAt])
+}
+
+model VerificationLog {
+  id        String           @id @default(cuid())
+  userId    String
+  type      VerificationType
+  delta     Int
+  details   String
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model IDDocument {
+  id         String           @id @default(cuid())
+  userId     String
+  type       String
+  fileUrl    String
+  status     IDDocumentStatus @default(PENDING)
+  reviewedBy String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  user       User             @relation(fields: [userId], references: [id])
+}
+
+model Device {
+  id          String      @id @default(cuid())
+  userId      String?
+  fingerprint String      @unique
+  ipAddress   String?
+  lastSeenAt  DateTime    @default(now())
+  user        User?       @relation(fields: [userId], references: [id])
+  signatures  Signature[]
+
+  @@index([ipAddress])
+}
+
+model FraudRule {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String
+  threshold   Int
+  penalty     Int
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FraudEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  petitionId String?
+  ruleKey    String
+  details    String
+  riskPoints Int
+  ipAddress  String?
+  deviceId   String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([ruleKey, createdAt])
+  @@index([petitionId, createdAt])
+}
+
+model FraudAnomalySnapshot {
+  id                   String   @id @default(cuid())
+  windowStart          DateTime
+  windowEnd            DateTime
+  totalSignatures      Int
+  suspiciousSignatures Int
+  uniqueIps            Int
+  uniqueDevices        Int
+  riskIndex            Float
+  createdAt            DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+enum FraudJobType {
+  ANOMALY_SCAN
+}
+
+enum FraudJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model FraudJob {
+  id          String         @id @default(cuid())
+  type        FraudJobType
+  status      FraudJobStatus @default(QUEUED)
+  payload     String?
+  attempts    Int            @default(0)
+  error       String?
+  createdAt   DateTime       @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([status, createdAt])
+}
+
+// ============================================================================
+// CMS & Content Management System
+// ============================================================================
+
+enum ContentPublishStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+model ContentType {
+  id               String    @id @default(cuid())
+  name             String    @unique
+  slug             String    @unique
+  description      String?
+  schema           String    @db.Text() // JSON schema definition
+  requiresApproval Boolean   @default(false)
+  allowComments    Boolean   @default(true)
+  creatorCanEnable Boolean   @default(true) // For donations per-content
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  contents         Content[]
+
+  @@index([slug])
+}
+
+model Content {
+  id              String               @id @default(cuid())
+  contentTypeId   String
+  contentType     ContentType          @relation(fields: [contentTypeId], references: [id])
+  title           String
+  slug            String
+  data            String               @db.Text() // JSON data
+  status          ContentPublishStatus @default(DRAFT)
+  publishedAt     DateTime?
+  rejectionReason String?
+  creatorId       String
+  creator         User                 @relation(fields: [creatorId], references: [id])
+  metadata        String?              @db.Text() // JSON metadata
+  viewCount       Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  relations       ContentRelation[]    @relation(name: "RelatedFrom")
+  relatedBy       ContentRelation[]    @relation(name: "RelatedTo")
+  tags            ContentTag[]
+  comments        ContentComment[]
+  donations       Donation[]
+  payments        Payment[]            @relation("ContentPayments")
+  subscriptions   Subscription[]       @relation("ContentSubscriptions")
+
+  @@unique([contentTypeId, slug])
+  @@index([contentTypeId, status, publishedAt])
+  @@index([creatorId, createdAt])
+}
+
+model ContentRelation {
+  id              String   @id @default(cuid())
+  sourceContentId String
+  targetContentId String
+  relationType    String // "related", "parent", "derived", etc.
+  sourceContent   Content  @relation(name: "RelatedFrom", fields: [sourceContentId], references: [id], onDelete: Cascade)
+  targetContent   Content  @relation(name: "RelatedTo", fields: [targetContentId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@unique([sourceContentId, targetContentId, relationType])
+  @@index([targetContentId])
+}
+
+model ContentTag {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  contents  Content[]
+  createdAt DateTime  @default(now())
+
+  @@index([slug])
+}
+
+model ContentComment {
+  id              String           @id @default(cuid())
+  contentId       String
+  content         Content          @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?            @relation(fields: [userId], references: [id])
+  authorName      String
+  body            String           @db.Text()
+  parentCommentId String?
+  repliesTo       ContentComment?  @relation(name: "CommentReplies", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies         ContentComment[] @relation(name: "CommentReplies")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([contentId, createdAt])
+  @@index([userId])
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  parentId  String?
+  parent    Category?  @relation(name: "CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation(name: "CategoryHierarchy")
+  createdAt DateTime   @default(now())
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+// ============================================================================
+// Notifications System
+// ============================================================================
+
+enum NotificationType {
+  SIGNATURE_RECEIVED
+  COMMENT_REPLY
+  PETITION_APPROVED
+  PETITION_REJECTED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  CONTENT_PUBLISHED
+  FRAUD_DETECTED
+  DONATION_RECEIVED
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  status      NotificationStatus @default(UNREAD)
+  title       String
+  message     String
+  actionUrl   String?
+  actionLabel String?
+  metadata    String?            @db.Text() // JSON
+  readAt      DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([userId, status, createdAt])
+  @@index([userId, readAt])
+}
+
+model NotificationPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppEnabled    Boolean  @default(true)
+  emailEnabled    Boolean  @default(true)
+  pushEnabled     Boolean  @default(false)
+  digestFrequency String   @default("daily") // "instant", "daily", "weekly"
+  mutedTypes      String   @default("[]") // JSON array of NotificationType
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============================================================================
+// Event System
+// ============================================================================
+
+enum DomainEventType {
+  CONTENT_CREATED
+  CONTENT_PUBLISHED
+  CONTENT_REJECTED
+  SIGNATURE_ADDED
+  USER_VERIFIED
+  FRAUD_DETECTED
+  DONATION_RECEIVED
+  COMMENT_ADDED
+}
+
+model DomainEvent {
+  id          String          @id @default(cuid())
+  type        DomainEventType
+  entityId    String // ID of affected entity (petition, user, etc.)
+  entityType  String // Type of entity (petition, user, signature, etc.)
+  payload     String          @db.Text() // JSON event data
+  processed   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  processedAt DateTime?
+
+  @@index([type, entityId, processed])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// Donations System
+// ============================================================================
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Donation {
+  id                    String         @id @default(cuid())
+  contentId             String? // For per-content donations (can be null for platform donations)
+  content               Content?       @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  donorUserId           String? // Null for anonymous donors
+  donorUser             User?          @relation(fields: [donorUserId], references: [id], onDelete: SetNull)
+  donorEmail            String?
+  donorName             String?
+  amount                Float
+  currency              String         @default("USD")
+  description           String?
+  stripePaymentIntentId String?
+  status                DonationStatus @default(PENDING)
+  dedicationMessage     String?
+  isAnonymous           Boolean        @default(false)
+  refundedAt            DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  @@index([contentId, createdAt])
+  @@index([donorUserId, createdAt])
+  @@index([status, createdAt])
+}
+
+model DonationConfig {
+  id                         String   @id @default(cuid())
+  platformDonationsEnabled   Boolean  @default(true)
+  perContentDonationsEnabled Boolean  @default(false)
+  supportedCurrencies        String   @default("[\"USD\", \"LRD\"]") // JSON array
+  stripePublishableKey       String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  // Ensure only one config row exists
+  @@unique([id])
+}
+
+// ============================================================================
+// Payments & Subscriptions
+// ============================================================================
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD
+  PAYPAL
+  BANK_TRANSFER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+model Payment {
+  id                    String            @id @default(cuid())
+  userId                String?
+  user                  User?             @relation("UserPayments", fields: [userId], references: [id], onDelete: SetNull)
+  petitionId            String?
+  petition              Petition?         @relation("PetitionPayments", fields: [petitionId], references: [id], onDelete: SetNull)
+  contentId             String?
+  content               Content?          @relation("ContentPayments", fields: [contentId], references: [id], onDelete: SetNull)
+  amount                Float
+  currency              String            @default("USD")
+  status                PaymentStatus     @default(PENDING)
+  paymentMethod         PaymentMethod     @default(CARD)
+  stripePaymentIntentId String?           @unique
+  stripeChargeId        String?           @unique
+  stripeInvoiceId       String?           @unique
+  stripeCheckoutId      String?           @unique
+  lastWebhookEventId    String?
+  description           String?
+  metadata              String?           @db.Text() // JSON: additional info
+  completedAt           DateTime?
+  failureReason         String?
+  refunds               Refund[]          @relation("PaymentRefunds")
+  orderItems            OrderItem[]       @relation("PaymentItems")
+  webhookEvents         WebhookEventLog[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([petitionId, createdAt])
+  @@index([contentId, createdAt])
+  @@index([status, createdAt])
+  @@index([stripePaymentIntentId])
+  @@index([stripeChargeId])
+  @@index([stripeInvoiceId])
+  @@index([lastWebhookEventId])
+}
+
+model PaymentMethodRecord {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation("UserPaymentMethods", fields: [userId], references: [id], onDelete: Cascade)
+  type           PaymentMethod
+  stripeMethodId String?        @unique // Stripe payment method ID
+  brand          String? // visa, mastercard, amex
+  lastFourDigits String?
+  expiryMonth    Int?
+  expiryYear     Int?
+  isDefault      Boolean        @default(false)
+  billingEmail   String?
+  billingName    String?
+  subscriptions  Subscription[] @relation("SubscriptionPaymentMethod")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId, isDefault])
+}
+
+model Subscription {
+  id                   String               @id @default(cuid())
+  userId               String
+  user                 User                 @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  petitionId           String?
+  petition             Petition?            @relation("PetitionSubscriptions", fields: [petitionId], references: [id], onDelete: SetNull)
+  contentId            String?
+  content              Content?             @relation("ContentSubscriptions", fields: [contentId], references: [id], onDelete: SetNull)
+  amount               Float
+  currency             String               @default("USD")
+  interval             String               @default("monthly") // monthly, quarterly, yearly
+  status               SubscriptionStatus   @default(ACTIVE)
+  stripeSubscriptionId String?              @unique(map: "stripe_subscription_unique")
+  stripeCustomerId     String?
+  lastWebhookEventId   String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  nextBillingDate      DateTime?
+  cancelledAt          DateTime?
+  cancellationReason   String?
+  paymentMethodId      String?
+  paymentMethod        PaymentMethodRecord? @relation("SubscriptionPaymentMethod", fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  metadata             String?              @db.Text() // JSON: frequency, notifications
+  webhookEvents        WebhookEventLog[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@index([userId, status])
+  @@index([petitionId, status])
+  @@index([contentId, status])
+  @@index([nextBillingDate])
+  @@index([status, createdAt])
+  @@index([stripeSubscriptionId])
+  @@index([lastWebhookEventId])
+}
+
+model Refund {
+  id             String    @id @default(cuid())
+  paymentId      String
+  payment        Payment   @relation("PaymentRefunds", fields: [paymentId], references: [id], onDelete: Cascade)
+  amount         Float
+  currency       String    @default("USD")
+  reason         String
+  stripeRefundId String?   @unique
+  status         String    @default("pending") // pending, succeeded, failed
+  processedAt    DateTime?
+  notes          String?   @db.Text()
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([paymentId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  paymentId   String
+  payment     Payment  @relation("PaymentItems", fields: [paymentId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  metadata    String?  @db.Text() // JSON: item details
+  createdAt   DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+// ============================================================================
+// Webhook Event Processing & Deduplication
+// ============================================================================
+
+model WebhookEventLog {
+  id             String        @id @default(cuid())
+  stripeEventId  String        @unique // Stripe event ID for deduplication
+  eventType      String // e.g., "payment_intent.succeeded", "invoice.payment_succeeded"
+  status         String        @default("processing") // processing, completed, failed
+  paymentId      String?
+  payment        Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  payload        String        @db.Text() // Raw Stripe webhook payload (JSON)
+  error          String?       @db.Text() // Error details if processing failed
+  processedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([stripeEventId])
+  @@index([eventType, createdAt])
+  @@index([status, createdAt])
+  @@index([paymentId, createdAt])
+  @@index([subscriptionId, createdAt])
+}
+
+// ============================================================================
+// Audit & Logging
+// ============================================================================
+
+enum AuditActionType {
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  APPROVE
+  REJECT
+  LOGIN
+}
+
+model AuditLog {
+  id         String          @id @default(cuid())
+  userId     String?
+  user       User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditActionType
+  entityType String // "petition", "user", "content", etc.
+  entityId   String
+  changes    String?         @db.Text() // JSON diff of what changed
+  details    String?         @db.Text() // Additional context
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ============================================================================
+// Feature Flags
+// ============================================================================
+
+model FeatureToggle {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  enabled     Boolean  @default(false)
+  config      String?  @db.Text() // JSON config
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
+// ============================================================================
+// WhatsApp Viral Growth System
+// ============================================================================
+
+enum ReferralStatus {
+  PENDING // Referral link generated but not used yet
+  CONVERTED // Referrer signed the petition
+  REWARDED // Bonus applied to trust score
+  FRAUD_BLOCKED // Detected as fraud
+}
+
+model Referral {
+  id                   String         @id @default(cuid())
+  petitionId           String
+  petition             Petition       @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  referrerId           String
+  referrer             User           @relation(name: "ReferralsCreated", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeEmail         String?
+  refereePhone         String?
+  referralCode         String         @unique // Unique code for tracking
+  shareUrl             String // Full referral URL with utm params
+  whatsappMessage      String? // Pre-generated WhatsApp message
+  status               ReferralStatus @default(PENDING)
+  convertedSignatureId String? // Link to the signature that converted
+  trustBonusApplied    Int            @default(0) // Trust score bonus from this referral
+  clickCount           Int            @default(0) // How many times link was clicked
+  conversionDate       DateTime? // When the referral converted
+  expiresAt            DateTime? // Referral link expiration (default 30 days)
+  metadata             String?        @db.Text() // JSON: utm_source, utm_medium, utm_campaign
+  shareLinks           ShareLink[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([petitionId, referrerId])
+  @@index([referralCode])
+  @@index([status, createdAt])
+}
+
+enum MilestoneType {
+  SIGNATURES // 10, 50, 100, 500, 1000 signatures
+  TRENDING // Trending in county
+  GOVERNMENT_READY // Ready for government submission (1000+ signatures)
+}
+
+model PetitionMilestone {
+  id             String        @id @default(cuid())
+  petitionId     String
+  petition       Petition      @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  type           MilestoneType
+  targetValue    Int // 10, 50, 100, 500, 1000, etc.
+  currentValue   Int           @default(0) // Current progress
+  achieved       Boolean       @default(false)
+  achievedAt     DateTime?
+  shareTriggered Boolean       @default(false) // Whether share modal was shown
+  metadata       String?       @db.Text() // JSON: county rank, government contact
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([petitionId, type, targetValue])
+  @@index([petitionId, achieved])
+  @@index([achievedAt])
+}
+
+model ShareLink {
+  id            String    @id @default(cuid())
+  referralId    String?
+  referral      Referral? @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  shortCode     String    @unique // e.g., "r/abc123" -> redirects to /r/abc123
+  targetUrl     String // Full URL to petition
+  petitionId    String
+  petition      Petition  @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  clickCount    Int       @default(0)
+  conversions   Int       @default(0) // How many clicks led to signatures
+  source        String    @default("whatsapp") // whatsapp, facebook, twitter, etc.
+  medium        String    @default("organic") // organic, paid, viral
+  campaign      String? // Campaign name for tracking
+  expiresAt     DateTime? // Optional expiration
+  metadata      String?   @db.Text() // JSON: deviceInfo, referrer, etc.
+  createdAt     DateTime  @default(now())
+  lastClickedAt DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  // Facebook-specific tracking
+  facebookShareCount      Int     @default(0)
+  facebookEngagementScore Int     @default(0)
+  networkReachEstimate    Int     @default(0)
+  influencerFlag          Boolean @default(false)
+  viralMultiplier         Float   @default(1.0)
+  shareDialogUsed         Boolean @default(false)
+
+  @@index([petitionId, source])
+  @@index([clickCount, conversions])
+  @@index([createdAt])
+  @@index([influencerFlag, viralMultiplier])
+}
+
+// ============================================================================
+// Government Integration System
+// ============================================================================
+
+enum SubmissionStatus {
+  SUBMITTED
+  ACKNOWLEDGED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EMAIL_FAILED
+}
+
+model PetitionSubmission {
+  id              String           @id @default(cuid())
+  petitionId      String
+  petition        Petition         @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  governmentEmail String // Email address submitted to
+  status          SubmissionStatus @default(SUBMITTED)
+  submittedBy     String // User ID who submitted
+  submittedByUser User             @relation(fields: [submittedBy], references: [id])
+  submittedAt     DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  notes           String?          @db.Text() // Additional notes from submitter
+  responseNotes   String?          @db.Text() // Notes from government
+  pdfUrl          String? // Optional: URL to stored PDF if we host it
+  signatureCount  Int? // Snapshot of signature count at submission
+  createdAt       DateTime         @default(now())
+
+  @@unique([petitionId, submittedAt])
+  @@index([petitionId, status])
+  @@index([submittedBy, createdAt])
+  @@index([status, createdAt])
+}
+
+model GovernmentContact {
+  id        String   @id @default(cuid())
+  name      String // e.g., "Ministry of Planning"
+  email     String   @unique
+  phone     String?
+  category  String // e.g., "MINISTRY", "PARLIAMENT", "NGO"
+  region    String? // e.g., "NATIONAL", "MONTSERRADO", "GRAND_CAPE_MOUNT"
+  priority  Int      @default(0) // Higher = more important (used for default submission)
+  isActive  Boolean  @default(true)
+  notes     String?  @db.Text() // Internal notes about this contact
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, priority])
+  @@index([region, isActive])
+  @@index([isActive, priority])
+}
+
+// ============================================================================
+// Facebook Viral Growth System - Gamification & Social Engagement
+// ============================================================================
+
+enum BadgeType {
+  SHARE_WIZARD // 10+ shares in a petition
+  VIRAL_HERO // 50+ conversions from shares
+  NETWORK_BUILDER // 100+ friends shared with
+  INFLUENCER // 5%+ of network converted
+  STREAK_MASTER // Shares 5+ consecutive days
+}
+
+model SocialEngagementBadge {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
+  petitionId      String
+  petition        Petition  @relation("PetitionBadges", fields: [petitionId], references: [id], onDelete: Cascade)
+  badgeType       BadgeType
+  multiplierBonus Float     @default(1.0) // 1.0 = no bonus, 2.0 = 2x trust bonus
+  earnedAt        DateTime  @default(now())
+  metadata        String?   @db.Text() // JSON: conditions met, progress details
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, petitionId, badgeType])
+  @@index([userId, badgeType])
+  @@index([petitionId, badgeType])
+  @@index([earnedAt])
+}
+
+enum ChallengeStatus {
+  ACTIVE // Challenge is currently running
+  COMPLETED // Challenge period ended
+  CANCELLED // Challenge was cancelled
+}
+
+enum ChallengePeriod {
+  WEEKLY // Monday-Sunday
+  CAMPAIGN // Custom date range
+}
+
+model ShareChallenge {
+  id               String          @id @default(cuid())
+  petitionId       String?
+  petition         Petition?       @relation("PetitionChallenges", fields: [petitionId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?         @db.Text()
+  period           ChallengePeriod @default(WEEKLY)
+  startDate        DateTime
+  endDate          DateTime
+  status           ChallengeStatus @default(ACTIVE)
+  goalType         String // "share_count", "conversion_count", "network_reach"
+  goalValue        Int
+  rewardMultiplier Float           @default(2.0) // 2-5x trust bonus for completion
+  participantCount Int             @default(0)
+  completions      Int             @default(0)
+  metadata         String?         @db.Text() // JSON: rules, reward details
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Reverse relation for ChallengeMembership
+  memberships ChallengeMembership[]
+
+  @@index([petitionId, period, startDate])
+  @@index([status, endDate])
+  @@index([createdAt])
+}
+
+model ChallengeMembership {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation("ChallengeParticipants", fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String
+  challenge   ShareChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  progress    Int            @default(0) // Current progress toward goal
+  completed   Boolean        @default(false)
+  completedAt DateTime?
+  earnedBonus Float          @default(0.0) // Bonus actually earned
+  joinedAt    DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([userId, challengeId])
+  @@index([challengeId, completed])
+  @@index([userId, completedAt])
+}
+
+model FacebookPixelEvent {
+  id              String    @id @default(cuid())
+  eventId         String    @unique // Facebook event ID
+  userId          String?
+  user            User?     @relation("FacebookPixelEvents", fields: [userId], references: [id], onDelete: SetNull)
+  petitionId      String?
+  petition        Petition? @relation("FacebookPixelEvents", fields: [petitionId], references: [id], onDelete: SetNull)
+  eventType       String // ViewContent, AddToCart, InitiateCheckout, Purchase, etc.
+  eventData       String    @db.Text() // JSON: content_ids, value, currency
+  conversionValue Float     @default(0.0) // Monetary value if applicable
+  pixelId         String? // Facebook pixel ID
+  metadata        String?   @db.Text() // JSON: timestamp, user agent, IP
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([petitionId, eventType])
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+model CustomAudience {
+  id                 String    @id @default(cuid())
+  name               String
+  description        String?   @db.Text()
+  audienceType       String // SHARERS, CONVERTERS, INFLUENCERS, ENGAGED
+  petitionId         String
+  petition           Petition  @relation("CustomAudiences", fields: [petitionId], references: [id], onDelete: Cascade)
+  userIds            String    @db.Text() // JSON array of user IDs
+  estimatedSize      Int       @default(0)
+  facebookAudienceId String? // External Facebook audience ID for ads
+  syncedAt           DateTime?
+  metadata           String?   @db.Text() // JSON: sync status, last error
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([petitionId, audienceType])
+  @@index([syncedAt])
+}
+
+// ============================================================================
+// RBAC - Role Based Access Control
+// ============================================================================
+
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  OVERRIDE
+}
+
+enum PermissionResource {
+  PETITION
+  DIRECTORY
+  INSTITUTION
+  USER
+  ROUTING
+  CONTENT
+  ROLE
+  ANALYTICS
+}
+
+model Permission {
+  id          String             @id @default(cuid())
+  resource    PermissionResource
+  action      PermissionAction
+  description String?
+  key         String             @unique // e.g., "petition:approve"
+  createdAt   DateTime           @default(now())
+  rolePerms   RolePermission[]
+
+  @@unique([resource, action])
+  @@index([key])
+}
+
+model Role {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  description String?
+  isSystem    Boolean              @default(false) // System roles: SUPER_ADMIN, ADMIN, MODERATOR, USER
+  permissions RolePermission[]
+  userRoles   UserRoleAssignment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([name])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRoleAssignment {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime? // Optional: role expiration
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// Contact Directory System - Institutional Routing
+// ============================================================================
+
+enum InstitutionType {
+  GOVERNMENT
+  NGO
+}
+
+enum InstitutionCategory {
+  MINISTRY
+  AGENCY
+  PARLIAMENT
+  LOCAL_AUTHORITY
+  UTILITY
+  HEALTH
+  EDUCATION
+  SECURITY
+  NGO
+}
+
+enum ContactPriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Institution {
+  id              String                  @id @default(cuid())
+  name            String
+  type            InstitutionType
+  category        InstitutionCategory
+  officialEmail   String
+  secondaryEmails String                  @default("[]") // JSON array of emails
+  contactPerson   String?
+  phone           String?
+  verified        Boolean                 @default(false)
+  logo            String? // URL to institution logo
+  description     String?
+  website         String?
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  country         String                  @default("Liberia")
+  lastVerifiedAt  DateTime?
+  metadata        String?                 @db.Text() // JSON: additional info
+  departments     InstitutionDepartment[]
+  contacts        ContactDirectory[]
+  routingLogs     RoutingLog[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([type, category, verified])
+  @@index([verified, createdAt])
+  @@index([name])
+}
+
+model InstitutionDepartment {
+  id            String             @id @default(cuid())
+  institutionId String
+  institution   Institution        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  name          String // e.g., "Public Works", "Health", "Education"
+  email         String
+  phone         String?
+  description   String?
+  contacts      ContactDirectory[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@index([email])
+}
+
+model ContactDirectory {
+  id            String                 @id @default(cuid())
+  institutionId String
+  institution   Institution            @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  departmentId  String?
+  department    InstitutionDepartment? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  issueTags     String                 @default("[]") // JSON array: ["roads", "electricity", "schools"]
+  priorityLevel ContactPriorityLevel   @default(MEDIUM)
+  isPrimary     Boolean                @default(false) // Primary contact for institution
+  email         String?
+  phone         String?
+  contactName   String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([institutionId])
+  @@index([departmentId])
+  @@index([isPrimary, priorityLevel])
+}
+
+enum RoutingDecision {
+  MATCHED
+  FALLBACK
+  MANUAL_OVERRIDE
+  FAILED
+}
+
+model RoutingLog {
+  id                 String          @id @default(cuid())
+  petitionId         String?
+  petition           Petition?       @relation("PetitionRouting", fields: [petitionId], references: [id], onDelete: Cascade)
+  institutionId      String?
+  institution        Institution?    @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  departmentId       String?
+  decision           RoutingDecision
+  matchedTags        String          @default("[]") // JSON array of matched tags
+  fallbackReason     String?
+  manualOverrideBy   String? // User ID if manually overridden
+  adminNotes         String?
+  emailSentAt        DateTime?
+  emailDeliveredAt   DateTime?
+  emailFailureReason String?
+  recipientEmails    String          @default("[]") // JSON array
+  ccEmails           String          @default("[]") // JSON array
+  metadata           String?         @db.Text() // JSON: additional tracking info
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([petitionId, createdAt])
+  @@index([institutionId, createdAt])
+  @@index([decision, createdAt])
+  @@index([emailSentAt])
+}
+
+// ============================================================================
+// CMS - Content Management System
+// ============================================================================
+
+model CMSPage {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  content         String    @db.Text() // Rich HTML content
+  metaDescription String?
+  metaKeywords    String?
+  ogImage         String? // Open Graph image URL
+  ogTitle         String?
+  ogDescription   String?
+  published       Boolean   @default(false)
+  publishedAt     DateTime?
+  authorId        String?
+  author          User?     @relation("CMSPageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  viewCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([published, publishedAt])
+}
+
+model CMSTemplate {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  category          String // e.g., "health", "infrastructure", "education"
+  titleHint         String? // Suggested title format
+  descriptionHint   String?
+  suggestedTags     String   @default("[]") // JSON array
+  suggestedCategory String?
+  content           String   @db.Text() // Template content/structure as JSON
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category, active])
+}
+
+// Email verification tokens for signup flow
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique // Hashed token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+
+  @@index([email, expiresAt])
+  @@index([token])
+}
+
+// Password reset tokens for password recovery flow
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique // Hashed token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+
+  @@index([userId, expiresAt])
+  @@index([token])
+}

@@ -1,0 +1,278 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PetitionStatus } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { SmartRoutingService } from '../contact-directory/routing/smart-routing.service';
+import {
+  CreatePetitionCommentDto,
+  CreatePetitionDto,
+  CreatePetitionUpdateDto,
+} from './dto';
+
+@Injectable()
+export class PetitionsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly smartRouting: SmartRoutingService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  private async rankByRisk(
+    petitions: Array<{
+      id: string;
+      createdAt: Date;
+      todaySignatures: number;
+      signaturesCount: number;
+      title: string;
+      summary: string;
+      imageUrl: string | null;
+      description: string;
+      goal: number;
+      status: PetitionStatus;
+      updatedAt: Date;
+      creatorId: string;
+    }>,
+  ) {
+    const now = Date.now();
+    const riskCounts = await this.prisma.fraudEvent.groupBy({
+      by: ['petitionId'],
+      _count: { _all: true },
+      where: {
+        petitionId: { in: petitions.map((petition) => petition.id) },
+      },
+    });
+    const riskMap = new Map(
+      riskCounts.map((entry) => [entry.petitionId, entry._count._all]),
+    );
+
+    return petitions
+      .map((petition) => {
+        const ageHours = Math.max(
+          1,
+          (now - petition.createdAt.getTime()) / (1000 * 60 * 60),
+        );
+        const riskCount = riskMap.get(petition.id) ?? 0;
+        const momentum =
+          petition.todaySignatures * 1.5 + petition.signaturesCount * 0.2;
+        const freshnessBoost = 10 / ageHours;
+        const score = momentum + freshnessBoost - riskCount * 8;
+        return { ...petition, discoveryScore: Number(score.toFixed(2)) };
+      })
+      .sort((a, b) => b.discoveryScore - a.discoveryScore);
+  }
+
+  async stats() {
+    const [totals, goalData] = await Promise.all([
+      this.prisma.petition.aggregate({
+        where: { status: PetitionStatus.APPROVED },
+        _count: { _all: true },
+        _sum: { signaturesCount: true },
+      }),
+      this.prisma.petition.findMany({
+        where: { status: PetitionStatus.APPROVED },
+        select: { signaturesCount: true, goal: true },
+      }),
+    ]);
+
+    const campaignsWon = goalData.filter((p) => p.signaturesCount >= p.goal).length;
+
+    return {
+      totalPetitions: totals._count._all,
+      totalSignatures: totals._sum.signaturesCount ?? 0,
+      campaignsWon,
+      countiesReached: 15,
+    };
+  }
+
+  create(userId: string, dto: CreatePetitionDto) {
+    return this.prisma.petition.create({
+      data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
+    });
+  }
+
+  async list() {
+    const petitions = await this.prisma.petition.findMany({
+      where: { status: PetitionStatus.APPROVED },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return this.rankByRisk(petitions);
+  }
+
+  async trending() {
+    const petitions = await this.prisma.petition.findMany({
+      where: { status: PetitionStatus.APPROVED },
+      orderBy: { todaySignatures: 'desc' },
+      take: 25,
+    });
+    const ranked = await this.rankByRisk(petitions);
+    return ranked.slice(0, 6);
+  }
+
+  getById(id: string) {
+    return this.prisma.petition.findUnique({ where: { id } });
+  }
+
+  async approve(id: string, category?: string) {
+    const petition = await this.prisma.petition.findUnique({ where: { id } });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.status !== PetitionStatus.PENDING) {
+      throw new BadRequestException('Only pending petitions can be approved');
+    }
+
+    // Approve petition
+    const approved = await this.prisma.petition.update({
+      where: { id },
+      data: {
+        status: PetitionStatus.APPROVED,
+        ...(category && { category }),
+      },
+    });
+
+    // Auto-route petition to institution
+    try {
+      const tags = category ? [category] : [];
+      const routingResult = await this.smartRouting.routePetition(
+        petition.title,
+        category || null,
+        tags,
+      );
+
+      // Log routing decision
+      await this.smartRouting.logRoutingDecision(id, routingResult);
+
+      // Emit event to send email to institution
+      this.eventEmitter.emit('petition.routed', {
+        petitionId: id,
+        routingResult,
+      });
+    } catch (error) {
+      // Log routing error but don't fail petition approval
+      console.error(`Error routing petition ${id}:`, error);
+    }
+
+    return approved;
+  }
+
+  async reject(id: string) {
+    const petition = await this.prisma.petition.findUnique({ where: { id } });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.status !== PetitionStatus.PENDING) {
+      throw new BadRequestException('Only pending petitions can be rejected');
+    }
+    return this.prisma.petition.update({
+      where: { id },
+      data: { status: PetitionStatus.REJECTED },
+    });
+  }
+
+  async listUpdates(petitionId: string) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
+    if (!petition || petition.status !== PetitionStatus.APPROVED) return [];
+    return this.prisma.petitionUpdate.findMany({
+      where: { petitionId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async listComments(petitionId: string) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
+    if (!petition || petition.status !== PetitionStatus.APPROVED) return [];
+    return this.prisma.petitionComment.findMany({
+      where: { petitionId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+  }
+
+  async createUpdate(
+    petitionId: string,
+    userId: string,
+    dto: CreatePetitionUpdateDto,
+  ) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.creatorId !== userId) {
+      throw new ForbiddenException(
+        'Only the petition creator can post updates',
+      );
+    }
+    return this.prisma.petitionUpdate.create({
+      data: {
+        petitionId,
+        title: dto.title,
+        body: dto.body,
+      },
+    });
+  }
+
+  async createComment(
+    petitionId: string,
+    dto: CreatePetitionCommentDto,
+    userId?: string,
+  ) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
+    if (!petition || petition.status !== PetitionStatus.APPROVED) {
+      throw new BadRequestException('Petition is not open for comments');
+    }
+    return this.prisma.petitionComment.create({
+      data: {
+        petitionId,
+        authorName: dto.authorName,
+        body: dto.body,
+        userId,
+      },
+    });
+  }
+
+  async browse() {
+    // Fetch all approved petitions with creator info
+    const petitions = await this.prisma.petition.findMany({
+      where: { status: PetitionStatus.APPROVED },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Group petitions by category
+    const grouped = new Map<string | null, typeof petitions>();
+    for (const petition of petitions) {
+      const cat = petition.category || 'Uncategorized';
+      if (!grouped.has(cat)) {
+        grouped.set(cat, []);
+      }
+      grouped.get(cat)!.push(petition);
+    }
+
+    // Get trending petitions (top 6 by today's signatures)
+    const trendingPetitions = petitions
+      .sort((a, b) => b.todaySignatures - a.todaySignatures)
+      .slice(0, 6);
+
+    return {
+      categories: Object.fromEntries(grouped),
+      trending: trendingPetitions,
+      total: petitions.length,
+    };
+  }
+}

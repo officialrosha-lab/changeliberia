@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .challenge-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .content {
+      padding: 40px 20px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .challenge-info {
+      background-color: #f9f9f9;
+      border-left: 4px solid #f5576c;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .challenge-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f5576c;
+      margin: 0 0 10px 0;
+    }
+    .challenge-description {
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+    }
+    .reward-box {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 4px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .reward-multiplier {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .reward-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin: 5px 0 0 0;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-box {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+      border-top: 3px solid #f5576c;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f5576c;
+      margin: 0;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin: 5px 0 0 0;
+    }
+    .cta-button {
+      display: inline-block;
+      background-color: #f5576c;
+      color: white !important;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 600;
+      margin: 20px 0;
+      transition: background-color 0.2s;
+    }
+    .cta-button:hover {
+      background-color: #f093fb;
+    }
+    .footer {
+      background-color: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      border-top: 1px solid #eee;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="challenge-icon">🎯</div>
+      <h1>Challenge Complete!</h1>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Awesome work, {{userName}}!</div>
+
+      <p>You've successfully completed the challenge <strong>"{{challengeTitle}}"</strong>! Your dedication is making a real impact.</p>
+
+      <div class="challenge-info">
+        <div class="challenge-title">{{challengeTitle}}</div>
+        <div class="challenge-description">
+          Challenge Goal: Share the petition {{goalValue}} times
+        </div>
+      </div>
+
+      <div class="reward-box">
+        <div class="reward-multiplier">{{rewardMultiplier}}x</div>
+        <div class="reward-label">Share Multiplier Earned</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value">{{goalValue}}</div>
+          <div class="stat-label">Shares Required</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">✓</div>
+          <div class="stat-label">Challenge Complete</div>
+        </div>
+      </div>
+
+      <p>Your share multiplier is now boosted by {{rewardMultiplier}}x! This means your next shares will count more toward future challenges and badges. Keep up the momentum!</p>
+
+      <div style="text-align: center;">
+        <a href="{{actionUrl}}" class="cta-button">View More Challenges</a>
+      </div>
+
+      <hr class="divider">
+
+      <p style="font-size: 12px; color: #999; margin: 20px 0 0 0;">
+        You received this email because you completed a challenge on Change Liberia. 
+        <a href="{{unsubscribeUrl}}" style="color: #f5576c; text-decoration: none;">Manage notifications</a>
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 Change Liberia. All rights reserved.</p>
+      <p>Empowering communities to create lasting change through petitions and advocacy.</p>
+    </div>
+  </div>
+</body>
+</html>

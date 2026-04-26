@@ -1,0 +1,537 @@
+'use client';
+
+import Link from 'next/link';
+import { FormEvent, useEffect, useState } from 'react';
+import { apiGet, apiPost, apiPostFormData } from '../../lib/api';
+import { useAuthStore } from '../../lib/store';
+
+type User = {
+  id: string;
+  fullName: string;
+  trustScore: number;
+  verificationStatus: string;
+  role: string;
+};
+
+type CompletedSteps = {
+  phone: boolean;
+  geo: boolean;
+  device: boolean;
+  idDocument: boolean;
+};
+
+type MyPetition = {
+  id: string;
+  title: string;
+  status: string;
+  signaturesCount: number;
+  goal: number;
+};
+
+type GovernmentStatus = {
+  petitionId: string;
+  submitted: boolean;
+  status: string;
+  submittedAt?: string;
+  updatedAt?: string;
+};
+
+function formatStatus(value: string): string {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
+export function DashboardClient() {
+  const token = useAuthStore((s) => s.token);
+  const setToken = useAuthStore((s) => s.setToken);
+  const [user, setUser] = useState<User | null>(null);
+  const [petitions, setPetitions] = useState<MyPetition[]>([]);
+  const [message, setMessage] = useState('');
+  const [governmentStatuses, setGovernmentStatuses] = useState<Record<string, GovernmentStatus>>({});
+  const [completed, setCompleted] = useState<CompletedSteps>({ phone: false, geo: false, device: false, idDocument: false });
+  const [verifying, setVerifying] = useState<string | null>(null);
+  const [idType, setIdType] = useState('passport');
+  const [idUrl, setIdUrl] = useState('');
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [updatePetitionId, setUpdatePetitionId] = useState<string | null>(null);
+  const [updateTitle, setUpdateTitle] = useState('');
+  const [updateBody, setUpdateBody] = useState('');
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [me, mine, steps] = await Promise.all([
+          apiGet<User>('/users/me', token),
+          apiGet<MyPetition[]>('/users/me/petitions', token),
+          apiGet<CompletedSteps>('/verification/completed', token),
+        ]);
+        if (!cancelled) {
+          setUser(me);
+          setPetitions(mine);
+          setCompleted(steps);
+        }
+      } catch {
+        if (!cancelled) {
+          setToken(null);
+          setMessage('Session expired. Sign in again.');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, setToken]);
+
+  useEffect(() => {
+    if (!token || petitions.length === 0) return;
+    let cancelled = false;
+
+    void (async () => {
+      const results = await Promise.allSettled(
+        petitions.map((petition) => apiGet<GovernmentStatus>(`/government/status/${petition.id}`, token)),
+      );
+
+      if (cancelled) return;
+
+      const statusMap: Record<string, GovernmentStatus> = {};
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          statusMap[petitions[index].id] = result.value;
+        }
+      });
+      setGovernmentStatuses(statusMap);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, petitions]);
+
+  async function runVerification(path: string) {
+    if (!token || verifying) return;
+    setVerifying(path);
+    setMessage('');
+    try {
+      if (path === 'geo') {
+        await apiPost('/verification/geo', { countryCode: 'LR' }, token);
+      } else {
+        await apiPost(`/verification/${path}`, {}, token);
+      }
+      const [me, steps] = await Promise.all([
+        apiGet<User>('/users/me', token),
+        apiGet<CompletedSteps>('/verification/completed', token),
+      ]);
+      setUser(me);
+      setCompleted(steps);
+      setMessage('Verification step recorded. Your trust score has been updated.');
+    } catch {
+      setMessage('Could not complete verification. Please try again.');
+    } finally {
+      setVerifying(null);
+    }
+  }
+
+  async function submitId(e: FormEvent) {
+    e.preventDefault();
+    if (!token) return;
+    if (idFile) {
+      const fd = new FormData();
+      fd.append('type', idType);
+      fd.append('file', idFile);
+      await apiPostFormData('/verification/id-document', fd, token);
+      setIdFile(null);
+    } else if (idUrl.trim()) {
+      await apiPost(
+        '/verification/id-document',
+        { type: idType, fileUrl: idUrl.trim() },
+        token,
+      );
+      setIdUrl('');
+    } else {
+      return;
+    }
+    setMessage('ID submitted for admin review. Trust increases when approved.');
+  }
+
+  async function submitUpdate(e: FormEvent) {
+    e.preventDefault();
+    if (!token || !updatePetitionId || !updateTitle.trim() || !updateBody.trim()) {
+      return;
+    }
+    await apiPost(
+      `/petitions/${updatePetitionId}/updates`,
+      { title: updateTitle.trim(), body: updateBody.trim() },
+      token,
+    );
+    setUpdatePetitionId(null);
+    setUpdateTitle('');
+    setUpdateBody('');
+    setMessage('Update published.');
+  }
+
+  if (!token) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="mt-4 text-zinc-600">
+            Sign in to manage petitions, publish updates, and complete your verification steps.
+          </p>
+          <p className="mt-4 text-zinc-600">
+            <Link href="/auth/login" className="font-semibold text-emerald-700 underline">
+              Sign in
+            </Link>{' '}
+            to manage petitions and verification.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      <div className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+          Campaign dashboard
+        </p>
+        <h1 className="mt-3 text-3xl font-bold text-zinc-900">
+          {user ? `Welcome back, ${user.fullName}` : 'Dashboard'}
+        </h1>
+        <p className="mt-3 max-w-2xl text-zinc-600">
+          Track your trust status, manage petitions, and keep supporters updated as your campaign
+          grows.
+        </p>
+        {message ? (
+          <p className={`mt-4 text-sm font-medium ${message.startsWith('Could not') ? 'text-red-600' : 'text-emerald-700'}`}>
+            {message}
+          </p>
+        ) : null}
+
+        {user ? (
+          <>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Trust score</p>
+                <p className="mt-2 text-2xl font-bold text-zinc-900">{user.trustScore}</p>
+              </div>
+              <div className="rounded-2xl bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Verification</p>
+                <p className="mt-2 text-lg font-semibold text-zinc-900">
+                  {user.verificationStatus.replaceAll('_', ' ')}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">My petitions</p>
+                <p className="mt-2 text-2xl font-bold text-zinc-900">{petitions.length}</p>
+              </div>
+              <div className="rounded-2xl bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Admin access</p>
+                {user.role === 'ADMIN' ? (
+                  <Link href="/admin" className="mt-2 inline-block font-semibold text-emerald-700 underline">
+                    Open admin panel
+                  </Link>
+                ) : (
+                  <p className="mt-2 text-sm text-zinc-500">Standard account</p>
+                )}
+              </div>
+            </div>
+            <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Government submissions</p>
+                  <p className="mt-1 text-sm text-zinc-600">View and manage petitions you have submitted to government or NGO contacts.</p>
+                </div>
+                <Link
+                  href="/government/submissions"
+                  className="inline-flex rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  View my submissions
+                </Link>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-3xl bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-zinc-900">Grow your account trust</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Complete the steps below so your petitions and signatures carry more credibility.
+          </p>
+          <div className="mt-5 space-y-3">
+            {([
+              {
+                key: 'phone',
+                label: 'Confirm your phone',
+                desc: 'Adds a strong trust signal that you are a reachable, real supporter.',
+                btnLabel: 'Verify phone',
+                doneLabel: 'Phone verified',
+                filled: true,
+              },
+              {
+                key: 'geo',
+                label: 'Confirm Liberia location',
+                desc: 'Use your current location signal to show the petition has Liberian support.',
+                btnLabel: 'Verify location',
+                doneLabel: 'Location confirmed',
+                filled: false,
+              },
+              {
+                key: 'device',
+                label: 'Secure this device',
+                desc: 'Helps reduce abuse and makes future support actions smoother.',
+                btnLabel: 'Link device',
+                doneLabel: 'Device linked',
+                filled: false,
+              },
+            ] as const).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
+              const isDone = completed[key as keyof CompletedSteps];
+              const isLoading = verifying === key;
+              return (
+                <div
+                  key={key}
+                  className={`rounded-2xl border p-4 transition-colors ${isDone ? 'border-emerald-200 bg-emerald-50' : 'border-zinc-200'}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      {isDone && (
+                        <span className="mt-0.5 flex-shrink-0 text-emerald-600">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </span>
+                      )}
+                      <div>
+                        <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-zinc-900'}`}>{label}</p>
+                        <p className="mt-1 text-sm text-zinc-600">{desc}</p>
+                      </div>
+                    </div>
+                    {isDone ? (
+                      <span className="flex-shrink-0 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                        {doneLabel}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isLoading || !!verifying}
+                        onClick={() => runVerification(key)}
+                        className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                          filled
+                            ? 'bg-zinc-900 text-white hover:bg-zinc-700'
+                            : 'border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:bg-zinc-50'
+                        }`}
+                      >
+                        {isLoading ? 'Working…' : btnLabel}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <form onSubmit={submitId} className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-lg text-white shadow-sm">
+                🪪
+              </span>
+              <div>
+                <p className="font-bold text-emerald-950">Submit an ID for review</p>
+                <p className="mt-0.5 text-sm text-emerald-800/80">
+                  ID review gives your account the strongest trust boost once approved by an admin.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <select
+                value={idType}
+                onChange={(e) => setIdType(e.target.value)}
+                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="passport">Passport</option>
+                <option value="voter_id">Voter ID</option>
+                <option value="other">Other government ID</option>
+              </select>
+
+              <label className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-emerald-300 bg-white px-4 py-3 transition hover:border-emerald-400 hover:bg-emerald-50/50">
+                <svg className="h-5 w-5 flex-shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                <span className="text-sm text-zinc-500">
+                  {idFile ? (
+                    <span className="font-medium text-emerald-700">{idFile.name}</span>
+                  ) : (
+                    <>Upload JPEG, PNG or PDF <span className="text-zinc-400">— up to 5 MB</span></>
+                  )}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  onChange={(e) => setIdFile(e.target.files?.[0] ?? null)}
+                  className="sr-only"
+                />
+              </label>
+
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-emerald-200" />
+                <span className="text-xs font-medium text-emerald-700">or paste a URL</span>
+                <div className="h-px flex-1 bg-emerald-200" />
+              </div>
+
+              <input
+                value={idUrl}
+                onChange={(e) => setIdUrl(e.target.value)}
+                placeholder="https://drive.google.com/your-id-document"
+                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+
+              <button
+                type="submit"
+                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95"
+              >
+                Submit ID for review
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900">My petitions</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Review campaign status and share updates when supporters need to hear from you.
+              </p>
+            </div>
+            <Link
+              href="/create"
+              className="flex-shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+            >
+              + Start a petition
+            </Link>
+          </div>
+
+          <ul className="mt-4 space-y-3">
+            {petitions.map((p) => {
+              const progress = Math.min(100, Math.round((p.signaturesCount / p.goal) * 100));
+              return (
+                <li key={p.id} className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200">
+                  <Link href={`/petitions/${p.id}`} className="text-sm font-semibold text-zinc-900 hover:text-emerald-700 transition-colors">
+                    {p.title}
+                  </Link>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      p.status === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : p.status === 'REJECTED'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-zinc-100 text-zinc-600'
+                    }`}>
+                      {formatStatus(p.status)}
+                    </span>
+                    <span className="text-xs font-medium text-emerald-600">{p.signaturesCount.toLocaleString()} signatures</span>
+                    <span className="text-xs text-zinc-400">{progress}% of goal</span>
+                    {governmentStatuses[p.id] ? (
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        governmentStatuses[p.id].submitted
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {governmentStatuses[p.id].submitted ? 'Gov submitted' : 'Gov ready'}
+                      </span>
+                    ) : p.signaturesCount >= p.goal ? (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                        Ready for gov review
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setUpdatePetitionId(p.id)}
+                      className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+                    >
+                      Post update
+                    </button>
+                    <Link
+                      href={`/petitions/${p.id}`}
+                      className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-700"
+                    >
+                      View petition
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {petitions.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center">
+              <p className="text-sm font-semibold text-zinc-700">No petitions yet</p>
+              <p className="mt-1 text-sm text-zinc-500">
+                Launch a petition to begin gathering support and keep campaigners updated.
+              </p>
+              <Link
+                href="/create"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+              >
+                ✍️ Start your first petition
+              </Link>
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      {updatePetitionId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form
+            onSubmit={submitUpdate}
+            className="w-full max-w-md rounded-3xl bg-white p-6 shadow-lg"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900">Post a campaign update</h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              Let supporters know what has changed, what happened next, or what help you still
+              need.
+            </p>
+            <input
+              value={updateTitle}
+              onChange={(e) => setUpdateTitle(e.target.value)}
+              placeholder="e.g. Meeting secured with Ministry of Public Works"
+              className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            />
+            <textarea
+              value={updateBody}
+              onChange={(e) => setUpdateBody(e.target.value)}
+              placeholder="Share what happened, what changed, or what help you still need…"
+              rows={4}
+              className="mt-3 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            />
+            <div className="mt-3 flex gap-2">
+              <button
+                type="submit"
+                className="rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-zinc-900"
+              >
+                Publish
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpdatePetitionId(null)}
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </main>
+  );
+}

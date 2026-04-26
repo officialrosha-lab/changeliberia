@@ -1,0 +1,101 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: verified_liberian_voices
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: liberian-voices-api
+    ports:
+      - '4000:4000'
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/verified_liberian_voices
+      
+      # JWT & Auth
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      
+      # Application
+      NODE_ENV: ${NODE_ENV:-development}
+      RUN_MIGRATIONS_ON_START: 'true'
+      CORS_ORIGIN: http://localhost:3000
+      ID_DOCUMENT_PUBLIC_BASE_URL: http://localhost:4000
+      APP_URL: http://localhost:4000
+      
+      # Stripe (Phase 12.1)
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-sk_test_}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_test_}
+      
+      # Email (Phase 12.3)
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-development}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@liberianvoices.org}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-support@liberianvoices.org}
+      
+      # SendGrid (alternative to SMTP)
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      
+      # Facebook API
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+      FACEBOOK_PIXEL_ID: ${FACEBOOK_PIXEL_ID:-}
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: liberian-voices-web
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      API_URL_INTERNAL: http://api:4000/api/v1
+    depends_on:
+      - api
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: liberian-voices-mailhog
+    ports:
+      - '1025:1025'  # SMTP port
+      - '8025:8025'  # Web UI port
+    environment:
+      MH_SMTP_BIND_ADDR: '0.0.0.0:1025'
+      MH_UI_WEB_PATH: '/'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8025/api/events']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:
+  api_uploads:
