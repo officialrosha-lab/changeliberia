@@ -1,0 +1,117 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+
+interface TrendingItem {
+  id: string;
+  title: string;
+  signaturesCount: number;
+}
+
+const FALLBACK_ITEMS: TrendingItem[] = [
+  { id: '1', title: 'Fix roads in Nimba County', signaturesCount: 0 },
+  { id: '2', title: 'Improve schools in Lofa', signaturesCount: 0 },
+  { id: '3', title: 'Clean water for Grand Bassa', signaturesCount: 0 },
+];
+
+const FALLBACK_TEXT = 'Change Liberia · Civic petitions for all 15 counties of Liberia · Sign. Share. Speak up.';
+
+export function TrendingTicker() {
+  const [items, setItems] = useState<TrendingItem[]>([]);
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const socket = io('http://localhost:3001/petitions', {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 3,
+      timeout: 5000,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      if (!mounted) return;
+      setConnected(true);
+      socket.emit('get_trending');
+    });
+
+    socket.on('trending_petitions', (data: { petitions: TrendingItem[] }) => {
+      if (!mounted) return;
+      if (data.petitions?.length) {
+        setItems(data.petitions);
+      }
+    });
+
+    socket.on('connect_error', () => {
+      if (!mounted) return;
+      setConnected(false);
+    });
+
+    return () => {
+      mounted = false;
+      socket.disconnect();
+    };
+  }, []);
+
+  const displayItems = items.length > 0 ? items : (connected ? FALLBACK_ITEMS : []);
+  const showFallback = !connected && items.length === 0;
+
+  return (
+    <div className="bg-emerald-700 dark:bg-emerald-800 text-white overflow-hidden">
+      <div className="flex items-center h-8">
+        {/* Pinned label */}
+        <div className="shrink-0 flex items-center gap-2 px-3 border-r border-emerald-600 dark:border-emerald-700 h-full bg-emerald-800 dark:bg-emerald-900">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-200 whitespace-nowrap">
+            Trending
+          </span>
+        </div>
+
+        {/* Scrolling area */}
+        <div className="flex-1 overflow-hidden relative">
+          {showFallback ? (
+            <div className="animate-ticker inline-flex whitespace-nowrap">
+              {/* Duplicate for seamless loop */}
+              {[0, 1].map((dupe) => (
+                <span key={dupe} className="inline-flex items-center gap-0 text-xs text-emerald-50">
+                  <span className="px-6">{FALLBACK_TEXT}</span>
+                  <span className="text-emerald-400 px-2" aria-hidden>·</span>
+                  <span className="px-6">{FALLBACK_TEXT}</span>
+                  <span className="text-emerald-400 px-2" aria-hidden>·</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="animate-ticker inline-flex whitespace-nowrap">
+              {/* Duplicate for seamless loop */}
+              {[0, 1].map((dupe) => (
+                <span key={dupe} className="inline-flex items-center">
+                  {displayItems.map((item, i) => (
+                    <span key={`${dupe}-${item.id}`} className="inline-flex items-center text-xs">
+                      <span className="px-5 text-emerald-50">
+                        🔥 <span className="font-medium">{item.title}</span>
+                        {item.signaturesCount > 0 && (
+                          <span className="text-emerald-300 ml-1">
+                            — {item.signaturesCount.toLocaleString()} signatures
+                          </span>
+                        )}
+                      </span>
+                      {i < displayItems.length - 1 && (
+                        <span className="text-emerald-500" aria-hidden>·</span>
+                      )}
+                    </span>
+                  ))}
+                  <span className="text-emerald-500 px-4" aria-hidden>·</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

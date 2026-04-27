@@ -10,7 +10,7 @@ export function Header() {
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-neutral-700 dark:bg-neutral-900/95 safe-top">
+    <header className="border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-neutral-700 dark:bg-neutral-900/95 safe-top">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 md:py-4">
         <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6 lg:gap-10">
           <Link href="/" className="shrink-0 flex items-center gap-2">
