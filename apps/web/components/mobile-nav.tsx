@@ -72,17 +72,6 @@ export function MobileNav() {
           </button>
         </div>
 
-        {/* Start a petition CTA */}
-        <div className="px-5 py-4">
-          <Link
-            href="/create"
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
-          >
-            ✍️ Start a petition
-          </Link>
-        </div>
-
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
           {token && (

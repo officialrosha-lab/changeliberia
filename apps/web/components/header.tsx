@@ -48,10 +48,9 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
           <Link
             href="/create"
-            className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 sm:px-3 sm:py-2 sm:text-sm md:px-4 md:py-2 md:text-sm min-h-10 min-w-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
+            className="hidden md:inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
           >
-            <span className="hidden sm:inline">Start a petition</span>
-            <span className="sm:hidden">+</span>
+            Start a petition
           </Link>
           
           <ThemeToggle />
