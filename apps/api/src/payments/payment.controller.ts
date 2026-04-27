@@ -19,15 +19,14 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('payments')
 export class PaymentController {
-  private stripe: InstanceType<typeof Stripe>;
+  private stripe: InstanceType<typeof Stripe> | null;
 
   constructor(
     private readonly paymentService: PaymentService,
     private readonly webhookService: PaymentWebhookService,
   ) {
-    this.stripe = new Stripe(process.env.STRIPE_API_KEY || '', {
-      apiVersion: '2024-11-20' as any,
-    });
+    const apiKey = process.env.STRIPE_API_KEY;
+    this.stripe = apiKey ? new Stripe(apiKey, { apiVersion: '2024-11-20' as any }) : null;
   }
 
   /**
