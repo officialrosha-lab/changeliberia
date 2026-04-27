@@ -16,26 +16,28 @@ export function validateEnvOrThrow(): void {
     throw new Error('Production requires DATABASE_URL.');
   }
 
-  // Validate Stripe configuration
-  const stripeApiKey = process.env.STRIPE_API_KEY ?? '';
-  if (!stripeApiKey.trim()) {
-    throw new Error('Production requires STRIPE_API_KEY to be set.');
-  }
+  // Stripe validation is skipped when SKIP_STRIPE_VALIDATION=true (e.g. staging without live keys)
+  if (process.env.SKIP_STRIPE_VALIDATION !== 'true') {
+    const stripeApiKey = process.env.STRIPE_API_KEY ?? '';
+    if (!stripeApiKey.trim()) {
+      throw new Error('Production requires STRIPE_API_KEY to be set.');
+    }
 
-  if (!stripeApiKey.startsWith('sk_live_')) {
-    throw new Error(
-      'Production requires STRIPE_API_KEY to use live key (sk_live_*), not test key.',
-    );
-  }
+    if (!stripeApiKey.startsWith('sk_live_')) {
+      throw new Error(
+        'Production requires STRIPE_API_KEY to use live key (sk_live_*), not test key.',
+      );
+    }
 
-  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
-  if (!stripeWebhookSecret.trim()) {
-    throw new Error('Production requires STRIPE_WEBHOOK_SECRET to be set.');
-  }
+    const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
+    if (!stripeWebhookSecret.trim()) {
+      throw new Error('Production requires STRIPE_WEBHOOK_SECRET to be set.');
+    }
 
-  if (!stripeWebhookSecret.startsWith('whsec_')) {
-    throw new Error(
-      'Production requires STRIPE_WEBHOOK_SECRET to be in correct format (whsec_*).',
-    );
+    if (!stripeWebhookSecret.startsWith('whsec_')) {
+      throw new Error(
+        'Production requires STRIPE_WEBHOOK_SECRET to be in correct format (whsec_*).',
+      );
+    }
   }
 }
