@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
@@ -92,14 +93,18 @@ export function TrendingTicker() {
                 <span key={dupe} className="inline-flex items-center">
                   {displayItems.map((item, i) => (
                     <span key={`${dupe}-${item.id}`} className="inline-flex items-center text-xs">
-                      <span className="px-5 text-white">
+                      <Link
+                        href={`/petitions/${item.id}`}
+                        className="px-5 text-white hover:text-blue-200 hover:underline transition-colors"
+                        tabIndex={dupe === 0 ? 0 : -1}
+                      >
                         🔥 <span className="font-medium">{item.title}</span>
                         {item.signaturesCount > 0 && (
                           <span className="text-blue-200 ml-1">
                             — {item.signaturesCount.toLocaleString()} signatures
                           </span>
                         )}
-                      </span>
+                      </Link>
                       {i < displayItems.length - 1 && (
                         <span className="text-blue-300" aria-hidden>·</span>
                       )}

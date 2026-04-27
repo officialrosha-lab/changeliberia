@@ -54,8 +54,10 @@ export function MobileNav() {
       {/* Drawer */}
       <div
         className={`fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-neutral-900 md:hidden safe-top ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          isOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         }`}
+        aria-hidden={!isOpen}
+        inert={!isOpen ? true : undefined}
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-neutral-800">
