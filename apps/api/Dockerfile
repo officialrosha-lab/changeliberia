@@ -21,6 +21,8 @@ RUN pnpm turbo run build --filter=api
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Prisma's native query engine requires libssl at runtime on Alpine (musl)
+RUN apk add --no-cache openssl
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
