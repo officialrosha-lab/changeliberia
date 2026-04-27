@@ -26,7 +26,9 @@ export function TrendingTicker() {
   useEffect(() => {
     let mounted = true;
 
-    const socket = io('http://localhost:3001/petitions', {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+    const wsBase = apiBase.replace(/\/api\/v1\/?$/, '');
+    const socket = io(`${wsBase}/petitions`, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 3,
