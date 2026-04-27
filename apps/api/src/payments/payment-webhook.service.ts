@@ -26,15 +26,18 @@ interface StripeWebhookEvent {
 @Injectable()
 export class PaymentWebhookService {
   private readonly logger = new Logger(PaymentWebhookService.name);
-  private readonly stripe: InstanceType<typeof Stripe>;
+  private readonly stripe: InstanceType<typeof Stripe> | null;
   private readonly webhookSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventHandler: WebhookEventHandlerService,
   ) {
-    // Initialize Stripe instance
-    this.stripe = new Stripe(process.env.STRIPE_API_KEY || '');
+    const apiKey = process.env.STRIPE_API_KEY;
+    this.stripe = apiKey ? new Stripe(apiKey) : null;
+    if (!this.stripe) {
+      this.logger.warn('STRIPE_API_KEY not set — webhook endpoint will be unavailable.');
+    }
 
     this.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
     if (!this.webhookSecret) {
@@ -127,6 +130,9 @@ export class PaymentWebhookService {
       // Check timestamp freshness
       this.validateTimestamp(signatureHeader.timestamp);
 
+      if (!this.stripe) {
+        throw new BadRequestException('Payment webhooks are not configured on this server.');
+      }
       // Verify signature using Stripe library
       const event = this.stripe.webhooks.constructEvent(
         rawBody,
