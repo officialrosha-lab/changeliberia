@@ -30,6 +30,8 @@ const COLS = [
     links: [
       { href: '/#how-it-works', label: 'Help center' },
       { href: '/petitions', label: 'Community guidelines' },
+      { href: '/privacy', label: 'Privacy policy' },
+      { href: '/terms', label: 'Terms of service' },
     ],
   },
 ];
@@ -104,7 +106,15 @@ export function SiteFooter() {
               <span className="font-semibold text-zinc-500 dark:text-neutral-500">Change Liberia</span>
               . Built for the people of Liberia.
             </p>
-            <p>English (Liberia)</p>
+            <div className="flex items-center gap-4">
+              <Link href="/privacy" className="hover:text-zinc-600 dark:hover:text-neutral-400 transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-zinc-600 dark:hover:text-neutral-400 transition-colors">
+                Terms
+              </Link>
+              <span>English (Liberia)</span>
+            </div>
           </div>
         </div>
       </footer>
