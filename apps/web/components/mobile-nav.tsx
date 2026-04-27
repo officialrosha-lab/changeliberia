@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
 
-const NAV_ITEMS = [
-  { href: '/dashboard',            icon: '📋', label: 'My petitions' },
+const PUBLIC_NAV_ITEMS = [
   { href: '/petitions', icon: '🔍', label: 'Browse causes' },
   { href: '/#donate',              icon: '💛', label: 'Donate' },
   { href: '/#how-it-works',        icon: '💡', label: 'How it works' },
@@ -86,7 +85,17 @@ export function MobileNav() {
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {NAV_ITEMS.map((item) => (
+          {token && (
+            <Link
+              href="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+            >
+              <span className="text-base">📋</span>
+              My petitions
+            </Link>
+          )}
+          {PUBLIC_NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import { apiGet } from '../../lib/api';
 import { PetitionDiscoveryClient } from '../../components/petition-discovery-client';
 
@@ -26,16 +25,14 @@ type BrowseResponse = {
   total: number;
 };
 
+const EMPTY: BrowseResponse = { categories: {}, trending: [], total: 0 };
+
 export default async function PetitionsDiscoveryPage() {
   const data = await apiGet<BrowseResponse>('/petitions/browse/all').catch(() => null);
 
-  if (!data) {
-    return notFound();
-  }
-
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-neutral-950">
-      <PetitionDiscoveryClient data={data} />
+      <PetitionDiscoveryClient data={data ?? EMPTY} />
     </main>
   );
 }
