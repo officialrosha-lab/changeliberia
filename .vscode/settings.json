@@ -11,6 +11,7 @@
         "/^docker --version && docker-compose --version 2>&1 \\|\\| echo \"Docker tools not available\"$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "pkill": true
     }
 }
