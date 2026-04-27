@@ -76,14 +76,25 @@ export interface PaymentHistoryResponse {
 
 @Injectable()
 export class PaymentService {
-  private stripe: InstanceType<typeof Stripe>;
+  private stripe: InstanceType<typeof Stripe> | null = null;
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(private readonly prisma: PrismaService) {
-    const apiKey = process.env.STRIPE_API_KEY || '';
-    this.stripe = new Stripe(apiKey, {
-      apiVersion: '2024-11-20' as any,
-    });
+    const apiKey = process.env.STRIPE_API_KEY;
+    if (apiKey) {
+      this.stripe = new Stripe(apiKey, {
+        apiVersion: '2024-11-20' as any,
+      });
+    } else {
+      this.logger.warn('STRIPE_API_KEY is not set — payment endpoints will be unavailable.');
+    }
+  }
+
+  private getStripe(): InstanceType<typeof Stripe> {
+    if (!this.stripe) {
+      throw new BadRequestException('Payment processing is not configured on this server.');
+    }
+    return this.stripe;
   }
 
   /**
@@ -109,7 +120,7 @@ export class PaymentService {
 
       const amountInCents = Math.round(dto.amount * 100);
 
-      const intent = await this.stripe.paymentIntents.create({
+      const intent = await this.getStripe().paymentIntents.create({
         amount: amountInCents,
         currency: dto.currency.toLowerCase(),
         payment_method_types: ['card'],
@@ -158,7 +169,7 @@ export class PaymentService {
   ): Promise<PaymentHistoryResponse> {
     try {
       // Confirm the intent with Stripe
-      const intent = await this.stripe.paymentIntents.confirm(intentId, {
+      const intent = await this.getStripe().paymentIntents.confirm(intentId, {
         payment_method: paymentMethodId,
       });
 
@@ -187,7 +198,7 @@ export class PaymentService {
       });
 
       // Store payment method
-      const paymentMethod = await this.stripe.paymentMethods.retrieve(
+      const paymentMethod = await this.getStripe().paymentMethods.retrieve(
         paymentMethodId,
       );
 
@@ -246,7 +257,7 @@ export class PaymentService {
             : 'year'
       ) as 'month' | 'year' | 'week';
 
-      const session = await this.stripe.checkout.sessions.create({
+      const session = await this.getStripe().checkout.sessions.create({
         payment_method_types: ['card'],
         mode,
         line_items: [
@@ -352,7 +363,7 @@ export class PaymentService {
       }
 
       // Create Stripe customer
-      const customer = await this.stripe.customers.create({
+      const customer = await this.getStripe().customers.create({
         email: dto.donorEmail,
         name: dto.donorName,
         metadata: {
@@ -362,12 +373,12 @@ export class PaymentService {
       });
 
       // Create price
-      const product = await this.stripe.products.create({
+      const product = await this.getStripe().products.create({
         name: dto.petitionId ? 'Petition Donation' : 'Platform Donation',
         type: 'service',
       });
 
-      const price = await this.stripe.prices.create({
+      const price = await this.getStripe().prices.create({
         product: product.id,
         unit_amount: Math.round(dto.amount * 100),
         currency: dto.currency.toLowerCase(),
@@ -378,7 +389,7 @@ export class PaymentService {
       });
 
       // Create subscription
-      const subscription = await this.stripe.subscriptions.create({
+      const subscription = await this.getStripe().subscriptions.create({
         customer: customer.id,
         items: [{ price: price.id }],
         payment_settings: {
@@ -439,12 +450,12 @@ export class PaymentService {
 
       if (amount && amount !== stored.amount) {
         // Create new price and update
-        const product = await this.stripe.products.create({
+        const product = await this.getStripe().products.create({
           name: 'Updated Donation',
           type: 'service',
         });
 
-        const price = await this.stripe.prices.create({
+        const price = await this.getStripe().prices.create({
           product: product.id,
           unit_amount: Math.round(amount * 100),
           currency: stored.currency.toLowerCase(),
@@ -454,12 +465,12 @@ export class PaymentService {
           },
         });
 
-        await this.stripe.subscriptions.update(
+        await this.getStripe().subscriptions.update(
           stored.stripeSubscriptionId || '',
           {
             items: [
               {
-                id: (await this.stripe.subscriptions.retrieve(
+                id: (await this.getStripe().subscriptions.retrieve(
                   stored.stripeSubscriptionId || '',
                 )).items.data[0].id,
                 price: price.id,
@@ -494,7 +505,7 @@ export class PaymentService {
         throw new BadRequestException('Subscription not found');
       }
 
-      await (this.stripe.subscriptions as any).del(stored.stripeSubscriptionId);
+      await (this.getStripe().subscriptions as any).del(stored.stripeSubscriptionId);
 
       const updated = await this.prisma.subscription.update({
         where: { id: subscriptionId },
@@ -553,7 +564,7 @@ export class PaymentService {
       }
 
       // Retrieve the charge from the payment intent
-      const intent = await this.stripe.paymentIntents.retrieve(
+      const intent = await this.getStripe().paymentIntents.retrieve(
         payment.stripePaymentIntentId,
       );
 
@@ -565,7 +576,7 @@ export class PaymentService {
       const chargeId = charges[0].id;
 
       // Create refund
-      const refund = await this.stripe.refunds.create({
+      const refund = await this.getStripe().refunds.create({
         charge: chargeId,
         reason: reason as 'duplicate' | 'fraudulent' | 'requested_by_customer',
       });
