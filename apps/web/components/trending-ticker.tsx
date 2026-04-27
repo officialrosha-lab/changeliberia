@@ -62,11 +62,11 @@ export function TrendingTicker() {
   const showFallback = !connected && items.length === 0;
 
   return (
-    <div className="bg-emerald-700 dark:bg-emerald-800 text-white overflow-hidden">
+    <div className="text-white overflow-hidden" style={{ backgroundColor: '#002D62' }}>
       <div className="flex items-center h-8">
         {/* Pinned label */}
-        <div className="shrink-0 flex items-center gap-2 px-3 border-r border-emerald-600 dark:border-emerald-700 h-full bg-emerald-800 dark:bg-emerald-900">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-200 whitespace-nowrap">
+        <div className="shrink-0 flex items-center gap-2 px-3 border-r border-red-700 h-full bg-red-600">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white whitespace-nowrap">
             Trending
           </span>
         </div>
@@ -79,9 +79,9 @@ export function TrendingTicker() {
               {[0, 1].map((dupe) => (
                 <span key={dupe} className="inline-flex items-center gap-0 text-xs text-emerald-50">
                   <span className="px-6">{FALLBACK_TEXT}</span>
-                  <span className="text-emerald-400 px-2" aria-hidden>·</span>
+                  <span className="text-blue-300 px-2" aria-hidden>·</span>
                   <span className="px-6">{FALLBACK_TEXT}</span>
-                  <span className="text-emerald-400 px-2" aria-hidden>·</span>
+                  <span className="text-blue-300 px-2" aria-hidden>·</span>
                 </span>
               ))}
             </div>
@@ -92,16 +92,16 @@ export function TrendingTicker() {
                 <span key={dupe} className="inline-flex items-center">
                   {displayItems.map((item, i) => (
                     <span key={`${dupe}-${item.id}`} className="inline-flex items-center text-xs">
-                      <span className="px-5 text-emerald-50">
+                      <span className="px-5 text-white">
                         🔥 <span className="font-medium">{item.title}</span>
                         {item.signaturesCount > 0 && (
-                          <span className="text-emerald-300 ml-1">
+                          <span className="text-blue-200 ml-1">
                             — {item.signaturesCount.toLocaleString()} signatures
                           </span>
                         )}
                       </span>
                       {i < displayItems.length - 1 && (
-                        <span className="text-emerald-500" aria-hidden>·</span>
+                        <span className="text-blue-300" aria-hidden>·</span>
                       )}
                     </span>
                   ))}
