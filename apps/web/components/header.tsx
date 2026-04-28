@@ -83,7 +83,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="text-xs font-medium text-zinc-700 hover:text-emerald-600 dark:text-neutral-300 dark:hover:text-emerald-400 transition-colors md:text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1"
+                  className="rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-800 shadow-sm transition hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-600 dark:text-neutral-200 dark:hover:border-emerald-500 dark:hover:text-emerald-400 sm:px-4 md:py-2 md:text-sm min-h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
                 >
                   Log in
                 </Link>

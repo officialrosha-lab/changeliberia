@@ -10,23 +10,28 @@ interface TrendingItem {
   signaturesCount: number;
 }
 
-const FALLBACK_ITEMS: TrendingItem[] = [
-  { id: '1', title: 'Fix roads in Nimba County', signaturesCount: 0 },
-  { id: '2', title: 'Improve schools in Lofa', signaturesCount: 0 },
-  { id: '3', title: 'Clean water for Grand Bassa', signaturesCount: 0 },
-];
-
 const FALLBACK_TEXT = 'Change Liberia · Civic petitions for all 15 counties of Liberia · Sign. Share. Speak up.';
 
 export function TrendingTicker() {
   const [items, setItems] = useState<TrendingItem[]>([]);
-  const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+    // Fetch real petitions immediately via REST — no waiting for WebSocket
+    fetch(`${apiBase}/petitions/trending`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: TrendingItem[] | null) => {
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          setItems(data.map((p) => ({ id: p.id, title: p.title, signaturesCount: p.signaturesCount ?? 0 })));
+        }
+      })
+      .catch(() => {});
+
+    // WebSocket — overwrites with live data when connected
     const wsBase = apiBase.replace(/\/api\/v1\/?$/, '');
     const socket = io(`${wsBase}/petitions`, {
       transports: ['websocket', 'polling'],
@@ -39,7 +44,6 @@ export function TrendingTicker() {
 
     socket.on('connect', () => {
       if (!mounted) return;
-      setConnected(true);
       socket.emit('get_trending');
     });
 
@@ -50,19 +54,13 @@ export function TrendingTicker() {
       }
     });
 
-    socket.on('connect_error', () => {
-      if (!mounted) return;
-      setConnected(false);
-    });
-
     return () => {
       mounted = false;
       socket.disconnect();
     };
   }, []);
 
-  const displayItems = items.length > 0 ? items : (connected ? FALLBACK_ITEMS : []);
-  const showFallback = !connected && items.length === 0;
+  const showFallback = items.length === 0;
 
   return (
     <div className="text-white overflow-hidden" style={{ backgroundColor: '#002D62' }}>
@@ -78,7 +76,6 @@ export function TrendingTicker() {
         <div className="flex-1 overflow-hidden relative">
           {showFallback ? (
             <div className="animate-ticker inline-flex whitespace-nowrap">
-              {/* Duplicate for seamless loop */}
               {[0, 1].map((dupe) => (
                 <span key={dupe} className="inline-flex items-center gap-0 text-xs text-emerald-50">
                   <span className="px-6">{FALLBACK_TEXT}</span>
@@ -90,10 +87,9 @@ export function TrendingTicker() {
             </div>
           ) : (
             <div className="animate-ticker inline-flex whitespace-nowrap">
-              {/* Duplicate for seamless loop */}
               {[0, 1].map((dupe) => (
                 <span key={dupe} className="inline-flex items-center">
-                  {displayItems.map((item, i) => (
+                  {items.map((item, i) => (
                     <span key={`${dupe}-${item.id}`} className="inline-flex items-center text-xs">
                       <Link
                         href={`/petitions/${item.id}`}
@@ -107,7 +103,7 @@ export function TrendingTicker() {
                           </span>
                         )}
                       </Link>
-                      {i < displayItems.length - 1 && (
+                      {i < items.length - 1 && (
                         <span className="text-blue-300" aria-hidden>·</span>
                       )}
                     </span>
