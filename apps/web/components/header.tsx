@@ -77,7 +77,7 @@ export function Header() {
               <>
                 <Link
                   href="/auth/signup"
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-emerald-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-emerald-400 sm:px-4 md:px-4 md:py-2 md:text-sm min-h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+                  className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 md:text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
                 >
                   Sign up
                 </Link>
