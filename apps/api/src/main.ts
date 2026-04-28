@@ -27,6 +27,12 @@ function isSwaggerEnabled(): boolean {
   return !prod;
 }
 
+// Prevent unhandled Promise rejections (e.g. from Prisma's async engine
+// initialisation) from crashing the process before app.listen() is reached.
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('[bootstrap] Unhandled rejection (non-fatal):', reason);
+});
+
 async function bootstrap() {
   validateEnvOrThrow();
   const app = await NestFactory.create(AppModule);
