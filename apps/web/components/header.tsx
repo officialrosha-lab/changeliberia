@@ -83,7 +83,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-800 shadow-sm transition hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-600 dark:text-neutral-200 dark:hover:border-emerald-500 dark:hover:text-emerald-400 sm:px-4 md:py-2 md:text-sm min-h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+                  className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 md:text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
                 >
                   Log in
                 </Link>
