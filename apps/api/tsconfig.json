@@ -14,6 +14,6 @@
     "incremental": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "prisma/seed.ts"],
+  "include": ["src/**/*", "prisma/seed.ts", "prisma/create-admin.ts"],
   "exclude": ["node_modules", "dist"]
 }
