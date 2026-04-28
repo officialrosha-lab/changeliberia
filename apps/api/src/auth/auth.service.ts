@@ -185,10 +185,11 @@ export class AuthService {
       throw new UnauthorizedException('Google OAuth is not configured on this server');
     }
     const client = new OAuth2Client(clientId);
-    let payload: ReturnType<Awaited<ReturnType<typeof client.verifyIdToken>>['getPayload']>;
+    let payload: { sub: string; email?: string; name?: string; picture?: string } | undefined;
     try {
       const ticket = await client.verifyIdToken({ idToken, audience: clientId });
-      payload = ticket.getPayload();
+      const p = ticket.getPayload();
+      if (p) payload = { sub: p.sub, email: p.email, name: p.name, picture: p.picture };
     } catch {
       throw new UnauthorizedException('Invalid Google token');
     }
