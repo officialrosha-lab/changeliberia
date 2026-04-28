@@ -30,4 +30,6 @@ async function main() {
   console.log(`✅ Admin user ready: ${admin.email} (id: ${admin.id})`);
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((err) => console.error('⚠️  create-admin failed (non-fatal):', err?.message ?? err))
+  .finally(() => prisma.$disconnect());
