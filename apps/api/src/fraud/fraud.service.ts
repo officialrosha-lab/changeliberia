@@ -12,12 +12,16 @@ export class FraudService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    await this.refreshQueueDepthMetric();
-    const latest = await this.prisma.fraudAnomalySnapshot.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-    if (latest) {
-      fraudRiskIndexGauge.set(latest.riskIndex);
+    try {
+      await this.refreshQueueDepthMetric();
+      const latest = await this.prisma.fraudAnomalySnapshot.findFirst({
+        orderBy: { createdAt: 'desc' },
+      });
+      if (latest) {
+        fraudRiskIndexGauge.set(latest.riskIndex);
+      }
+    } catch (err) {
+      console.warn('[FraudService] onModuleInit skipped — DB not ready:', err instanceof Error ? err.message : err);
     }
   }
 
