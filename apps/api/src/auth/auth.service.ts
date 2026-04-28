@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { OtpProvider } from './otp.provider';
@@ -172,6 +173,33 @@ export class AuthService {
     });
 
     return this.issueToken(newUser.id, newUser.phone);
+  }
+
+  /**
+   * Verify a Google ID token (from @react-oauth/google One-Tap) and log the user in.
+   * Called by POST /auth/google/callback with { token: <id_token> }.
+   */
+  async verifyGoogleToken(idToken: string) {
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    if (!clientId) {
+      throw new UnauthorizedException('Google OAuth is not configured on this server');
+    }
+    const client = new OAuth2Client(clientId);
+    let payload: ReturnType<Awaited<ReturnType<typeof client.verifyIdToken>>['getPayload']>;
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+    if (!payload) throw new UnauthorizedException('Invalid Google token');
+
+    return this.loginWithGoogle({
+      googleId: payload.sub,
+      googleEmail: payload.email ?? '',
+      fullName: payload.name ?? payload.email ?? 'Google User',
+      avatarUrl: payload.picture,
+    });
   }
 }
 

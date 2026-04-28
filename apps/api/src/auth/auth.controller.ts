@@ -89,9 +89,13 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req: any) {
-    // After successful Google authentication, passport will call this
-    // The user object contains the token from GoogleStrategy.validate()
     return req.user;
+  }
+
+  // Google Identity Services (One-Tap) — receives an ID token from the frontend
+  @Post('google/callback')
+  async googleTokenCallback(@Body() body: { token: string }) {
+    return this.authService.verifyGoogleToken(body.token);
   }
 }
 
