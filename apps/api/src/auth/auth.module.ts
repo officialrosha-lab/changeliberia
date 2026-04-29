@@ -29,6 +29,6 @@ import { EmailModule } from '../email/email.module';
     PasswordResetService,
   ],
   controllers: [AuthController],
-  exports: [AuthService, RolesGuard],
+  exports: [AuthService, RolesGuard, PasswordProvider],
 })
 export class AuthModule {}
