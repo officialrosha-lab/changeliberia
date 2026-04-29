@@ -36,6 +36,12 @@ type GovernmentStatus = {
   updatedAt?: string;
 };
 
+type PetitionMetrics = {
+  totalViews: number;
+  totalShares: number;
+  engagementScore: number;
+};
+
 function formatStatus(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
@@ -56,6 +62,9 @@ export function DashboardClient() {
   const [idType, setIdType] = useState('passport');
   const [idUrl, setIdUrl] = useState('');
   const [idFile, setIdFile] = useState<File | null>(null);
+  const [metrics, setMetrics] = useState<Record<string, PetitionMetrics>>({});
+  const [shareOpenId, setShareOpenId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [updatePetitionId, setUpdatePetitionId] = useState<string | null>(null);
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateBody, setUpdateBody] = useState('');
@@ -92,25 +101,40 @@ export function DashboardClient() {
     let cancelled = false;
 
     void (async () => {
-      const results = await Promise.allSettled(
-        petitions.map((petition) => apiGet<GovernmentStatus>(`/government/status/${petition.id}`, token)),
-      );
+      const [govResults, analyticsResults] = await Promise.all([
+        Promise.allSettled(
+          petitions.map((p) => apiGet<GovernmentStatus>(`/government/status/${p.id}`, token)),
+        ),
+        Promise.allSettled(
+          petitions.map((p) => apiGet<PetitionMetrics>(`/analytics/petition/${p.id}`, token)),
+        ),
+      ]);
 
       if (cancelled) return;
 
       const statusMap: Record<string, GovernmentStatus> = {};
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          statusMap[petitions[index].id] = result.value;
-        }
+      govResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') statusMap[petitions[index].id] = result.value;
       });
       setGovernmentStatuses(statusMap);
+
+      const metricsMap: Record<string, PetitionMetrics> = {};
+      analyticsResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') metricsMap[petitions[index].id] = result.value;
+      });
+      setMetrics(metricsMap);
     })();
 
     return () => {
       cancelled = true;
     };
   }, [token, petitions]);
+
+  async function copyLink(url: string) {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function refreshTrust() {
     if (!token) return;
@@ -258,6 +282,8 @@ export function DashboardClient() {
     setMessage('Update published.');
   }
 
+  const allVerified = completed.phone && completed.geo && completed.device && completed.idDocument;
+
   if (!token) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-8">
@@ -345,161 +371,177 @@ export function DashboardClient() {
         ) : null}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">Grow your account trust</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Complete the steps below so your petitions and signatures carry more credibility.
-          </p>
-          <div className="mt-5 space-y-3">
-            {([
-              {
-                key: 'phone' as const,
-                label: 'Confirm your phone',
-                desc: 'Adds a strong trust signal that you are a reachable, real supporter.',
-                btnLabel: 'Verify phone',
-                doneLabel: 'Phone verified',
-                filled: true,
-              },
-              {
-                key: 'geo' as const,
-                label: 'Confirm Liberia location',
-                desc: 'Use your current location signal to show the petition has Liberian support.',
-                btnLabel: 'Verify location',
-                doneLabel: 'Location confirmed',
-                filled: false,
-              },
-              {
-                key: 'device' as const,
-                label: 'Secure this device',
-                desc: 'Helps reduce abuse and makes future support actions smoother.',
-                btnLabel: 'Link device',
-                doneLabel: 'Device linked',
-                filled: false,
-              },
-            ]).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
-              const isDone = completed[key as keyof CompletedSteps];
-              const isLoading = verifying === key;
-              const handleClick =
-                key === 'phone'
-                  ? () => setPhoneStep('enter_phone')
-                  : key === 'geo'
-                    ? runGeoVerification
-                    : runDeviceVerification;
-              return (
-                <div
-                  key={key}
-                  className={`rounded-2xl border p-4 transition-colors ${isDone ? 'border-emerald-200 bg-emerald-50' : 'border-zinc-200'}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2">
-                      {isDone && (
-                        <span className="mt-0.5 flex-shrink-0 text-emerald-600">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        </span>
-                      )}
-                      <div>
-                        <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-zinc-900'}`}>{label}</p>
-                        <p className="mt-1 text-sm text-zinc-600">{desc}</p>
+      {allVerified ? (
+        <div className="mt-6 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3">
+          <span className="flex items-center gap-2 text-sm font-medium text-emerald-800">
+            <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            Account fully verified
+          </span>
+          <Link href="/settings" className="text-xs font-semibold text-emerald-700 underline hover:text-emerald-900">
+            View verification details
+          </Link>
+        </div>
+      ) : null}
+
+      <div className={`mt-6 grid gap-6 ${allVerified ? '' : 'lg:grid-cols-[1.1fr_0.9fr]'}`}>
+        {!allVerified ? (
+          <section className="rounded-3xl bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-zinc-900">Grow your account trust</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Complete the steps below so your petitions and signatures carry more credibility.
+            </p>
+            <div className="mt-5 space-y-3">
+              {([
+                {
+                  key: 'phone' as const,
+                  label: 'Confirm your phone',
+                  desc: 'Adds a strong trust signal that you are a reachable, real supporter.',
+                  btnLabel: 'Verify phone',
+                  doneLabel: 'Phone verified',
+                  filled: true,
+                },
+                {
+                  key: 'geo' as const,
+                  label: 'Confirm Liberia location',
+                  desc: 'Use your current location signal to show the petition has Liberian support.',
+                  btnLabel: 'Verify location',
+                  doneLabel: 'Location confirmed',
+                  filled: false,
+                },
+                {
+                  key: 'device' as const,
+                  label: 'Secure this device',
+                  desc: 'Helps reduce abuse and makes future support actions smoother.',
+                  btnLabel: 'Link device',
+                  doneLabel: 'Device linked',
+                  filled: false,
+                },
+              ]).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
+                const isDone = completed[key as keyof CompletedSteps];
+                const isLoading = verifying === key;
+                const handleClick =
+                  key === 'phone'
+                    ? () => setPhoneStep('enter_phone')
+                    : key === 'geo'
+                      ? runGeoVerification
+                      : runDeviceVerification;
+                return (
+                  <div
+                    key={key}
+                    className={`rounded-2xl border p-4 transition-colors ${isDone ? 'border-emerald-200 bg-emerald-50' : 'border-zinc-200'}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        {isDone && (
+                          <span className="mt-0.5 flex-shrink-0 text-emerald-600">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          </span>
+                        )}
+                        <div>
+                          <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-zinc-900'}`}>{label}</p>
+                          <p className="mt-1 text-sm text-zinc-600">{desc}</p>
+                        </div>
                       </div>
+                      {isDone ? (
+                        <span className="flex-shrink-0 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                          {doneLabel}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isLoading || !!verifying}
+                          onClick={handleClick}
+                          className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                            filled
+                              ? 'bg-zinc-900 text-white hover:bg-zinc-700'
+                              : 'border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:bg-zinc-50'
+                          }`}
+                        >
+                          {isLoading ? 'Working…' : btnLabel}
+                        </button>
+                      )}
                     </div>
-                    {isDone ? (
-                      <span className="flex-shrink-0 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                        {doneLabel}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isLoading || !!verifying}
-                        onClick={handleClick}
-                        className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                          filled
-                            ? 'bg-zinc-900 text-white hover:bg-zinc-700'
-                            : 'border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:bg-zinc-50'
-                        }`}
-                      >
-                        {isLoading ? 'Working…' : btnLabel}
-                      </button>
-                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <form onSubmit={submitId} className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-lg text-white shadow-sm">
-                🪪
-              </span>
-              <div>
-                <p className="font-bold text-emerald-950">Submit an ID for review</p>
-                <p className="mt-0.5 text-sm text-emerald-800/80">
-                  ID review gives your account the strongest trust boost once approved by an admin.
-                </p>
-              </div>
+                );
+              })}
             </div>
-            <div className="mt-4 space-y-3">
-              <select
-                value={idType}
-                onChange={(e) => setIdType(e.target.value)}
-                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <option value="passport">Passport</option>
-                <option value="voter_id">Voter ID</option>
-                <option value="other">Other government ID</option>
-              </select>
 
-              <label className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-emerald-300 bg-white px-4 py-3 transition hover:border-emerald-400 hover:bg-emerald-50/50">
-                <svg className="h-5 w-5 flex-shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                </svg>
-                <span className="text-sm text-zinc-500">
-                  {idFile ? (
-                    <span className="font-medium text-emerald-700">{idFile.name}</span>
-                  ) : (
-                    <>Upload JPEG, PNG or PDF <span className="text-zinc-400">— up to 5 MB</span></>
-                  )}
+            <form onSubmit={submitId} className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-lg text-white shadow-sm">
+                  🪪
                 </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,application/pdf"
-                  onChange={(e) => setIdFile(e.target.files?.[0] ?? null)}
-                  className="sr-only"
-                />
-              </label>
-
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-emerald-200" />
-                <span className="text-xs font-medium text-emerald-700">or paste a URL</span>
-                <div className="h-px flex-1 bg-emerald-200" />
+                <div>
+                  <p className="font-bold text-emerald-950">Submit an ID for review</p>
+                  <p className="mt-0.5 text-sm text-emerald-800/80">
+                    ID review gives your account the strongest trust boost once approved by an admin.
+                  </p>
+                </div>
               </div>
+              <div className="mt-4 space-y-3">
+                <select
+                  value={idType}
+                  onChange={(e) => setIdType(e.target.value)}
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value="passport">Passport</option>
+                  <option value="voter_id">Voter ID</option>
+                  <option value="other">Other government ID</option>
+                </select>
 
-              <input
-                value={idUrl}
-                onChange={(e) => setIdUrl(e.target.value)}
-                placeholder="https://drive.google.com/your-id-document"
-                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
+                <label className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-emerald-300 bg-white px-4 py-3 transition hover:border-emerald-400 hover:bg-emerald-50/50">
+                  <svg className="h-5 w-5 flex-shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <span className="text-sm text-zinc-500">
+                    {idFile ? (
+                      <span className="font-medium text-emerald-700">{idFile.name}</span>
+                    ) : (
+                      <>Upload JPEG, PNG or PDF <span className="text-zinc-400">— up to 5 MB</span></>
+                    )}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    onChange={(e) => setIdFile(e.target.files?.[0] ?? null)}
+                    className="sr-only"
+                  />
+                </label>
 
-              <button
-                type="submit"
-                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95"
-              >
-                Submit ID for review
-              </button>
-            </div>
-          </form>
-        </section>
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-emerald-200" />
+                  <span className="text-xs font-medium text-emerald-700">or paste a URL</span>
+                  <div className="h-px flex-1 bg-emerald-200" />
+                </div>
+
+                <input
+                  value={idUrl}
+                  onChange={(e) => setIdUrl(e.target.value)}
+                  placeholder="https://drive.google.com/your-id-document"
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+
+                <button
+                  type="submit"
+                  className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95"
+                >
+                  Submit ID for review
+                </button>
+              </div>
+            </form>
+          </section>
+        ) : null}
 
         <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-zinc-900">My petitions</h2>
               <p className="mt-1 text-sm text-zinc-500">
-                Review campaign status and share updates when supporters need to hear from you.
+                Create, manage, and share your campaigns. Track every signature and milestone.
               </p>
             </div>
             <Link
@@ -513,6 +555,12 @@ export function DashboardClient() {
           <ul className="mt-4 space-y-3">
             {petitions.map((p) => {
               const progress = Math.min(100, Math.round((p.signaturesCount / p.goal) * 100));
+              const m = metrics[p.id];
+              const petitionUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}/petitions/${p.id}`
+                : `/petitions/${p.id}`;
+              const shareText = `Sign this petition: ${p.title}`;
+              const isShareOpen = shareOpenId === p.id;
               return (
                 <li key={p.id} className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200">
                   <Link href={`/petitions/${p.id}`} className="text-sm font-semibold text-zinc-900 hover:text-emerald-700 transition-colors">
@@ -550,7 +598,23 @@ export function DashboardClient() {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
+                  {m && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
+                      <span>👁 {m.totalViews.toLocaleString()} views</span>
+                      <span>🔗 {m.totalShares.toLocaleString()} shares</span>
+                      {m.totalViews > 0 && (
+                        <span>{Math.round((p.signaturesCount / m.totalViews) * 100)}% conversion</span>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShareOpenId(isShareOpen ? null : p.id)}
+                      className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+                    >
+                      Share
+                    </button>
                     <button
                       type="button"
                       onClick={() => setUpdatePetitionId(p.id)}
@@ -565,6 +629,41 @@ export function DashboardClient() {
                       View petition
                     </Link>
                   </div>
+                  {isShareOpen && (
+                    <div className="mt-3 flex flex-wrap gap-2 rounded-2xl border border-zinc-100 bg-white p-3">
+                      <button
+                        type="button"
+                        onClick={() => void copyLink(petitionUrl)}
+                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        {copied ? '✓ Copied!' : '📋 Copy link'}
+                      </button>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + petitionUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        💬 WhatsApp
+                      </a>
+                      <a
+                        href={`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(petitionUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        𝕏 Twitter
+                      </a>
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(petitionUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        📘 Facebook
+                      </a>
+                    </div>
+                  )}
                 </li>
               );
             })}
