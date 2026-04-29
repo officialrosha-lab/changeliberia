@@ -18,7 +18,7 @@ interface User {
 
 interface VerificationStatus {
   phone: boolean;
-  email: boolean;
+  geo: boolean;
   device: boolean;
   idDocument: boolean;
 }
@@ -46,7 +46,7 @@ export function ProfileSettings() {
       setLoading(true);
       const [u, v] = await Promise.all([
         apiGet<User>('/users/me', token!),
-        apiGet<VerificationStatus>('/users/me/verification-status', token!),
+        apiGet<VerificationStatus>('/verification/completed', token!),
       ]);
       setUser(u);
       setVerification(v);
@@ -186,10 +186,10 @@ export function ProfileSettings() {
           <h3 className="font-semibold text-lg mb-4">Verification Status</h3>
           <div className="space-y-3">
             {[
-              { key: 'email', label: 'Email Verified', icon: '✉️' },
               { key: 'phone', label: 'Phone Verified', icon: '📱' },
-              { key: 'device', label: 'Device Verified', icon: '💻' },
-              { key: 'idDocument', label: 'ID Document Verified', icon: '🆔' },
+              { key: 'geo', label: 'Liberia Location Confirmed', icon: '📍' },
+              { key: 'device', label: 'Device Linked', icon: '💻' },
+              { key: 'idDocument', label: 'ID Document Submitted', icon: '🆔' },
             ].map((item) => (
               <div
                 key={item.key}
