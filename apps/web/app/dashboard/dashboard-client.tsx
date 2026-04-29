@@ -225,14 +225,17 @@ export function DashboardClient() {
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">My petitions</p>
                 <p className="mt-2 text-2xl font-bold text-zinc-900">{petitions.length}</p>
               </div>
-              <div className="rounded-2xl bg-zinc-50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Admin access</p>
+              <div className="rounded-2xl bg-zinc-50 dark:bg-neutral-800 p-4 flex flex-col justify-between">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-400">Admin access</p>
                 {user.role === 'ADMIN' ? (
-                  <Link href="/admin" className="mt-2 inline-block font-semibold text-emerald-700 underline">
+                  <Link
+                    href="/admin"
+                    className="mt-3 inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                  >
                     Open admin panel
                   </Link>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500">Standard account</p>
+                  <p className="mt-2 text-sm text-zinc-500 dark:text-neutral-400">Standard account</p>
                 )}
               </div>
             </div>
