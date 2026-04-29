@@ -183,7 +183,7 @@ export function ProfileSettings() {
       {/* Verification Status */}
       {verification && (
         <div className="bg-white border border-zinc-200 rounded-lg p-6">
-          <h3 className="font-semibold text-lg mb-4">Verification Status</h3>
+          <h3 className="font-semibold text-lg mb-4 text-zinc-900">Verification Status</h3>
           <div className="space-y-3">
             {[
               { key: 'phone', label: 'Phone Verified', icon: '📱' },
@@ -201,7 +201,7 @@ export function ProfileSettings() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium text-zinc-800">{item.label}</span>
                 </div>
                 <span
                   className={`text-sm font-semibold ${
