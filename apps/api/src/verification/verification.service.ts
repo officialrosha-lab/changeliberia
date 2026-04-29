@@ -1,18 +1,21 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerificationStatus, VerificationType } from '@prisma/client';
+import { SmsService } from '../sms/sms.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class VerificationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sms: SmsService,
+  ) {}
 
   private readonly otpStore = new Map<string, { code: string; expiresAt: number }>();
 
-  requestPhoneOtp(phone: string): { success: boolean } {
+  async requestPhoneOtp(phone: string): Promise<{ success: boolean }> {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(phone, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
-    // TODO: integrate SMS provider (Twilio, Africa's Talking, etc.)
-    console.log(`[OTP] ${phone} → ${code}`);
+    await this.sms.sendSms(phone, `Your Change Liberia verification code is: ${code}. It expires in 10 minutes.`);
     return { success: true };
   }
 
