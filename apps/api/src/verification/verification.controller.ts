@@ -52,6 +52,21 @@ export class VerificationController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('phone/request-otp')
+  requestPhoneOtp(@Body() body: { phone: string }) {
+    return this.service.requestPhoneOtp(body.phone);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('phone/verify-otp')
+  verifyPhoneOtp(
+    @Req() req: { user: { userId: string } },
+    @Body() body: { phone: string; code: string },
+  ) {
+    return this.service.verifyPhoneOtp(req.user.userId, body.phone, body.code);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('phone')
   verifyPhone(@Req() req: { user: { userId: string } }) {
     return this.service.applyEvent(
@@ -79,12 +94,15 @@ export class VerificationController {
 
   @UseGuards(JwtAuthGuard)
   @Post('device')
-  verifyDevice(@Req() req: { user: { userId: string } }) {
+  verifyDevice(
+    @Req() req: { user: { userId: string } },
+    @Body() body: { fingerprint?: string },
+  ) {
     return this.service.applyEvent(
       req.user.userId,
       VerificationType.DEVICE,
       10,
-      'Device fingerprint linked',
+      `Device fingerprint: ${body.fingerprint ?? 'unknown'}`,
     );
   }
 

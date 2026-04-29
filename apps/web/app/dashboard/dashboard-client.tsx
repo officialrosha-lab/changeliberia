@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -49,6 +49,10 @@ export function DashboardClient() {
   const [governmentStatuses, setGovernmentStatuses] = useState<Record<string, GovernmentStatus>>({});
   const [completed, setCompleted] = useState<CompletedSteps>({ phone: false, geo: false, device: false, idDocument: false });
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [phoneStep, setPhoneStep] = useState<'idle' | 'enter_phone' | 'enter_otp'>('idle');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [idType, setIdType] = useState('passport');
   const [idUrl, setIdUrl] = useState('');
   const [idFile, setIdFile] = useState<File | null>(null);
@@ -108,25 +112,109 @@ export function DashboardClient() {
     };
   }, [token, petitions]);
 
-  async function runVerification(path: string) {
+  async function refreshTrust() {
+    if (!token) return;
+    const [me, steps] = await Promise.all([
+      apiGet<User>('/users/me', token),
+      apiGet<CompletedSteps>('/verification/completed', token),
+    ]);
+    setUser(me);
+    setCompleted(steps);
+  }
+
+  async function requestPhoneOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !phoneInput.trim() || verifying) return;
+    setVerifying('phone');
+    setPhoneError('');
+    try {
+      await apiPost('/verification/phone/request-otp', { phone: phoneInput.trim() }, token);
+      setPhoneStep('enter_otp');
+    } catch {
+      setPhoneError('Could not send code. Please check your number and try again.');
+    } finally {
+      setVerifying(null);
+    }
+  }
+
+  async function verifyPhoneOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !otpInput.trim() || verifying) return;
+    setVerifying('phone');
+    setPhoneError('');
+    try {
+      await apiPost('/verification/phone/verify-otp', { phone: phoneInput.trim(), code: otpInput.trim() }, token);
+      await refreshTrust();
+      setPhoneStep('idle');
+      setPhoneInput('');
+      setOtpInput('');
+      setMessage('Phone verified. Your trust score has been updated.');
+    } catch {
+      setPhoneError('Invalid code. Please try again.');
+    } finally {
+      setVerifying(null);
+    }
+  }
+
+  async function runGeoVerification() {
     if (!token || verifying) return;
-    setVerifying(path);
+    setVerifying('geo');
     setMessage('');
     try {
-      if (path === 'geo') {
-        await apiPost('/verification/geo', { countryCode: 'LR' }, token);
-      } else {
-        await apiPost(`/verification/${path}`, {}, token);
+      const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }),
+      );
+      const { latitude, longitude } = position.coords;
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+        { headers: { 'User-Agent': 'ChangeLiberia/1.0' } },
+      );
+      const geo = await resp.json() as { address?: { country_code?: string } };
+      const countryCode = (geo?.address?.country_code ?? 'XX').toUpperCase();
+      await apiPost('/verification/geo', { countryCode }, token);
+      await refreshTrust();
+      setMessage(
+        countryCode === 'LR'
+          ? 'Liberia location confirmed. Your trust score has been updated.'
+          : 'Location confirmed. Your trust score has been updated.',
+      );
+    } catch (err: unknown) {
+      const isGeoError = err instanceof GeolocationPositionError;
+      setMessage(
+        isGeoError
+          ? 'Location access denied. Please allow location access in your browser and try again.'
+          : 'Could not confirm location. Please try again.',
+      );
+    } finally {
+      setVerifying(null);
+    }
+  }
+
+  async function runDeviceVerification() {
+    if (!token || verifying) return;
+    setVerifying('device');
+    setMessage('');
+    try {
+      const components = [
+        navigator.userAgent,
+        navigator.language,
+        `${screen.width}x${screen.height}`,
+        String(screen.colorDepth),
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        String(navigator.hardwareConcurrency),
+        String(navigator.maxTouchPoints),
+      ].join('|');
+      let hash = 0;
+      for (let i = 0; i < components.length; i++) {
+        hash = ((hash << 5) - hash) + components.charCodeAt(i);
+        hash |= 0;
       }
-      const [me, steps] = await Promise.all([
-        apiGet<User>('/users/me', token),
-        apiGet<CompletedSteps>('/verification/completed', token),
-      ]);
-      setUser(me);
-      setCompleted(steps);
-      setMessage('Verification step recorded. Your trust score has been updated.');
+      const fingerprint = Math.abs(hash).toString(16);
+      await apiPost('/verification/device', { fingerprint }, token);
+      await refreshTrust();
+      setMessage('Device linked. Your trust score has been updated.');
     } catch {
-      setMessage('Could not complete verification. Please try again.');
+      setMessage('Could not link device. Please try again.');
     } finally {
       setVerifying(null);
     }
@@ -266,7 +354,7 @@ export function DashboardClient() {
           <div className="mt-5 space-y-3">
             {([
               {
-                key: 'phone',
+                key: 'phone' as const,
                 label: 'Confirm your phone',
                 desc: 'Adds a strong trust signal that you are a reachable, real supporter.',
                 btnLabel: 'Verify phone',
@@ -274,7 +362,7 @@ export function DashboardClient() {
                 filled: true,
               },
               {
-                key: 'geo',
+                key: 'geo' as const,
                 label: 'Confirm Liberia location',
                 desc: 'Use your current location signal to show the petition has Liberian support.',
                 btnLabel: 'Verify location',
@@ -282,16 +370,22 @@ export function DashboardClient() {
                 filled: false,
               },
               {
-                key: 'device',
+                key: 'device' as const,
                 label: 'Secure this device',
                 desc: 'Helps reduce abuse and makes future support actions smoother.',
                 btnLabel: 'Link device',
                 doneLabel: 'Device linked',
                 filled: false,
               },
-            ] as const).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
+            ]).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
               const isDone = completed[key as keyof CompletedSteps];
               const isLoading = verifying === key;
+              const handleClick =
+                key === 'phone'
+                  ? () => setPhoneStep('enter_phone')
+                  : key === 'geo'
+                    ? runGeoVerification
+                    : runDeviceVerification;
               return (
                 <div
                   key={key}
@@ -319,7 +413,7 @@ export function DashboardClient() {
                       <button
                         type="button"
                         disabled={isLoading || !!verifying}
-                        onClick={() => runVerification(key)}
+                        onClick={handleClick}
                         className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                           filled
                             ? 'bg-zinc-900 text-white hover:bg-zinc-700'
@@ -492,6 +586,96 @@ export function DashboardClient() {
           ) : null}
         </section>
       </div>
+
+      {phoneStep !== 'idle' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          {phoneStep === 'enter_phone' ? (
+            <form
+              onSubmit={requestPhoneOtp}
+              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-lg"
+            >
+              <h3 className="text-lg font-semibold text-zinc-900">Verify your phone</h3>
+              <p className="mt-1 text-sm text-zinc-600">
+                Enter your phone number and we&apos;ll send a 6-digit code to confirm it.
+              </p>
+              <input
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                placeholder="+231 77 000 0000"
+                required
+                className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+              {phoneError && (
+                <p className="mt-2 text-sm text-red-600">{phoneError}</p>
+              )}
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={!!verifying}
+                  className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {verifying === 'phone' ? 'Sending…' : 'Send code'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPhoneStep('idle'); setPhoneInput(''); setPhoneError(''); }}
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form
+              onSubmit={verifyPhoneOtp}
+              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-lg"
+            >
+              <h3 className="text-lg font-semibold text-zinc-900">Enter verification code</h3>
+              <p className="mt-1 text-sm text-zinc-600">
+                Enter the 6-digit code sent to <span className="font-medium text-zinc-900">{phoneInput}</span>.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                required
+                className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-center text-xl font-bold tracking-widest text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+              {phoneError && (
+                <p className="mt-2 text-sm text-red-600">{phoneError}</p>
+              )}
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={!!verifying || otpInput.length !== 6}
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {verifying === 'phone' ? 'Verifying…' : 'Verify'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhoneStep('enter_phone')}
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPhoneStep('idle'); setPhoneInput(''); setOtpInput(''); setPhoneError(''); }}
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {updatePetitionId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
