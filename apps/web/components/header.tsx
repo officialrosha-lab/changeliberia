@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../lib/store';
 import { ThemeToggle } from './theme-toggle';
 import { MobileNav } from './mobile-nav';
@@ -9,6 +10,13 @@ import { NotificationDropdown } from './notification-dropdown';
 export function Header() {
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
+  const router = useRouter();
+
+  function signOut() {
+    setToken(null);
+    router.push('/');
+  }
+
   return (
     <header className="border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-neutral-700 dark:bg-neutral-900/95 safe-top">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 md:py-4">
@@ -67,7 +75,7 @@ export function Header() {
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => setToken(null)}
+                  onClick={signOut}
                   className="text-xs font-medium text-zinc-700 hover:text-red-600 dark:text-neutral-300 dark:hover:text-red-400 transition-colors md:text-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500 rounded px-2 py-1"
                 >
                   Log out

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
 
@@ -16,6 +17,13 @@ export function MobileNav() {
   const { theme, toggleTheme } = useTheme();
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
+  const router = useRouter();
+
+  function signOut() {
+    setToken(null);
+    setIsOpen(false);
+    router.push('/');
+  }
   const isDark =
     theme === 'dark' ||
     (theme === 'system' &&
@@ -101,7 +109,7 @@ export function MobileNav() {
           <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-neutral-800">
             {token ? (
               <button
-                onClick={() => { setToken(null); setIsOpen(false); }}
+                onClick={signOut}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
               >
                 <span className="text-base">🚪</span>
