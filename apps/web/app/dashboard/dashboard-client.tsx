@@ -325,20 +325,22 @@ export function DashboardClient() {
                 </div>
               )}
             </div>
-            <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-zinc-900">Government submissions</p>
-                  <p className="mt-1 text-sm text-zinc-600">View and manage petitions you have submitted to government or NGO contacts.</p>
+            {user.role === 'ADMIN' && (
+              <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900">Government submissions</p>
+                    <p className="mt-1 text-sm text-zinc-600">View and manage petitions submitted to government or NGO contacts.</p>
+                  </div>
+                  <Link
+                    href="/government/submissions"
+                    className="inline-flex rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    View submissions
+                  </Link>
                 </div>
-                <Link
-                  href="/government/submissions"
-                  className="inline-flex rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                >
-                  View my submissions
-                </Link>
               </div>
-            </div>
+            )}
           </>
         ) : null}
       </div>
