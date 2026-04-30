@@ -14,6 +14,7 @@ import {
   CreatePetitionUpdateDto,
   UpdatePetitionDto,
 } from './dto';
+import { PetitionUpdatePublishedEvent } from '../events/domain-events';
 
 @Injectable()
 export class PetitionsService {
@@ -216,13 +217,37 @@ export class PetitionsService {
         'Only the petition creator can post updates',
       );
     }
-    return this.prisma.petitionUpdate.create({
-      data: {
-        petitionId,
-        title: dto.title,
-        body: dto.body,
-      },
+    const update = await this.prisma.petitionUpdate.create({
+      data: { petitionId, title: dto.title, body: dto.body },
     });
+
+    this.eventEmitter.emit(
+      'PETITION_UPDATE_PUBLISHED',
+      new PetitionUpdatePublishedEvent(update.id, petitionId, petition.title, dto.title),
+    );
+
+    return update;
+  }
+
+  async followPetition(userId: string, petitionId: string) {
+    await this.prisma.petitionFollower.upsert({
+      where: { userId_petitionId: { userId, petitionId } },
+      create: { userId, petitionId },
+      update: {},
+    });
+    return { following: true };
+  }
+
+  async unfollowPetition(userId: string, petitionId: string) {
+    await this.prisma.petitionFollower.deleteMany({ where: { userId, petitionId } });
+    return { following: false };
+  }
+
+  async isFollowing(userId: string, petitionId: string) {
+    const row = await this.prisma.petitionFollower.findUnique({
+      where: { userId_petitionId: { userId, petitionId } },
+    });
+    return { following: !!row };
   }
 
   async createComment(

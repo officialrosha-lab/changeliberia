@@ -84,6 +84,31 @@ export class ContentRejectedEvent extends DomainEvent {
 }
 
 /**
+ * Petition Update Events
+ */
+export class PetitionUpdatePublishedEvent extends DomainEvent {
+  readonly eventType = 'PETITION_UPDATE_PUBLISHED';
+  readonly entityType = 'petition';
+
+  constructor(
+    public readonly entityId: string,   // PetitionUpdate id
+    public readonly petitionId: string,
+    public readonly petitionTitle: string,
+    public readonly updateTitle: string,
+  ) {
+    super(petitionId);
+  }
+
+  getPayload() {
+    return {
+      petitionId: this.petitionId,
+      petitionTitle: this.petitionTitle,
+      updateTitle: this.updateTitle,
+    };
+  }
+}
+
+/**
  * Signature Events
  */
 export class SignatureAddedEvent extends DomainEvent {

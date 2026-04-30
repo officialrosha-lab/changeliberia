@@ -2,7 +2,7 @@
 
 import { Turnstile } from '@marsidev/react-turnstile';
 import { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiPost } from '../../../lib/api';
+import { apiGet, apiPost, apiDelete } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { ShareModal } from '../../../components/share-modal';
 
@@ -25,6 +25,9 @@ export function SignForm({
   const [count, setCount] = useState(signatureCount);
   const [hasSigned, setHasSigned] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showFollowPrompt, setShowFollowPrompt] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [captchaRequired, setCaptchaRequired] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [status, setStatus] = useState('');
@@ -50,6 +53,13 @@ export function SignForm({
         }
       })
       .catch(() => {/* silent — form stays visible */});
+  }, [petitionId, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    apiGet<{ following: boolean }>(`/petitions/${petitionId}/follow`, token)
+      .then(({ following: f }) => setFollowing(f))
+      .catch(() => {});
   }, [petitionId, token]);
 
   // Live signature counter via SSE
@@ -110,7 +120,8 @@ export function SignForm({
       setCaptchaToken(null);
       setStatus('');
       setName('');
-      setShowShare(true);
+      // Show follow prompt first; share modal opens after
+      setShowFollowPrompt(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('already signed')) {
@@ -121,6 +132,24 @@ export function SignForm({
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function toggleFollow() {
+    if (!token) return;
+    setFollowLoading(true);
+    try {
+      if (following) {
+        await apiDelete(`/petitions/${petitionId}/follow`, token);
+        setFollowing(false);
+      } else {
+        await apiPost(`/petitions/${petitionId}/follow`, {}, token);
+        setFollowing(true);
+      }
+    } catch {
+      // silent
+    } finally {
+      setFollowLoading(false);
     }
   }
 
@@ -152,13 +181,30 @@ export function SignForm({
             <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">
               Thank you for your support. Help it grow by sharing with others.
             </p>
-            <button
-              type="button"
-              onClick={() => setShowShare(true)}
-              className="mt-3 w-full rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Share this petition
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowShare(true)}
+                className="flex-1 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Share this petition
+              </button>
+              {token && (
+                <button
+                  type="button"
+                  disabled={followLoading}
+                  onClick={() => void toggleFollow()}
+                  title={following ? 'Stop notifications' : 'Get notified of updates'}
+                  className={`flex-shrink-0 rounded-full border px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                    following
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
+                      : 'border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300 hover:text-emerald-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                  }`}
+                >
+                  {followLoading ? '…' : following ? '🔔 Following' : '🔕 Follow'}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>
@@ -212,6 +258,62 @@ export function SignForm({
           >
             Add your name and sign
           </button>
+        </div>
+      )}
+
+      {showFollowPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl dark:bg-neutral-900">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/40">
+              <svg className="h-6 w-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-lg font-bold text-zinc-900 dark:text-white">Stay in the loop</h2>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-300">
+              Get notified when there are major updates, milestones, or news about this petition.
+            </p>
+
+            {token ? (
+              <div className="mt-5 flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={followLoading}
+                  onClick={async () => {
+                    if (!following) await toggleFollow();
+                    setShowFollowPrompt(false);
+                    setShowShare(true);
+                  }}
+                  className="w-full rounded-full bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                >
+                  {followLoading ? 'Saving…' : following ? 'Already following ✓' : 'Yes, notify me'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowFollowPrompt(false); setShowShare(true); }}
+                  className="w-full rounded-full border border-zinc-200 bg-white py-2.5 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                >
+                  No thanks
+                </button>
+              </div>
+            ) : (
+              <div className="mt-5 flex flex-col gap-2">
+                <a
+                  href="/auth/signup"
+                  className="block w-full rounded-full bg-emerald-600 py-3 text-center text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                >
+                  Create an account to get updates
+                </a>
+                <button
+                  type="button"
+                  onClick={() => { setShowFollowPrompt(false); setShowShare(true); }}
+                  className="w-full rounded-full border border-zinc-200 bg-white py-2.5 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -10,6 +10,7 @@ import {
   DonationReceivedEvent,
   BadgeUnlockedEvent,
   ChallengeCompletedEvent,
+  PetitionUpdatePublishedEvent,
 } from '../events/domain-events';
 
 interface NotificationPayload {
@@ -382,10 +383,29 @@ export class NotificationsService {
       message: `Congratulations! You've reached #${rank} on the ${category} leaderboard. Keep sharing to stay at the top!`,
       actionUrl: '/leaderboard',
       actionLabel: 'View Leaderboard',
-      metadata: {
-        rank,
-        category,
-      },
+      metadata: { rank, category },
     });
+  }
+
+  @OnEvent('PETITION_UPDATE_PUBLISHED')
+  async handlePetitionUpdatePublished(event: PetitionUpdatePublishedEvent) {
+    const followers = await this.prisma.petitionFollower.findMany({
+      where: { petitionId: event.petitionId },
+      select: { userId: true },
+    });
+    if (!followers.length) return;
+
+    await Promise.all(
+      followers.map((f: { userId: string }) =>
+        this.createNotification(f.userId, {
+          type: 'PETITION_UPDATE',
+          title: `Update: ${event.petitionTitle}`,
+          message: event.updateTitle,
+          actionUrl: `/petitions/${event.petitionId}`,
+          actionLabel: 'Read update',
+          metadata: { petitionId: event.petitionId },
+        }),
+      ),
+    );
   }
 }

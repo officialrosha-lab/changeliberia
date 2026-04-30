@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   MessageEvent,
   NotFoundException,
@@ -146,6 +147,24 @@ export class PetitionsController {
     @Body() dto: UpdatePetitionDto,
   ) {
     return this.service.updatePetition(id, req.user.userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/follow')
+  checkFollow(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
+    return this.service.isFollowing(req.user.userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/follow')
+  follow(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
+    return this.service.followPetition(req.user.userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/follow')
+  unfollow(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
+    return this.service.unfollowPetition(req.user.userId, id);
   }
 
   @UseGuards(JwtAuthGuard)

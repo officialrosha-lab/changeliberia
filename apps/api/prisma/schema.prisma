@@ -86,6 +86,7 @@ model User {
   payments          Payment[]               @relation("UserPayments")
   paymentMethods    PaymentMethodRecord[]   @relation("UserPaymentMethods")
   subscriptions     Subscription[]          @relation("UserSubscriptions")
+  petitionFollows   PetitionFollower[]
 
   // Facebook viral growth relations
   badges                  SocialEngagementBadge[] @relation("UserBadges")
@@ -135,6 +136,8 @@ model Petition {
   pixelEvents FacebookPixelEvent[]    @relation("FacebookPixelEvents")
   audiences   CustomAudience[]        @relation("CustomAudiences")
 
+  followers   PetitionFollower[]
+
   @@index([status, createdAt])
 }
 
@@ -147,6 +150,18 @@ model PetitionUpdate {
   petition   Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
 
   @@index([petitionId, createdAt])
+}
+
+model PetitionFollower {
+  id         String   @id @default(cuid())
+  userId     String
+  petitionId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petition   Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, petitionId])
+  @@index([petitionId])
 }
 
 model PetitionComment {
@@ -408,6 +423,7 @@ enum NotificationType {
   CONTENT_PUBLISHED
   FRAUD_DETECTED
   DONATION_RECEIVED
+  PETITION_UPDATE
 }
 
 enum NotificationStatus {
