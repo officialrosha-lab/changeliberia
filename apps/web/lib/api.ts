@@ -71,7 +71,21 @@ export async function apiDelete<T = unknown>(
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  if (!res.ok) throw new Error('Request failed');
+  if (!res.ok) {
+    let message = `Request failed (${res.status} ${res.statusText})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.message === 'string') message = data.message;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) message = text;
+      } catch {
+        // ignore parse errors
+      }
+    }
+    throw new Error(message);
+  }
   return res.json() as Promise<T>;
 }
 
