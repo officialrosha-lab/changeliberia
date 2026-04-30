@@ -108,6 +108,7 @@ model Petition {
   summary          String
   description      String
   category         String?
+  petitionType     String?              // "government" | "ngo" | "social" | "community"
   goal             Int                  @default(1000)
   status           PetitionStatus       @default(PENDING)
   signaturesCount  Int                  @default(0)

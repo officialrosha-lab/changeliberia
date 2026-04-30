@@ -50,15 +50,45 @@ interface GovernmentStatus {
   }>;
 }
 
+const COPY = {
+  government: {
+    panelTitle: 'Government Submission',
+    panelDesc: 'Track readiness, download a report, and submit this petition when it reaches 1,000 verified signatures.',
+    statusLabel: 'Government readiness',
+    readyMsg: 'This petition can be submitted to government now.',
+    notReadyMsg: 'This petition is not yet government-ready.',
+    submitBtn: 'Submit petition to government',
+    recipientLabel: 'Government contact',
+    emailPlaceholder: 'ministry@example.gov.lr',
+    noContactsMsg: 'No government contacts are available. Enter an email address manually below.',
+  },
+  ngo: {
+    panelTitle: 'NGO Partnership',
+    panelDesc: 'Track readiness, download a report, and connect with an NGO partner when this petition reaches 1,000 signatures.',
+    statusLabel: 'NGO readiness',
+    readyMsg: 'This petition is ready for NGO review.',
+    notReadyMsg: 'This petition is not yet ready for NGO review.',
+    submitBtn: 'Submit to NGO partner',
+    recipientLabel: 'NGO contact',
+    emailPlaceholder: 'partner@ngo.org',
+    noContactsMsg: 'No NGO contacts are listed. Enter a partner email address manually below.',
+  },
+};
+
 export function PetitionGovernmentPanel({
   petitionId,
   petitionTitle,
   signaturesCount,
+  petitionType,
 }: {
   petitionId: string;
   petitionTitle: string;
   signaturesCount: number;
+  petitionType?: string | null;
 }) {
+  const type = petitionType ?? 'government';
+  const isSubmissionType = type === 'government' || type === 'ngo';
+  const copy = type === 'ngo' ? COPY.ngo : COPY.government;
   const token = useAuthStore((state) => state.token);
   const [readiness, setReadiness] = useState<GovernmentReadiness | null>(null);
   const [contacts, setContacts] = useState<GovernmentContact[]>([]);
@@ -170,7 +200,7 @@ export function PetitionGovernmentPanel({
   if (loading) {
     return (
       <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-zinc-500">Loading government readiness...</p>
+        <p className="text-sm text-zinc-500">Loading campaign readiness...</p>
       </div>
     );
   }
@@ -178,20 +208,72 @@ export function PetitionGovernmentPanel({
   if (!readiness) {
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
-        <p className="text-sm text-red-700">Unable to load government readiness details.</p>
+        <p className="text-sm text-red-700">Unable to load campaign readiness details.</p>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </div>
     );
   }
 
+  /* ── Social / Community — simplified "Collect & share" panel ── */
+  if (!isSubmissionType) {
+    return (
+      <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Signature progress</p>
+            <h2 className="mt-1 text-xl font-extrabold text-zinc-900">Collect &amp; share</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              This petition collects signatures directly. Download a report or share the link when
+              you&apos;re ready to act.
+            </p>
+          </div>
+          <a
+            href={reportUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Download report
+          </a>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-3xl bg-emerald-50 p-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Signatures</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-900">{readiness.signaturesCount.toLocaleString()}</p>
+            <p className="mt-1 text-sm text-emerald-700">
+              {readiness.isGovernmentReady ? 'Goal reached!' : `${readiness.signaturesNeeded.toLocaleString()} more to goal`}
+            </p>
+          </div>
+          <div className="rounded-3xl bg-blue-50 p-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Next milestone</p>
+            <p className="mt-2 text-3xl font-semibold text-blue-900">{readiness.nextMilestone.toLocaleString()}</p>
+            <p className="mt-1 text-sm text-blue-700">{readiness.nextMilestoneProgress}% there</p>
+          </div>
+          <div className="rounded-3xl bg-zinc-50 p-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Petition</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-900 break-words">{petitionTitle}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl bg-zinc-50 p-4">
+          <p className="text-sm font-semibold text-zinc-700">Campaign status</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            You&apos;re in control — share your petition link and present the report directly to your
+            target audience when you&apos;re ready.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Government / NGO — full submission panel ── */
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-zinc-900">Government Submission</h2>
-          <p className="mt-2 text-sm text-zinc-600">
-            Track readiness, download a report, and submit this petition when it reaches 1,000 verified signatures.
-          </p>
+          <h2 className="text-xl font-extrabold text-zinc-900">{copy.panelTitle}</h2>
+          <p className="mt-2 text-sm text-zinc-600">{copy.panelDesc}</p>
         </div>
         <a
           href={reportUrl}
@@ -225,11 +307,9 @@ export function PetitionGovernmentPanel({
       <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-zinc-900">Government readiness</p>
+            <p className="text-sm font-semibold text-zinc-900">{copy.statusLabel}</p>
             <p className="text-sm text-zinc-600">
-              {readiness.isGovernmentReady
-                ? 'This petition can be submitted to government now.'
-                : 'This petition is not yet government-ready.'}
+              {readiness.isGovernmentReady ? copy.readyMsg : copy.notReadyMsg}
             </p>
           </div>
           <span
@@ -244,7 +324,7 @@ export function PetitionGovernmentPanel({
         {!readiness.isGovernmentReady && (
           <div className="mt-4 rounded-2xl bg-white p-4 text-sm text-zinc-600">
             <p>
-              This petition needs <strong>{readiness.signaturesNeeded.toLocaleString()}</strong> more verified signatures before it can be submitted to government or NGO partners.
+              This petition needs <strong>{readiness.signaturesNeeded.toLocaleString()}</strong> more verified signatures before it can be submitted.
             </p>
           </div>
         )}
@@ -288,7 +368,7 @@ export function PetitionGovernmentPanel({
           ) : (
             <div className="rounded-3xl border border-slate-200 bg-white p-4">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-zinc-900">Submit to government or NGO</p>
+                <p className="text-sm font-semibold text-zinc-900">{copy.recipientLabel}</p>
                 {!token ? (
                   <Link href="/auth/login" className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                     Sign in to submit
@@ -317,12 +397,12 @@ export function PetitionGovernmentPanel({
                 </div>
               ) : (
                 <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                  No government contacts are available. Enter an email address manually below.
+                  {copy.noContactsMsg}
                 </div>
               )}
 
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-zinc-700">Government or NGO email</label>
+                <label className="block text-sm font-medium text-zinc-700">Email address</label>
                 <input
                   type="email"
                   value={customEmail}
@@ -330,7 +410,7 @@ export function PetitionGovernmentPanel({
                     setCustomEmail(e.target.value);
                     setSelectedContactId('');
                   }}
-                  placeholder="contact@example.org"
+                  placeholder={copy.emailPlaceholder}
                   className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
                 />
               </div>
@@ -358,7 +438,7 @@ export function PetitionGovernmentPanel({
                 disabled={!canSubmit || submitting}
                 className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? 'Submitting…' : 'Submit petition to government'}
+                {submitting ? 'Submitting…' : copy.submitBtn}
               </button>
             </div>
           )}

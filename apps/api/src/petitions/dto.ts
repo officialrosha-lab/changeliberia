@@ -6,6 +6,7 @@ export class UpdatePetitionDto {
   @IsOptional() @IsString() @MaxLength(20000) description?: string;
   @IsOptional() @IsString() imageUrl?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
+  @IsOptional() @IsString() petitionType?: string;
 }
 
 export class CreatePetitionDto {
@@ -14,6 +15,7 @@ export class CreatePetitionDto {
   @IsString() summary!: string;
   @IsString() description!: string;
   @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsString() petitionType?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
 }
 

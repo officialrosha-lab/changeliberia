@@ -11,9 +11,37 @@ type PetitionPayload = {
   summary: string;
   description: string;
   category?: string;
+  petitionType?: string;
   imageUrl?: string;
   goal: number;
 };
+
+const PETITION_TYPES = [
+  {
+    value: 'government',
+    label: 'Government action',
+    icon: '🏛️',
+    hint: 'Requesting a law, policy, or official response',
+  },
+  {
+    value: 'ngo',
+    label: 'NGO partnership',
+    icon: '🤝',
+    hint: 'Seeking support or funding from an NGO',
+  },
+  {
+    value: 'social',
+    label: 'Social movement',
+    icon: '✊',
+    hint: "Raising awareness — you'll handle distribution",
+  },
+  {
+    value: 'community',
+    label: 'Community campaign',
+    icon: '🏘️',
+    hint: 'Local action at council or neighbourhood level',
+  },
+];
 
 type CreatedPetition = { id: string };
 
@@ -48,6 +76,7 @@ export function CreatePetitionForm() {
   const [imageUrlValue, setImageUrlValue] = useState('');
   const [imagePreviewSrc, setImagePreviewSrc] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedPetitionType, setSelectedPetitionType] = useState<string | null>(null);
   const prefillTitle = searchParams.get('title') ?? '';
 
   const handleImageFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +154,7 @@ export function CreatePetitionForm() {
       summary: String(form.get('summary')),
       description: String(form.get('description')),
       category: selectedCategory || undefined,
+      petitionType: selectedPetitionType || undefined,
       imageUrl: finalImageUrl || undefined,
       goal: Number(form.get('goal')),
     };
@@ -280,6 +310,37 @@ export function CreatePetitionForm() {
               className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500"
             />
           </div>
+          <div className="mt-5">
+            <p className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
+              What kind of petition is this? <span className="font-normal text-zinc-500 dark:text-neutral-400">(optional)</span>
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-neutral-500">
+              This helps us display the right information to supporters and know how to route your petition.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {PETITION_TYPES.map(({ value, label, icon, hint }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedPetitionType(selectedPetitionType === value ? null : value)}
+                  className={`flex flex-col items-start rounded-2xl border p-3 text-left transition-all active:scale-95 ${
+                    selectedPetitionType === value
+                      ? 'border-emerald-500 bg-emerald-50 shadow-sm dark:border-emerald-400 dark:bg-emerald-950/40'
+                      : 'border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <span className="text-xl">{icon}</span>
+                  <span className={`mt-1.5 text-xs font-semibold leading-tight ${selectedPetitionType === value ? 'text-emerald-800 dark:text-emerald-300' : 'text-zinc-800 dark:text-neutral-200'}`}>
+                    {label}
+                  </span>
+                  <span className="mt-1 text-[10px] leading-snug text-zinc-500 dark:text-neutral-500">
+                    {hint}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-4">
             <p className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
               Cause / category <span className="font-normal text-zinc-500 dark:text-neutral-400">(optional)</span>

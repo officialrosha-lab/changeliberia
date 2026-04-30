@@ -18,6 +18,7 @@ type Petition = {
   todaySignatures: number;
   goal: number;
   category?: string | null;
+  petitionType?: string | null;
 };
 
 type PetitionUpdate = {
@@ -227,6 +228,7 @@ export default async function PetitionPage({
               petitionId={petition.id}
               petitionTitle={petition.title}
               signaturesCount={petition.signaturesCount}
+              petitionType={petition.petitionType}
             />
 
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
