@@ -47,10 +47,10 @@ export class AdminController {
 
   @Delete('petitions/:id')
   async deletePetition(@Param('id') id: string) {
-    const petition = await this.prisma.petition.findUnique({ where: { id } });
-    if (!petition) throw new NotFoundException('Petition not found');
-
     try {
+      const petition = await this.prisma.petition.findUnique({ where: { id } });
+      if (!petition) throw new NotFoundException('Petition not found');
+
       // Delete all child records explicitly — do not rely on DB-level cascades
       // because cascade migrations may not have run on the production database.
       await this.prisma.$transaction(async (tx) => {
@@ -69,12 +69,14 @@ export class AdminController {
         await tx.routingLog.deleteMany({ where: { petitionId: id } });
         await tx.petition.delete({ where: { id } });
       });
+
+      return { success: true, message: 'Petition deleted' };
     } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[admin] deletePetition ${id} failed:`, msg);
       throw new InternalServerErrorException(`Failed to delete petition: ${msg}`);
     }
-
-    return { success: true, message: 'Petition deleted' };
   }
 
   @Patch('id-documents/:id')
