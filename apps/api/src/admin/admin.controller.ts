@@ -50,14 +50,23 @@ export class AdminController {
     if (!petition) throw new NotFoundException('Petition not found');
 
     try {
-      await this.prisma.$transaction([
-        this.prisma.fraudEvent.deleteMany({ where: { petitionId: id } }),
-        this.prisma.signature.deleteMany({ where: { petitionId: id } }),
-        this.prisma.petitionComment.deleteMany({ where: { petitionId: id } }),
-        this.prisma.petitionFollower.deleteMany({ where: { petitionId: id } }),
-        this.prisma.petitionUpdate.deleteMany({ where: { petitionId: id } }),
-        this.prisma.petition.delete({ where: { id } }),
-      ]);
+      // Delete all child records explicitly — do not rely on DB-level cascades
+      // because cascade migrations may not have run on the production database.
+      await this.prisma.$transaction(async (tx) => {
+        await tx.fraudEvent.deleteMany({ where: { petitionId: id } });
+        await tx.signature.deleteMany({ where: { petitionId: id } });
+        await tx.petitionComment.deleteMany({ where: { petitionId: id } });
+        await tx.petitionFollower.deleteMany({ where: { petitionId: id } });
+        await tx.petitionUpdate.deleteMany({ where: { petitionId: id } });
+        await tx.petitionSubmission.deleteMany({ where: { petitionId: id } });
+        await tx.petitionMilestone.deleteMany({ where: { petitionId: id } });
+        await tx.socialEngagementBadge.deleteMany({ where: { petitionId: id } });
+        await tx.customAudience.deleteMany({ where: { petitionId: id } });
+        // ShareLink before Referral — ShareLink.referralId is SetNull, not Cascade
+        await tx.shareLink.deleteMany({ where: { petitionId: id } });
+        await tx.referral.deleteMany({ where: { petitionId: id } });
+        await tx.petition.delete({ where: { id } });
+      });
     } catch (error) {
       throw new Error(`Failed to delete petition: ${error instanceof Error ? error.message : String(error)}`);
     }
