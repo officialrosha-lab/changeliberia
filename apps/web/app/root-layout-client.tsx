@@ -1,7 +1,6 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
@@ -13,7 +12,6 @@ function BottomNavContent() {
 
 export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   return (
-    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
     <LayoutProvider>
       <div className="sticky top-0 z-50">
         <Suspense fallback={null}>
@@ -28,6 +26,5 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
         <BottomNavContent />
       </Suspense>
     </LayoutProvider>
-    </GoogleOAuthProvider>
   );
 }

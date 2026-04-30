@@ -1,6 +1,6 @@
 'use client';
 
-import { CredentialResponse, GoogleLogin } from '@react-oauth/google';
+import { CredentialResponse, GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiPost } from '../lib/api';
@@ -14,7 +14,7 @@ export function GoogleAuthButton() {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
 
-  // Already logged in — don't render the button
+  // Already logged in — don't render
   if (token) return null;
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -49,14 +49,16 @@ export function GoogleAuthButton() {
       </div>
 
       <div className="flex justify-center">
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-          text="signin_with"
-          theme="outline"
-          size="large"
-          auto_select={false}
-        />
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            text="signin_with"
+            theme="outline"
+            size="large"
+            auto_select={false}
+          />
+        </GoogleOAuthProvider>
       </div>
 
       {message && (
