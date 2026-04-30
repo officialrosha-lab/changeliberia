@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React, { FormEvent, useEffect, useState } from 'react';
 import { apiGet, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -46,6 +47,7 @@ function formatStatus(value: string): string {
 export function DashboardClient() {
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [petitions, setPetitions] = useState<MyPetition[]>([]);
   const [message, setMessage] = useState('');
@@ -71,6 +73,10 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
+
+  useEffect(() => {
+    if (!token) { router.replace('/'); return; }
+  }, [token, router]);
 
   useEffect(() => {
     if (!token) return;
@@ -335,22 +341,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const allVerified = completed.phone && completed.geo && completed.device && completed.idDocument;
 
   if (!token) {
-    return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="mt-4 text-zinc-600">
-            Sign in to manage petitions, publish updates, and complete your verification steps.
-          </p>
-          <p className="mt-4 text-zinc-600">
-            <Link href="/auth/login" className="font-semibold text-emerald-700 underline">
-              Sign in
-            </Link>{' '}
-            to manage petitions and verification.
-          </p>
-        </div>
-      </main>
-    );
+    return null;
   }
 
   return (
