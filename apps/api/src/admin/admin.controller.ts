@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Patch,
@@ -68,7 +69,8 @@ export class AdminController {
         await tx.petition.delete({ where: { id } });
       });
     } catch (error) {
-      throw new Error(`Failed to delete petition: ${error instanceof Error ? error.message : String(error)}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new InternalServerErrorException(`Failed to delete petition: ${msg}`);
     }
 
     return { success: true, message: 'Petition deleted' };
