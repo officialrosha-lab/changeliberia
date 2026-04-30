@@ -49,10 +49,18 @@ export class AdminController {
     const petition = await this.prisma.petition.findUnique({ where: { id } });
     if (!petition) throw new NotFoundException('Petition not found');
 
-    await this.prisma.$transaction([
-      this.prisma.signature.deleteMany({ where: { petitionId: id } }),
-      this.prisma.petition.delete({ where: { id } }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.fraudEvent.deleteMany({ where: { petitionId: id } }),
+        this.prisma.signature.deleteMany({ where: { petitionId: id } }),
+        this.prisma.petitionComment.deleteMany({ where: { petitionId: id } }),
+        this.prisma.petitionFollower.deleteMany({ where: { petitionId: id } }),
+        this.prisma.petitionUpdate.deleteMany({ where: { petitionId: id } }),
+        this.prisma.petition.delete({ where: { id } }),
+      ]);
+    } catch (error) {
+      throw new Error(`Failed to delete petition: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     return { success: true, message: 'Petition deleted' };
   }
