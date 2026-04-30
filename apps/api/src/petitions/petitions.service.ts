@@ -12,6 +12,7 @@ import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
   CreatePetitionUpdateDto,
+  UpdatePetitionDto,
 } from './dto';
 
 @Injectable()
@@ -93,6 +94,13 @@ export class PetitionsService {
     return this.prisma.petition.create({
       data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
     });
+  }
+
+  async updatePetition(petitionId: string, userId: string, dto: UpdatePetitionDto) {
+    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.creatorId !== userId) throw new ForbiddenException('Not your petition');
+    return this.prisma.petition.update({ where: { id: petitionId }, data: { ...dto } });
   }
 
   async list() {

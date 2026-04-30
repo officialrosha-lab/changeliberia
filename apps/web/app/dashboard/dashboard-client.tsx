@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPostFormData } from '../../lib/api';
+import { apiGet, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 type User = {
@@ -23,6 +23,9 @@ type CompletedSteps = {
 type MyPetition = {
   id: string;
   title: string;
+  summary: string;
+  description: string;
+  imageUrl?: string | null;
   status: string;
   signaturesCount: number;
   goal: number;
@@ -68,6 +71,12 @@ export function DashboardClient() {
   const [updatePetitionId, setUpdatePetitionId] = useState<string | null>(null);
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateBody, setUpdateBody] = useState('');
+  const [editPetitionId, setEditPetitionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editSummary, setEditSummary] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -264,6 +273,45 @@ export function DashboardClient() {
       return;
     }
     setMessage('ID submitted for admin review. Trust increases when approved.');
+  }
+
+  function openEdit(p: MyPetition) {
+    setEditPetitionId(p.id);
+    setEditTitle(p.title);
+    setEditSummary(p.summary ?? '');
+    setEditDescription(p.description ?? '');
+    setEditImageUrl(p.imageUrl ?? '');
+  }
+
+  async function submitEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!token || !editPetitionId) return;
+    setEditSubmitting(true);
+    try {
+      await apiPatch(
+        `/petitions/${editPetitionId}`,
+        {
+          title: editTitle,
+          summary: editSummary,
+          description: editDescription,
+          imageUrl: editImageUrl || undefined,
+        },
+        token,
+      );
+      setPetitions((prev) =>
+        prev.map((p) =>
+          p.id === editPetitionId
+            ? { ...p, title: editTitle, summary: editSummary, description: editDescription, imageUrl: editImageUrl || p.imageUrl }
+            : p,
+        ),
+      );
+      setEditPetitionId(null);
+      setMessage('Petition updated.');
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : 'Could not save changes.');
+    } finally {
+      setEditSubmitting(false);
+    }
   }
 
   async function submitUpdate(e: FormEvent) {
@@ -617,6 +665,13 @@ export function DashboardClient() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => openEdit(p)}
+                      className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setUpdatePetitionId(p.id)}
                       className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
                     >
@@ -630,38 +685,63 @@ export function DashboardClient() {
                     </Link>
                   </div>
                   {isShareOpen && (
-                    <div className="mt-3 flex flex-wrap gap-2 rounded-2xl border border-zinc-100 bg-white p-3">
-                      <button
-                        type="button"
-                        onClick={() => void copyLink(petitionUrl)}
-                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-                      >
-                        {copied ? '✓ Copied!' : '📋 Copy link'}
-                      </button>
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + petitionUrl)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-                      >
-                        💬 WhatsApp
-                      </a>
-                      <a
-                        href={`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(petitionUrl)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-                      >
-                        𝕏 Twitter
-                      </a>
-                      <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(petitionUrl)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-                      >
-                        📘 Facebook
-                      </a>
+                    <div className="mt-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+                      <div className="flex flex-col gap-4 sm:flex-row">
+                        <div className="flex flex-col items-center gap-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(petitionUrl)}&size=120x120&margin=4`}
+                            alt="QR code"
+                            className="h-[120px] w-[120px] rounded-xl border border-zinc-200"
+                          />
+                          <a
+                            href={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(petitionUrl)}&size=300x300&margin=8`}
+                            download={`petition-${p.id}-qr.png`}
+                            className="text-xs font-semibold text-emerald-700 hover:underline"
+                          >
+                            Download QR Code
+                          </a>
+                        </div>
+                        <div className="flex flex-wrap content-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void copyLink(petitionUrl)}
+                            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          >
+                            {copied ? '✓ Copied!' : '📋 Copy link'}
+                          </button>
+                          <a
+                            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(petitionUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          >
+                            📘 Facebook
+                          </a>
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + petitionUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          >
+                            💬 WhatsApp
+                          </a>
+                          <a
+                            href={`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(petitionUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          >
+                            𝕏 Twitter
+                          </a>
+                          <a
+                            href={`mailto:?subject=${encodeURIComponent(p.title)}&body=${encodeURIComponent(shareText + '\n\n' + petitionUrl)}`}
+                            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          >
+                            ✉️ Email
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </li>
@@ -685,6 +765,94 @@ export function DashboardClient() {
           ) : null}
         </section>
       </div>
+
+      {editPetitionId && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16">
+          <form
+            onSubmit={submitEdit}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl dark:bg-neutral-900"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Edit petition</h3>
+              <button
+                type="button"
+                onClick={() => setEditPetitionId(null)}
+                className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-neutral-800"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  maxLength={200}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Summary</label>
+                <input
+                  type="text"
+                  value={editSummary}
+                  onChange={(e) => setEditSummary(e.target.value)}
+                  maxLength={500}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">
+                  Description{' '}
+                  <span className="normal-case font-normal text-zinc-400">— paste YouTube URLs or image URLs on their own line to embed them</span>
+                </label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={10}
+                  maxLength={20000}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Cover image URL</label>
+                <input
+                  type="url"
+                  value={editImageUrl}
+                  onChange={(e) => setEditImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+                {editImageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={editImageUrl} alt="preview" className="mt-2 h-32 w-full rounded-xl object-cover" />
+                )}
+              </div>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="submit"
+                disabled={editSubmitting}
+                className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              >
+                {editSubmitting ? 'Saving…' : 'Save changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditPetitionId(null)}
+                className="rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {phoneStep !== 'idle' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

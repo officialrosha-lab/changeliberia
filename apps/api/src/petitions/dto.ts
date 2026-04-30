@@ -1,5 +1,13 @@
 import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
+export class UpdatePetitionDto {
+  @IsOptional() @IsString() @MaxLength(200) title?: string;
+  @IsOptional() @IsString() @MaxLength(500) summary?: string;
+  @IsOptional() @IsString() @MaxLength(20000) description?: string;
+  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsInt() @Min(100) goal?: number;
+}
+
 export class CreatePetitionDto {
   @IsString() title!: string;
   @IsOptional() @IsString() imageUrl?: string;

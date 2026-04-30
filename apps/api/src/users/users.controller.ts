@@ -45,6 +45,9 @@ export class UsersController {
       select: {
         id: true,
         title: true,
+        summary: true,
+        description: true,
+        imageUrl: true,
         status: true,
         signaturesCount: true,
         goal: true,

@@ -33,6 +33,31 @@ type PetitionComment = {
   createdAt: string;
 };
 
+function renderDescriptionLine(line: string, index: number) {
+  const youtubeMatch = line.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+  );
+  if (youtubeMatch) {
+    return (
+      <div key={index} className="my-4 aspect-video overflow-hidden rounded-xl">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeMatch[1]}`}
+          className="h-full w-full"
+          allowFullScreen
+          title={`video-${index}`}
+        />
+      </div>
+    );
+  }
+  if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(line) && line.startsWith('http')) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img key={index} src={line} alt="" className="my-4 w-full rounded-xl object-cover" />
+    );
+  }
+  return <span key={index}>{line}<br /></span>;
+}
+
 export default async function PetitionPage({
   params,
 }: {
@@ -148,8 +173,8 @@ export default async function PetitionPage({
               <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
                 Support this campaign to move the issue from public frustration to visible action.
               </p>
-              <div className="mt-4 whitespace-pre-line text-sm leading-relaxed text-zinc-700 dark:text-neutral-300 sm:text-base">
-                {petition.description}
+              <div className="mt-4 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300 sm:text-base">
+                {petition.description.split('\n').map(renderDescriptionLine)}
               </div>
             </div>
 

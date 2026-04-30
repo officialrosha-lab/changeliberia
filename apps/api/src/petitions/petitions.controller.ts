@@ -22,6 +22,7 @@ import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
   CreatePetitionUpdateDto,
+  UpdatePetitionDto,
 } from './dto';
 import { PetitionsService } from './petitions.service';
 import { SignatureAddedEvent } from '../events/domain-events';
@@ -104,6 +105,16 @@ export class PetitionsController {
     @Body() dto: CreatePetitionCommentDto,
   ) {
     return this.service.createComment(id, dto, req.user?.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  editPetition(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+    @Body() dto: UpdatePetitionDto,
+  ) {
+    return this.service.updatePetition(id, req.user.userId, dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
