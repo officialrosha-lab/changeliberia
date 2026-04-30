@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { apiGet } from '../../../lib/api';
@@ -61,6 +62,45 @@ function renderDescriptionLine(line: string, index: number) {
     );
   }
   return <span key={index}>{line}<br /></span>;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const petition = await apiGet<Petition>(`/petitions/${id}`).catch(() => null);
+  if (!petition) return {};
+
+  const title = petition.title;
+  const description =
+    petition.summary || petition.description.slice(0, 160).replace(/\n/g, ' ');
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia-web.vercel.app';
+  const pageUrl = `${siteUrl}/petitions/${id}`;
+  const image = petition.imageUrl
+    ? { url: petition.imageUrl, width: 1200, height: 630, alt: title }
+    : { url: `${siteUrl}/og-image.png`, width: 1200, height: 630, alt: 'Change Liberia' };
+
+  return {
+    title: `${title} — Change Liberia`,
+    description,
+    openGraph: {
+      type: 'website',
+      url: pageUrl,
+      siteName: 'Change Liberia',
+      title,
+      description,
+      images: [image],
+    },
+    twitter: {
+      card: petition.imageUrl ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      images: [image.url],
+    },
+  };
 }
 
 export default async function PetitionPage({
