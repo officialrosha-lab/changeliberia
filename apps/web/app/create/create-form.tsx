@@ -6,17 +6,36 @@ import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
+type PetitionPayload = {
+  title: string;
+  summary: string;
+  description: string;
+  category?: string;
+  imageUrl?: string;
+  goal: number;
+};
+
 type CreatedPetition = { id: string };
 
 export function CreatePetitionForm() {
   const token = useAuthStore((s) => s.token);
+  const setToken = useAuthStore((s) => s.setToken);
   const searchParams = useSearchParams();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingPayload = useRef<PetitionPayload | null>(null);
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [verificationLoaded, setVerificationLoaded] = useState(!token);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authPhone, setAuthPhone] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   useEffect(() => {
     if (!token) { setVerificationLoaded(true); return; }
@@ -67,19 +86,26 @@ export function CreatePetitionForm() {
     }
   };
 
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!token) {
-      setStatus('Sign in or create an account before submitting your petition.');
-      return;
-    }
-
+  async function doSubmitPetition(payload: PetitionPayload, authToken: string) {
     setSubmitting(true);
     setStatus('');
+    try {
+      await apiPost<CreatedPetition>('/petitions', payload, authToken);
+      setStatus('Petition submitted for review. Taking you to your dashboard...');
+      window.setTimeout(() => router.push('/dashboard'), 700);
+    } catch {
+      setStatus('We could not submit your petition right now. Please review your details and try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
     const form = new FormData(e.currentTarget);
     let finalImageUrl = String(form.get('imageUrl')).trim();
 
-    // If user uploaded a file, convert to data URL or upload
     if (uploadedImageFile) {
       try {
         const reader = new FileReader();
@@ -88,32 +114,59 @@ export function CreatePetitionForm() {
           reader.onerror = reject;
           reader.readAsDataURL(uploadedImageFile);
         });
-      } catch (err) {
+      } catch {
         setStatus('Could not process the image file. Please try again.');
-        setSubmitting(false);
         return;
       }
     }
 
+    const payload: PetitionPayload = {
+      title: String(form.get('title')),
+      summary: String(form.get('summary')),
+      description: String(form.get('description')),
+      category: selectedCategory || undefined,
+      imageUrl: finalImageUrl || undefined,
+      goal: Number(form.get('goal')),
+    };
+
+    if (!token) {
+      pendingPayload.current = payload;
+      setShowAuthModal(true);
+      return;
+    }
+
+    await doSubmitPetition(payload, token);
+  }
+
+  async function handleAuthSubmit(e: FormEvent) {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSubmitting(true);
     try {
-      await apiPost<CreatedPetition>(
-        '/petitions',
-        {
-          title: String(form.get('title')),
-          summary: String(form.get('summary')),
-          description: String(form.get('description')),
-          category: selectedCategory || undefined,
-          imageUrl: finalImageUrl || undefined,
-          goal: Number(form.get('goal')),
-        },
-        token,
-      );
-      setStatus('Petition submitted for review. Taking you to your dashboard...');
-      window.setTimeout(() => router.push('/dashboard'), 700);
-    } catch {
-      setStatus('We could not submit your petition right now. Please review your details and try again.');
+      let data: { accessToken: string };
+      if (authTab === 'login') {
+        data = await apiPost<{ accessToken: string }>('/auth/login/email', {
+          email: authEmail,
+          password: authPassword,
+        });
+      } else {
+        data = await apiPost<{ accessToken: string }>('/auth/signup/email', {
+          fullName: authFullName,
+          phone: authPhone,
+          email: authEmail,
+          password: authPassword,
+        });
+      }
+      setToken(data.accessToken);
+      setShowAuthModal(false);
+      if (pendingPayload.current) {
+        await doSubmitPetition(pendingPayload.current, data.accessToken);
+        pendingPayload.current = null;
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Authentication failed. Please try again.');
     } finally {
-      setSubmitting(false);
+      setAuthSubmitting(false);
     }
   }
 
@@ -409,6 +462,126 @@ export function CreatePetitionForm() {
       )}
       {verificationLoaded && (!token || phoneVerified) && status && (
         <p className="mt-4 text-sm font-medium text-emerald-700 dark:text-emerald-400">{status}</p>
+      )}
+
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl dark:bg-neutral-900">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-100 p-5 dark:border-neutral-800">
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                Sign in to submit your petition
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-neutral-800"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-zinc-100 dark:border-neutral-800">
+              {(['login', 'signup'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => { setAuthTab(tab); setAuthError(''); }}
+                  className={`flex-1 py-3 text-sm font-semibold transition ${
+                    authTab === tab
+                      ? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                  }`}
+                >
+                  {tab === 'login' ? 'Log in' : 'Sign up'}
+                </button>
+              ))}
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-4 p-5">
+              {authTab === 'signup' && (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Full name</label>
+                    <input
+                      type="text"
+                      required
+                      value={authFullName}
+                      onChange={(e) => setAuthFullName(e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Phone number</label>
+                    <input
+                      type="tel"
+                      required
+                      value={authPhone}
+                      onChange={(e) => setAuthPhone(e.target.value)}
+                      placeholder="+231 70 000 0000"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                />
+              </div>
+
+              {authError && (
+                <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                  {authError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={authSubmitting}
+                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 py-3 text-sm font-bold text-zinc-900 shadow-sm transition hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600"
+              >
+                {authSubmitting
+                  ? authTab === 'login' ? 'Signing in…' : 'Creating account…'
+                  : authTab === 'login' ? 'Sign in & submit petition' : 'Create account & submit petition'}
+              </button>
+
+              <p className="text-center text-xs text-zinc-500 dark:text-neutral-400">
+                {authTab === 'login' ? (
+                  <>No account yet?{' '}
+                    <button type="button" onClick={() => setAuthTab('signup')} className="font-semibold text-amber-600 hover:underline">Sign up</button>
+                  </>
+                ) : (
+                  <>Already have an account?{' '}
+                    <button type="button" onClick={() => setAuthTab('login')} className="font-semibold text-amber-600 hover:underline">Log in</button>
+                  </>
+                )}
+              </p>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );
