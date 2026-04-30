@@ -6,6 +6,7 @@ import { AdminFraudPanel } from '../../components/admin-fraud-panel';
 import { AdminIdDocsPanel } from '../../components/admin-id-docs-panel';
 import { AdminGovernmentPanel } from '../../components/admin-government-panel';
 import { AdminPendingPetitionsPanel } from '../../components/admin-pending-petitions-panel';
+import { AdminDeletePetitionPanel } from '../../components/admin-delete-petition-panel';
 import { AdminUserManager } from '../../components/admin-users';
 import { GlobalAnalytics } from '../../components/admin-analytics';
 import { AdminSettings } from '../../components/admin-settings';
@@ -169,8 +170,9 @@ export function AdminPageClient() {
       {/* Dashboard Tab */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-3">
             <AdminPendingPetitionsPanel initial={pending} />
+            <AdminDeletePetitionPanel />
             <AdminIdDocsPanel initialDocs={pendingIds} />
             <section className="rounded-2xl bg-white p-5">
               <h2 className="text-xl font-semibold">Fraud events</h2>

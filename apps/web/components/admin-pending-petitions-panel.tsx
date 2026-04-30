@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { apiPatch } from '../lib/api';
+import { apiDelete, apiPatch } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
 type Petition = {
@@ -29,6 +29,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   const [rows, setRows] = useState(initial);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Record<string, string | null>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleCategoryChange = (id: string, category: string | null) => {
     setSelectedCategory((prev) => ({ ...prev, [id]: category }));
@@ -47,6 +48,24 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
     await apiPatch(`/petitions/${id}/reject`, {}, token);
     setRows((r) => r.filter((p) => p.id !== id));
     setExpandedId(null);
+  }
+
+  async function deletePetition(id: string) {
+    if (!token) return;
+    if (!window.confirm('Delete this petition from the platform? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      await apiDelete(`/admin/petitions/${id}`, token);
+      setRows((r) => r.filter((p) => p.id !== id));
+      setExpandedId(null);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to delete petition');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   if (rows.length === 0) {
@@ -152,6 +171,14 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       </button>
                       <button
                         type="button"
+                        onClick={() => deletePetition(p.id)}
+                        disabled={!token || deletingId === p.id}
+                        className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
+                      >
+                        {deletingId === p.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setExpandedId(null)}
                         className="ml-auto inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                       >
@@ -179,6 +206,14 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                     >
                       Reject
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deletePetition(p.id)}
+                      disabled={!token || deletingId === p.id}
+                      className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deletingId === p.id ? 'Deleting…' : 'Delete'}
                     </button>
                   </div>
                 )}

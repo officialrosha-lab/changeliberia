@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -41,6 +42,19 @@ export class AdminController {
       orderBy: { createdAt: 'asc' },
       include: { user: { select: { id: true, fullName: true, phone: true } } },
     });
+  }
+
+  @Delete('petitions/:id')
+  async deletePetition(@Param('id') id: string) {
+    const petition = await this.prisma.petition.findUnique({ where: { id } });
+    if (!petition) throw new NotFoundException('Petition not found');
+
+    await this.prisma.$transaction([
+      this.prisma.signature.deleteMany({ where: { petitionId: id } }),
+      this.prisma.petition.delete({ where: { id } }),
+    ]);
+
+    return { success: true, message: 'Petition deleted' };
   }
 
   @Patch('id-documents/:id')
