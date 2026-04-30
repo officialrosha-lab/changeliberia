@@ -32,6 +32,5 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 WORKDIR /app/apps/api
-RUN chmod +x docker-entrypoint.sh
 EXPOSE 4000
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/src/main.js"]
