@@ -12,6 +12,7 @@
             "approve": true,
             "matchCommandLine": true
         },
-        "pkill": true
+        "pkill": true,
+        "git push": true
     }
 }
