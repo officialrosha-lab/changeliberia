@@ -66,6 +66,7 @@ export class AdminController {
         // ShareLink before Referral — ShareLink.referralId is SetNull, not Cascade
         await tx.shareLink.deleteMany({ where: { petitionId: id } });
         await tx.referral.deleteMany({ where: { petitionId: id } });
+        await tx.routingLog.deleteMany({ where: { petitionId: id } });
         await tx.petition.delete({ where: { id } });
       });
     } catch (error) {
