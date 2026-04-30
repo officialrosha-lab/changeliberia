@@ -1,15 +1,27 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   MessageEvent,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Req,
+  Res,
   Sse,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { createReadStream, existsSync } from 'fs';
+import { extname } from 'path';
+import type { Response } from 'express';
+import type { MemoryUploadedFile } from '../verification/uploaded-file.types';
+import { PetitionMediaStorageService } from './petition-media-storage.service';
 import { UserRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { Observable, fromEvent, filter, map } from 'rxjs';
@@ -32,6 +44,7 @@ export class PetitionsController {
   constructor(
     private readonly service: PetitionsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly mediaStorage: PetitionMediaStorageService,
   ) {}
 
   @Get()
@@ -70,6 +83,24 @@ export class PetitionsController {
       filter((event) => event.petitionId === id),
       map(() => ({ data: JSON.stringify({ petitionId: id }) })),
     );
+  }
+
+  @Get('media/:filename')
+  async serveMedia(
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    const abs = this.mediaStorage.resolveSafe(filename);
+    if (!abs || !existsSync(abs)) throw new NotFoundException('Media not found');
+    const ext = extname(filename).toLowerCase();
+    const ct: Record<string, string> = {
+      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+      '.webp': 'image/webp', '.gif': 'image/gif',
+      '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+    };
+    res.setHeader('Content-Type', ct[ext] ?? 'application/octet-stream');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    createReadStream(abs).pipe(res);
   }
 
   @Get(':id')
@@ -115,6 +146,35 @@ export class PetitionsController {
     @Body() dto: UpdatePetitionDto,
   ) {
     return this.service.updatePetition(id, req.user.userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 50 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+          'video/mp4', 'video/webm', 'video/quicktime',
+        ];
+        cb(null, allowed.includes(file.mimetype));
+      },
+    }),
+  )
+  @Post(':id/media')
+  async uploadMedia(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+    @UploadedFile() file: MemoryUploadedFile | undefined,
+  ) {
+    if (!file) throw new BadRequestException('No file provided or unsupported file type');
+    const petition = await this.service.getById(id);
+    if (!petition || petition.creatorId !== req.user.userId) {
+      throw new BadRequestException('Not your petition');
+    }
+    const url = await this.mediaStorage.save(file);
+    return { url };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

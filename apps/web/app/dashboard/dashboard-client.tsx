@@ -77,6 +77,7 @@ export function DashboardClient() {
   const [editDescription, setEditDescription] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [mediaUploading, setMediaUploading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -281,6 +282,25 @@ export function DashboardClient() {
     setEditSummary(p.summary ?? '');
     setEditDescription(p.description ?? '');
     setEditImageUrl(p.imageUrl ?? '');
+  }
+
+  async function uploadMedia(file: File, kind: 'cover' | 'embed') {
+    if (!token || !editPetitionId) return;
+    setMediaUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const result = await apiPostFormData(`/petitions/${editPetitionId}/media`, fd, token) as { url: string };
+      if (kind === 'cover') {
+        setEditImageUrl(result.url);
+      } else {
+        setEditDescription((prev) => (prev ? `${prev}\n${result.url}` : result.url));
+      }
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setMediaUploading(false);
+    }
   }
 
   async function submitEdit(e: FormEvent) {
@@ -809,7 +829,7 @@ export function DashboardClient() {
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">
                   Description{' '}
-                  <span className="normal-case font-normal text-zinc-400">— paste YouTube URLs or image URLs on their own line to embed them</span>
+                  <span className="normal-case font-normal text-zinc-400">— paste YouTube/image/video URLs on their own line, or upload below</span>
                 </label>
                 <textarea
                   value={editDescription}
@@ -818,9 +838,26 @@ export function DashboardClient() {
                   maxLength={20000}
                   className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
+                <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400">
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  {mediaUploading ? 'Uploading…' : 'Upload image or video to embed'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                    disabled={mediaUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadMedia(f, 'embed');
+                      e.target.value = '';
+                    }}
+                    className="sr-only"
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Cover image URL</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Cover image</label>
                 <input
                   type="url"
                   value={editImageUrl}
@@ -828,6 +865,23 @@ export function DashboardClient() {
                   placeholder="https://example.com/image.jpg"
                   className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
+                <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400">
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  {mediaUploading ? 'Uploading…' : 'Upload cover image'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    disabled={mediaUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadMedia(f, 'cover');
+                      e.target.value = '';
+                    }}
+                    className="sr-only"
+                  />
+                </label>
                 {editImageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={editImageUrl} alt="preview" className="mt-2 h-32 w-full rounded-xl object-cover" />

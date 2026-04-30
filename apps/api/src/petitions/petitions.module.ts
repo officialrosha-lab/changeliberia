@@ -5,11 +5,12 @@ import { ContactDirectoryModule } from '../contact-directory/contact-directory.m
 import { PetitionsController } from './petitions.controller';
 import { PetitionsService } from './petitions.service';
 import { PetitionEmailService } from '../contact-directory/email/petition-email.service';
+import { PetitionMediaStorageService } from './petition-media-storage.service';
 
 @Module({
   imports: [AuthModule, EmailModule, ContactDirectoryModule],
   controllers: [PetitionsController],
-  providers: [PetitionsService, PetitionEmailService],
+  providers: [PetitionsService, PetitionEmailService, PetitionMediaStorageService],
   exports: [PetitionsService, PetitionEmailService],
 })
 export class PetitionsModule {}

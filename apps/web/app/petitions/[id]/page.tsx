@@ -55,6 +55,11 @@ function renderDescriptionLine(line: string, index: number) {
       <img key={index} src={line} alt="" className="my-4 w-full rounded-xl object-cover" />
     );
   }
+  if (/\.(mp4|webm|mov)(\?.*)?$/i.test(line) && line.startsWith('http')) {
+    return (
+      <video key={index} src={line} controls className="my-4 w-full rounded-xl" />
+    );
+  }
   return <span key={index}>{line}<br /></span>;
 }
 

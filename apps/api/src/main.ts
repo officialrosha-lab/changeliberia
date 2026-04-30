@@ -57,6 +57,7 @@ async function bootstrap() {
 
   const uploadsRoot = join(process.cwd(), 'uploads');
   mkdirSync(join(uploadsRoot, 'id-documents'), { recursive: true });
+  mkdirSync(join(uploadsRoot, 'petition-media'), { recursive: true });
 
   httpServer.get('/metrics', async (_req, res) => {
     res.set('Content-Type', metricsRegister.contentType);
