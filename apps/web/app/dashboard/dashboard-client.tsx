@@ -39,12 +39,6 @@ type GovernmentStatus = {
   updatedAt?: string;
 };
 
-type PetitionMetrics = {
-  totalViews: number;
-  totalShares: number;
-  engagementScore: number;
-};
-
 function formatStatus(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
@@ -65,8 +59,7 @@ export function DashboardClient() {
   const [idType, setIdType] = useState('passport');
   const [idUrl, setIdUrl] = useState('');
   const [idFile, setIdFile] = useState<File | null>(null);
-  const [metrics, setMetrics] = useState<Record<string, PetitionMetrics>>({});
-  const [shareOpenId, setShareOpenId] = useState<string | null>(null);
+const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [updatePetitionId, setUpdatePetitionId] = useState<string | null>(null);
   const [updateTitle, setUpdateTitle] = useState('');
@@ -111,14 +104,9 @@ export function DashboardClient() {
     let cancelled = false;
 
     void (async () => {
-      const [govResults, analyticsResults] = await Promise.all([
-        Promise.allSettled(
-          petitions.map((p) => apiGet<GovernmentStatus>(`/government/status/${p.id}`, token)),
-        ),
-        Promise.allSettled(
-          petitions.map((p) => apiGet<PetitionMetrics>(`/analytics/petition/${p.id}`, token)),
-        ),
-      ]);
+      const govResults = await Promise.allSettled(
+        petitions.map((p) => apiGet<GovernmentStatus>(`/government/status/${p.id}`, token)),
+      );
 
       if (cancelled) return;
 
@@ -127,12 +115,6 @@ export function DashboardClient() {
         if (result.status === 'fulfilled') statusMap[petitions[index].id] = result.value;
       });
       setGovernmentStatuses(statusMap);
-
-      const metricsMap: Record<string, PetitionMetrics> = {};
-      analyticsResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') metricsMap[petitions[index].id] = result.value;
-      });
-      setMetrics(metricsMap);
     })();
 
     return () => {
@@ -623,7 +605,6 @@ export function DashboardClient() {
           <ul className="mt-4 space-y-3">
             {petitions.map((p) => {
               const progress = Math.min(100, Math.round((p.signaturesCount / p.goal) * 100));
-              const m = metrics[p.id];
               const petitionUrl = typeof window !== 'undefined'
                 ? `${window.location.origin}/petitions/${p.id}`
                 : `/petitions/${p.id}`;
@@ -644,7 +625,7 @@ export function DashboardClient() {
                     }`}>
                       {formatStatus(p.status)}
                     </span>
-                    <span className="text-xs font-medium text-emerald-600">{p.signaturesCount.toLocaleString()} signatures</span>
+                    <span className="text-xs font-medium text-emerald-600">{(p.signaturesCount ?? 0).toLocaleString()} signatures</span>
                     <span className="text-xs text-zinc-400">{progress}% of goal</span>
                     {governmentStatuses[p.id] ? (
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -666,15 +647,6 @@ export function DashboardClient() {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  {m && (
-                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-                      <span>👁 {m.totalViews.toLocaleString()} views</span>
-                      <span>🔗 {m.totalShares.toLocaleString()} shares</span>
-                      {m.totalViews > 0 && (
-                        <span>{Math.round((p.signaturesCount / m.totalViews) * 100)}% conversion</span>
-                      )}
-                    </div>
-                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
