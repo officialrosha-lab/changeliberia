@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useState, useRef, ChangeEvent } from 'react';
-import { apiPost } from '../../lib/api';
+import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
+import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 type CreatedPetition = { id: string };
@@ -15,6 +15,15 @@ export function CreatePetitionForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [verificationLoaded, setVerificationLoaded] = useState(!token);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+
+  useEffect(() => {
+    if (!token) { setVerificationLoaded(true); return; }
+    apiGet<{ phone: boolean }>('/verification/completed', token)
+      .then(({ phone }) => { setPhoneVerified(phone); setVerificationLoaded(true); })
+      .catch(() => setVerificationLoaded(true));
+  }, [token]);
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState('');
   const [imageUrlValue, setImageUrlValue] = useState('');
@@ -110,25 +119,79 @@ export function CreatePetitionForm() {
 
   return (
     <>
-      <p className="mt-4 max-w-2xl text-zinc-600">
+      <p className="mt-4 max-w-2xl text-zinc-600 dark:text-neutral-400">
         First, tell us about your issue. Keep it specific, local, and actionable so supporters
         immediately understand what must change.
       </p>
 
-      {!token ? (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          You can draft your petition here, but you will need to{' '}
-          <Link href="/auth/login" className="font-semibold underline">
-            log in
-          </Link>{' '}
-          or{' '}
-          <Link href="/auth/signup" className="font-semibold underline">
-            create an account
-          </Link>{' '}
-          before submitting it for approval.
+      {/* Loading state */}
+      {!verificationLoaded && (
+        <div className="mt-6 flex items-center gap-3 text-sm text-zinc-500 dark:text-neutral-400">
+          <svg className="h-4 w-4 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          Checking account status…
         </div>
-      ) : null}
+      )}
 
+      {/* Guest notice */}
+      {verificationLoaded && !token && (
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+          You can draft your petition here, but you will need to{' '}
+          <Link href="/auth/login" className="font-semibold underline">log in</Link>{' '}
+          or{' '}
+          <Link href="/auth/signup" className="font-semibold underline">create an account</Link>{' '}
+          and verify your phone before submitting for approval.
+        </div>
+      )}
+
+      {/* Verification gate — logged in but phone not verified */}
+      {verificationLoaded && token && !phoneVerified && (
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+            <svg className="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          </div>
+
+          <h2 className="mt-4 text-lg font-bold text-amber-900 dark:text-amber-200">
+            Verify your account to launch a petition
+          </h2>
+          <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+            To keep petitions trustworthy and prevent spam, you need to verify your phone number before
+            launching a petition. This takes less than a minute.
+          </p>
+
+          <ul className="mt-4 space-y-2 text-sm text-amber-800 dark:text-amber-300">
+            {[
+              { icon: '📱', label: 'Phone verification', note: 'required to launch', done: false },
+              { icon: '📍', label: 'Location confirmation', note: 'builds trust', done: false },
+              { icon: '💻', label: 'Device link', note: 'reduces fraud', done: false },
+              { icon: '🪪', label: 'ID document', note: 'highest trust boost', done: false },
+            ].map((s) => (
+              <li key={s.label} className="flex items-center gap-2">
+                <span>{s.icon}</span>
+                <span className="font-medium">{s.label}</span>
+                <span className="text-xs text-amber-600 dark:text-amber-400">— {s.note}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/dashboard"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-400 active:scale-95"
+          >
+            Complete verification
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+        </div>
+      )}
+
+      {/* Form — only shown when verified (or guest) */}
+      {verificationLoaded && (!token || phoneVerified) && (
       <form onSubmit={submit} className="mt-8 space-y-6">
         <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">
@@ -343,7 +406,10 @@ export function CreatePetitionForm() {
           </div>
         </div>
       </form>
-      {status ? <p className="mt-4 text-sm text-emerald-700 dark:text-emerald-400 font-medium">{status}</p> : null}
+      )}
+      {verificationLoaded && (!token || phoneVerified) && status && (
+        <p className="mt-4 text-sm font-medium text-emerald-700 dark:text-emerald-400">{status}</p>
+      )}
     </>
   );
 }

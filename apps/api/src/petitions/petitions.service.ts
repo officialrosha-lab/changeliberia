@@ -91,7 +91,15 @@ export class PetitionsService {
     };
   }
 
-  create(userId: string, dto: CreatePetitionDto) {
+  async create(userId: string, dto: CreatePetitionDto) {
+    const phoneLog = await this.prisma.verificationLog.findFirst({
+      where: { userId, type: 'OTP' },
+    });
+    if (!phoneLog) {
+      throw new ForbiddenException(
+        'Please verify your phone number before creating a petition.',
+      );
+    }
     return this.prisma.petition.create({
       data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
     });
