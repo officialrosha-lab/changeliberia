@@ -1,15 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PhoneSignupForm } from './phone-signup-form';
 import { EmailSignupForm } from './email-signup-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
+import { useAuthStore } from '../../../lib/store';
 
 type SignupMethod = 'phone' | 'email';
 
 export default function SignupPage() {
+  const token = useAuthStore((s) => s.token);
+  const router = useRouter();
   const [method, setMethod] = useState<SignupMethod>('phone');
+
+  useEffect(() => {
+    if (token) router.replace('/dashboard');
+  }, [token, router]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 md:py-14">

@@ -1,46 +1,39 @@
 'use client';
 
-import { CredentialResponse, GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { CredentialResponse, GoogleLogin } from '@react-oauth/google';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
 export function GoogleAuthButton() {
+  const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
   const setAuthMethod = useAuthStore((s) => s.setAuthMethod);
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
 
+  // Already logged in — don't render the button
+  if (token) return null;
+
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
-      // In a real implementation, you would:
-      // 1. Send the credential token to your backend
-      // 2. Backend verifies it with Google and creates/links user
-      // 3. Backend returns your app's JWT token
-
-      // For now, we'll decode the JWT to get user info (THIS IS INSECURE - DO NOT USE IN PRODUCTION)
-      // In production, ALWAYS verify the token on the backend
-
       if (!credentialResponse.credential) {
         throw new Error('No credential received from Google');
       }
 
-      // Send to backend for verification and user creation/linking
       const response = await apiPost<{ accessToken: string }>(
         '/auth/google/callback',
-        {
-          token: credentialResponse.credential,
-        }
+        { token: credentialResponse.credential },
       );
 
       setToken(response.accessToken);
       setAuthMethod('google');
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsError(true);
-      setMessage(error?.message || 'Failed to sign in with Google');
+      setMessage(error instanceof Error ? error.message : 'Failed to sign in with Google');
     }
   };
 
@@ -56,15 +49,14 @@ export function GoogleAuthButton() {
       </div>
 
       <div className="flex justify-center">
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            text="signin_with"
-            theme="outline"
-            size="large"
-          />
-        </GoogleOAuthProvider>
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          text="signin_with"
+          theme="outline"
+          size="large"
+          auto_select={false}
+        />
       </div>
 
       {message && (

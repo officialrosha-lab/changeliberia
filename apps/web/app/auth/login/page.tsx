@@ -1,11 +1,20 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoginForm } from './login-form';
 import { EmailLoginForm } from './email-login-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
+import { useAuthStore } from '../../../lib/store';
 
 export default function LoginPage() {
+  const token = useAuthStore((s) => s.token);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (token) router.replace('/dashboard');
+  }, [token, router]);
+
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-neutral-950 px-4 py-12 md:py-16">
       <div className="mx-auto max-w-6xl">
