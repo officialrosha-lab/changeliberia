@@ -13,23 +13,24 @@ const COLS = [
   {
     title: 'Learn',
     links: [
-      { href: '/#how-it-works', label: 'How it works' },
+      { href: '/how-it-works', label: 'How it works' },
       { href: '/create', label: 'Create your petition' },
-      { href: '/#how-it-works', label: 'Collect signatures' },
+      { href: '/collect-signatures', label: 'Collect signatures' },
     ],
   },
   {
     title: 'About',
     links: [
       { href: '/', label: 'Home' },
+      { href: '/about', label: 'About us' },
       { href: '/dashboard', label: 'Dashboard' },
     ],
   },
   {
     title: 'Help & legal',
     links: [
-      { href: '/#how-it-works', label: 'Help center' },
-      { href: '/petitions', label: 'Community guidelines' },
+      { href: '/help-center', label: 'Help center' },
+      { href: '/community-guidelines', label: 'Community guidelines' },
       { href: '/privacy', label: 'Privacy policy' },
       { href: '/terms', label: 'Terms of service' },
     ],
