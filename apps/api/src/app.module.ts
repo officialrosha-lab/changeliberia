@@ -22,6 +22,7 @@ import { RbacModule } from './rbac/rbac.module';
 import { ContactDirectoryModule } from './contact-directory/contact-directory.module';
 import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
+import { SponsorsModule } from './sponsors/sponsors.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CMSModule } from './cms/cms.module';
     ContactDirectoryModule,
     ModeratorModule,
     CMSModule,
+    SponsorsModule,
     AuthModule,
     UsersModule,
     PetitionsModule,

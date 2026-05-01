@@ -11,6 +11,7 @@ import { AdminUserManager } from '../../components/admin-users';
 import { GlobalAnalytics } from '../../components/admin-analytics';
 import { AdminSettings } from '../../components/admin-settings';
 import { CMSPageManager, CMSTemplateManager } from '../../components/cms';
+import { AdminSponsors } from '../../components/admin-sponsors';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -264,6 +265,10 @@ export function AdminPageClient() {
           <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Template Management</h2>
             <CMSTemplateManager />
+          </section>
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Sponsors &amp; Partners</h2>
+            <AdminSponsors />
           </section>
         </div>
       )}

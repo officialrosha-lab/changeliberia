@@ -8,6 +8,7 @@ import { HomeHowItWorks } from '../components/home-how-it-works';
 import { HomeSocialProof } from '../components/home-social-proof';
 import { PulseMap } from '../components/pulse-map';
 import { SiteFooter } from '../components/site-footer';
+import { SponsorsSection } from '../components/sponsors-section';
 import { apiGet } from '../lib/api';
 
 type Petition = {
@@ -53,6 +54,7 @@ export default async function Home() {
       <HomeDonationSection />
       <HomeDraftCta />
       <HomeContributeBanner />
+      <SponsorsSection />
       <SiteFooter />
     </>
   );

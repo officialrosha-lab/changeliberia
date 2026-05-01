@@ -16,6 +16,24 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (err) {
       this.logger.warn('Could not ensure petitionType column:', err);
     }
+    try {
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "Sponsor" (
+          "id" TEXT NOT NULL,
+          "name" TEXT NOT NULL,
+          "logoUrl" TEXT NOT NULL,
+          "websiteUrl" TEXT,
+          "type" TEXT NOT NULL DEFAULT 'sponsor',
+          "displayOrder" INTEGER NOT NULL DEFAULT 0,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "Sponsor_pkey" PRIMARY KEY ("id")
+        )
+      `);
+    } catch (err) {
+      this.logger.warn('Could not ensure Sponsor table:', err);
+    }
   }
 
   async onModuleDestroy() {

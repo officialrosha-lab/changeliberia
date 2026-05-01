@@ -1317,3 +1317,15 @@ model PasswordResetToken {
   @@index([userId, expiresAt])
   @@index([token])
 }
+
+model Sponsor {
+  id           String   @id @default(cuid())
+  name         String
+  logoUrl      String
+  websiteUrl   String?
+  type         String   @default("sponsor") // "sponsor" | "partner"
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
