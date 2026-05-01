@@ -134,14 +134,14 @@ export function AdminPageClient() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <Link href="/dashboard" className="text-emerald-600 hover:underline text-sm font-medium">
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-neutral-50">Admin Panel</h1>
+        <Link href="/dashboard" className="text-emerald-600 hover:underline text-sm font-medium dark:text-emerald-400">
           Back to Dashboard
         </Link>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-zinc-200 overflow-x-auto">
+      <div className="flex gap-2 mb-6 border-b border-zinc-200 overflow-x-auto dark:border-neutral-800">
         {(
           [
             ['dashboard', 'Dashboard'],
@@ -159,7 +159,7 @@ export function AdminPageClient() {
             className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab
                 ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-neutral-400 dark:hover:text-neutral-50'
             }`}
           >
             {label}
@@ -174,11 +174,11 @@ export function AdminPageClient() {
             <AdminPendingPetitionsPanel initial={pending} />
             <AdminDeletePetitionPanel />
             <AdminIdDocsPanel initialDocs={pendingIds} />
-            <section className="rounded-2xl bg-white p-5">
-              <h2 className="text-xl font-semibold">Fraud events</h2>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Fraud events</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {flags.map((f) => (
-                  <li key={f.id} className="rounded-lg bg-zinc-50 p-3">
+                  <li key={f.id} className="rounded-lg bg-zinc-100 p-3 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300">
                     {f.details}
                   </li>
                 ))}
@@ -186,11 +186,11 @@ export function AdminPageClient() {
             </section>
           </div>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-zinc-900">Government submission summary</h2>
-                <p className="mt-1 text-sm text-zinc-600">See overall submission counts and quickly access the government workflow dashboard.</p>
+                <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Government submission summary</h2>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-400">See overall submission counts and quickly access the government workflow dashboard.</p>
               </div>
               <button
                 type="button"
@@ -208,11 +208,11 @@ export function AdminPageClient() {
               initialRules={rules}
               latestSnapshots={analytics.latestSnapshots}
             />
-            <section className="rounded-2xl bg-white p-5">
-              <h2 className="text-xl font-semibold">Top triggered rules</h2>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Top triggered rules</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {analytics.topRules.map((rule) => (
-                  <li key={rule.ruleKey} className="rounded-lg bg-zinc-50 p-3">
+                  <li key={rule.ruleKey} className="rounded-lg bg-zinc-100 p-3 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300">
                     {rule.ruleKey} - {rule.count} events
                   </li>
                 ))}
@@ -225,8 +225,8 @@ export function AdminPageClient() {
       {/* Directory Tab */}
       {activeTab === 'directory' && (
         <div className="space-y-4">
-          <p className="text-zinc-600">
-            <Link href="/admin/directory" className="text-emerald-600 hover:underline font-medium">
+          <p className="text-zinc-600 dark:text-neutral-400">
+            <Link href="/admin/directory" className="text-emerald-600 hover:underline font-medium dark:text-emerald-400">
               Go to Directory Management →
             </Link>
           </p>
@@ -235,21 +235,21 @@ export function AdminPageClient() {
 
       {/* Users Tab */}
       {activeTab === 'users' && (
-        <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminUserManager />
         </div>
       )}
 
       {/* Analytics Tab */}
       {activeTab === 'analytics' && (
-        <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <GlobalAnalytics />
         </div>
       )}
 
       {/* Government Tab */}
       {activeTab === 'government' && (
-        <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminGovernmentPanel />
         </div>
       )}
@@ -257,12 +257,12 @@ export function AdminPageClient() {
       {/* CMS Tab */}
       {activeTab === 'cms' && (
         <div className="space-y-6">
-          <section className="bg-white rounded-lg border border-zinc-200 p-6">
-            <h2 className="text-2xl font-semibold mb-4">Page Management</h2>
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Page Management</h2>
             <CMSPageManager />
           </section>
-          <section className="bg-white rounded-lg border border-zinc-200 p-6">
-            <h2 className="text-2xl font-semibold mb-4">Template Management</h2>
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Template Management</h2>
             <CMSTemplateManager />
           </section>
         </div>
@@ -270,7 +270,7 @@ export function AdminPageClient() {
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminSettings />
         </div>
       )}

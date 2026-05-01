@@ -50,26 +50,26 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
 
   if (docs.length === 0) {
     return (
-      <section className="rounded-2xl bg-white p-5">
-        <h2 className="text-xl font-semibold">ID document reviews</h2>
-        <p className="mt-2 text-sm text-zinc-600">No pending uploads.</p>
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">ID document reviews</h2>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-400">No pending uploads.</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl bg-white p-5">
-      <h2 className="text-xl font-semibold">ID document reviews</h2>
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">ID document reviews</h2>
       <ul className="mt-3 space-y-3 text-sm">
         {docs.map((d) => (
-          <li key={d.id} className="rounded-lg border border-zinc-200 p-3">
-            <p className="font-medium">
+          <li key={d.id} className="rounded-lg border border-zinc-200 p-3 dark:border-neutral-700">
+            <p className="font-medium text-zinc-900 dark:text-neutral-50">
               {d.user.fullName} · {d.type}
             </p>
             <button
               type="button"
               onClick={() => void openFile(d)}
-              className="text-emerald-700 underline"
+              className="text-emerald-600 underline dark:text-emerald-400"
             >
               View file
             </button>
@@ -78,7 +78,7 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
                 type="button"
                 onClick={() => review(d.id, 'APPROVED')}
                 disabled={!token}
-                className="rounded-lg bg-emerald-600 px-3 py-1 text-white disabled:opacity-50"
+                className="rounded-lg bg-emerald-600 px-3 py-1 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 Approve
               </button>
@@ -86,7 +86,7 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
                 type="button"
                 onClick={() => review(d.id, 'REJECTED')}
                 disabled={!token}
-                className="rounded-lg border border-zinc-300 px-3 py-1 disabled:opacity-50"
+                className="rounded-lg border border-zinc-300 px-3 py-1 text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 Reject
               </button>
