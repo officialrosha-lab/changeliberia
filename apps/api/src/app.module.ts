@@ -23,6 +23,7 @@ import { ContactDirectoryModule } from './contact-directory/contact-directory.mo
 import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
 import { SponsorsModule } from './sponsors/sponsors.module';
+import { MembershipModule } from './membership/membership.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SponsorsModule } from './sponsors/sponsors.module';
     ModeratorModule,
     CMSModule,
     SponsorsModule,
+    MembershipModule,
     AuthModule,
     UsersModule,
     PetitionsModule,

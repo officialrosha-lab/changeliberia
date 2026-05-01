@@ -100,9 +100,13 @@ export class PetitionsService {
         'Please verify your phone number before creating a petition.',
       );
     }
-    return this.prisma.petition.create({
+    const petition = await this.prisma.petition.create({
       data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
     });
+    await this.prisma.petitionStatusLog.create({
+      data: { petitionId: petition.id, status: 'submitted' },
+    });
+    return petition;
   }
 
   async updatePetition(petitionId: string, userId: string, dto: UpdatePetitionDto) {
@@ -142,13 +146,19 @@ export class PetitionsService {
       throw new BadRequestException('Only pending petitions can be approved');
     }
 
-    // Approve petition
+    // Approve petition and log status transition
     const approved = await this.prisma.petition.update({
       where: { id },
       data: {
         status: PetitionStatus.APPROVED,
         ...(category && { category }),
       },
+    });
+    await this.prisma.petitionStatusLog.create({
+      data: { petitionId: id, status: 'approved', note: 'Petition approved by admin' },
+    });
+    await this.prisma.petitionStatusLog.create({
+      data: { petitionId: id, status: 'gathering_signatures' },
     });
 
     // Auto-route petition to institution
@@ -315,5 +325,12 @@ export class PetitionsService {
       trending: trendingPetitions,
       total: petitions.length,
     };
+  }
+
+  async getStatusLog(petitionId: string) {
+    return this.prisma.petitionStatusLog.findMany({
+      where: { petitionId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 }

@@ -4,6 +4,8 @@ import { apiGet } from '../../../lib/api';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
 import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
+import { PetitionTimeline } from '../../../components/petition-timeline';
+import { JoinMovement } from '../../../components/join-movement';
 import { CommentForm } from './comment-form';
 import { SignForm } from './sign-form';
 import { PetitionClientPage } from './petition-client-page';
@@ -18,7 +20,19 @@ type Petition = {
   todaySignatures: number;
   goal: number;
   category?: string | null;
+  categories?: string[];
   petitionType?: string | null;
+  priorActions?: string | null;
+  isAnonymous?: boolean;
+  displayName?: string | null;
+  county?: string | null;
+};
+
+type StatusLog = {
+  id: string;
+  status: string;
+  note?: string | null;
+  createdAt: string;
 };
 
 type PetitionUpdate = {
@@ -110,10 +124,11 @@ export default async function PetitionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [petition, updates, comments] = await Promise.all([
+  const [petition, updates, comments, statusLogs] = await Promise.all([
     apiGet<Petition>(`/petitions/${id}`).catch(() => null),
     apiGet<PetitionUpdate[]>(`/petitions/${id}/updates`).catch(() => []),
     apiGet<PetitionComment[]>(`/petitions/${id}/comments`).catch(() => []),
+    apiGet<StatusLog[]>(`/petitions/${id}/status-log`).catch(() => []),
   ]);
   // SSR couldn't reach the API — fall back to client-side rendering
   if (!petition) return <PetitionClientPage id={id} />;
@@ -162,6 +177,11 @@ export default async function PetitionPage({
                   </span>
                   Live updates
                 </span>
+                {petition.isAnonymous && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-neutral-800 dark:text-neutral-400">
+                    🔒 Anonymous petition
+                  </span>
+                )}
               </div>
 
               <h1 className="mt-4 text-2xl font-extrabold leading-snug text-zinc-900 dark:text-white sm:text-3xl md:text-4xl">
@@ -170,6 +190,22 @@ export default async function PetitionPage({
               <p className="mt-3 text-base leading-relaxed text-zinc-600 dark:text-neutral-400 sm:text-lg">
                 {petition.summary}
               </p>
+
+              {/* Categories + county */}
+              {((petition.categories?.length ?? 0) > 0 || petition.county) && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {petition.categories?.map((cat) => (
+                    <span key={cat} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold capitalize text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300">
+                      {cat.replace('-', ' ')}
+                    </span>
+                  ))}
+                  {petition.county && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      📍 {petition.county}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Live signature stats — count, progress, next milestone, signer feed */}
               <div className="mt-6">
@@ -223,6 +259,28 @@ export default async function PetitionPage({
               <div className="mt-4 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300 sm:text-base">
                 {petition.description.split('\n').map(renderDescriptionLine)}
               </div>
+
+              {/* Prior actions */}
+              {petition.priorActions && (
+                <div className="mt-6 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-neutral-500">
+                    Prior actions taken
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300">
+                    {petition.priorActions}
+                  </p>
+                </div>
+              )}
+
+              {/* Creator display */}
+              <p className="mt-4 text-xs text-zinc-400 dark:text-neutral-500">
+                Created by:{' '}
+                <span className="font-semibold text-zinc-600 dark:text-neutral-400">
+                  {petition.isAnonymous
+                    ? (petition.displayName || 'Anonymous')
+                    : 'A verified Liberian citizen'}
+                </span>
+              </p>
             </div>
 
             <PetitionGovernmentPanel
@@ -287,15 +345,21 @@ export default async function PetitionPage({
 
             {/* Comments */}
             <CommentForm petitionId={petition.id} initialComments={comments} />
+
+            {/* Petition timeline */}
+            {statusLogs.length > 0 && (
+              <PetitionTimeline logs={statusLogs} />
+            )}
           </div>
 
           {/* RIGHT — sign form (sticky) */}
-          <aside className="md:sticky md:top-20 md:self-start">
+          <aside className="space-y-4 md:sticky md:top-20 md:self-start">
             <SignForm
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}
               goal={petition.goal}
             />
+            <JoinMovement />
           </aside>
         </div>
       </div>

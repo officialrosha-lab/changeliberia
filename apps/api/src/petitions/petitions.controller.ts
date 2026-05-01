@@ -209,4 +209,9 @@ export class PetitionsController {
   reject(@Param('id') id: string) {
     return this.service.reject(id);
   }
+
+  @Get(':id/status-log')
+  getStatusLog(@Param('id') id: string) {
+    return this.service.getStatusLog(id);
+  }
 }

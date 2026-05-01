@@ -1,7 +1,27 @@
-import { BadRequestException, Body, Controller, Get, Patch, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PasswordProvider } from '../auth/password.provider';
 import { PrismaService } from '../prisma/prisma.service';
+
+class UpdateProfileDto {
+  @IsOptional() @IsString() @MaxLength(120) fullName?: string;
+  @IsOptional() @IsString() @MaxLength(500) bio?: string;
+  @IsOptional() @IsString() avatarUrl?: string;
+  @IsOptional() @IsString() gender?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(120) age?: number;
+  @IsOptional() @IsString() @MaxLength(200) address?: string;
+  @IsOptional() @IsString() @MaxLength(60) county?: string;
+}
 
 @Controller('users')
 export class UsersController {
@@ -14,6 +34,18 @@ export class UsersController {
   @Get('me')
   me(@Req() req: { user: { userId: string } }) {
     return this.prisma.user.findUnique({ where: { id: req.user.userId } });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async updateProfile(
+    @Req() req: { user: { userId: string } },
+    @Body() body: UpdateProfileDto,
+  ) {
+    return this.prisma.user.update({
+      where: { id: req.user.userId },
+      data: body,
+    });
   }
 
   @UseGuards(JwtAuthGuard)

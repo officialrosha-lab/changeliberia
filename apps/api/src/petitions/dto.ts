@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class UpdatePetitionDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;
@@ -7,15 +15,28 @@ export class UpdatePetitionDto {
   @IsOptional() @IsString() imageUrl?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
   @IsOptional() @IsString() petitionType?: string;
+  @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) categories?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
+  @IsOptional() @IsString() @MaxLength(4000) priorActions?: string;
+  @IsOptional() @IsBoolean() isAnonymous?: boolean;
+  @IsOptional() @IsString() @MaxLength(120) displayName?: string;
+  @IsOptional() @IsString() county?: string;
 }
 
 export class CreatePetitionDto {
-  @IsString() title!: string;
+  @IsString() @MaxLength(200) title!: string;
   @IsOptional() @IsString() imageUrl?: string;
-  @IsString() summary!: string;
-  @IsString() description!: string;
+  @IsString() @MaxLength(500) summary!: string;
+  @IsString() @MaxLength(20000) description!: string;
   @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) categories?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
   @IsOptional() @IsString() petitionType?: string;
+  @IsOptional() @IsString() @MaxLength(4000) priorActions?: string;
+  @IsOptional() @IsBoolean() isAnonymous?: boolean;
+  @IsOptional() @IsString() @MaxLength(120) displayName?: string;
+  @IsOptional() @IsString() county?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
 }
 
