@@ -24,6 +24,7 @@ import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
 import { SponsorsModule } from './sponsors/sponsors.module';
 import { MembershipModule } from './membership/membership.module';
+import { SupportersModule } from './supporters/supporters.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MembershipModule } from './membership/membership.module';
     CMSModule,
     SponsorsModule,
     MembershipModule,
+    SupportersModule,
     AuthModule,
     UsersModule,
     PetitionsModule,

@@ -1342,6 +1342,19 @@ model Sponsor {
   updatedAt    DateTime @updatedAt
 }
 
+model Supporter {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  userId    String?
+  email     String?
+  phone     String?
+  source    String   @default("navbar") // "navbar" | "campaign" | "petition"
+  joinedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([joinedAt])
+}
+
 model Membership {
   id        String   @id @default(cuid())
   userId    String

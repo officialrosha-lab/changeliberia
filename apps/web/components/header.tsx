@@ -6,6 +6,7 @@ import { useAuthStore } from '../lib/store';
 import { ThemeToggle } from './theme-toggle';
 import { MobileNav } from './mobile-nav';
 import { NotificationDropdown } from './notification-dropdown';
+import { JoinMovementButton } from './join-movement-button';
 
 export function Header() {
   const token = useAuthStore((s) => s.token);
@@ -61,6 +62,8 @@ export function Header() {
             Start a petition
           </Link>
           
+          <JoinMovementButton />
+
           <ThemeToggle />
 
           {token && <NotificationDropdown />}

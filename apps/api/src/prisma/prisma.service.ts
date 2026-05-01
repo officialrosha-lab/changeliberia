@@ -63,6 +63,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         )`,
       },
       {
+        label: 'Supporter',
+        sql: `CREATE TABLE IF NOT EXISTS "Supporter" (
+          "id" TEXT NOT NULL,
+          "sessionId" TEXT NOT NULL,
+          "userId" TEXT,
+          "email" TEXT,
+          "phone" TEXT,
+          "source" TEXT NOT NULL DEFAULT 'navbar',
+          "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "Supporter_pkey" PRIMARY KEY ("id"),
+          CONSTRAINT "Supporter_sessionId_key" UNIQUE ("sessionId")
+        )`,
+      },
+      {
         label: 'PetitionStatusLog',
         sql: `CREATE TABLE IF NOT EXISTS "PetitionStatusLog" (
           "id" TEXT NOT NULL,

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
+import { JoinMovementButton } from './join-movement-button';
 
 const PUBLIC_NAV_ITEMS = [
   { href: '/petitions', icon: '🔍', label: 'Browse causes' },
@@ -80,6 +81,11 @@ export function MobileNav() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        </div>
+
+        {/* Join movement CTA */}
+        <div className="border-b border-zinc-100 px-5 py-4 dark:border-neutral-800">
+          <JoinMovementButton />
         </div>
 
         {/* Nav links */}
