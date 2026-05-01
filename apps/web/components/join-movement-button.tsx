@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { apiGet, apiPost } from '../lib/api';
 
 const SESSION_KEY = 'cl_session_id';
@@ -25,9 +26,12 @@ export function JoinMovementButton() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
+  // Only portal after hydration — createPortal needs document to exist
+  const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     if (localStorage.getItem(JOINED_KEY) === 'true') setPhase('done');
     void apiGet<{ count: number }>('/supporters/count')
       .then((d) => setCount(d.count))
@@ -69,7 +73,7 @@ export function JoinMovementButton() {
         ...(phone ? { phone } : {}),
       });
     } catch {
-      // non-blocking — don't fail the join flow
+      // non-blocking
     } finally {
       setSaving(false);
       setPhase('done');
@@ -80,7 +84,9 @@ export function JoinMovementButton() {
     if (e.target === e.currentTarget) cb();
   };
 
-  return (
+  // Overlays portaled to document.body so they escape the header's
+  // backdrop-blur stacking context and always cover the full viewport.
+  const portals = mounted ? createPortal(
     <>
       {/* Toast */}
       {toast && (
@@ -90,31 +96,6 @@ export function JoinMovementButton() {
         >
           {toast}
         </div>
-      )}
-
-      {/* Button — idle / done */}
-      {phase === 'done' ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-          ✓ Joined
-          {count !== null && (
-            <span className="text-emerald-500 dark:text-emerald-400">
-              · {count.toLocaleString()}
-            </span>
-          )}
-        </span>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setPhase('modal')}
-          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/80"
-        >
-          <span>+ Join 🇱🇷</span>
-          {count !== null && (
-            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400">
-              {count.toLocaleString()}
-            </span>
-          )}
-        </button>
       )}
 
       {/* Join modal */}
@@ -213,6 +194,39 @@ export function JoinMovementButton() {
           </div>
         </div>
       )}
+    </>,
+    document.body,
+  ) : null;
+
+  return (
+    <>
+      {/* Inline button — stays in the header DOM */}
+      {phase === 'done' ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+          ✓ Joined
+          {count !== null && (
+            <span className="text-emerald-500 dark:text-emerald-400">
+              · {count.toLocaleString()}
+            </span>
+          )}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setPhase('modal')}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/80"
+        >
+          <span>+ Join 🇱🇷</span>
+          {count !== null && (
+            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400">
+              {count.toLocaleString()}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Portaled overlays — outside the header DOM tree */}
+      {portals}
     </>
   );
 }
