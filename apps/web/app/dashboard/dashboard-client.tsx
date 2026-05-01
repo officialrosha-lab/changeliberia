@@ -890,6 +890,9 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 required
                 className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
+              <p className="mt-1.5 text-xs text-zinc-400">
+                Liberian numbers: +231 77 000 0000 or 0770000000
+              </p>
               {phoneError && (
                 <p className="mt-2 text-sm text-red-600">{phoneError}</p>
               )}
