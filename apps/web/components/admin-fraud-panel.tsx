@@ -64,24 +64,24 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
   }
 
   return (
-    <section className="rounded-2xl bg-white p-5">
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Fraud analytics and tuning</h2>
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Fraud analytics and tuning</h2>
         <button
           onClick={runAnomalyJob}
           disabled={running || !token}
-          className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-neutral-700 dark:hover:bg-neutral-600"
         >
           {running ? 'Running...' : 'Run anomaly job'}
         </button>
       </div>
-      {jobMessage ? <p className="mt-2 text-sm text-emerald-700">{jobMessage}</p> : null}
+      {jobMessage ? <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">{jobMessage}</p> : null}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {latestSnapshots.slice(0, 4).map((snap) => (
-          <div key={snap.id} className="rounded-xl bg-zinc-50 p-3 text-sm">
-            <p className="font-semibold">Risk index: {(snap.riskIndex * 100).toFixed(1)}%</p>
-            <p className="text-zinc-600">
+          <div key={snap.id} className="rounded-xl bg-zinc-100 p-3 text-sm dark:bg-neutral-800">
+            <p className="font-semibold text-zinc-900 dark:text-neutral-50">Risk index: {(snap.riskIndex * 100).toFixed(1)}%</p>
+            <p className="text-zinc-600 dark:text-neutral-400">
               {snap.suspiciousSignatures}/{snap.totalSignatures} suspicious signatures
             </p>
           </div>
@@ -90,38 +90,39 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
 
       <div className="mt-5 space-y-3">
         {rules.map((rule) => (
-          <div key={rule.id} className="rounded-xl border border-zinc-200 p-3">
+          <div key={rule.id} className="rounded-xl border border-zinc-200 p-3 dark:border-neutral-700">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="font-semibold">{rule.key}</p>
-                <p className="text-sm text-zinc-600">{rule.description}</p>
+                <p className="font-semibold text-zinc-900 dark:text-neutral-50">{rule.key}</p>
+                <p className="text-sm text-zinc-600 dark:text-neutral-400">{rule.description}</p>
               </div>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={rule.enabled}
                   onChange={(e) => toggleRule(rule.key, e.target.checked)}
+                  className="accent-emerald-500"
                 />
                 Enabled
               </label>
             </div>
             <div className="mt-3 grid gap-2 md:grid-cols-2">
-              <label className="text-sm">
+              <label className="text-sm text-zinc-700 dark:text-neutral-300">
                 Threshold
                 <input
                   type="number"
                   defaultValue={rule.threshold}
                   onBlur={(e) => updateRule(rule.key, 'threshold', Number(e.target.value))}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-2 py-1"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-50"
                 />
               </label>
-              <label className="text-sm">
+              <label className="text-sm text-zinc-700 dark:text-neutral-300">
                 Penalty
                 <input
                   type="number"
                   defaultValue={rule.penalty}
                   onBlur={(e) => updateRule(rule.key, 'penalty', Number(e.target.value))}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-2 py-1"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-50"
                 />
               </label>
             </div>
