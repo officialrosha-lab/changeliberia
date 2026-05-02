@@ -52,7 +52,7 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
       const result = await apiPatch(`/ambassadors/admin/${id}`, {
         status: newStatus,
         notes: updateNotes || undefined,
-      }, token);
+      }, token as string | undefined);
 
       setApplications((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: newStatus, notes: updateNotes || a.notes } : a))
