@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useAuthStore } from '@/lib/auth.store';
 import { apiPost } from '@/lib/api';
 
 const LIBERIAN_COUNTIES = [
