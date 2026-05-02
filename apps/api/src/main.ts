@@ -33,64 +33,82 @@ process.on('unhandledRejection', (reason: unknown) => {
   console.error('[bootstrap] Unhandled rejection (non-fatal):', reason);
 });
 
-async function ensureColumns(prisma: PrismaService) {
-  const cols: Array<{ table: string; column: string; definition: string }> = [
-    { table: 'Petition', column: 'categories',   definition: 'TEXT[]' },
-    { table: 'Petition', column: 'county',        definition: 'TEXT' },
-    { table: 'Petition', column: 'displayName',   definition: 'TEXT' },
-    { table: 'Petition', column: 'isAnonymous',   definition: 'BOOLEAN NOT NULL DEFAULT false' },
-    { table: 'Petition', column: 'priorActions',  definition: 'TEXT' },
-    { table: 'Petition', column: 'tags',          definition: 'TEXT[]' },
-    { table: 'User',     column: 'address',       definition: 'TEXT' },
-    { table: 'User',     column: 'age',           definition: 'INTEGER' },
-    { table: 'User',     column: 'county',        definition: 'TEXT' },
-    { table: 'User',     column: 'gender',        definition: 'TEXT' },
+async function ensureSchema(prisma: PrismaService) {
+  const stmts = [
+    // Petition columns from platform_v2_governance migration
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "categories" TEXT[]`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "county" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "displayName" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "isAnonymous" BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "priorActions" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "tags" TEXT[]`,
+    // User columns from platform_v2_governance migration
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "age" INTEGER`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "county" TEXT`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "gender" TEXT`,
+    // Membership table
+    `CREATE TABLE IF NOT EXISTS "Membership" (
+      "id" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'supporter',
+      "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Membership_userId_key" ON "Membership"("userId")`,
+    `CREATE INDEX IF NOT EXISTS "Membership_role_joinedAt_idx" ON "Membership"("role", "joinedAt")`,
+    // PetitionStatusLog table — written on every petition.create()
+    `CREATE TABLE IF NOT EXISTS "PetitionStatusLog" (
+      "id" TEXT NOT NULL,
+      "petitionId" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "note" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PetitionStatusLog_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE INDEX IF NOT EXISTS "PetitionStatusLog_petitionId_createdAt_idx" ON "PetitionStatusLog"("petitionId", "createdAt")`,
+    // Supporter table
+    `CREATE TABLE IF NOT EXISTS "Supporter" (
+      "id" TEXT NOT NULL,
+      "sessionId" TEXT NOT NULL,
+      "userId" TEXT,
+      "email" TEXT,
+      "phone" TEXT,
+      "source" TEXT NOT NULL DEFAULT 'navbar',
+      "ipAddress" TEXT,
+      "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Supporter_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Supporter_sessionId_key" ON "Supporter"("sessionId")`,
+    `CREATE INDEX IF NOT EXISTS "Supporter_ipAddress_idx" ON "Supporter"("ipAddress")`,
+    // Sponsor table
+    `CREATE TABLE IF NOT EXISTS "Sponsor" (
+      "id" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "logoUrl" TEXT NOT NULL,
+      "websiteUrl" TEXT,
+      "type" TEXT NOT NULL DEFAULT 'sponsor',
+      "displayOrder" INTEGER NOT NULL DEFAULT 0,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Sponsor_pkey" PRIMARY KEY ("id")
+    )`,
   ];
-  for (const { table, column, definition } of cols) {
+  for (const sql of stmts) {
     try {
-      await prisma.$executeRawUnsafe(
-        `ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${column}" ${definition}`,
-      );
+      await prisma.$executeRawUnsafe(sql);
     } catch {
-      // column likely already exists — safe to ignore
+      // each statement is idempotent — ignore duplicate-object errors
     }
   }
-  for (const tbl of ['Membership', 'PetitionStatusLog']) {
-    try {
-      const rows = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
-        `SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = $1) AS exists`,
-        tbl,
-      );
-      if (!rows[0]?.exists) {
-        if (tbl === 'Membership') {
-          await prisma.$executeRawUnsafe(`
-            CREATE TABLE "Membership" (
-              "id" TEXT NOT NULL,
-              "userId" TEXT NOT NULL,
-              "role" TEXT NOT NULL DEFAULT 'supporter',
-              "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
-            )`);
-          await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Membership_userId_key" ON "Membership"("userId")`);
-          await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Membership_role_joinedAt_idx" ON "Membership"("role", "joinedAt")`);
-          await prisma.$executeRawUnsafe(`ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        } else {
-          await prisma.$executeRawUnsafe(`
-            CREATE TABLE "PetitionStatusLog" (
-              "id" TEXT NOT NULL,
-              "petitionId" TEXT NOT NULL,
-              "status" TEXT NOT NULL,
-              "note" TEXT,
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT "PetitionStatusLog_pkey" PRIMARY KEY ("id")
-            )`);
-          await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PetitionStatusLog_petitionId_createdAt_idx" ON "PetitionStatusLog"("petitionId", "createdAt")`);
-          await prisma.$executeRawUnsafe(`ALTER TABLE "PetitionStatusLog" ADD CONSTRAINT "PetitionStatusLog_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        }
-      }
-    } catch {
-      // table likely already exists — safe to ignore
-    }
+  // FK constraints — added separately since they fail if already present
+  const fks = [
+    `ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+    `ALTER TABLE "PetitionStatusLog" ADD CONSTRAINT "PetitionStatusLog_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+  ];
+  for (const sql of fks) {
+    try { await prisma.$executeRawUnsafe(sql); } catch { /* already exists */ }
   }
 }
 
@@ -114,7 +132,7 @@ async function bootstrap() {
     credentials: true,
   });
   const prisma = app.get(PrismaService);
-  await ensureColumns(prisma);
+  await ensureSchema(prisma);
   const httpServer = app.getHttpAdapter().getInstance() as Application;
 
   const uploadsRoot = join(process.cwd(), 'uploads');
