@@ -286,7 +286,7 @@ export default function LeadersPage() {
               },
               {
                 q: 'Can I change causes or areas?',
-                a: 'Yes. Leaders can pivot at any time. Your leadership journey evolves with your community's needs.',
+                a: "Yes. Leaders can pivot at any time. Your leadership journey evolves with your community's needs.",
               },
             ].map((faq, idx) => (
               <div key={idx} className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
