@@ -42,11 +42,24 @@ async function ensureSchema(prisma: PrismaService) {
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "isAnonymous" BOOLEAN NOT NULL DEFAULT false`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "priorActions" TEXT`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "tags" TEXT[]`,
+    // Petition columns from add_petition_category and add_petition_type migrations
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "category" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "petitionType" TEXT`,
+    // Petition donation columns from cms_events_notifications_donations migration
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationsEnabled" BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationGoal" DOUBLE PRECISION`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "totalDonations" DOUBLE PRECISION NOT NULL DEFAULT 0`,
     // User columns from platform_v2_governance migration
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT`,
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "age" INTEGER`,
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "county" TEXT`,
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "gender" TEXT`,
+    // User columns from cms_events_notifications_donations migration
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "badgesEarned" TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "bio" TEXT`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT`,
+    // User columns from add_webhook_fields migration
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stripeCustomerId" TEXT`,
     // Membership table
     `CREATE TABLE IF NOT EXISTS "Membership" (
       "id" TEXT NOT NULL,
