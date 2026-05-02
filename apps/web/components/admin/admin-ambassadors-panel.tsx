@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import { useAuthStore } from '../../lib/store';
 import { apiPatch } from '../../lib/api';
-import { ApplicationStatus } from '@prisma/client';
+
+type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 interface Ambassador {
   id: string;
