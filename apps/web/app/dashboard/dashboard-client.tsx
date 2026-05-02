@@ -184,30 +184,16 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     setVerifying('geo');
     setMessage('');
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }),
-      );
-      const { latitude, longitude } = position.coords;
-      const resp = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-        { headers: { 'User-Agent': 'ChangeLiberia/1.0' } },
-      );
-      const geo = await resp.json() as { address?: { country_code?: string } };
-      const countryCode = (geo?.address?.country_code ?? 'XX').toUpperCase();
-      await apiPost('/verification/geo', { countryCode }, token);
+      const result = await apiPost<{ verificationStatus: string }>('/verification/geo', {}, token);
       await refreshTrust();
+      const isLiberia = result?.verificationStatus === 'VERIFIED_LIBERIAN' || result?.verificationStatus === 'HIGH_TRUST';
       setMessage(
-        countryCode === 'LR'
+        isLiberia
           ? 'Liberia location confirmed. Your trust score has been updated.'
           : 'Location confirmed. Your trust score has been updated.',
       );
-    } catch (err: unknown) {
-      const isGeoError = err instanceof GeolocationPositionError;
-      setMessage(
-        isGeoError
-          ? 'Location access denied. Please allow location access in your browser and try again.'
-          : 'Could not confirm location. Please try again.',
-      );
+    } catch {
+      setMessage('Could not confirm location. Please try again.');
     } finally {
       setVerifying(null);
     }
@@ -447,7 +433,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 {
                   key: 'geo' as const,
                   label: 'Confirm Liberia location',
-                  desc: 'Use your current location signal to show the petition has Liberian support.',
+                  desc: 'Verify your network is in Liberia to add stronger local credibility to your petitions.',
                   btnLabel: 'Verify location',
                   doneLabel: 'Location confirmed',
                   filled: false,
