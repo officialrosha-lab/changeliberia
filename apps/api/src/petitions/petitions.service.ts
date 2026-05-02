@@ -123,7 +123,7 @@ export class PetitionsService {
         orderBy: { createdAt: 'desc' },
         take: 20,
       });
-      return this.rankByRisk(petitions);
+      return await this.rankByRisk(petitions);
     } catch (e: any) {
       throw new BadRequestException(`DEBUG: ${e?.message ?? String(e)}`);
     }
