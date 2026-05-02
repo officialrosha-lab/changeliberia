@@ -178,7 +178,7 @@ export function AdminSettings() {
       {/* Moderator Scopes Tab */}
       {activeTab === 'scopes' && (
         <div className="space-y-4">
-          <p className="text-zinc-600 text-sm">
+          <p className="text-zinc-500 dark:text-neutral-400 text-sm">
             Restrict moderators to specific petition categories. Unset means moderators can approve all.
           </p>
 
@@ -189,7 +189,7 @@ export function AdminSettings() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-semibold">{scope.moderatorName}</p>
+                  <p className="font-semibold text-zinc-900 dark:text-neutral-50 text-sm">{scope.moderatorName}</p>
                   <p className="text-xs text-zinc-500">ID: {scope.moderatorId}</p>
                 </div>
                 <button
@@ -232,7 +232,7 @@ export function AdminSettings() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm text-zinc-600">
+                  <p className="text-sm text-zinc-500 dark:text-neutral-400">
                     {editingScope?.allowedCategories.length === 0
                       ? 'All categories'
                       : editingScope?.allowedCategories.join(', ')}
@@ -248,7 +248,7 @@ export function AdminSettings() {
       {activeTab === 'templates' && (
         <div className="space-y-4">
           <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-zinc-50 dark:bg-neutral-800/60 p-4 space-y-3">
-            <p className="font-semibold">Create New Template</p>
+            <p className="font-semibold text-zinc-900 dark:text-neutral-50 text-sm">Create New Template</p>
             <input
               type="text"
               placeholder="Template name (e.g., 'Moderator Lite')"
@@ -256,7 +256,7 @@ export function AdminSettings() {
               onChange={(e) => setNewTemplateName(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
             />
-            <div className="max-h-48 overflow-y-auto space-y-1 bg-white p-3 rounded border border-zinc-200">
+            <div className="max-h-48 overflow-y-auto space-y-1 bg-white dark:bg-neutral-900 p-3 rounded-xl border border-zinc-200 dark:border-neutral-700">
               {allPermissions.map((perm) => (
                 <label key={perm} className="flex items-center gap-2">
                   <input
@@ -289,8 +289,8 @@ export function AdminSettings() {
               <div key={template.id} className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="font-semibold">{template.name}</p>
-                    <p className="text-xs text-zinc-600">
+                    <p className="font-semibold text-zinc-900 dark:text-neutral-50 text-sm">{template.name}</p>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400">
                       {template.permissions.length} permissions • Created{' '}
                       {new Date(template.createdAt).toLocaleDateString()}
                     </p>
@@ -306,7 +306,7 @@ export function AdminSettings() {
                   {template.permissions.map((perm) => (
                     <span
                       key={perm}
-                      className="inline-block px-2 py-1 text-xs rounded bg-zinc-100 text-zinc-700 font-mono"
+                      className="inline-block px-2 py-1 text-xs rounded-lg bg-zinc-100 dark:bg-neutral-800 text-zinc-600 dark:text-neutral-300 font-mono"
                     >
                       {perm}
                     </span>
@@ -323,7 +323,7 @@ export function AdminSettings() {
         <div className="space-y-4">
           <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-4">
             <div>
-              <label className="block text-sm font-semibold mb-2">
+              <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">
                 Petition Approval Threshold (signatures required)
               </label>
               <input
@@ -338,7 +338,7 @@ export function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">
+              <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">
                 Auto-Approval Signature Threshold
               </label>
               <input
@@ -356,7 +356,7 @@ export function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">
+              <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">
                 Default Routing Priority
               </label>
               <select
@@ -374,7 +374,7 @@ export function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">Fraud Detection Level</label>
+              <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">Fraud Detection Level</label>
               <select
                 value={settings.fraudDetectionLevel}
                 onChange={(e) =>
@@ -389,7 +389,7 @@ export function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">
+              <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">
                 Max Signatures Per User
               </label>
               <input
@@ -412,7 +412,7 @@ export function AdminSettings() {
                 }
                 className="w-4 h-4 rounded"
               />
-              <label className="text-sm font-semibold">Enable Email Notifications</label>
+              <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Enable Email Notifications</label>
             </div>
 
             <button

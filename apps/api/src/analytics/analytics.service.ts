@@ -627,26 +627,25 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
   async getPlatformStats(days: number) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const [
-      totalUsers, newUsers,
-      totalPetitions, activePetitions, newPetitions,
-      totalSignatures, newSignatures,
-      totalSupporters,
+      totalUsers,
+      totalPetitions, approvedPetitions, petitionsThisMonth,
+      totalSignatures, signaturesThisMonth,
     ] = await Promise.all([
       this.prisma.user.count(),
-      this.prisma.user.count({ where: { createdAt: { gte: since } } }),
       this.prisma.petition.count(),
       this.prisma.petition.count({ where: { status: 'APPROVED' } }),
       this.prisma.petition.count({ where: { createdAt: { gte: since } } }),
       this.prisma.signature.count(),
       this.prisma.signature.count({ where: { createdAt: { gte: since } } }),
-      this.prisma.supporter.count(),
     ]);
     return {
-      totalUsers, newUsers,
-      totalPetitions, activePetitions, newPetitions,
-      totalSignatures, newSignatures,
-      totalSupporters,
-      period: days,
+      totalUsers,
+      totalPetitions,
+      totalSignatures,
+      approvalRate: totalPetitions > 0 ? approvedPetitions / totalPetitions : 0,
+      avgSignaturesPerPetition: totalPetitions > 0 ? totalSignatures / totalPetitions : 0,
+      petitionsThisMonth,
+      signaturesThisMonth,
     };
   }
 
@@ -684,11 +683,12 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     const sMap = toMap(signatures);
 
     const allDates = [...new Set([...Object.keys(uMap), ...Object.keys(pMap), ...Object.keys(sMap)])].sort();
+    // Return field names matching the frontend interface: date, petitions, signatures, users
     return allDates.map((date) => ({
       date,
-      newUsers: uMap[date] ?? 0,
-      newPetitions: pMap[date] ?? 0,
-      newSignatures: sMap[date] ?? 0,
+      petitions: pMap[date] ?? 0,
+      signatures: sMap[date] ?? 0,
+      users: uMap[date] ?? 0,
     }));
   }
 
@@ -700,10 +700,11 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       _count: { id: true },
       _sum: { signaturesCount: true },
     });
+    // Return field names matching the frontend interface: category, petitions, signatures
     return groups.map((g) => ({
       category: g.petitionType ?? 'OTHER',
-      petitionCount: g._count.id,
-      signatureCount: g._sum.signaturesCount ?? 0,
+      petitions: g._count.id,
+      signatures: g._sum.signaturesCount ?? 0,
     }));
   }
 
@@ -715,22 +716,19 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       take: 100,
     });
     const byRule: Record<string, number> = {};
-    const flaggedUsers = new Set<string>();
+    const flaggedUserSet = new Set<string>();
+    const flaggedIpSet = new Set<string>();
     for (const e of events) {
       byRule[e.ruleKey] = (byRule[e.ruleKey] ?? 0) + 1;
-      flaggedUsers.add(e.userId ?? e.ipAddress ?? e.id);
+      if (e.userId) flaggedUserSet.add(e.userId);
+      if (e.ipAddress) flaggedIpSet.add(e.ipAddress);
     }
+    // Return field names matching the frontend interface
     return {
-      totalFlags: events.length,
-      flaggedUsers: flaggedUsers.size,
-      byRule,
-      recentEvents: events.slice(0, 20).map((e) => ({
-        id: e.id,
-        ruleKey: e.ruleKey,
-        details: e.details,
-        createdAt: e.createdAt,
-      })),
-      period: days,
+      flaggedAccounts: flaggedUserSet.size,
+      flaggedSignatures: events.filter((e) => e.ruleKey.toLowerCase().includes('signature')).length,
+      blockedIPs: flaggedIpSet.size,
+      suspiciousActivity: events.length,
     };
   }
 }
