@@ -138,8 +138,13 @@ export function CreatePetitionForm() {
       await apiPost<CreatedPetition>('/petitions', payload, authToken);
       setStatus('Petition submitted for review. Taking you to your dashboard…');
       window.setTimeout(() => router.push('/dashboard'), 700);
-    } catch {
-      setStatus('We could not submit your petition right now. Please review your details and try again.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('phone')) {
+        setStatus('Please verify your phone number in your dashboard before creating a petition.');
+      } else {
+        setStatus(msg || 'We could not submit your petition right now. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
