@@ -53,10 +53,17 @@ export function JoinMovementButton() {
         '/supporters/join',
         { sessionId, source: 'navbar' },
       );
+      // Always persist joined state — whether first join or IP-detected duplicate.
+      // This prevents future API calls and keeps the button in the correct state.
       localStorage.setItem(JOINED_KEY, 'true');
       setCount(res.count);
-      setPhase('capture');
-      showToast("You're part of the movement 🇱🇷");
+      if (res.alreadyJoined) {
+        // Already counted from this network — go straight to done, no toast spam
+        setPhase('done');
+      } else {
+        setPhase('capture');
+        showToast("You're part of the movement 🇱🇷");
+      }
     } finally {
       setLoading(false);
     }

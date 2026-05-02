@@ -15,12 +15,20 @@ export class SupportersService implements OnModuleInit {
     return { count: this.cachedCount };
   }
 
-  async join(sessionId: string, userId?: string, source = 'navbar') {
-    const existing = await this.prisma.supporter.findUnique({ where: { sessionId } });
-    if (existing) return { count: this.cachedCount, alreadyJoined: true };
+  async join(sessionId: string, ipAddress: string, userId?: string, source = 'navbar') {
+    // Layer 1: sessionId deduplication (fast — unique index)
+    const bySession = await this.prisma.supporter.findUnique({ where: { sessionId } });
+    if (bySession) return { count: this.cachedCount, alreadyJoined: true };
+
+    // Layer 2: IP deduplication — prevents re-join after clearing localStorage,
+    // incognito windows, or different browsers on the same device/network.
+    if (ipAddress && ipAddress !== 'unknown') {
+      const byIp = await this.prisma.supporter.findFirst({ where: { ipAddress } });
+      if (byIp) return { count: this.cachedCount, alreadyJoined: true };
+    }
 
     await this.prisma.supporter.create({
-      data: { sessionId, userId: userId ?? null, source },
+      data: { sessionId, userId: userId ?? null, source, ipAddress },
     });
     this.cachedCount++;
     return { count: this.cachedCount, alreadyJoined: false };

@@ -18,6 +18,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
     // Nullable columns added to existing tables
     const safeAlters = [
+      `ALTER TABLE "Supporter" ADD COLUMN IF NOT EXISTS "ipAddress" TEXT`,
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "priorActions" TEXT`,
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "isAnonymous" BOOLEAN NOT NULL DEFAULT false`,
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "displayName" TEXT`,

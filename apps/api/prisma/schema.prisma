@@ -1348,11 +1348,13 @@ model Supporter {
   userId    String?
   email     String?
   phone     String?
+  ipAddress String?  // used for deduplication — one join per IP
   source    String   @default("navbar") // "navbar" | "campaign" | "petition"
   joinedAt  DateTime @default(now())
 
   @@index([userId])
   @@index([joinedAt])
+  @@index([ipAddress])
 }
 
 model Membership {
