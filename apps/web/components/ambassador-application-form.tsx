@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { apiPost } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 const LIBERIAN_COUNTIES = [
   'Bomi',
