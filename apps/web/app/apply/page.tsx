@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { AmbassadorApplicationForm } from '@/components/ambassador-application-form';
+import { AmbassadorApplicationForm } from '../../components/ambassador-application-form';
 
 export const metadata: Metadata = {
   title: "Become a Voice for Change | Change Liberia",

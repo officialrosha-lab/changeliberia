@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { apiPost } from '@/lib/api';
+import { apiPost } from '../../lib/api';
 
 const LIBERIAN_COUNTIES = [
   'Bomi',
