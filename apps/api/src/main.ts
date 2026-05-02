@@ -33,6 +33,67 @@ process.on('unhandledRejection', (reason: unknown) => {
   console.error('[bootstrap] Unhandled rejection (non-fatal):', reason);
 });
 
+async function ensureColumns(prisma: PrismaService) {
+  const cols: Array<{ table: string; column: string; definition: string }> = [
+    { table: 'Petition', column: 'categories',   definition: 'TEXT[]' },
+    { table: 'Petition', column: 'county',        definition: 'TEXT' },
+    { table: 'Petition', column: 'displayName',   definition: 'TEXT' },
+    { table: 'Petition', column: 'isAnonymous',   definition: 'BOOLEAN NOT NULL DEFAULT false' },
+    { table: 'Petition', column: 'priorActions',  definition: 'TEXT' },
+    { table: 'Petition', column: 'tags',          definition: 'TEXT[]' },
+    { table: 'User',     column: 'address',       definition: 'TEXT' },
+    { table: 'User',     column: 'age',           definition: 'INTEGER' },
+    { table: 'User',     column: 'county',        definition: 'TEXT' },
+    { table: 'User',     column: 'gender',        definition: 'TEXT' },
+  ];
+  for (const { table, column, definition } of cols) {
+    try {
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${column}" ${definition}`,
+      );
+    } catch {
+      // column likely already exists — safe to ignore
+    }
+  }
+  for (const tbl of ['Membership', 'PetitionStatusLog']) {
+    try {
+      const rows = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+        `SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = $1) AS exists`,
+        tbl,
+      );
+      if (!rows[0]?.exists) {
+        if (tbl === 'Membership') {
+          await prisma.$executeRawUnsafe(`
+            CREATE TABLE "Membership" (
+              "id" TEXT NOT NULL,
+              "userId" TEXT NOT NULL,
+              "role" TEXT NOT NULL DEFAULT 'supporter',
+              "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
+            )`);
+          await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Membership_userId_key" ON "Membership"("userId")`);
+          await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Membership_role_joinedAt_idx" ON "Membership"("role", "joinedAt")`);
+          await prisma.$executeRawUnsafe(`ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
+        } else {
+          await prisma.$executeRawUnsafe(`
+            CREATE TABLE "PetitionStatusLog" (
+              "id" TEXT NOT NULL,
+              "petitionId" TEXT NOT NULL,
+              "status" TEXT NOT NULL,
+              "note" TEXT,
+              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              CONSTRAINT "PetitionStatusLog_pkey" PRIMARY KEY ("id")
+            )`);
+          await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PetitionStatusLog_petitionId_createdAt_idx" ON "PetitionStatusLog"("petitionId", "createdAt")`);
+          await prisma.$executeRawUnsafe(`ALTER TABLE "PetitionStatusLog" ADD CONSTRAINT "PetitionStatusLog_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
+        }
+      }
+    } catch {
+      // table likely already exists — safe to ignore
+    }
+  }
+}
+
 async function bootstrap() {
   validateEnvOrThrow();
   const app = await NestFactory.create(AppModule);
@@ -53,6 +114,7 @@ async function bootstrap() {
     credentials: true,
   });
   const prisma = app.get(PrismaService);
+  await ensureColumns(prisma);
   const httpServer = app.getHttpAdapter().getInstance() as Application;
 
   const uploadsRoot = join(process.cwd(), 'uploads');
