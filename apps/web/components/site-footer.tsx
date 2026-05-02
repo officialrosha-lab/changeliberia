@@ -11,6 +11,7 @@ const COLS = [
       { href: '/leaders', label: 'Become a Change Leader 🇱🇷' },
       { href: '/leaders', label: 'Join the Movement' },
       { href: '/leaders', label: 'How It Works' },
+      { href: '/apply', label: 'Become a Voice for Change' },
     ],
   },
   {

@@ -46,7 +46,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -149,6 +149,7 @@ export function AdminPageClient() {
             ['users', 'Users'],
             ['analytics', 'Analytics'],
             ['government', 'Government'],
+            ['ambassadors', 'Ambassadors'],
             ['cms', 'CMS'],
             ['settings', 'Settings'],
           ] as const
@@ -251,6 +252,17 @@ export function AdminPageClient() {
       {activeTab === 'government' && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminGovernmentPanel />
+        </div>
+      )}
+
+      {/* Ambassadors Tab */}
+      {activeTab === 'ambassadors' && (
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          {token && (
+            <Link href="/admin/ambassadors" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400">
+              Go to Ambassadors Management →
+            </Link>
+          )}
         </div>
       )}
 
