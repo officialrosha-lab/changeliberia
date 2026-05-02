@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch } from '../../lib/api';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface ModeratorScope {
@@ -93,11 +93,7 @@ export function AdminSettings() {
   async function handleDeleteTemplate(id: string) {
     if (!token) return;
     try {
-      const response = await fetch(`/api/admin/settings/permission-templates/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Failed to delete template');
+      await apiDelete(`/admin/settings/permission-templates/${id}`, token);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete template');
@@ -115,7 +111,7 @@ export function AdminSettings() {
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading settings...</div>;
+    return <div className="text-center py-8 text-zinc-500 dark:text-neutral-400">Loading settings...</div>;
   }
 
   const categoryOptions = ['HEALTH', 'EDUCATION', 'AGENCY', 'MINISTRY', 'SECURITY', 'UTILITY', 'NGO'];
@@ -150,7 +146,7 @@ export function AdminSettings() {
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-zinc-200">
+      <div className="flex gap-1 border-b border-zinc-200 dark:border-neutral-700">
         {(
           [
             ['scopes', 'Moderator Scopes'],
@@ -161,10 +157,10 @@ export function AdminSettings() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                : 'border-transparent text-zinc-500 dark:text-neutral-400 hover:text-zinc-700 dark:hover:text-neutral-200'
             }`}
           >
             {label}
@@ -174,7 +170,7 @@ export function AdminSettings() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
           {error}
         </div>
       )}
@@ -189,7 +185,7 @@ export function AdminSettings() {
           {scopes.map((scope) => (
             <div
               key={scope.moderatorId}
-              className="border border-zinc-200 rounded-lg p-4 space-y-3"
+              className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-3"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -198,7 +194,7 @@ export function AdminSettings() {
                 </div>
                 <button
                   onClick={() => setEditingScope(editingScope?.moderatorId === scope.moderatorId ? null : scope)}
-                  className="text-emerald-600 hover:underline font-medium"
+                  className="text-emerald-600 dark:text-emerald-400 hover:underline text-sm font-semibold"
                 >
                   {editingScope?.moderatorId === scope.moderatorId ? 'Done' : 'Edit'}
                 </button>
@@ -229,7 +225,7 @@ export function AdminSettings() {
                   </div>
                   <button
                     onClick={() => handleSaveScope(editingScope)}
-                    className="mt-3 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                    className="mt-3 px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 text-sm font-semibold"
                   >
                     Save
                   </button>
@@ -251,14 +247,14 @@ export function AdminSettings() {
       {/* Permission Templates Tab */}
       {activeTab === 'templates' && (
         <div className="space-y-4">
-          <div className="border border-zinc-200 rounded-lg p-4 space-y-3 bg-blue-50">
+          <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-zinc-50 dark:bg-neutral-800/60 p-4 space-y-3">
             <p className="font-semibold">Create New Template</p>
             <input
               type="text"
               placeholder="Template name (e.g., 'Moderator Lite')"
               value={newTemplateName}
               onChange={(e) => setNewTemplateName(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
             />
             <div className="max-h-48 overflow-y-auto space-y-1 bg-white p-3 rounded border border-zinc-200">
               {allPermissions.map((perm) => (
@@ -282,7 +278,7 @@ export function AdminSettings() {
             <button
               onClick={handleCreateTemplate}
               disabled={!newTemplateName.trim()}
-              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              className="w-full px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 text-sm font-semibold"
             >
               Create Template
             </button>
@@ -290,7 +286,7 @@ export function AdminSettings() {
 
           <div className="space-y-2">
             {templates.map((template) => (
-              <div key={template.id} className="border border-zinc-200 rounded-lg p-4">
+              <div key={template.id} className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="font-semibold">{template.name}</p>
@@ -301,7 +297,7 @@ export function AdminSettings() {
                   </div>
                   <button
                     onClick={() => handleDeleteTemplate(template.id)}
-                    className="text-red-600 hover:underline text-sm font-medium"
+                    className="text-red-600 dark:text-red-400 hover:underline text-xs font-medium"
                   >
                     Delete
                   </button>
@@ -325,7 +321,7 @@ export function AdminSettings() {
       {/* System Settings Tab */}
       {activeTab === 'settings' && settings && (
         <div className="space-y-4">
-          <div className="border border-zinc-200 rounded-lg p-4 space-y-4">
+          <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Petition Approval Threshold (signatures required)
@@ -337,7 +333,7 @@ export function AdminSettings() {
                   setSettings({ ...settings, petitionApprovalThreshold: parseInt(e.target.value) })
                 }
                 min={1}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               />
             </div>
 
@@ -355,7 +351,7 @@ export function AdminSettings() {
                   })
                 }
                 min={0}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               />
             </div>
 
@@ -368,7 +364,7 @@ export function AdminSettings() {
                 onChange={(e) =>
                   setSettings({ ...settings, routingDefaultPriority: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               >
                 <option>TAG_MATCH</option>
                 <option>CATEGORY_MATCH</option>
@@ -384,7 +380,7 @@ export function AdminSettings() {
                 onChange={(e) =>
                   setSettings({ ...settings, fraudDetectionLevel: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               >
                 <option value="LOW">Low (minimal checks)</option>
                 <option value="MEDIUM">Medium (standard checks)</option>
@@ -403,7 +399,7 @@ export function AdminSettings() {
                   setSettings({ ...settings, maxSignaturesPerUser: parseInt(e.target.value) })
                 }
                 min={1}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               />
             </div>
 
@@ -421,7 +417,7 @@ export function AdminSettings() {
 
             <button
               onClick={() => handleSaveSettings(settings)}
-              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              className="w-full px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 text-sm font-semibold"
             >
               Save Settings
             </button>

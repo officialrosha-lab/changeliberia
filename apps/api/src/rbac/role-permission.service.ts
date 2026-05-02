@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   Role,
@@ -22,8 +22,18 @@ export interface CreatePermissionDto {
 }
 
 @Injectable()
-export class RolePermissionService {
+export class RolePermissionService implements OnModuleInit {
+  private readonly logger = new Logger(RolePermissionService.name);
   constructor(private prisma: PrismaService) {}
+
+  async onModuleInit() {
+    try {
+      await this.initializeDefaultRoles();
+      this.logger.log('RBAC default roles and permissions initialized');
+    } catch (err) {
+      this.logger.warn(`RBAC init skipped: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   // ==================== PERMISSION METHODS ====================
 

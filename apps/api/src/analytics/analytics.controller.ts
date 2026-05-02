@@ -180,4 +180,34 @@ export class AnalyticsController {
       filename: `petition-${petitionId}-analytics.csv`,
     };
   }
+
+  // ── Platform-wide admin analytics (admin only) ───────────────────────────
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('platform-stats')
+  getPlatformStats(@Query('days') days = '30') {
+    return this.analytics.getPlatformStats(Math.max(1, Number(days) || 30));
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('daily-metrics')
+  getDailyMetrics(@Query('days') days = '30') {
+    return this.analytics.getDailyMetrics(Math.max(1, Number(days) || 30));
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('category-stats')
+  getCategoryStats(@Query('days') days = '30') {
+    return this.analytics.getCategoryStats(Math.max(1, Number(days) || 30));
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('fraud-stats')
+  getFraudStats(@Query('days') days = '30') {
+    return this.analytics.getFraudStats(Math.max(1, Number(days) || 30));
+  }
 }

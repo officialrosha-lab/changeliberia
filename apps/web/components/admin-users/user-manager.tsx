@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch } from '../../lib/api';
+import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface User {
@@ -85,11 +85,7 @@ export function AdminUserManager() {
   async function handleRemoveRole(userId: string, roleId: string) {
     if (!token) return;
     try {
-      const response = await fetch(`/api/rbac/users/${userId}/roles/${roleId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Failed to remove role');
+      await apiDelete(`/rbac/users/${userId}/roles/${roleId}`, token);
       await loadUserRoles(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove role');
@@ -118,48 +114,50 @@ export function AdminUserManager() {
             setSearchTerm(e.target.value);
             setPage(0);
           }}
-          className="flex-1 px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="flex-1 px-3 py-2 rounded-xl border border-zinc-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
         />
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       {/* Users Table */}
-      <div className="overflow-x-auto bg-white rounded-lg border border-zinc-200">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
+          <thead className="bg-zinc-50 dark:bg-neutral-800/50 border-b border-zinc-200 dark:border-neutral-700">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold">Name</th>
-              <th className="px-4 py-3 text-left font-semibold">Email</th>
-              <th className="px-4 py-3 text-left font-semibold">Trust Score</th>
-              <th className="px-4 py-3 text-left font-semibold">Status</th>
-              <th className="px-4 py-3 text-left font-semibold">Roles</th>
-              <th className="px-4 py-3 text-left font-semibold">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Trust Score</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Roles</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((user) => {
               const ur = userRoles.get(user.id) || [];
               return (
-                <tr key={user.id} className="border-b border-zinc-200 hover:bg-zinc-50">
-                  <td className="px-4 py-3 font-medium">{user.fullName}</td>
-                  <td className="px-4 py-3 text-zinc-600">{user.email}</td>
+                <tr key={user.id} className="border-b border-zinc-100 dark:border-neutral-800 hover:bg-zinc-50 dark:hover:bg-neutral-800/60 transition-colors">
+                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-neutral-50">{user.fullName}</td>
+                  <td className="px-4 py-3 text-zinc-500 dark:text-neutral-400">{user.email}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold">
                       {user.trustScore}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-block px-2 py-1 text-xs rounded-full ${
+                      className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
                         user.verificationStatus === 'HIGH_TRUST'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                          : user.verificationStatus === 'VERIFIED_LIBERIAN'
+                            ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                            : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
                       }`}
                     >
                       {user.verificationStatus}
@@ -168,7 +166,7 @@ export function AdminUserManager() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {ur.map((r) => (
-                        <span key={r.roleId} className="inline-block px-2 py-1 text-xs rounded bg-purple-100 text-purple-700">
+                        <span key={r.roleId} className="inline-block px-2 py-1 text-xs rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 font-medium">
                           {roles.find((ro) => ro.id === r.roleId)?.name || 'Unknown'}
                         </span>
                       ))}
@@ -196,33 +194,33 @@ export function AdminUserManager() {
 
       {/* Role Management Panel */}
       {selectedUserId && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-lg mb-4">
-            Role Management for {users.find((u) => u.id === selectedUserId)?.fullName}
+        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-6">
+          <h3 className="font-semibold text-base text-zinc-900 dark:text-neutral-50 mb-4">
+            Role Management — {users.find((u) => u.id === selectedUserId)?.fullName}
           </h3>
 
           {/* Current Roles */}
           <div className="mb-6">
-            <p className="font-semibold mb-2">Current Roles</p>
+            <p className="text-sm font-semibold text-zinc-700 dark:text-neutral-300 mb-2">Current Roles</p>
             {(userRoles.get(selectedUserId) || []).length === 0 ? (
-              <p className="text-zinc-600 text-sm">No roles assigned</p>
+              <p className="text-zinc-500 dark:text-neutral-400 text-sm">No roles assigned</p>
             ) : (
               <div className="space-y-2">
                 {(userRoles.get(selectedUserId) || []).map((ur) => {
                   const role = roles.find((r) => r.id === ur.roleId);
                   return (
-                    <div key={ur.roleId} className="flex justify-between items-center bg-white p-3 rounded border border-blue-200">
+                    <div key={ur.roleId} className="flex justify-between items-center bg-white dark:bg-neutral-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
                       <div>
-                        <p className="font-medium">{role?.name}</p>
+                        <p className="font-medium text-zinc-900 dark:text-neutral-50 text-sm">{role?.name}</p>
                         {ur.expiresAt && (
-                          <p className="text-xs text-zinc-500">
+                          <p className="text-xs text-zinc-500 dark:text-neutral-400">
                             Expires: {new Date(ur.expiresAt).toLocaleDateString()}
                           </p>
                         )}
                       </div>
                       <button
                         onClick={() => handleRemoveRole(selectedUserId, ur.roleId)}
-                        className="text-red-600 hover:underline text-sm font-medium"
+                        className="text-red-600 dark:text-red-400 hover:underline text-xs font-medium"
                       >
                         Remove
                       </button>
@@ -235,19 +233,19 @@ export function AdminUserManager() {
 
           {/* Assign Role */}
           <div>
-            <p className="font-semibold mb-2">Assign Role</p>
+            <p className="text-sm font-semibold text-zinc-700 dark:text-neutral-300 mb-2">Assign Role</p>
             <div className="space-y-2">
               {roles
                 .filter((r) => !userRoles.get(selectedUserId)?.some((ur) => ur.roleId === r.id))
                 .map((role) => (
-                  <div key={role.id} className="flex justify-between items-center bg-white p-3 rounded border border-blue-200">
+                  <div key={role.id} className="flex justify-between items-center bg-white dark:bg-neutral-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
                     <div>
-                      <p className="font-medium">{role.name}</p>
-                      <p className="text-xs text-zinc-500">{role.description}</p>
+                      <p className="font-medium text-zinc-900 dark:text-neutral-50 text-sm">{role.name}</p>
+                      <p className="text-xs text-zinc-500 dark:text-neutral-400">{role.description}</p>
                     </div>
                     <button
                       onClick={() => handleAssignRole(selectedUserId, role.id)}
-                      className="text-emerald-600 hover:underline text-sm font-medium"
+                      className="text-emerald-600 dark:text-emerald-400 hover:underline text-xs font-semibold"
                     >
                       Assign
                     </button>
@@ -263,17 +261,17 @@ export function AdminUserManager() {
         <button
           onClick={() => setPage(Math.max(0, page - 1))}
           disabled={page === 0}
-          className="px-4 py-2 bg-zinc-200 text-zinc-900 rounded-lg disabled:opacity-50"
+          className="px-4 py-2 bg-zinc-100 dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 rounded-xl border border-zinc-200 dark:border-neutral-700 text-sm font-medium disabled:opacity-40"
         >
           Previous
         </button>
-        <span className="text-sm text-zinc-600">
+        <span className="text-sm text-zinc-500 dark:text-neutral-400">
           Page {page + 1} of {Math.ceil(filtered.length / pageSize)}
         </span>
         <button
           onClick={() => setPage(page + 1)}
           disabled={filtered.length < pageSize}
-          className="px-4 py-2 bg-zinc-200 text-zinc-900 rounded-lg disabled:opacity-50"
+          className="px-4 py-2 bg-zinc-100 dark:bg-neutral-800 text-zinc-900 dark:text-neutral-50 rounded-xl border border-zinc-200 dark:border-neutral-700 text-sm font-medium disabled:opacity-40"
         >
           Next
         </button>

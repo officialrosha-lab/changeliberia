@@ -30,12 +30,15 @@ export class PermissionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    if (!user || !user.sub) {
+    if (!user || !user.userId) {
       throw new ForbiddenException('User not authenticated');
     }
 
+    // Admins bypass RBAC — they always have full access
+    if (user.role === 'ADMIN') return true;
+
     const hasPermission = await this.rolePermissionService.hasPermission(
-      user.sub,
+      user.userId,
       permission.resource,
       permission.action,
     );

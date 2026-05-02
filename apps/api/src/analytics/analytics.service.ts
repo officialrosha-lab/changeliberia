@@ -621,4 +621,116 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
 
     return csv;
   }
+
+  // ── Platform-wide admin analytics ────────────────────────────────────────
+
+  async getPlatformStats(days: number) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const [
+      totalUsers, newUsers,
+      totalPetitions, activePetitions, newPetitions,
+      totalSignatures, newSignatures,
+      totalSupporters,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.petition.count(),
+      this.prisma.petition.count({ where: { status: 'APPROVED' } }),
+      this.prisma.petition.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.signature.count(),
+      this.prisma.signature.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.supporter.count(),
+    ]);
+    return {
+      totalUsers, newUsers,
+      totalPetitions, activePetitions, newPetitions,
+      totalSignatures, newSignatures,
+      totalSupporters,
+      period: days,
+    };
+  }
+
+  async getDailyMetrics(days: number) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const [users, petitions, signatures] = await Promise.all([
+      this.prisma.$queryRaw<{ date: Date; count: bigint }[]>`
+        SELECT DATE("createdAt") as date, COUNT(*) as count
+        FROM "User"
+        WHERE "createdAt" >= ${since}
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+      this.prisma.$queryRaw<{ date: Date; count: bigint }[]>`
+        SELECT DATE("createdAt") as date, COUNT(*) as count
+        FROM "Petition"
+        WHERE "createdAt" >= ${since}
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+      this.prisma.$queryRaw<{ date: Date; count: bigint }[]>`
+        SELECT DATE("createdAt") as date, COUNT(*) as count
+        FROM "Signature"
+        WHERE "createdAt" >= ${since}
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+    ]);
+
+    const toMap = (rows: { date: Date; count: bigint }[]) =>
+      Object.fromEntries(rows.map((r) => [r.date.toISOString().slice(0, 10), Number(r.count)]));
+
+    const uMap = toMap(users);
+    const pMap = toMap(petitions);
+    const sMap = toMap(signatures);
+
+    const allDates = [...new Set([...Object.keys(uMap), ...Object.keys(pMap), ...Object.keys(sMap)])].sort();
+    return allDates.map((date) => ({
+      date,
+      newUsers: uMap[date] ?? 0,
+      newPetitions: pMap[date] ?? 0,
+      newSignatures: sMap[date] ?? 0,
+    }));
+  }
+
+  async getCategoryStats(days: number) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const groups = await this.prisma.petition.groupBy({
+      by: ['petitionType'],
+      where: { createdAt: { gte: since } },
+      _count: { id: true },
+      _sum: { signaturesCount: true },
+    });
+    return groups.map((g) => ({
+      category: g.petitionType ?? 'OTHER',
+      petitionCount: g._count.id,
+      signatureCount: g._sum.signaturesCount ?? 0,
+    }));
+  }
+
+  async getFraudStats(days: number) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const events = await this.prisma.fraudEvent.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    const byRule: Record<string, number> = {};
+    const flaggedUsers = new Set<string>();
+    for (const e of events) {
+      byRule[e.ruleKey] = (byRule[e.ruleKey] ?? 0) + 1;
+      flaggedUsers.add(e.userId ?? e.ipAddress ?? e.id);
+    }
+    return {
+      totalFlags: events.length,
+      flaggedUsers: flaggedUsers.size,
+      byRule,
+      recentEvents: events.slice(0, 20).map((e) => ({
+        id: e.id,
+        ruleKey: e.ruleKey,
+        details: e.details,
+        createdAt: e.createdAt,
+      })),
+      period: days,
+    };
+  }
 }
