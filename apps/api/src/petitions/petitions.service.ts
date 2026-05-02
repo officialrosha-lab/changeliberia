@@ -117,12 +117,16 @@ export class PetitionsService {
   }
 
   async list() {
-    const petitions = await this.prisma.petition.findMany({
-      where: { status: PetitionStatus.APPROVED },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    });
-    return this.rankByRisk(petitions);
+    try {
+      const petitions = await this.prisma.petition.findMany({
+        where: { status: PetitionStatus.APPROVED },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      });
+      return this.rankByRisk(petitions);
+    } catch (e: any) {
+      throw new BadRequestException(`DEBUG: ${e?.message ?? String(e)}`);
+    }
   }
 
   async trending() {
