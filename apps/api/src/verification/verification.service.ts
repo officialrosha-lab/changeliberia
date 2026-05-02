@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { VerificationStatus, VerificationType } from '@prisma/client';
 import { SmsService } from '../sms/sms.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -39,8 +39,37 @@ export class VerificationService {
   async requestPhoneOtp(phone: string): Promise<{ success: boolean }> {
     const normalized = normalizePhone(phone);
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    // Send SMS first — only persist the code if delivery succeeds
-    await this.sms.sendSms(normalized, `Your Change Liberia verification code is: ${code}. It expires in 10 minutes.`);
+    try {
+      await this.sms.sendSms(
+        normalized,
+        `Your Change Liberia verification code is: ${code}. It expires in 10 minutes.`,
+      );
+    } catch (err: unknown) {
+      const e = err as { code?: number };
+      // Twilio 21211 / 21614: invalid or non-mobile number
+      if (e.code === 21211 || e.code === 21614) {
+        throw new BadRequestException(
+          'Invalid phone number. Please check the format (e.g. +231 77 000 0000) and try again.',
+        );
+      }
+      // Twilio 21408 / 63038 / 21612: geographic permission or carrier block
+      if (e.code === 21408 || e.code === 63038 || e.code === 21612) {
+        throw new BadRequestException(
+          'SMS delivery to this number is not currently supported. Please contact support or try a different number.',
+        );
+      }
+      // Twilio 21606: From number is not enabled for this country
+      if (e.code === 21606) {
+        throw new InternalServerErrorException(
+          'SMS is not configured for this region. Please contact support.',
+        );
+      }
+      // All other Twilio errors
+      throw new InternalServerErrorException(
+        'Could not send verification code. Please try again in a moment.',
+      );
+    }
+    // Only store the code after confirmed delivery
     this.otpStore.set(normalized, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
     return { success: true };
   }

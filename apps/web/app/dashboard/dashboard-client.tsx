@@ -152,8 +152,9 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     try {
       await apiPost('/verification/phone/request-otp', { phone: phoneInput.trim() }, token);
       setPhoneStep('enter_otp');
-    } catch {
-      setPhoneError('Could not send code. Please check your number and try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      setPhoneError(msg || 'Could not send code. Please check your number and try again.');
     } finally {
       setVerifying(null);
     }
