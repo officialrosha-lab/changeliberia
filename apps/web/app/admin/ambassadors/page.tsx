@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/lib/store';
-import { AdminAmbassadorsPanel } from '@/components/admin/admin-ambassadors-panel';
+import { useAuthStore } from '../../../lib/store';
+import { AdminAmbassadorsPanel } from '../../../components/admin/admin-ambassadors-panel';
 
 export default function AdminAmbassadorsPage() {
   const { token } = useAuthStore();
