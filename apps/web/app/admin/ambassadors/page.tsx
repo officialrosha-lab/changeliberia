@@ -1,34 +1,39 @@
-import { Metadata } from 'next';
-import { cookies } from 'next/headers';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/lib/store';
 import { AdminAmbassadorsPanel } from '@/components/admin/admin-ambassadors-panel';
 
-export const metadata: Metadata = {
-  title: 'Manage Ambassadors | Admin',
-};
+export default function AdminAmbassadorsPage() {
+  const { token } = useAuthStore();
+  const [ambassadors, setAmbassadors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-async function getAmbassadors(token: string) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/ambassadors/admin`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
+  useEffect(() => {
+    if (!token) return;
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ambassadors: ${response.status}`);
-    }
+    const fetchAmbassadors = async () => {
+      try {
+        const response = await fetch('/ambassadors/admin', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching ambassadors:', error);
-    return [];
-  }
-}
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ambassadors: ${response.status}`);
+        }
 
-export default async function AdminAmbassadorsPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value || '';
+        const data = await response.json();
+        setAmbassadors(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const ambassadors = await getAmbassadors(token);
+    fetchAmbassadors();
+  }, [token]);
 
   return (
     <div className="space-y-6">
@@ -39,7 +44,10 @@ export default async function AdminAmbassadorsPage() {
         </p>
       </div>
 
-      <AdminAmbassadorsPanel initialApplications={ambassadors} />
+      {loading && <p className="text-zinc-600">Loading...</p>}
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/40 dark:bg-red-950/20"><p className="text-sm text-red-700 dark:text-red-300">{error}</p></div>}
+      
+      {!loading && !error && <AdminAmbassadorsPanel initialApplications={ambassadors} />}
     </div>
   );
 }
