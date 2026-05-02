@@ -8,6 +8,9 @@ const COLS = [
       { href: '/create', label: 'Start a petition' },
       { href: '/petitions', label: 'Browse by topic' },
       { href: '/petitions', label: 'Search petitions' },
+      { href: '/leaders', label: 'Become a Change Leader 🇱🇷' },
+      { href: '/leaders', label: 'Join the Movement' },
+      { href: '/leaders', label: 'How It Works' },
     ],
   },
   {
