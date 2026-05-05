@@ -40,6 +40,7 @@ export class PetitionsService {
       creatorId: string;
     }>,
   ) {
+    if (petitions.length === 0) return [];
     const now = Date.now();
     const riskCounts = await this.prisma.fraudEvent.groupBy({
       by: ['petitionId'],
@@ -117,16 +118,12 @@ export class PetitionsService {
   }
 
   async list() {
-    try {
-      const petitions = await this.prisma.petition.findMany({
-        where: { status: PetitionStatus.APPROVED },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      });
-      return await this.rankByRisk(petitions);
-    } catch (e: any) {
-      throw new BadRequestException(`DEBUG: ${e?.message ?? String(e)}`);
-    }
+    const petitions = await this.prisma.petition.findMany({
+      where: { status: PetitionStatus.APPROVED },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return this.rankByRisk(petitions);
   }
 
   async trending() {
