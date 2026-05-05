@@ -30,11 +30,11 @@ export class AdminController {
 
   @Get('users')
   async listUsers(
-    @Query('page') page = '1',
+    @Query('page') page = '0',
     @Query('limit') limit = '20',
     @Query('search') search = '',
   ) {
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = Number(page) * Number(limit);
     const where = search
       ? {
           OR: [
@@ -43,25 +43,22 @@ export class AdminController {
           ],
         }
       : {};
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        skip,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          role: true,
-          trustScore: true,
-          verificationStatus: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-    return { users, total, page: Number(page), limit: Number(limit) };
+    return this.prisma.user.findMany({
+      where,
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        role: true,
+        trustScore: true,
+        verificationStatus: true,
+        createdAt: true,
+      },
+    });
   }
 
   @Get('petitions/pending')
