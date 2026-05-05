@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '../../components/site-footer';
+import { fetchCmsPage, getSection } from '../../lib/cms';
 
 export const metadata: Metadata = {
   title: 'Help Center — Change Liberia',
@@ -39,7 +40,7 @@ const FAQS = [
     items: [
       {
         q: 'How do I start a petition?',
-        a: 'Click "Start a petition" from any page. You\'ll go through a 5-step form: describe the issue, pick categories and a county, tell the full story, add media (optional), and set your identity preferences. Once submitted, your petition is reviewed by our team within 24-48 hours.',
+        a: "Click \"Start a petition\" from any page. You'll go through a 5-step form: describe the issue, pick categories and a county, tell the full story, add media (optional), and set your identity preferences. Once submitted, your petition is reviewed by our team within 24-48 hours.",
       },
       {
         q: 'What happens after I submit my petition?',
@@ -91,18 +92,30 @@ const FAQS = [
   },
 ];
 
-export default function HelpCenterPage() {
+export default async function HelpCenterPage() {
+  const cms = await fetchCmsPage('help-center');
+  const heroHtml = getSection(cms, 'hero');
+  const categoriesHtml = getSection(cms, 'categories');
+  const faqsHtml = getSection(cms, 'faqs');
+  const contactHtml = getSection(cms, 'contact');
+
   return (
     <>
       <main className="min-h-screen bg-white dark:bg-neutral-950">
 
         {/* Hero */}
         <section className="bg-emerald-700 px-4 py-20 text-center dark:bg-emerald-900">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">Support</p>
-          <h1 className="mt-3 text-4xl font-extrabold text-white sm:text-5xl">Help Center</h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-emerald-100 sm:text-lg">
-            Everything you need to create petitions, gather support, and understand how Change Liberia works.
-          </p>
+          {heroHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: heroHtml }} />
+          ) : (
+            <>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">Support</p>
+              <h1 className="mt-3 text-4xl font-extrabold text-white sm:text-5xl">Help Center</h1>
+              <p className="mx-auto mt-4 max-w-xl text-base text-emerald-100 sm:text-lg">
+                Everything you need to create petitions, gather support, and understand how Change Liberia works.
+              </p>
+            </>
+          )}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/create"
@@ -121,82 +134,100 @@ export default function HelpCenterPage() {
 
         {/* Categories */}
         <section className="mx-auto max-w-5xl px-4 py-16">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Browse by topic
-          </p>
-          <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-            How can we help?
-          </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map((c) => (
-              <div
-                key={c.title}
-                className="rounded-2xl border border-zinc-200 bg-white p-6 transition hover:border-emerald-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-emerald-700"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-2xl dark:bg-emerald-950">
-                  {c.icon}
-                </div>
-                <h3 className="mt-4 text-base font-bold text-zinc-900 dark:text-neutral-50">{c.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-neutral-400">{c.desc}</p>
+          {categoriesHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: categoriesHtml }} />
+          ) : (
+            <>
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                Browse by topic
+              </p>
+              <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                How can we help?
+              </h2>
+              <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {CATEGORIES.map((c) => (
+                  <div
+                    key={c.title}
+                    className="rounded-2xl border border-zinc-200 bg-white p-6 transition hover:border-emerald-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-emerald-700"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-2xl dark:bg-emerald-950">
+                      {c.icon}
+                    </div>
+                    <h3 className="mt-4 text-base font-bold text-zinc-900 dark:text-neutral-50">{c.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-neutral-400">{c.desc}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </section>
 
         {/* FAQs */}
         <section className="bg-zinc-50 px-4 py-16 dark:bg-neutral-900">
           <div className="mx-auto max-w-3xl">
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Common questions
-            </p>
-            <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-              Frequently asked questions
-            </h2>
+            {faqsHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: faqsHtml }} />
+            ) : (
+              <>
+                <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  Common questions
+                </p>
+                <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                  Frequently asked questions
+                </h2>
 
-            <div className="mt-10 space-y-10">
-              {FAQS.map((section) => (
-                <div key={section.section}>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                    {section.section}
-                  </h3>
-                  <div className="space-y-4">
-                    {section.items.map((item) => (
-                      <div
-                        key={item.q}
-                        className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-800"
-                      >
-                        <p className="font-semibold text-zinc-900 dark:text-neutral-50">{item.q}</p>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-neutral-400">{item.a}</p>
+                <div className="mt-10 space-y-10">
+                  {FAQS.map((section) => (
+                    <div key={section.section}>
+                      <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                        {section.section}
+                      </h3>
+                      <div className="space-y-4">
+                        {section.items.map((item) => (
+                          <div
+                            key={item.q}
+                            className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-800"
+                          >
+                            <p className="font-semibold text-zinc-900 dark:text-neutral-50">{item.q}</p>
+                            <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-neutral-400">{item.a}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </section>
 
-        {/* Still need help */}
+        {/* Contact */}
         <section className="px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Still stuck?
-            </p>
-            <h2 className="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-              Contact our support team
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-base text-zinc-600 dark:text-neutral-400">
-              We typically respond within one business day. For urgent matters — including abuse reports — mark your subject line URGENT.
-            </p>
-            <div className="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300">
-              <p>
-                Email:{' '}
-                <a href="mailto:hello@changelib.org" className="text-emerald-600 underline dark:text-emerald-400">
-                  hello@changelib.org
-                </a>
-              </p>
-              <p>WhatsApp: +231 77 000 0000</p>
-            </div>
+            {contactHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: contactHtml }} />
+            ) : (
+              <>
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  Still stuck?
+                </p>
+                <h2 className="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                  Contact our support team
+                </h2>
+                <p className="mx-auto mt-4 max-w-lg text-base text-zinc-600 dark:text-neutral-400">
+                  We typically respond within one business day. For urgent matters — including abuse reports — mark your subject line URGENT.
+                </p>
+                <div className="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300">
+                  <p>
+                    Email:{' '}
+                    <a href="mailto:hello@changelib.org" className="text-emerald-600 underline dark:text-emerald-400">
+                      hello@changelib.org
+                    </a>
+                  </p>
+                  <p>WhatsApp: +231 77 000 0000</p>
+                </div>
+              </>
+            )}
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 href="/community-guidelines"

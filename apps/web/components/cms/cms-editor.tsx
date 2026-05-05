@@ -5,6 +5,67 @@ import { useRouter, useParams } from 'next/navigation';
 import { apiGet, apiPatch } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
+interface CMSSection {
+  id: string;
+  label: string;
+  html: string;
+}
+
+function tryParseSections(content: string): CMSSection[] | null {
+  try {
+    const arr = JSON.parse(content);
+    return Array.isArray(arr) ? arr : null;
+  } catch {
+    return null;
+  }
+}
+
+function SectionEditor({ content, onChange }: { content: string; onChange: (v: string) => void }) {
+  const sections = tryParseSections(content);
+
+  if (!sections) {
+    return (
+      <div>
+        <label className="block text-sm font-semibold mb-2">Content (HTML)</label>
+        <textarea
+          value={content}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+          rows={12}
+          placeholder="Enter HTML content..."
+        />
+        <p className="text-xs text-zinc-500 mt-1">
+          Supports HTML. Use &lt;h1&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;a&gt;, etc.
+        </p>
+      </div>
+    );
+  }
+
+  function updateSection(id: string, html: string) {
+    const updated = sections!.map((s) => (s.id === id ? { ...s, html } : s));
+    onChange(JSON.stringify(updated));
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        Page Sections — edit each section independently
+      </p>
+      {sections.map((s) => (
+        <div key={s.id} className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
+          <label className="block text-sm font-semibold mb-2 text-zinc-800">{s.label}</label>
+          <textarea
+            value={s.html}
+            rows={8}
+            onChange={(e) => updateSection(s.id, e.target.value)}
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm bg-white"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface CMSPage {
   id: string;
   title: string;
@@ -123,19 +184,10 @@ export function CMSEditor() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-2">Content (HTML)</label>
-          <textarea
-            value={page.content}
-            onChange={(e) => setPage({ ...page, content: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-            rows={12}
-            placeholder="Enter HTML content..."
-          />
-          <p className="text-xs text-zinc-500 mt-1">
-            Supports HTML. Use &lt;h1&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;a&gt;, etc.
-          </p>
-        </div>
+        <SectionEditor
+          content={page.content}
+          onChange={(content) => setPage({ ...page, content })}
+        />
       </div>
 
       {/* SEO Metadata */}

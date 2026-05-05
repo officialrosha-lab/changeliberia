@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '../../components/site-footer';
+import { fetchCmsPage, getSection } from '../../lib/cms';
 
 export const metadata: Metadata = {
   title: 'How It Works — Change Liberia',
@@ -70,7 +71,7 @@ const STAGES = [
     color: 'bg-rose-50 dark:bg-rose-950',
     iconBg: 'bg-rose-100 dark:bg-rose-900',
     title: 'Routed to the right authority',
-    body: 'Change Liberia\'s smart routing system identifies the correct institution — Ministry, Legislature, County Superintendent, or NGO — and delivers the petition formally with a digital signature record.',
+    body: "Change Liberia's smart routing system identifies the correct institution — Ministry, Legislature, County Superintendent, or NGO — and delivers the petition formally with a digital signature record.",
     detail: [
       'Intelligent routing to the right official',
       'Formal email submission with petition report',
@@ -84,7 +85,7 @@ const STAGES = [
     color: 'bg-orange-50 dark:bg-orange-950',
     iconBg: 'bg-orange-100 dark:bg-orange-900',
     title: 'Response tracked publicly',
-    body: 'The authority\'s response — or lack thereof — is tracked and shown publicly on the petition page. Supporters receive notifications. Silence is recorded as a public fact.',
+    body: "The authority's response — or lack thereof — is tracked and shown publicly on the petition page. Supporters receive notifications. Silence is recorded as a public fact.",
     detail: [
       'Response status shown on petition page',
       'Supporters notified of updates',
@@ -108,50 +109,35 @@ const STAGES = [
   },
 ];
 
-const FAQS = [
-  {
-    q: 'Do I need to be a Liberian citizen to use Change Liberia?',
-    a: 'You need a Liberian connection — citizen, resident, or diaspora. You will need a valid phone number to verify your identity.',
-  },
-  {
-    q: 'Is it free to create a petition?',
-    a: 'Yes, completely free. Creating, signing, and sharing petitions costs nothing.',
-  },
-  {
-    q: 'What happens if my petition is rejected?',
-    a: 'You will receive a reason. If your petition is a genuine civic issue that complies with our guidelines, you can revise and resubmit or submit an appeal.',
-  },
-  {
-    q: 'Can I stay anonymous?',
-    a: 'Yes. You can enable the anonymous option when creating your petition. Your legal identity is kept securely on our servers but is never shown publicly.',
-  },
-  {
-    q: 'What if the authority does not respond?',
-    a: 'Silence is documented. The petition page will show "No response received" as a public record. This itself can generate media and political pressure.',
-  },
-  {
-    q: 'Can I petition for anything?',
-    a: 'No. Petitions must be civic issues — infrastructure, health, education, governance, environment, rights, etc. Personal disputes, commercial claims, and defamatory content are not allowed.',
-  },
-];
+export default async function HowItWorksPage() {
+  const cms = await fetchCmsPage('how-it-works');
+  const heroHtml = getSection(cms, 'hero');
+  const stagesHtml = getSection(cms, 'stages');
+  const trustHtml = getSection(cms, 'trust');
+  const faqsHtml = getSection(cms, 'faqs');
 
-export default function HowItWorksPage() {
   return (
     <>
       <main className="min-h-screen bg-white dark:bg-neutral-950">
         {/* Hero */}
         <section className="bg-zinc-900 px-4 py-20 text-center dark:bg-neutral-900">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-            How it works
-          </p>
-          <h1 className="mt-3 text-4xl font-extrabold text-white sm:text-5xl">
-            From issue to action — <br className="hidden sm:block" />
-            step by step.
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-300 sm:text-lg">
-            Change Liberia is not just a petition tool. It is a structured civic process
-            that connects citizens directly to decision-makers with verified public evidence.
-          </p>
+          {heroHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: heroHtml }} />
+          ) : (
+            <>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                How it works
+              </p>
+              <h1 className="mt-3 text-4xl font-extrabold text-white sm:text-5xl">
+                From issue to action — <br className="hidden sm:block" />
+                step by step.
+              </h1>
+              <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-300 sm:text-lg">
+                Change Liberia is not just a petition tool. It is a structured civic process
+                that connects citizens directly to decision-makers with verified public evidence.
+              </p>
+            </>
+          )}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/create"
@@ -170,20 +156,25 @@ export default function HowItWorksPage() {
 
         {/* Step-by-step timeline */}
         <section className="mx-auto max-w-4xl px-4 py-20">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            The process
-          </p>
-          <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-            7 stages of change
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600 dark:text-neutral-400">
-            Every petition follows this transparent lifecycle — publicly visible at every stage.
-          </p>
+          {stagesHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: stagesHtml }} />
+          ) : (
+            <>
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                The process
+              </p>
+              <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                7 stages of change
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600 dark:text-neutral-400">
+                Every petition follows this transparent lifecycle — publicly visible at every stage.
+              </p>
+            </>
+          )}
 
           <div className="mt-12 space-y-6">
             {STAGES.map((s, i) => (
               <div key={s.n} className="flex gap-5">
-                {/* Left: number + connector */}
                 <div className="flex flex-col items-center">
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl ${s.iconBg}`}
@@ -194,8 +185,6 @@ export default function HowItWorksPage() {
                     <div className="mt-2 w-0.5 flex-1 bg-zinc-200 dark:bg-neutral-700" />
                   )}
                 </div>
-
-                {/* Right: content */}
                 <div className={`mb-6 flex-1 rounded-2xl ${s.color} border border-transparent p-5`}>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-extrabold text-zinc-400 dark:text-neutral-500">
@@ -225,49 +214,68 @@ export default function HowItWorksPage() {
         {/* Trust section */}
         <section className="bg-zinc-50 px-4 py-16 dark:bg-neutral-900">
           <div className="mx-auto max-w-4xl">
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Why it works
-            </p>
-            <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-              Built on verified trust
-            </h2>
-            <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              {[
-                { icon: '📱', title: 'Phone verification', body: 'Every signer verifies their phone number, confirming they are a real person.' },
-                { icon: '🪪', title: 'ID verification', body: 'High-trust signatures come from users who upload a national ID or passport.' },
-                { icon: '🔒', title: 'Fraud detection', body: 'Our system detects and removes bot signatures, duplicate accounts, and anomalous patterns.' },
-              ].map((c) => (
-                <div key={c.title} className="rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-neutral-700 dark:bg-neutral-800">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-2xl dark:bg-emerald-950">
-                    {c.icon}
-                  </div>
-                  <h3 className="font-bold text-zinc-900 dark:text-neutral-50">{c.title}</h3>
-                  <p className="mt-2 text-sm text-zinc-500 dark:text-neutral-400">{c.body}</p>
+            {trustHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: trustHtml }} />
+            ) : (
+              <>
+                <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  Why it works
+                </p>
+                <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                  Built on verified trust
+                </h2>
+                <div className="mt-10 grid gap-6 sm:grid-cols-3">
+                  {[
+                    { icon: '📱', title: 'Phone verification', body: 'Every signer verifies their phone number, confirming they are a real person.' },
+                    { icon: '🪪', title: 'ID verification', body: 'High-trust signatures come from users who upload a national ID or passport.' },
+                    { icon: '🔒', title: 'Fraud detection', body: 'Our system detects and removes bot signatures, duplicate accounts, and anomalous patterns.' },
+                  ].map((c) => (
+                    <div key={c.title} className="rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-neutral-700 dark:bg-neutral-800">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-2xl dark:bg-emerald-950">
+                        {c.icon}
+                      </div>
+                      <h3 className="font-bold text-zinc-900 dark:text-neutral-50">{c.title}</h3>
+                      <p className="mt-2 text-sm text-zinc-500 dark:text-neutral-400">{c.body}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </section>
 
         {/* FAQ */}
         <section className="mx-auto max-w-3xl px-4 py-16">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            FAQ
-          </p>
-          <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
-            Common questions
-          </h2>
-          <div className="mt-10 space-y-4">
-            {FAQS.map((f) => (
-              <div
-                key={f.q}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-700 dark:bg-neutral-900"
-              >
-                <p className="font-semibold text-zinc-900 dark:text-neutral-50">{f.q}</p>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-neutral-400">{f.a}</p>
+          {faqsHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: faqsHtml }} />
+          ) : (
+            <>
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                FAQ
+              </p>
+              <h2 className="mt-3 text-center text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                Common questions
+              </h2>
+              <div className="mt-10 space-y-4">
+                {[
+                  { q: 'Do I need to be a Liberian citizen to use Change Liberia?', a: 'You need a Liberian connection — citizen, resident, or diaspora. You will need a valid phone number to verify your identity.' },
+                  { q: 'Is it free to create a petition?', a: 'Yes, completely free. Creating, signing, and sharing petitions costs nothing.' },
+                  { q: 'What happens if my petition is rejected?', a: 'You will receive a reason. If your petition is a genuine civic issue that complies with our guidelines, you can revise and resubmit or submit an appeal.' },
+                  { q: 'Can I stay anonymous?', a: 'Yes. You can enable the anonymous option when creating your petition. Your legal identity is kept securely on our servers but is never shown publicly.' },
+                  { q: 'What if the authority does not respond?', a: 'Silence is documented. The petition page will show "No response received" as a public record. This itself can generate media and political pressure.' },
+                  { q: 'Can I petition for anything?', a: 'No. Petitions must be civic issues — infrastructure, health, education, governance, environment, rights, etc. Personal disputes, commercial claims, and defamatory content are not allowed.' },
+                ].map((f) => (
+                  <div
+                    key={f.q}
+                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-700 dark:bg-neutral-900"
+                  >
+                    <p className="font-semibold text-zinc-900 dark:text-neutral-50">{f.q}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-neutral-400">{f.a}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </section>
 
         {/* CTA */}
