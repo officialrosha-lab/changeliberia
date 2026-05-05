@@ -49,6 +49,13 @@ async function ensureSchema(prisma: PrismaService) {
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationsEnabled" BOOLEAN NOT NULL DEFAULT false`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationGoal" DOUBLE PRECISION`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "totalDonations" DOUBLE PRECISION NOT NULL DEFAULT 0`,
+    // UserRole enum + column (user_role_phase8) — JwtStrategy SELECTs role on every request
+    // CREATE TYPE has no IF NOT EXISTS before PG16; catch{} handles duplicate_object silently
+    `CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN')`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" "UserRole" NOT NULL DEFAULT 'USER'`,
+    // AuthProvider enum + column (add_email_verification migration)
+    `CREATE TYPE "AuthProvider" AS ENUM ('PHONE', 'EMAIL', 'GOOGLE')`,
+    `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "authProvider" "AuthProvider" NOT NULL DEFAULT 'PHONE'`,
     // User columns from platform_v2_governance migration
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT`,
     `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "age" INTEGER`,
