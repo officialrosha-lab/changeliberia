@@ -63,16 +63,6 @@ export class PetitionsController {
     return this.service.stats();
   }
 
-  @Get('debug/columns')
-  debugColumns() {
-    return this.service.debugColumns();
-  }
-
-  @Get('debug/list')
-  async debugList() {
-    return this.service.debugList();
-  }
-
   @Get('browse/all')
   browse() {
     return this.service.browse();
