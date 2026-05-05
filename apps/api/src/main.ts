@@ -94,6 +94,26 @@ async function ensureSchema(prisma: PrismaService) {
     )`,
     `CREATE UNIQUE INDEX IF NOT EXISTS "Supporter_sessionId_key" ON "Supporter"("sessionId")`,
     `CREATE INDEX IF NOT EXISTS "Supporter_ipAddress_idx" ON "Supporter"("ipAddress")`,
+    // AmbassadorApplication table
+    `CREATE TABLE IF NOT EXISTS "AmbassadorApplication" (
+      "id" TEXT NOT NULL,
+      "fullName" TEXT NOT NULL,
+      "email" TEXT NOT NULL,
+      "phone" TEXT NOT NULL,
+      "location" TEXT NOT NULL,
+      "occupation" TEXT,
+      "motivation" TEXT NOT NULL,
+      "growthPlan" TEXT NOT NULL,
+      "socialLinks" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'PENDING',
+      "notes" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "AmbassadorApplication_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "AmbassadorApplication_email_key" ON "AmbassadorApplication"("email")`,
+    `CREATE INDEX IF NOT EXISTS "AmbassadorApplication_status_idx" ON "AmbassadorApplication"("status")`,
+    `CREATE INDEX IF NOT EXISTS "AmbassadorApplication_createdAt_idx" ON "AmbassadorApplication"("createdAt")`,
     // Sponsor table
     `CREATE TABLE IF NOT EXISTS "Sponsor" (
       "id" TEXT NOT NULL,
