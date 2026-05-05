@@ -117,6 +117,28 @@ export class PetitionsService {
     return this.prisma.petition.update({ where: { id: petitionId }, data: { ...dto } });
   }
 
+  async debugColumns() {
+    return this.prisma.$queryRaw`
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'Petition'
+      ORDER BY ordinal_position
+    `;
+  }
+
+  async debugList() {
+    try {
+      const result = await this.prisma.petition.findMany({
+        where: { status: PetitionStatus.APPROVED },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      });
+      return { ok: true, count: result.length };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? String(e), code: e?.code };
+    }
+  }
+
   async list() {
     const petitions = await this.prisma.petition.findMany({
       where: { status: PetitionStatus.APPROVED },
