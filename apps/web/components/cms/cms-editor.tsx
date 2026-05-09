@@ -2,69 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { apiGet, apiPatch } from '../../lib/api';
+import { apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
-
-interface CMSSection {
-  id: string;
-  label: string;
-  html: string;
-}
-
-function tryParseSections(content: string): CMSSection[] | null {
-  try {
-    const arr = JSON.parse(content);
-    return Array.isArray(arr) ? arr : null;
-  } catch {
-    return null;
-  }
-}
-
-function SectionEditor({ content, onChange }: { content: string; onChange: (v: string) => void }) {
-  const sections = tryParseSections(content);
-
-  if (!sections) {
-    return (
-      <div>
-        <label className="block text-sm font-semibold mb-2">Content (HTML)</label>
-        <textarea
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-          rows={12}
-          placeholder="Enter HTML content..."
-        />
-        <p className="text-xs text-zinc-500 mt-1">
-          Supports HTML. Use &lt;h1&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;a&gt;, etc.
-        </p>
-      </div>
-    );
-  }
-
-  function updateSection(id: string, html: string) {
-    const updated = sections!.map((s) => (s.id === id ? { ...s, html } : s));
-    onChange(JSON.stringify(updated));
-  }
-
-  return (
-    <div className="space-y-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-        Page Sections — edit each section independently
-      </p>
-      {sections.map((s) => (
-        <div key={s.id} className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
-          <label className="block text-sm font-semibold mb-2 text-zinc-800">{s.label}</label>
-          <textarea
-            value={s.html}
-            rows={8}
-            onChange={(e) => updateSection(s.id, e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm bg-white"
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
+import { CMSPageBlockEditor } from '../cms-page-block-editor';
 
 interface CMSPage {
   id: string;
@@ -77,6 +17,7 @@ interface CMSPage {
   ogTitle: string | null;
   ogDescription: string | null;
   published: boolean;
+  isDraft: boolean;
   publishedAt: string | null;
 }
 
@@ -91,6 +32,8 @@ export function CMSEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!token || !pageId) return;
@@ -125,6 +68,54 @@ export function CMSEditor() {
     }
   }
 
+  async function handleToggleDraft() {
+    if (!token || !page) return;
+    try {
+      setSaving(true);
+      const updated = await apiPatch<CMSPage>(
+        `/cms/pages/${pageId}/draft`,
+        { isDraft: !page.isDraft },
+        token
+      );
+      setPage(updated as CMSPage);
+      setSuccess(`Page marked as ${updated.isDraft ? 'draft' : 'ready for publishing'}`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update draft status');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    if (!token || !page) return;
+    try {
+      setSaving(true);
+      const updated = await apiPost(
+        `/cms/pages/${pageId}/publish`,
+        {},
+        token
+      );
+      setPage(updated as CMSPage);
+      setSuccess('Page published successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to publish page');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function loadVersionHistory() {
+    if (!token || !pageId) return;
+    try {
+      const data = await apiGet<any[]>(`/cms/pages/${pageId}/versions`, token);
+      setVersions(data || []);
+    } catch (err) {
+      setError('Failed to load version history');
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8">Loading page...</div>;
   }
@@ -134,12 +125,26 @@ export function CMSEditor() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{page.title}</h1>
           <p className="text-sm text-zinc-600 mt-1">/{page.slug}</p>
+          <div className="mt-2 flex gap-2 items-center">
+            <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
+              page.isDraft
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              {page.isDraft ? 'Draft' : 'Ready'}
+            </span>
+            {page.published && (
+              <span className="inline-block px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+                Published
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={() => router.back()}
@@ -161,8 +166,78 @@ export function CMSEditor() {
         </div>
       )}
 
-      {/* Main Content Editor */}
-      <div className="space-y-4">
+      {/* Draft/Publish Controls */}
+      <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 flex justify-between items-center">
+        <div>
+          <p className="font-semibold">Publishing Controls</p>
+          <p className="text-sm text-zinc-600 mt-1">
+            {page.isDraft ? 'Mark page as ready for review before publishing' : 'Page is ready for publishing'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleToggleDraft}
+            disabled={saving}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              page.isDraft
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'bg-amber-600 text-white hover:bg-amber-700'
+            } disabled:opacity-50`}
+          >
+            {page.isDraft ? 'Mark as Ready' : 'Back to Draft'}
+          </button>
+          {page.isDraft && (
+            <button
+              onClick={handlePublish}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+            >
+              Publish Now
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setShowVersionHistory(!showVersionHistory);
+              if (!showVersionHistory) loadVersionHistory();
+            }}
+            className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 font-semibold"
+          >
+            Version History
+          </button>
+        </div>
+      </div>
+
+      {/* Version History Panel */}
+      {showVersionHistory && (
+        <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
+          <h3 className="font-semibold mb-3">Version History ({versions.length})</h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {versions.length === 0 ? (
+              <p className="text-sm text-zinc-600">No versions yet</p>
+            ) : (
+              versions.map((v: any, idx: number) => (
+                <div key={v.id} className="flex justify-between items-center text-sm bg-white p-2 rounded">
+                  <span>{new Date(v.createdAt).toLocaleString()}</span>
+                  {idx > 0 && (
+                    <button className="text-blue-600 hover:underline text-xs font-medium">
+                      Restore
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Block Editor */}
+      <div className="border border-zinc-200 rounded-lg p-6 bg-white">
+        <h2 className="text-xl font-bold mb-4">Page Blocks</h2>
+        <CMSPageBlockEditor />
+      </div>
+
+      {/* Basic Info */}
+      <div className="space-y-4 border border-zinc-200 rounded-lg p-4 bg-white">
         <div>
           <label className="block text-sm font-semibold mb-2">Page Title</label>
           <input
@@ -183,11 +258,6 @@ export function CMSEditor() {
             placeholder="URL-friendly page slug"
           />
         </div>
-
-        <SectionEditor
-          content={page.content}
-          onChange={(content) => setPage({ ...page, content })}
-        />
       </div>
 
       {/* SEO Metadata */}
@@ -249,27 +319,6 @@ export function CMSEditor() {
               placeholder="https://..."
             />
           </div>
-        </div>
-      </div>
-
-      {/* Publishing Status */}
-      <div className="border border-zinc-200 rounded-lg p-4 bg-purple-50">
-        <h3 className="font-semibold text-lg mb-4">Publishing</h3>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={page.published}
-              onChange={(e) => setPage({ ...page, published: e.target.checked })}
-              className="w-4 h-4 rounded"
-            />
-            <span className="font-medium">Publish this page</span>
-          </label>
-          {page.publishedAt && (
-            <span className="text-sm text-zinc-600">
-              Published {new Date(page.publishedAt).toLocaleDateString()}
-            </span>
-          )}
         </div>
       </div>
 
