@@ -190,4 +190,51 @@ export class CMSController {
     await this.cmsService.incrementViewCount(page.id);
     return page;
   }
+
+  /**
+   * Get all blocks for a page
+   */
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission(PermissionResource.CONTENT, PermissionAction.READ)
+  @Get('pages/:pageId/blocks')
+  async getPageBlocks(@Param('pageId') pageId: string) {
+    return this.cmsService.getPageBlocks(pageId);
+  }
+
+  /**
+   * Create block for a page
+   */
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission(PermissionResource.CONTENT, PermissionAction.CREATE)
+  @Post('pages/:pageId/blocks')
+  async createBlock(
+    @Param('pageId') pageId: string,
+    @Body() data: { type: string; order: number; props: Record<string, any> },
+  ) {
+    return this.cmsService.createBlock(pageId, data);
+  }
+
+  /**
+   * Update block
+   */
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission(PermissionResource.CONTENT, PermissionAction.UPDATE)
+  @Patch('blocks/:blockId')
+  async updateBlock(
+    @Param('blockId') blockId: string,
+    @Body() data: { type?: string; order?: number; props?: Record<string, any> },
+  ) {
+    return this.cmsService.updateBlock(blockId, data);
+  }
+
+  /**
+   * Delete block
+   */
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission(PermissionResource.CONTENT, PermissionAction.DELETE)
+  @Delete('blocks/:blockId')
+  async deleteBlock(@Param('blockId') blockId: string) {
+    await this.cmsService.deleteBlock(blockId);
+    return { success: true, message: 'Block deleted' };
+  }
 }

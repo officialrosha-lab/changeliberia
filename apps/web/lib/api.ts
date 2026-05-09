@@ -15,14 +15,7 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
     cache: 'no-store',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  if (!res.ok) {
-    let message = `Request failed (${res.status})`;
-    try {
-      const data = await res.json();
-      if (typeof data?.message === 'string') message = data.message;
-    } catch { /* ignore parse errors */ }
-    throw new Error(message);
-  }
+  if (!res.ok) throw new Error('Request failed');
   return res.json() as Promise<T>;
 }
 

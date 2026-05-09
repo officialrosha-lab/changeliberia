@@ -26,17 +26,76 @@ export class CMSService {
   async getPageById(id: string) {
     return this.prisma.cMSPage.findUnique({
       where: { id },
+      include: {
+        blocks: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
   }
 
   async getPageBySlug(slug: string) {
     return this.prisma.cMSPage.findUnique({
       where: { slug },
+      include: {
+        blocks: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
   }
 
-  async createPage(authorId: string, data: { title: string; slug: string; content?: string }) {
-    return this.prisma.cMSPage.create({
+  async createBlock(
+    pageId: string,
+    data: {
+      type: string;
+      order: number;
+      props: Record<string, any>;
+    },
+  ) {
+    return this.prisma.cMSBlock.create({
+      data: {
+        pageId,
+        type: data.type,
+        order: data.order,
+        props: JSON.stringify(data.props),
+      },
+    });
+  }
+
+  async updateBlock(
+    blockId: string,
+    data: {
+      type?: string;
+      order?: number;
+      props?: Record<string, any>;
+    },
+  ) {
+    const updateData: any = { ...data };
+    if (data.props) {
+      updateData.props = JSON.stringify(data.props);
+    }
+    return this.prisma.cMSBlock.update({
+      where: { id: blockId },
+      data: updateData,
+    });
+  }
+
+  async deleteBlock(blockId: string) {
+    return this.prisma.cMSBlock.delete({
+      where: { id: blockId },
+    });
+  }
+
+  async getPageBlocks(pageId: string) {
+    return this.prisma.cMSBlock.findMany({
+      where: { pageId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  async createPage(authorId: string, data: { title: string; slug: string; content?: string; blocks?: any[] }) {
+    const page = await this.prisma.cMSPage.create({
       data: {
         title: data.title,
         slug: data.slug,
@@ -44,6 +103,21 @@ export class CMSService {
         authorId,
       },
     });
+
+    // Create initial blocks if provided
+    if (data.blocks && data.blocks.length > 0) {
+      await Promise.all(
+        data.blocks.map((block, index) =>
+          this.createBlock(page.id, {
+            type: block.type,
+            order: index,
+            props: block.props,
+          }),
+        ),
+      );
+    }
+
+    return this.getPageById(page.id);
   }
 
   async updatePage(

@@ -1271,25 +1271,40 @@ model RoutingLog {
 // ============================================================================
 
 model CMSPage {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   title           String
-  slug            String    @unique
-  content         String    @db.Text() // Rich HTML content
+  slug            String      @unique
+  content         String      @db.Text() // Rich HTML content (legacy)
+  blocks          CMSBlock[]  // Block-based content
   metaDescription String?
   metaKeywords    String?
   ogImage         String? // Open Graph image URL
   ogTitle         String?
   ogDescription   String?
-  published       Boolean   @default(false)
+  published       Boolean     @default(false)
   publishedAt     DateTime?
   authorId        String?
-  author          User?     @relation("CMSPageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-  viewCount       Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  author          User?       @relation("CMSPageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  viewCount       Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([slug])
   @@index([published, publishedAt])
+}
+
+model CMSBlock {
+  id        String    @id @default(cuid())
+  pageId    String
+  page      CMSPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type      String    // hero, text, image, grid, cta, testimonial, divider, faq, features
+  order     Int       // Display order within page
+  props     String    @db.Text() // JSON with block-specific props
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([pageId, order])
+  @@index([pageId, order])
 }
 
 model CMSTemplate {

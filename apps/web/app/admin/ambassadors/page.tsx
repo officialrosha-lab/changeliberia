@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../lib/store';
-import { apiGet } from '../../../lib/api';
 import { AdminAmbassadorsPanel } from '../../../components/admin/admin-ambassadors-panel';
 
 export default function AdminAmbassadorsPage() {
@@ -16,7 +15,15 @@ export default function AdminAmbassadorsPage() {
 
     const fetchAmbassadors = async () => {
       try {
-        const data = await apiGet<any[]>('/ambassadors/admin', token);
+        const response = await fetch('/ambassadors/admin', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ambassadors: ${response.status}`);
+        }
+
+        const data = await response.json();
         setAmbassadors(data);
       } catch (err: any) {
         setError(err.message);
