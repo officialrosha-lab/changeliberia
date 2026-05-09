@@ -22,6 +22,8 @@ export function CMSPageBlockEditor() {
   const [blockType, setBlockType] = useState<BlockType>('text');
   const [blockProps, setBlockProps] = useState<Record<string, any>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [copiedBlock, setCopiedBlock] = useState<CMSBlock | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -103,6 +105,75 @@ export function CMSPageBlockEditor() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete block');
+    }
+  }
+
+  async function handleDuplicateBlock(block: CMSBlock) {
+    if (!selectedPage || !token) return;
+    try {
+      const order = (selectedPage.blocks?.length ?? 0) + 1;
+      const newBlock = await apiPost<CMSBlock>(
+        `/cms/pages/${selectedPage.id}/blocks`,
+        { type: block.type, props: block.props, order },
+        token
+      );
+      setSelectedPage({
+        ...selectedPage,
+        blocks: [...(selectedPage.blocks || []), newBlock],
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate block');
+    }
+  }
+
+  function handleCopyBlock(block: CMSBlock) {
+    setCopiedBlock(block);
+    setError(null);
+  }
+
+  async function handlePasteBlock() {
+    if (!selectedPage || !token || !copiedBlock) return;
+    try {
+      const order = (selectedPage.blocks?.length ?? 0) + 1;
+      const newBlock = await apiPost<CMSBlock>(
+        `/cms/pages/${selectedPage.id}/blocks`,
+        { type: copiedBlock.type, props: copiedBlock.props, order },
+        token
+      );
+      setSelectedPage({
+        ...selectedPage,
+        blocks: [...(selectedPage.blocks || []), newBlock],
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to paste block');
+    }
+  }
+
+  async function handleReorderBlocks(sourceIndex: number, destIndex: number) {
+    if (!selectedPage || !token) return;
+    const blocks = [...(selectedPage.blocks || [])];
+    const [movedBlock] = blocks.splice(sourceIndex, 1);
+    blocks.splice(destIndex, 0, movedBlock);
+
+    // Update local state
+    setSelectedPage({
+      ...selectedPage,
+      blocks,
+    });
+
+    // Update order in database for all affected blocks
+    try {
+      const updates = blocks.map((block, idx) =>
+        apiPatch(`/cms/blocks/${block.id}`, { order: idx + 1 }, token!)
+      );
+      await Promise.all(updates);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reorder blocks');
+      // Refresh page on error
+      loadPageWithBlocks(selectedPage.id);
     }
   }
 
@@ -213,11 +284,41 @@ export function CMSPageBlockEditor() {
             <div className="space-y-4">
               <div>
                 <h4 className="mb-4 font-bold">Blocks ({selectedPage.blocks?.length ?? 0})</h4>
+                
+                {copiedBlock && (
+                  <div className="mb-4 flex items-center justify-between rounded-lg bg-blue-50 p-3 dark:bg-blue-950/30">
+                    <span className="text-sm text-blue-700 dark:text-blue-300">
+                      Copied: {copiedBlock.type.toUpperCase()}
+                    </span>
+                    <button
+                      onClick={handlePasteBlock}
+                      className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    >
+                      Paste
+                    </button>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   {(selectedPage.blocks || []).map((block, idx) => (
                     <div
                       key={block.id}
-                      className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-neutral-700 dark:bg-neutral-900"
+                      draggable
+                      onDragStart={() => setDraggedBlockId(block.id)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (draggedBlockId && draggedBlockId !== block.id) {
+                          const draggedIdx = (selectedPage.blocks || []).findIndex((b) => b.id === draggedBlockId);
+                          handleReorderBlocks(draggedIdx, idx);
+                        }
+                        setDraggedBlockId(null);
+                      }}
+                      className={`flex items-center justify-between rounded-lg border-2 p-3 transition ${
+                        draggedBlockId === block.id
+                          ? 'border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-950/30'
+                          : 'border-zinc-200 bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-900'
+                      }`}
+                      style={{ cursor: 'move' }}
                     >
                       <div className="flex-1">
                         <p className="text-sm font-medium text-zinc-900 dark:text-neutral-50">
@@ -227,21 +328,39 @@ export function CMSPageBlockEditor() {
                           <p className="text-xs text-zinc-500 dark:text-neutral-400">{block.props.title}</p>
                         )}
                       </div>
-                      <button
-                        onClick={() => {
-                          setEditingBlock(block);
-                          setBlockProps(block.props || {});
-                        }}
-                        className="ml-2 rounded px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBlock(block.id)}
-                        className="ml-1 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-                      >
-                        Delete
-                      </button>
+                      <div className="ml-2 flex gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingBlock(block);
+                            setBlockProps(block.props || {});
+                          }}
+                          className="rounded px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950"
+                          title="Edit block"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleCopyBlock(block)}
+                          className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+                          title="Copy block for pasting"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => handleDuplicateBlock(block)}
+                          className="rounded px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950"
+                          title="Duplicate block on this page"
+                        >
+                          Dup
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBlock(block.id)}
+                          className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                          title="Delete block"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -365,7 +484,7 @@ function BlockPropsEditor({
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
-            type="text"
+            type="url"
             placeholder="CTA URL (optional)"
             value={props.ctaUrl || ''}
             onChange={(e) => updateProp('ctaUrl', e.target.value)}
@@ -400,6 +519,40 @@ function BlockPropsEditor({
           </select>
         </>
       )}
+      {type === 'image' && (
+        <>
+          <input
+            type="url"
+            placeholder="Image URL"
+            value={props.url || ''}
+            onChange={(e) => updateProp('url', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+          <input
+            type="text"
+            placeholder="Alt text (for accessibility)"
+            value={props.alt || ''}
+            onChange={(e) => updateProp('alt', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+          <textarea
+            placeholder="Caption (optional)"
+            value={props.caption || ''}
+            onChange={(e) => updateProp('caption', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+            rows={2}
+          />
+          <select
+            value={props.size || 'full'}
+            onChange={(e) => updateProp('size', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value="small">Small (50%)</option>
+            <option value="medium">Medium (66%)</option>
+            <option value="full">Full width</option>
+          </select>
+        </>
+      )}
       {type === 'cta' && (
         <>
           <input
@@ -424,7 +577,7 @@ function BlockPropsEditor({
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
-            type="text"
+            type="url"
             placeholder="Primary button URL"
             value={props.primaryUrl || ''}
             onChange={(e) => updateProp('primaryUrl', e.target.value)}
@@ -432,23 +585,268 @@ function BlockPropsEditor({
           />
         </>
       )}
-      {(type === 'faq' || type === 'testimonial' || type === 'image' || type === 'grid' || type === 'features') && (
-        <div className="rounded bg-zinc-100 p-2 text-xs text-zinc-600 dark:bg-neutral-800 dark:text-neutral-400">
-          <p>Props editor coming for {type} blocks</p>
+      {type === 'testimonial' && (
+        <>
           <textarea
-            placeholder="JSON props"
-            value={JSON.stringify(props, null, 2)}
-            onChange={(e) => {
-              try {
-                onChange(JSON.parse(e.target.value));
-              } catch {
-                // Invalid JSON, don't update
-              }
-            }}
-            className="mt-2 w-full rounded border border-zinc-300 px-2 py-1 text-xs font-mono dark:border-neutral-600 dark:bg-neutral-700"
-            rows={6}
+            placeholder="Quote text"
+            value={props.quote || ''}
+            onChange={(e) => updateProp('quote', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+            rows={3}
           />
-        </div>
+          <input
+            type="text"
+            placeholder="Author name"
+            value={props.author || ''}
+            onChange={(e) => updateProp('author', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+          <input
+            type="text"
+            placeholder="Author role/title"
+            value={props.role || ''}
+            onChange={(e) => updateProp('role', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+          <input
+            type="url"
+            placeholder="Avatar image URL (optional)"
+            value={props.avatar || ''}
+            onChange={(e) => updateProp('avatar', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+          <select
+            value={props.rating || 5}
+            onChange={(e) => updateProp('rating', parseInt(e.target.value))}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value={5}>⭐ 5 stars</option>
+            <option value={4}>⭐ 4 stars</option>
+            <option value={3}>⭐ 3 stars</option>
+            <option value={2}>⭐ 2 stars</option>
+            <option value={1}>⭐ 1 star</option>
+          </select>
+        </>
+      )}
+      {type === 'faq' && (
+        <>
+          <div className="space-y-3">
+            {(props.items || []).map((item: any, idx: number) => (
+              <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Question {idx + 1}</span>
+                  <button
+                    onClick={() => {
+                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      updateProp('items', newItems);
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Question"
+                  value={item.question || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, question: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+                <textarea
+                  placeholder="Answer"
+                  value={item.answer || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, answer: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                  rows={2}
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              updateProp('items', [...(props.items || []), { question: '', answer: '' }]);
+            }}
+            className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
+          >
+            + Add FAQ Item
+          </button>
+        </>
+      )}
+      {type === 'grid' && (
+        <>
+          <select
+            value={props.columns || 3}
+            onChange={(e) => updateProp('columns', parseInt(e.target.value))}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value={2}>2 columns</option>
+            <option value={3}>3 columns</option>
+            <option value={4}>4 columns</option>
+          </select>
+          <div className="space-y-3">
+            {(props.items || []).map((item: any, idx: number) => (
+              <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Grid Item {idx + 1}</span>
+                  <button
+                    onClick={() => {
+                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      updateProp('items', newItems);
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={item.title || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, title: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+                <textarea
+                  placeholder="Description"
+                  value={item.description || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, description: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                  rows={2}
+                />
+                <input
+                  type="text"
+                  placeholder="Icon (emoji or icon name, e.g. 📱 or 'download')"
+                  value={item.icon || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, icon: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+                <input
+                  type="url"
+                  placeholder="Link URL (optional)"
+                  value={item.link || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, link: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              updateProp('items', [...(props.items || []), { title: '', description: '', icon: '', link: '' }]);
+            }}
+            className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
+          >
+            + Add Grid Item
+          </button>
+        </>
+      )}
+      {type === 'features' && (
+        <>
+          <div className="space-y-3">
+            {(props.items || []).map((item: any, idx: number) => (
+              <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Feature {idx + 1}</span>
+                  <button
+                    onClick={() => {
+                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      updateProp('items', newItems);
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Feature title"
+                  value={item.title || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, title: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+                <textarea
+                  placeholder="Feature description"
+                  value={item.description || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, description: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                  rows={2}
+                />
+                <input
+                  type="text"
+                  placeholder="Icon (emoji or icon name, e.g. ✅ or 'check')"
+                  value={item.icon || ''}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[idx] = { ...item, icon: e.target.value };
+                    updateProp('items', newItems);
+                  }}
+                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              updateProp('items', [...(props.items || []), { title: '', description: '', icon: '' }]);
+            }}
+            className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
+          >
+            + Add Feature
+          </button>
+        </>
+      )}
+      {type === 'divider' && (
+        <>
+          <select
+            value={props.style || 'solid'}
+            onChange={(e) => updateProp('style', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value="solid">Solid line</option>
+            <option value="dashed">Dashed line</option>
+            <option value="dotted">Dotted line</option>
+          </select>
+          <select
+            value={props.size || 'md'}
+            onChange={(e) => updateProp('size', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value="sm">Small spacing</option>
+            <option value="md">Medium spacing</option>
+            <option value="lg">Large spacing</option>
+          </select>
+        </>
       )}
     </div>
   );

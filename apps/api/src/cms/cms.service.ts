@@ -24,7 +24,7 @@ export class CMSService {
   }
 
   async getPageById(id: string) {
-    return this.prisma.cMSPage.findUnique({
+    const page = await this.prisma.cMSPage.findUnique({
       where: { id },
       include: {
         blocks: {
@@ -32,10 +32,20 @@ export class CMSService {
         },
       },
     });
+
+    if (page && page.blocks) {
+      // Parse props from JSON strings
+      page.blocks = page.blocks.map((block: any) => ({
+        ...block,
+        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      }));
+    }
+
+    return page;
   }
 
   async getPageBySlug(slug: string) {
-    return this.prisma.cMSPage.findUnique({
+    const page = await this.prisma.cMSPage.findUnique({
       where: { slug },
       include: {
         blocks: {
@@ -43,6 +53,16 @@ export class CMSService {
         },
       },
     });
+
+    if (page && page.blocks) {
+      // Parse props from JSON strings
+      page.blocks = page.blocks.map((block: any) => ({
+        ...block,
+        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      }));
+    }
+
+    return page;
   }
 
   async createBlock(
@@ -53,7 +73,7 @@ export class CMSService {
       props: Record<string, any>;
     },
   ) {
-    return this.prisma.cMSBlock.create({
+    const block = await this.prisma.cMSBlock.create({
       data: {
         pageId,
         type: data.type,
@@ -61,6 +81,11 @@ export class CMSService {
         props: JSON.stringify(data.props),
       },
     });
+
+    return {
+      ...block,
+      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+    };
   }
 
   async updateBlock(
@@ -75,10 +100,15 @@ export class CMSService {
     if (data.props) {
       updateData.props = JSON.stringify(data.props);
     }
-    return this.prisma.cMSBlock.update({
+    const block = await this.prisma.cMSBlock.update({
       where: { id: blockId },
       data: updateData,
     });
+
+    return {
+      ...block,
+      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+    };
   }
 
   async deleteBlock(blockId: string) {
@@ -88,10 +118,16 @@ export class CMSService {
   }
 
   async getPageBlocks(pageId: string) {
-    return this.prisma.cMSBlock.findMany({
+    const blocks = await this.prisma.cMSBlock.findMany({
       where: { pageId },
       orderBy: { order: 'asc' },
     });
+
+    // Parse props from JSON strings
+    return blocks.map((block: any) => ({
+      ...block,
+      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+    }));
   }
 
   async createPage(authorId: string, data: { title: string; slug: string; content?: string; blocks?: any[] }) {
