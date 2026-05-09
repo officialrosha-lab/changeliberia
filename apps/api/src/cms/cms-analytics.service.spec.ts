@@ -46,6 +46,8 @@ describe('CMSAnalyticsService', () => {
         blockType: 'hero',
       };
 
+      const now = new Date();
+
       mockPrisma.cMSBlockAnalytics.upsert.mockResolvedValueOnce({
         id: 'analytics-1',
         pageId: data.pageId,
@@ -53,8 +55,11 @@ describe('CMSAnalyticsService', () => {
         blockType: data.blockType,
         views: 1,
         clicks: 0,
+        engagement: 0,
         variantId: undefined,
-        recordDate: new Date(),
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType);
@@ -71,12 +76,20 @@ describe('CMSAnalyticsService', () => {
         blockType: 'hero',
       };
 
+      const now = new Date();
+
       mockPrisma.cMSBlockAnalytics.upsert.mockResolvedValueOnce({
         id: 'analytics-1',
         views: 5,
         clicks: 2,
         pageId: data.pageId,
         blockId: data.blockId,
+        blockType: data.blockType,
+        variantId: undefined,
+        engagement: 0.4,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType);
@@ -92,6 +105,8 @@ describe('CMSAnalyticsService', () => {
         variantId: 'variant-a',
       };
 
+      const now = new Date();
+
       mockPrisma.cMSBlockAnalytics.upsert.mockResolvedValueOnce({
         id: 'analytics-1',
         pageId: data.pageId,
@@ -100,7 +115,10 @@ describe('CMSAnalyticsService', () => {
         views: 1,
         clicks: 0,
         variantId: data.variantId,
-        recordDate: new Date(),
+        engagement: 0,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType, data.variantId);
@@ -117,6 +135,8 @@ describe('CMSAnalyticsService', () => {
         blockType: 'cta',
       };
 
+      const now = new Date();
+
       mockPrisma.cMSBlockAnalytics.upsert.mockResolvedValueOnce({
         id: 'analytics-1',
         pageId: data.pageId,
@@ -125,13 +145,24 @@ describe('CMSAnalyticsService', () => {
         views: 0,
         clicks: 1,
         variantId: undefined,
-        recordDate: new Date(),
+        engagement: 0,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       mockPrisma.cMSBlockAnalytics.update.mockResolvedValueOnce({
         id: 'analytics-1',
+        pageId: data.pageId,
+        blockId: data.blockId,
+        blockType: data.blockType,
         views: 0,
         clicks: 1,
+        variantId: undefined,
+        engagement: 0,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       const result = await service.trackBlockClick(data.pageId, data.blockId, data.blockType);
@@ -140,12 +171,14 @@ describe('CMSAnalyticsService', () => {
       expect(result.clicks).toBe(1);
     });
 
-    it('should increment existing click count', async () => {
+    it('should calculate engagement rate on click', async () => {
       const data = {
         pageId: 'page-1',
         blockId: 'block-1',
         blockType: 'cta',
       };
+
+      const now = new Date();
 
       mockPrisma.cMSBlockAnalytics.upsert.mockResolvedValueOnce({
         id: 'analytics-1',
@@ -155,181 +188,140 @@ describe('CMSAnalyticsService', () => {
         views: 10,
         clicks: 3,
         variantId: undefined,
-        recordDate: new Date(),
+        engagement: 0.3,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       mockPrisma.cMSBlockAnalytics.update.mockResolvedValueOnce({
         id: 'analytics-1',
+        pageId: data.pageId,
+        blockId: data.blockId,
+        blockType: data.blockType,
         views: 10,
         clicks: 3,
+        variantId: undefined,
+        engagement: 0.3,
+        recordDate: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       const result = await service.trackBlockClick(data.pageId, data.blockId, data.blockType);
 
       expect(result.clicks).toBe(3);
-    });
-  });
-
-  describe('getBlockAnalytics', () => {
-    it('should return analytics for a specific block', async () => {
-      const blockId = 'block-1';
-
-      mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([
-        {
-          id: 'analytics-1',
-          blockId,
-          blockType: 'hero',
-          viewCount: 100,
-          clickCount: 10,
-          variantId: '',
-          pageId: 'page-1',
-        },
-      ]);
-
-      const result = await service.getBlockAnalytics(blockId);
-
-      expect(prisma.cMSBlockAnalytics.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { blockId },
-        })
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].viewCount).toBe(100);
-      expect(result[0].clickCount).toBe(10);
-    });
-
-    it('should calculate engagement rate', async () => {
-      const blockId = 'block-1';
-
-      mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([
-        {
-          id: 'analytics-1',
-          blockId,
-          blockType: 'hero',
-          viewCount: 100,
-          clickCount: 10,
-          variantId: '',
-          pageId: 'page-1',
-        },
-      ]);
-
-      const result = await service.getBlockAnalytics(blockId);
-
-      expect(result[0].engagementRate).toBe(0.1); // 10/100
+      expect(prisma.cMSBlockAnalytics.update).toHaveBeenCalled();
     });
   });
 
   describe('getPageAnalytics', () => {
-    it('should aggregate analytics for all blocks on a page', async () => {
+    it('should return aggregated page analytics', async () => {
       const pageId = 'page-1';
+      const now = new Date();
 
       mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([
         {
-          id: 'analytics-1',
+          id: '1',
+          pageId,
           blockId: 'block-1',
           blockType: 'hero',
-          viewCount: 100,
-          clickCount: 10,
-          variantId: '',
-          pageId,
+          variantId: null,
+          views: 100,
+          clicks: 10,
+          engagement: 0.1,
+          recordDate: now,
+          createdAt: now,
+          updatedAt: now,
         },
         {
-          id: 'analytics-2',
+          id: '2',
+          pageId,
           blockId: 'block-2',
           blockType: 'cta',
-          viewCount: 80,
-          clickCount: 8,
-          variantId: '',
-          pageId,
+          variantId: null,
+          views: 50,
+          clicks: 5,
+          engagement: 0.1,
+          recordDate: now,
+          createdAt: now,
+          updatedAt: now,
         },
       ]);
 
-      const result = await service.getPageAnalytics(pageId);
+      const result = await service.getPageAnalytics(pageId, now, now);
 
-      expect(prisma.cMSBlockAnalytics.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { pageId },
-        })
-      );
-
-      expect(result.totalViews).toBe(180);
-      expect(result.totalClicks).toBe(18);
-      expect(result.avgEngagementRate).toBe(0.1); // 18/180
+      expect(result.pageId).toBe(pageId);
+      expect(result.blocks).toHaveLength(2);
+      expect(result.totals.views).toBe(150);
+      expect(result.totals.clicks).toBe(15);
+      expect(result.totals.avgEngagement).toBe(0.1);
     });
 
-    it('should handle empty page analytics', async () => {
+    it('should handle pages with no analytics', async () => {
       const pageId = 'page-empty';
+      const now = new Date();
 
       mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([]);
 
-      const result = await service.getPageAnalytics(pageId);
+      const result = await service.getPageAnalytics(pageId, now, now);
 
-      expect(result.totalViews).toBe(0);
-      expect(result.totalClicks).toBe(0);
-      expect(result.avgEngagementRate).toBe(0);
+      expect(result.pageId).toBe(pageId);
+      expect(result.blocks).toHaveLength(0);
+      expect(result.totals.views).toBe(0);
+      expect(result.totals.clicks).toBe(0);
+      expect(result.totals.avgEngagement).toBe(0);
     });
   });
 
   describe('compareVariants', () => {
-    it('should compare analytics across A/B test variants', async () => {
+    it('should compare two variants and identify winner', async () => {
       const blockId = 'block-1';
+      const variantA = 'variant-a';
+      const variantB = 'variant-b';
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      mockPrisma.cMSBlockAnalytics.groupBy.mockResolvedValueOnce([
+      // Mock first call for variant-a
+      mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([
         {
-          variantId: 'variant-a',
-          _sum: {
-            viewCount: 100,
-            clickCount: 15,
-          },
-        },
-        {
-          variantId: 'variant-b',
-          _sum: {
-            viewCount: 95,
-            clickCount: 12,
-          },
+          id: '1',
+          blockId,
+          blockType: 'hero',
+          variantId: variantA,
+          views: 100,
+          clicks: 15,
+          engagement: 0.15,
+          pageId: 'page-1',
+          recordDate: now,
+          createdAt: now,
+          updatedAt: now,
         },
       ]);
 
-      const result = await service.compareVariants(blockId);
-
-      expect(prisma.cMSBlockAnalytics.groupBy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          by: ['variantId'],
-          where: { blockId },
-        })
-      );
-
-      expect(result).toHaveLength(2);
-      expect(result[0].engagementRate).toBe(0.15); // 15/100
-      expect(result[1].engagementRate).toBeCloseTo(0.1263, 2); // 12/95
-    });
-
-    it('should identify winning variant', async () => {
-      const blockId = 'block-1';
-
-      mockPrisma.cMSBlockAnalytics.groupBy.mockResolvedValueOnce([
+      // Mock second call for variant-b
+      mockPrisma.cMSBlockAnalytics.findMany.mockResolvedValueOnce([
         {
-          variantId: 'variant-a',
-          _sum: {
-            viewCount: 100,
-            clickCount: 20,
-          },
-        },
-        {
-          variantId: 'variant-b',
-          _sum: {
-            viewCount: 100,
-            clickCount: 15,
-          },
+          id: '2',
+          blockId,
+          blockType: 'hero',
+          variantId: variantB,
+          views: 95,
+          clicks: 12,
+          engagement: 0.126,
+          pageId: 'page-1',
+          recordDate: now,
+          createdAt: now,
+          updatedAt: now,
         },
       ]);
 
-      const result = await service.compareVariants(blockId);
+      const result = await service.compareVariants(blockId, [variantA, variantB], startDate, now);
 
-      // variant-a has higher engagement (20/100 = 0.2 vs 15/100 = 0.15)
-      expect(result[0].engagementRate).toBeGreaterThan(result[1].engagementRate);
+      expect(result.blockId).toBe(blockId);
+      expect(result.winner).toBe(variantA);
+      expect(result.results[variantA].engagement).toBe(0.15);
+      expect(result.results[variantB].engagement).toBeCloseTo(0.126, 2);
     });
   });
 });

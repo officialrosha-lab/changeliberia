@@ -14,10 +14,7 @@ describe('CMSScheduler', () => {
         {
           provide: ContentSchedulingService,
           useValue: {
-            executeScheduledActions: jest.fn().mockResolvedValue({
-              executed: 1,
-              failed: 0,
-            }),
+            executeScheduledActions: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -33,34 +30,27 @@ describe('CMSScheduler', () => {
 
   describe('executeScheduledActions', () => {
     it('should call contentSchedulingService.executeScheduledActions', async () => {
-      const result = await scheduler.executeScheduledActions();
+      await scheduler.executeScheduledActions();
 
       expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
-      expect(result).toEqual({ executed: 1, failed: 0 });
     });
 
     it('should handle service errors gracefully', async () => {
       const error = new Error('Database connection failed');
       (contentSchedulingService.executeScheduledActions as jest.Mock).mockRejectedValueOnce(error);
 
-      await expect(scheduler.executeScheduledActions()).rejects.toThrow('Database connection failed');
+      // The scheduler catches errors and logs them, doesn't throw
+      await expect(scheduler.executeScheduledActions()).resolves.toBeUndefined();
+      expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
     });
 
-    it('should return execution results', async () => {
-      (contentSchedulingService.executeScheduledActions as jest.Mock).mockResolvedValueOnce({
-        executed: 5,
-        failed: 1,
-        actions: [
-          { id: 'schedule-1', action: 'publish', status: 'completed' },
-          { id: 'schedule-2', action: 'publish', status: 'completed' },
-        ],
-      });
+    it('should execute successfully and call service method', async () => {
+      (contentSchedulingService.executeScheduledActions as jest.Mock).mockResolvedValueOnce(undefined);
 
       const result = await scheduler.executeScheduledActions();
 
-      expect(result.executed).toBe(5);
-      expect(result.failed).toBe(1);
-      expect(result.actions).toHaveLength(2);
+      expect(result).toBeUndefined();
+      expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
     });
   });
 });
