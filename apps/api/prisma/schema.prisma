@@ -106,6 +106,10 @@ model User {
   // RBAC relations
   userRoles UserRoleAssignment[] // New role-based access control
   cmsPages  CMSPage[]            @relation("CMSPageAuthor")
+  cmsPageVersions CMSPageVersion[] @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  cmsFiles  CMSFile[] // Phase 2: File uploads
+  cmsExperiments CMSExperiment[] // Phase 4: A/B testing
+  cmsSchedules CMSSchedule[] @relation("CMSScheduleCreator") // Phase 3: Content scheduling
   
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
@@ -1276,6 +1280,9 @@ model CMSPage {
   slug            String      @unique
   content         String      @db.Text() // Rich HTML content (legacy)
   blocks          CMSBlock[]  // Block-based content
+  versions        CMSPageVersion[] // Version history
+  schedules       CMSSchedule[] @relation("CMSPageSchedule") // Scheduled actions
+  isDraft         Boolean     @default(true) // Phase 3: Draft mode
   metaDescription String?
   metaKeywords    String?
   ogImage         String? // Open Graph image URL
@@ -1417,4 +1424,100 @@ model AmbassadorApplication {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// ==================== PHASE 2: Rich Text & Version History ====================
+
+// Track page versions for undo/restore functionality
+model CMSPageVersion {
+  id          String   @id @default(cuid())
+  pageId      String
+  page        CMSPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String
+  blocks      String   @db.Text() // JSON array of CMSBlock snapshots
+  authorId    String?
+  author      User?    @relation("CMSPageVersionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  description String?  // What changed (e.g., "Updated hero block")
+  createdAt   DateTime @default(now())
+
+  @@index([pageId, createdAt])
+  @@index([pageId])
+}
+
+// Track file uploads (images, documents)
+model CMSFile {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String   // User's original filename
+  mimeType     String
+  size         Int      // File size in bytes
+  url          String   // Full URL path for serving
+  uploadedBy   String
+  user         User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  usageCount   Int      @default(0) // How many blocks use this
+  tags         String   @default("[]") // JSON array of tags
+  alt          String?  // Alt text for accessibility
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([uploadedBy, createdAt])
+}
+
+// Block analytics tracking for A/B testing and performance
+model CMSBlockAnalytics {
+  id          String   @id @default(cuid())
+  pageId      String
+  blockId     String
+  blockType   String
+  views       Int      @default(0)
+  clicks      Int      @default(0)
+  engagement  Float    @default(0) // Engagement rate 0-1
+  variantId   String?  // For A/B testing - variant identifier
+  recordDate  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([pageId, blockId, variantId, recordDate])
+  @@index([pageId, recordDate])
+  @@index([blockType, recordDate])
+}
+
+// A/B testing experiments for blocks
+model CMSExperiment {
+  id          String   @id @default(cuid())
+  pageId      String
+  blockId     String
+  name        String
+  description String?
+  status      String   @default("draft") // draft, active, completed
+  controlVariant String // JSON props for control group
+  variants    String   @db.Text() // JSON array of variant objects {id, props, label}
+  startDate   DateTime?
+  endDate     DateTime?
+  winningVariantId String? // Which variant won
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([pageId, status])
+  @@index([blockId])
+  @@index([createdBy])
+}
+
+// Content scheduling for automated publishing
+model CMSSchedule {
+  id          String   @id @default(cuid())
+  pageId      String
+  page        CMSPage  @relation("CMSPageSchedule", fields: [pageId], references: [id], onDelete: Cascade)
+  action      String   // "publish", "unpublish", "update"
+  scheduledFor DateTime
+  executed    Boolean  @default(false)
+  executedAt  DateTime?
+  createdBy   String
+  creator     User     @relation("CMSScheduleCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([pageId, scheduledFor])
+  @@index([executed, scheduledFor])
 }
