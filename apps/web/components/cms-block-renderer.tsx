@@ -1,34 +1,74 @@
 'use client';
 
 import { CMSBlock } from '../lib/cms';
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { apiPost } from '../lib/api';
 
 interface CMSBlockRendererProps {
   block: CMSBlock;
+  pageId?: string;
 }
 
-export function CMSBlockRenderer({ block }: CMSBlockRendererProps) {
-  const { type, props } = block;
+/**
+ * Track block view in analytics
+ */
+async function trackBlockView(pageId: string, blockId: string, blockType: string) {
+  try {
+    await apiPost(`/api/v1/cms/blocks/${blockId}/track-view`, {
+      pageId,
+      blockType,
+    });
+  } catch (error) {
+    // Silently fail - don't interrupt user experience
+    console.debug('Analytics tracking failed:', error);
+  }
+}
+
+/**
+ * Track block click in analytics
+ */
+async function trackBlockClick(pageId: string, blockId: string, blockType: string) {
+  try {
+    await apiPost(`/api/v1/cms/blocks/${blockId}/track-click`, {
+      pageId,
+      blockType,
+    });
+  } catch (error) {
+    // Silently fail - don't interrupt user experience
+    console.debug('Analytics tracking failed:', error);
+  }
+}
+
+export function CMSBlockRenderer({ block, pageId }: CMSBlockRendererProps) {
+  const { id, type, props } = block;
+
+  // Track view on mount
+  useEffect(() => {
+    if (pageId && id) {
+      trackBlockView(pageId, id, type);
+    }
+  }, [pageId, id, type]);
 
   switch (type) {
     case 'hero':
-      return <HeroBlock {...(props as HeroBlockProps)} />;
+      return <HeroBlock {...(props as HeroBlockProps)} blockId={id} pageId={pageId} />;
     case 'text':
-      return <TextBlock {...(props as TextBlockProps)} />;
+      return <TextBlock {...(props as TextBlockProps)} blockId={id} pageId={pageId} />;
     case 'image':
-      return <ImageBlock {...(props as ImageBlockProps)} />;
+      return <ImageBlock {...(props as ImageBlockProps)} blockId={id} pageId={pageId} />;
     case 'grid':
-      return <GridBlock {...(props as GridBlockProps)} />;
+      return <GridBlock {...(props as GridBlockProps)} blockId={id} pageId={pageId} />;
     case 'cta':
-      return <CTABlock {...(props as CTABlockProps)} />;
+      return <CTABlock {...(props as CTABlockProps)} blockId={id} pageId={pageId} />;
     case 'testimonial':
-      return <TestimonialBlock {...(props as TestimonialBlockProps)} />;
+      return <TestimonialBlock {...(props as TestimonialBlockProps)} blockId={id} pageId={pageId} />;
     case 'divider':
-      return <DividerBlock {...(props as DividerBlockProps)} />;
+      return <DividerBlock {...(props as DividerBlockProps)} blockId={id} pageId={pageId} />;
     case 'faq':
-      return <FAQBlock {...(props as FAQBlockProps)} />;
+      return <FAQBlock {...(props as FAQBlockProps)} blockId={id} pageId={pageId} />;
     case 'features':
-      return <FeaturesBlock {...(props as FeaturesBlockProps)} />;
+      return <FeaturesBlock {...(props as FeaturesBlockProps)} blockId={id} pageId={pageId} />;
     default:
       return null;
   }
@@ -41,9 +81,17 @@ interface HeroBlockProps {
   backgroundImage?: string;
   ctaText?: string;
   ctaUrl?: string;
+  blockId?: string;
+  pageId?: string;
 }
 
-function HeroBlock({ title, subtitle, description, backgroundImage, ctaText, ctaUrl }: HeroBlockProps) {
+function HeroBlock({ title, subtitle, description, backgroundImage, ctaText, ctaUrl, blockId, pageId }: HeroBlockProps) {
+  const handleCTAClick = async () => {
+    if (pageId && blockId) {
+      await trackBlockClick(pageId, blockId, 'hero');
+    }
+  };
+
   return (
     <section
       className="relative border-b border-zinc-200 bg-gradient-to-br from-emerald-50 to-white px-4 py-16 dark:border-neutral-800 dark:from-emerald-950/20 dark:to-neutral-900 sm:py-20 md:py-24"
@@ -69,6 +117,7 @@ function HeroBlock({ title, subtitle, description, backgroundImage, ctaText, cta
             <div className="mt-8">
               <Link
                 href={ctaUrl}
+                onClick={handleCTAClick}
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
                 {ctaText}
@@ -86,9 +135,11 @@ interface TextBlockProps {
   body: string;
   alignment?: 'left' | 'center' | 'right';
   emphasize?: boolean;
+  blockId?: string;
+  pageId?: string;
 }
 
-function TextBlock({ title, body, alignment = 'left', emphasize = false }: TextBlockProps) {
+function TextBlock({ title, body, alignment = 'left', emphasize = false, blockId, pageId }: TextBlockProps) {
   const alignmentClass = {
     left: 'text-left',
     center: 'text-center',
@@ -117,9 +168,11 @@ interface ImageBlockProps {
   caption?: string;
   width?: number;
   height?: number;
+  blockId?: string;
+  pageId?: string;
 }
 
-function ImageBlock({ src, alt = '', caption, width, height }: ImageBlockProps) {
+function ImageBlock({ src, alt = '', caption, width, height, blockId, pageId }: ImageBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
@@ -147,9 +200,11 @@ interface GridBlockProps {
     details?: string[];
   }>;
   columns?: number;
+  blockId?: string;
+  pageId?: string;
 }
 
-function GridBlock({ title, items, columns = 2 }: GridBlockProps) {
+function GridBlock({ title, items, columns = 2, blockId, pageId }: GridBlockProps) {
   const gridClass = {
     1: 'sm:grid-cols-1',
     2: 'sm:grid-cols-2',
@@ -197,9 +252,17 @@ interface CTABlockProps {
     url: string;
     primary?: boolean;
   }>;
+  blockId?: string;
+  pageId?: string;
 }
 
-function CTABlock({ title, description, buttons }: CTABlockProps) {
+function CTABlock({ title, description, buttons, blockId, pageId }: CTABlockProps) {
+  const handleButtonClick = async () => {
+    if (pageId && blockId) {
+      await trackBlockClick(pageId, blockId, 'cta');
+    }
+  };
+
   return (
     <section className="border-b border-zinc-200 bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-16 dark:border-neutral-800 dark:from-emerald-500 dark:to-emerald-600 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl text-center">
@@ -213,6 +276,7 @@ function CTABlock({ title, description, buttons }: CTABlockProps) {
               <Link
                 key={idx}
                 href={btn.url}
+                onClick={handleButtonClick}
                 className={`inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold transition-all ${
                   btn.primary
                     ? 'bg-white text-emerald-600 hover:bg-emerald-50'
@@ -234,9 +298,11 @@ interface TestimonialBlockProps {
   author: string;
   title?: string;
   image?: string;
+  blockId?: string;
+  pageId?: string;
 }
 
-function TestimonialBlock({ quote, author, title, image }: TestimonialBlockProps) {
+function TestimonialBlock({ quote, author, title, image, blockId, pageId }: TestimonialBlockProps) {
   return (
     <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-16 dark:border-neutral-800 dark:bg-neutral-800/30 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
@@ -257,9 +323,11 @@ function TestimonialBlock({ quote, author, title, image }: TestimonialBlockProps
 
 interface DividerBlockProps {
   style?: 'line' | 'space';
+  blockId?: string;
+  pageId?: string;
 }
 
-function DividerBlock({ style = 'line' }: DividerBlockProps) {
+function DividerBlock({ style = 'line', blockId, pageId }: DividerBlockProps) {
   return (
     <section className="border-b border-zinc-200 dark:border-neutral-800">
       {style === 'line' && <div className="h-px bg-zinc-200 dark:bg-neutral-800" />}
@@ -274,9 +342,11 @@ interface FAQBlockProps {
     q: string;
     a: string;
   }>;
+  blockId?: string;
+  pageId?: string;
 }
 
-function FAQBlock({ title, items }: FAQBlockProps) {
+function FAQBlock({ title, items, blockId, pageId }: FAQBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
@@ -305,9 +375,11 @@ interface FeaturesBlockProps {
     title: string;
     description: string;
   }>;
+  blockId?: string;
+  pageId?: string;
 }
 
-function FeaturesBlock({ title, features }: FeaturesBlockProps) {
+function FeaturesBlock({ title, features, blockId, pageId }: FeaturesBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">

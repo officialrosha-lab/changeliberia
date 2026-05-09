@@ -273,7 +273,7 @@ export function CMSPageBlockEditor() {
               <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
                 {selectedPage.blocks && selectedPage.blocks.length > 0 ? (
                   selectedPage.blocks.map((block) => (
-                    <CMSBlockRenderer key={block.id} block={block} />
+                    <CMSBlockRenderer key={block.id} block={block} pageId={selectedPage.id} />
                   ))
                 ) : (
                   <p className="text-center text-zinc-500">No blocks yet</p>

@@ -5,6 +5,7 @@ import { FileUploadService } from './file-upload.service';
 import { VersionHistoryService } from './version-history.service';
 import { ContentSchedulingService } from './content-scheduling.service';
 import { CMSAnalyticsService } from './cms-analytics.service';
+import { CMSScheduler } from './cms.scheduler';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RbacModule } from '../rbac/rbac.module';
 
@@ -16,6 +17,7 @@ import { RbacModule } from '../rbac/rbac.module';
     VersionHistoryService,
     ContentSchedulingService,
     CMSAnalyticsService,
+    CMSScheduler,
   ],
   controllers: [CMSController],
   exports: [CMSService, FileUploadService, VersionHistoryService, ContentSchedulingService, CMSAnalyticsService],
