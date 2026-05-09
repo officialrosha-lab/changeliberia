@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CMSBlock, CMSPage } from '@/lib/cms';
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
-import { useAuthStore } from '@/lib/store';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 import { CMSPageBlockEditor } from './cms-page-block-editor';
 import {
   Clock,
@@ -15,6 +14,16 @@ import {
   MoreVertical,
   AlertCircle,
 } from 'lucide-react';
+
+interface CMSPage {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  published: boolean;
+  publishedAt?: string;
+  blocks?: any[];
+}
 
 interface PageVersion {
   id: string;
@@ -38,7 +47,7 @@ interface CMSPageEnhanced extends CMSPage {
 }
 
 export function CMSPageEditorEnhanced() {
-  const token = useAuthStore((s) => s.token);
+  const token = useAuthStore((s: any) => s.token);
   const [selectedPage, setSelectedPage] = useState<CMSPageEnhanced | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showScheduling, setShowScheduling] = useState(false);

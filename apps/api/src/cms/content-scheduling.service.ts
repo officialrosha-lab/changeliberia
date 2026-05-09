@@ -48,7 +48,6 @@ export class ContentSchedulingService {
   /**
    * Execute scheduled actions - runs every minute
    */
-  @Cron('* * * * *') // Every minute
   async executeScheduledActions() {
     const now = new Date();
 

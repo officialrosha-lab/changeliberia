@@ -50,7 +50,7 @@ export function RichTextEditor({
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 underline">$1</a>')
       .replace(/^- (.*?)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul class="list-disc list-inside">$1</ul>')
+      .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul class="list-disc list-inside">$1</ul>')
       .replace(/\n/g, '<br/>');
 
     return html;

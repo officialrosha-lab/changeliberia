@@ -150,6 +150,15 @@ export class VersionHistoryService {
       include: { blocks: true },
     });
 
-    return this.createVersion(page, page.blocks as any, authorId, 'Auto-save');
+    if (!page) {
+      throw new Error('Page not found');
+    }
+
+    const pageWithBlocks = {
+      ...page,
+      blocks: page.blocks,
+    } as any;
+
+    return this.createVersion(pageWithBlocks, page.blocks as any, authorId, 'Auto-save');
   }
 }

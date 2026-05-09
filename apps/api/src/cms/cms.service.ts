@@ -168,13 +168,18 @@ export class CMSService {
       ogTitle?: string;
       ogDescription?: string;
       published?: boolean;
+      isDraft?: boolean;
+      publishedAt?: Date;
     },
   ) {
     const updateData: any = { ...data };
-    if (data.published === true) {
+    
+    // Remove publishedAt from updateData if provided, handle separately
+    if (data.publishedAt !== undefined) {
+      updateData.publishedAt = data.publishedAt;
+    } else if (data.published === true) {
       updateData.publishedAt = new Date();
-    }
-    if (data.published === false) {
+    } else if (data.published === false) {
       updateData.publishedAt = null;
     }
 

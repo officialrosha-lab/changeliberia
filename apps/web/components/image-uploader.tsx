@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Loader, AlertCircle } from 'lucide-react';
-import { apiPost, apiDelete } from '@/lib/api';
+import { apiPost, apiDelete } from '../lib/api';
 
 interface UploadedFile {
   id: string;
@@ -61,7 +61,7 @@ export function ImageUploader({
       formData.append('file', file);
       formData.append('alt', `Image: ${file.name}`);
 
-      const response = await apiPost('/api/v1/cms/files/upload', formData);
+      const response = await apiPost<UploadedFile>('/api/v1/cms/files/upload', formData);
 
       setUploadedFiles([response, ...uploadedFiles]);
       onFileSelected(response);

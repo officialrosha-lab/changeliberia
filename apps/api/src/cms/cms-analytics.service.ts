@@ -12,12 +12,15 @@ export class CMSAnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Use empty string as default for variant ID if not provided
+    const vid = variantId || '';
+
     return this.prisma.cMSBlockAnalytics.upsert({
       where: {
         pageId_blockId_variantId_recordDate: {
           pageId,
           blockId,
-          variantId: variantId || null,
+          variantId: vid,
           recordDate: today,
         },
       },
@@ -29,7 +32,7 @@ export class CMSAnalyticsService {
         pageId,
         blockId,
         blockType,
-        variantId,
+        variantId: vid || undefined,
         views: 1,
         clicks: 0,
         recordDate: today,
@@ -44,12 +47,15 @@ export class CMSAnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Use empty string as default for variant ID if not provided
+    const vid = variantId || '';
+
     const analytics = await this.prisma.cMSBlockAnalytics.upsert({
       where: {
         pageId_blockId_variantId_recordDate: {
           pageId,
           blockId,
-          variantId: variantId || null,
+          variantId: vid,
           recordDate: today,
         },
       },
@@ -61,7 +67,7 @@ export class CMSAnalyticsService {
         pageId,
         blockId,
         blockType,
-        variantId,
+        variantId: vid || undefined,
         views: 0,
         clicks: 1,
         recordDate: today,
@@ -176,7 +182,7 @@ export class CMSAnalyticsService {
    * Compare variant performance for A/B testing
    */
   async compareVariants(blockId: string, variantIds: string[], startDate: Date, endDate: Date) {
-    const results = {};
+    const results: Record<string, any> = {};
 
     for (const variantId of variantIds) {
       const analytics = await this.prisma.cMSBlockAnalytics.findMany({
@@ -204,9 +210,16 @@ export class CMSAnalyticsService {
     }
 
     // Determine winner (highest engagement)
-    const winner = Object.entries(results).reduce((max, [variantId, stats]: any) =>
-      stats.engagement > (results[max] as any).engagement ? variantId : max,
-    );
+    let winner = variantIds[0];
+    let maxEngagement = 0;
+
+    for (const variantId of variantIds) {
+      const engagement = (results[variantId] as any).engagement;
+      if (engagement > maxEngagement) {
+        maxEngagement = engagement;
+        winner = variantId;
+      }
+    }
 
     return {
       blockId,
