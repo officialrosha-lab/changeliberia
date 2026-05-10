@@ -35,9 +35,9 @@ export async function fetchApi(
   const url = getApiUrl(path);
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
   
   if (token) {
