@@ -26,6 +26,7 @@ import { SponsorsModule } from './sponsors/sponsors.module';
 import { MembershipModule } from './membership/membership.module';
 import { SupportersModule } from './supporters/supporters.module';
 import { AmbassadorsModule } from './ambassadors/ambassadors.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AmbassadorsModule } from './ambassadors/ambassadors.module';
     SignaturesModule,
     VerificationModule,
     FraudModule,
+    EmailModule,
     AdminModule,
     CaptchaModule,
     WhatsAppModule,

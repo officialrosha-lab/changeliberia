@@ -22,6 +22,7 @@ import { AdminFacebookPixel } from '../../components/admin-facebook-pixel';
 import { AdminFacebookReach } from '../../components/admin-facebook-reach';
 import { AdminFacebookSocialFeatures } from '../../components/admin-facebook-social-features';
 import { AdminFacebookEngagement } from '../../components/admin-facebook-engagement';
+import { AdminEmailSettings } from '../../components/admin-email-settings';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -57,7 +58,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -165,6 +166,7 @@ export function AdminPageClient() {
             ['ambassadors', 'Ambassadors'],
             ['cms', 'CMS'],
             ['settings', 'Settings'],
+            ['email', 'Email'],
           ] as const
         ).map(([tab, label]) => (
           <button
@@ -328,6 +330,13 @@ export function AdminPageClient() {
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Revenue Analytics</h2>
             <AdminStripeAnalytics />
           </section>
+        </div>
+      )}
+
+      {/* Email Tab */}
+      {activeTab === 'email' && (
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <AdminEmailSettings />
         </div>
       )}
 

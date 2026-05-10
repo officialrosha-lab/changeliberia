@@ -114,6 +114,7 @@ model User {
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
   memberships         Membership[]
+  emailLogs           EmailLog[]          // Email system relation
 }
 
 model Petition {
@@ -474,16 +475,21 @@ model Notification {
 }
 
 model NotificationPreference {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inAppEnabled    Boolean  @default(true)
-  emailEnabled    Boolean  @default(true)
-  pushEnabled     Boolean  @default(false)
-  digestFrequency String   @default("daily") // "instant", "daily", "weekly"
-  mutedTypes      String   @default("[]") // JSON array of NotificationType
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppEnabled      Boolean  @default(true)
+  emailEnabled      Boolean  @default(true)
+  pushEnabled       Boolean  @default(false)
+  digestFrequency   String   @default("daily") // "instant", "daily", "weekly", "never"
+  mutedTypes        String   @default("[]") // JSON array of NotificationType
+  emailCategories   String   @default("[]") // JSON array of enabled email categories
+  preferredSendTime String   @default("09:00") // Preferred time to send digest emails (HH:MM)
+  unsubscribeToken  String   @unique @default(cuid()) // For email unsubscribe links
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ============================================================================
@@ -1085,6 +1091,7 @@ enum PermissionResource {
   CONTENT
   ROLE
   ANALYTICS
+  EMAIL
 }
 
 model Permission {
@@ -1520,4 +1527,66 @@ model CMSSchedule {
 
   @@index([pageId, scheduledFor])
   @@index([executed, scheduledFor])
+}
+
+// ============================================================================
+// Email System (Resend + React Email + BullMQ)
+// ============================================================================
+
+enum EmailType {
+  WELCOME
+  VERIFY_EMAIL
+  PASSWORD_RESET
+  PASSWORD_RESET_CONFIRMATION
+  PETITION_APPROVED
+  PETITION_REJECTED
+  PETITION_MILESTONE_REACHED
+  GOVERNMENT_SUBMISSION
+  OFFICIAL_RESPONSE
+  WELCOME_TO_MOVEMENT
+  WEEKLY_DIGEST
+  AMBASSADOR_UPDATE
+  DONATION_RECEIVED
+  COMMENT_REPLY
+  SIGNATURE_RECEIVED
+}
+
+enum EmailStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
+  OPENED
+}
+
+model EmailLog {
+  id                String    @id @default(cuid())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  recipient         String
+  type              EmailType
+  subject           String
+  status            EmailStatus @default(QUEUED)
+  resendMessageId   String?
+  trackingPixelId   String?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+  bouncedAt         DateTime?
+  failureReason     String?
+  retryCount        Int       @default(0)
+  maxRetries        Int       @default(3)
+  lastAttemptedAt   DateTime?
+  metadata          String?   @db.Text()
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([recipient, status])
+  @@index([type, status])
+  @@index([status, createdAt])
+  @@index([trackingPixelId])
+  @@index([resendMessageId])
 }
