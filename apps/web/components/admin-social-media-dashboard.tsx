@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet } from '../../lib/api';
-import { useAuthStore } from '../../lib/store';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 interface FacebookHealth {
   status: 'healthy' | 'degraded' | 'error';
