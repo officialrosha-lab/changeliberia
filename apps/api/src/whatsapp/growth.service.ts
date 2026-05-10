@@ -45,7 +45,7 @@ export class GrowthService {
     }
 
     // Create new milestone records
-    const createdMilestones = [];
+    const createdMilestones: any[] = [];
     for (const milestone of newMilestones) {
       const created = await this.prisma.petitionMilestone.create({
         data: {
@@ -57,7 +57,7 @@ export class GrowthService {
           achievedAt: new Date(),
         },
       });
-      createdMilestones.push(created as any);
+      createdMilestones.push(created);
       this.logger.log(`🎉 Petition ${petitionId} reached ${milestone.targetValue} signatures!`);
     }
 
@@ -316,7 +316,7 @@ export class GrowthService {
     });
 
     // Create new ones
-    const milestones = [];
+    const milestones: any[] = [];
     for (const threshold of this.SIGNATURE_MILESTONES) {
       if (signatureCount >= threshold) {
         const milestone = await this.prisma.petitionMilestone.create({

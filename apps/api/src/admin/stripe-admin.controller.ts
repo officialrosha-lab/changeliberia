@@ -161,7 +161,7 @@ export class StripeAdminController {
       if (!payment) throw new NotFoundException('Payment not found');
 
       // Fetch Stripe details if available
-      let stripeDetails = null;
+      let stripeDetails: any = null;
       if (payment.stripePaymentIntentId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().paymentIntents.retrieve(
@@ -225,7 +225,7 @@ export class StripeAdminController {
       if (!subscription) throw new NotFoundException('Subscription not found');
 
       // Fetch Stripe subscription if available
-      let stripeDetails = null;
+      let stripeDetails: any = null;
       if (subscription.stripeSubscriptionId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().subscriptions.retrieve(
