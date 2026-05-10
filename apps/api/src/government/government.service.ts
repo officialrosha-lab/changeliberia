@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmissionStatus } from '@prisma/client';
@@ -11,7 +11,7 @@ export class GovernmentService {
 
   constructor(
     private prisma: PrismaService,
-    private readonly emailService: EmailService,
+    @Optional() private emailService: EmailService | null = null,
   ) {}
 
   /**
@@ -378,6 +378,11 @@ export class GovernmentService {
 </body>
 </html>`;
     const textContent = `Petition: ${petition.title}\nSignatures: ${petition.signaturesCount}\nCreator: ${petition.creator?.fullName || 'Unknown'} (${petition.creator?.email || 'No email'})\nNotes: ${notes || 'No additional notes provided.'}`;
+
+    if (!this.emailService) {
+      this.logger.error('EmailService not available - cannot send petition submission email');
+      return;
+    }
 
     return this.emailService.sendEmail({
       templateType: 'petition_to_institution',
