@@ -1,0 +1,356 @@
+import {
+  Body,
+  Button,
+  Container,
+  Font,
+  Head,
+  Hr,
+  Html,
+  Img,
+  Link,
+  Preview,
+  Row,
+  Section,
+  Text,
+} from '@react-email/components';
+
+interface PetitionDigestItem {
+  title: string;
+  signatures: number;
+  url: string;
+}
+
+interface WeeklyDigestProps {
+  recipientName: string;
+  digestDate: string;
+  petitions: PetitionDigestItem[];
+  totalNewSignatures: number;
+  appUrl: string;
+  trackingPixelUrl?: string;
+  unsubscribeUrl?: string;
+}
+
+export default function WeeklyDigestTemplate({
+  recipientName,
+  digestDate,
+  petitions,
+  totalNewSignatures,
+  appUrl,
+  trackingPixelUrl,
+  unsubscribeUrl,
+}: WeeklyDigestProps) {
+  return (
+    <Html>
+      <Head>
+        <Font
+          fontFamily="Segoe UI"
+          fallbackFontFamily="Verdana"
+          webFont={{
+            url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',
+            format: 'woff2',
+          }}
+        />
+      </Head>
+      <Preview>Your weekly Change Liberia digest</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={box}>
+            {/* Header */}
+            <Row>
+              <Section style={{ textAlign: 'center' as const }}>
+                <Text style={heading1}>📬 Weekly Digest</Text>
+                <Text style={digestDate}>{digestDate}</Text>
+              </Section>
+            </Row>
+
+            <Hr style={hr} />
+
+            {/* Stats */}
+            <Section style={statsBox}>
+              <Row>
+                <Section style={{ display: 'inline-block', width: '50%' }}>
+                  <Text style={statNumber}>{totalNewSignatures.toLocaleString()}</Text>
+                  <Text style={statLabel}>New Signatures This Week</Text>
+                </Section>
+              </Row>
+            </Section>
+
+            <Hr style={hr} />
+
+            {/* Main Content */}
+            <Text style={paragraph}>
+              Hi {recipientName},
+            </Text>
+
+            <Text style={paragraph}>
+              Here's what's happening this week on Change Liberia. Check out the petitions gaining 
+              momentum and consider adding your voice to the causes you care about.
+            </Text>
+
+            {/* Petitions List */}
+            {petitions && petitions.length > 0 && (
+              <Section>
+                <Text style={sectionTitle}>🔥 Trending This Week</Text>
+
+                {petitions.map((petition, index) => (
+                  <Section key={index} style={petitionCard}>
+                    <Row>
+                      <Section style={{ width: '100%' }}>
+                        <Link href={petition.url} style={petitionTitle}>
+                          {petition.title}
+                        </Link>
+                        <Text style={petitionStats}>
+                          {petition.signatures.toLocaleString()} signatures
+                        </Text>
+                      </Section>
+                    </Row>
+                    <Row>
+                      <Section style={{ width: '100%', textAlign: 'center' as const }}>
+                        <Button style={smallButton} href={petition.url}>
+                          View Petition
+                        </Button>
+                      </Section>
+                    </Row>
+                  </Section>
+                ))}
+              </Section>
+            )}
+
+            <Hr style={hr} />
+
+            <Text style={paragraph}>
+              Want to start your own petition? Share your concerns and rally support for the changes 
+              you want to see in Liberia.
+            </Text>
+
+            <Section style={buttonContainer}>
+              <Button style={button} href={appUrl}>
+                Explore More Petitions
+              </Button>
+            </Section>
+
+            <Hr style={hr} />
+
+            <Section style={tipsBox}>
+              <Text style={tipsTitle}>💡 Engagement Tips</Text>
+              <ul style={tipsList}>
+                <li>
+                  <Text style={tipsItem}>
+                    Share petitions you support on social media to amplify impact
+                  </Text>
+                </li>
+                <li>
+                  <Text style={tipsItem}>
+                    Leave comments to show your support and encourage others
+                  </Text>
+                </li>
+                <li>
+                  <Text style={tipsItem}>
+                    Track petitions you care about to get updates on their progress
+                  </Text>
+                </li>
+              </ul>
+            </Section>
+
+            <Hr style={hr} />
+
+            <Text style={paragraph}>
+              Questions? Contact us at{' '}
+              <Link href="mailto:support@changeliberia.org" style={footerLink}>
+                support@changeliberia.org
+              </Link>
+            </Text>
+
+            {/* Footer */}
+            <Hr style={hr} />
+
+            <Text style={footer}>
+              © {new Date().getFullYear()} Change Liberia. Empowering citizens to create change.
+            </Text>
+
+            <Text style={footer}>
+              You're receiving this email because you subscribed to the weekly digest.
+            </Text>
+
+            {unsubscribeUrl && (
+              <Text style={footer}>
+                <Link href={unsubscribeUrl} style={footerLink}>
+                  Manage email preferences
+                </Link>
+              </Text>
+            )}
+
+            {trackingPixelUrl && (
+              <Img src={trackingPixelUrl} alt="" width="1" height="1" />
+            )}
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+
+const main = {
+  backgroundColor: '#f9fafb',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI","Roboto","Oxygen-Sans","Ubuntu","Cantarell","Helvetica Neue",sans-serif',
+};
+
+const container = {
+  margin: '0 auto',
+  padding: '20px 0 48px',
+  marginBottom: '64px',
+};
+
+const box = {
+  padding: '0 48px',
+};
+
+const heading1 = {
+  color: '#1f2937',
+  fontSize: '32px',
+  fontWeight: '700',
+  margin: '24px 0 8px 0',
+  padding: '0',
+  lineHeight: '1.3',
+};
+
+const digestDate = {
+  color: '#9ca3af',
+  fontSize: '14px',
+  margin: '0',
+};
+
+const paragraph = {
+  color: '#4b5563',
+  fontSize: '15px',
+  lineHeight: '1.5',
+  margin: '16px 0',
+};
+
+const hr = {
+  borderColor: '#e5e7eb',
+  margin: '24px 0',
+};
+
+const statsBox = {
+  backgroundColor: '#f0fdf4',
+  border: '1px solid #dcfce7',
+  borderRadius: '6px',
+  padding: '24px',
+  textAlign: 'center' as const,
+};
+
+const statNumber = {
+  color: '#166534',
+  fontSize: '36px',
+  fontWeight: '700',
+  margin: '0 0 8px 0',
+};
+
+const statLabel = {
+  color: '#15803d',
+  fontSize: '14px',
+  fontWeight: '600',
+  margin: '0',
+};
+
+const sectionTitle = {
+  color: '#1f2937',
+  fontSize: '18px',
+  fontWeight: '700',
+  margin: '24px 0 16px 0',
+};
+
+const petitionCard = {
+  border: '1px solid #e5e7eb',
+  borderRadius: '6px',
+  padding: '16px',
+  marginBottom: '12px',
+  backgroundColor: '#fff',
+};
+
+const petitionTitle = {
+  color: '#10b981',
+  fontSize: '16px',
+  fontWeight: '600',
+  textDecoration: 'none',
+  lineHeight: '1.4',
+  display: 'block',
+};
+
+const petitionStats = {
+  color: '#9ca3af',
+  fontSize: '13px',
+  margin: '8px 0 12px 0',
+};
+
+const smallButton = {
+  backgroundColor: '#10b981',
+  borderRadius: '4px',
+  color: '#fff',
+  fontSize: '13px',
+  fontWeight: '600',
+  lineHeight: '100%',
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  display: 'inline-block',
+  padding: '8px 16px',
+};
+
+const buttonContainer = {
+  textAlign: 'center' as const,
+  margin: '32px 0',
+};
+
+const button = {
+  backgroundColor: '#10b981',
+  borderRadius: '6px',
+  color: '#fff',
+  fontSize: '15px',
+  fontWeight: '600',
+  lineHeight: '100%',
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  display: 'block',
+  padding: '12px 32px',
+};
+
+const tipsBox = {
+  backgroundColor: '#eff6ff',
+  border: '1px solid #bfdbfe',
+  borderRadius: '6px',
+  padding: '16px',
+};
+
+const tipsTitle = {
+  color: '#1e40af',
+  fontSize: '14px',
+  fontWeight: '600',
+  margin: '0 0 12px 0',
+};
+
+const tipsList = {
+  margin: '0 0 0 20px',
+  padding: '0',
+  listStyleType: 'disc' as const,
+};
+
+const tipsItem = {
+  color: '#1e3a8a',
+  fontSize: '14px',
+  lineHeight: '1.5',
+  margin: '6px 0',
+};
+
+const footer = {
+  color: '#6b7280',
+  fontSize: '13px',
+  lineHeight: '1.5',
+  margin: '12px 0',
+};
+
+const footerLink = {
+  color: '#10b981',
+  textDecoration: 'none',
+};
