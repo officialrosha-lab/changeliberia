@@ -70,4 +70,4 @@ export const TRACKING_CONFIG = {
   DOMAIN: process.env.TRACKING_DOMAIN || 'track.changeliberia.org',
   PIXEL_SIZE: 1, // 1x1 pixel
   PIXEL_FORMAT: 'image/gif',
-};\n
+};
