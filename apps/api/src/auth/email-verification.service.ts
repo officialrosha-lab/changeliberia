@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Optional, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { randomBytes } from 'crypto';
@@ -6,9 +6,11 @@ import { createHash } from 'crypto';
 
 @Injectable()
 export class EmailVerificationService {
+  private readonly logger = new Logger(EmailVerificationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    @Optional() private readonly emailService: EmailService | null,
   ) {}
 
   /**
@@ -48,13 +50,17 @@ export class EmailVerificationService {
     // Send verification email
     const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
     
-    await this.emailService.sendEmail({
-      recipientEmail: email,
-      subject: 'Verify your Change Liberia email address',
-      templateType: 'email_verification',
-      htmlContent: `Click to verify: ${verificationUrl}`,
-      textContent: `Click to verify: ${verificationUrl}`,
-    });
+    if (this.emailService) {
+      await this.emailService.sendEmail({
+        recipientEmail: email,
+        subject: 'Verify your Change Liberia email address',
+        templateType: 'email_verification',
+        htmlContent: `Click to verify: ${verificationUrl}`,
+        textContent: `Click to verify: ${verificationUrl}`,
+      });
+    } else {
+      this.logger.warn('EmailService not available - cannot send verification email');
+    }
 
     return {
       success: true,
