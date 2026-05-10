@@ -5,6 +5,8 @@
  * Actual rendering uses Handlebars templates or dynamic generation
  */
 
+import { EmailType } from '@prisma/client';
+
 // Template Component Types
 export type EmailTemplateProps =
   | WelcomeEmailProps
@@ -22,6 +24,25 @@ export type EmailTemplateProps =
   | SignatureReceivedProps
   | WeeklyDigestProps
   | DonationReceivedProps;
+
+// Type mapping for email types to their props
+export type EmailTemplatePropsMap = {
+  [EmailType.WELCOME]: WelcomeEmailProps;
+  [EmailType.VERIFY_EMAIL]: VerifyEmailProps;
+  [EmailType.PASSWORD_RESET]: PasswordResetEmailProps;
+  [EmailType.PASSWORD_RESET_CONFIRMATION]: PasswordResetConfirmationProps;
+  [EmailType.PETITION_APPROVED]: PetitionApprovedProps;
+  [EmailType.PETITION_REJECTED]: PetitionRejectedProps;
+  [EmailType.PETITION_MILESTONE_REACHED]: MilestoneReachedProps;
+  [EmailType.GOVERNMENT_SUBMISSION]: GovernmentSubmissionProps;
+  [EmailType.OFFICIAL_RESPONSE]: OfficialResponseProps;
+  [EmailType.WELCOME_TO_MOVEMENT]: WelcomeToMovementProps;
+  [EmailType.AMBASSADOR_UPDATE]: AmbassadorUpdateProps;
+  [EmailType.COMMENT_REPLY]: CommentReplyProps;
+  [EmailType.SIGNATURE_RECEIVED]: SignatureReceivedProps;
+  [EmailType.WEEKLY_DIGEST]: WeeklyDigestProps;
+  [EmailType.DONATION_RECEIVED]: DonationReceivedProps;
+};
 
 // Export individual template prop types for type safety
 export interface WelcomeEmailProps {

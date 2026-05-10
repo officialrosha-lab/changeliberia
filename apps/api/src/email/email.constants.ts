@@ -1,3 +1,73 @@
 /**
  * Email module constants and configuration
- */\n\n// BullMQ Queue name\nexport const BULL_EMAIL_QUEUE = 'email-queue';\n\n// Email queue job types\nexport enum EmailJobType {\n  SEND_EMAIL = 'send-email',\n  TRACK_OPEN = 'track-open',\n  TRACK_CLICK = 'track-click',\n  RETRY_FAILED = 'retry-failed',\n  PROCESS_DIGEST = 'process-digest',\n}\n\n// Retry configuration\nexport const RETRY_CONFIG = {\n  maxAttempts: 3,\n  backoff: {\n    type: 'exponential',\n    delay: 1000, // 1s initial delay\n  },\n};\n\n// Default email configuration\nexport const DEFAULT_EMAIL_CONFIG = {\n  FROM_EMAIL: process.env.MAIL_FROM || 'noreply@changeliberia.org',\n  FROM_NAME: 'Change Liberia',\n  REPLY_TO: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',\n  SUPPORT_EMAIL: 'support@changeliberia.org',\n};\n\n// Email type mappings for categories\nexport const EMAIL_CATEGORIES: Record<string, string[]> = {\n  AUTHENTICATION: ['WELCOME', 'VERIFY_EMAIL', 'PASSWORD_RESET', 'PASSWORD_RESET_CONFIRMATION'],\n  PETITION: [\n    'PETITION_APPROVED',\n    'PETITION_REJECTED',\n    'PETITION_MILESTONE_REACHED',\n    'GOVERNMENT_SUBMISSION',\n    'OFFICIAL_RESPONSE',\n  ],\n  COMMUNITY: [\n    'WELCOME_TO_MOVEMENT',\n    'AMBASSADOR_UPDATE',\n    'SIGNATURE_RECEIVED',\n    'COMMENT_REPLY',\n  ],\n  DIGEST: ['WEEKLY_DIGEST'],\n  DONATIONS: ['DONATION_RECEIVED'],\n};\n\n// Email preferences defaults\nexport const DEFAULT_EMAIL_PREFERENCES = {\n  emailEnabled: true,\n  digestFrequency: 'weekly' as const,\n  emailCategories: ['PETITION', 'COMMUNITY', 'DIGEST'],\n  preferredSendTime: '09:00', // 9 AM\n};\n\n// Resend API configuration\nexport const RESEND_CONFIG = {\n  apiKey: process.env.RESEND_API_KEY,\n  baseUrl: 'https://api.resend.com',\n};\n\n// Tracking configuration\nexport const TRACKING_CONFIG = {\n  DOMAIN: process.env.TRACKING_DOMAIN || 'track.changeliberia.org',\n  PIXEL_SIZE: 1, // 1x1 pixel\n  PIXEL_FORMAT: 'image/gif',\n};\n
+ */
+
+// BullMQ Queue name
+export const BULL_EMAIL_QUEUE = 'email-queue';
+
+// Email queue job types
+export enum EmailJobType {
+  SEND_EMAIL = 'send-email',
+  TRACK_OPEN = 'track-open',
+  TRACK_CLICK = 'track-click',
+  RETRY_FAILED = 'retry-failed',
+  PROCESS_DIGEST = 'process-digest',
+}
+
+// Retry configuration
+export const RETRY_CONFIG = {
+  maxAttempts: 3,
+  backoff: {
+    type: 'exponential',
+    delay: 1000, // 1s initial delay
+  },
+};
+
+// Default email configuration
+export const DEFAULT_EMAIL_CONFIG = {
+  FROM_EMAIL: process.env.MAIL_FROM || 'noreply@changeliberia.org',
+  FROM_NAME: 'Change Liberia',
+  REPLY_TO: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
+  SUPPORT_EMAIL: 'support@changeliberia.org',
+};
+
+// Email type mappings for categories
+export const EMAIL_CATEGORIES: Record<string, string[]> = {
+  AUTHENTICATION: ['WELCOME', 'VERIFY_EMAIL', 'PASSWORD_RESET', 'PASSWORD_RESET_CONFIRMATION'],
+  PETITION: [
+    'PETITION_APPROVED',
+    'PETITION_REJECTED',
+    'PETITION_MILESTONE_REACHED',
+    'GOVERNMENT_SUBMISSION',
+    'OFFICIAL_RESPONSE',
+  ],
+  COMMUNITY: [
+    'WELCOME_TO_MOVEMENT',
+    'AMBASSADOR_UPDATE',
+    'SIGNATURE_RECEIVED',
+    'COMMENT_REPLY',
+  ],
+  DIGEST: ['WEEKLY_DIGEST'],
+  DONATIONS: ['DONATION_RECEIVED'],
+};
+
+// Email preferences defaults
+export const DEFAULT_EMAIL_PREFERENCES = {
+  emailEnabled: true,
+  digestFrequency: 'weekly' as const,
+  emailCategories: ['PETITION', 'COMMUNITY', 'DIGEST'],
+  preferredSendTime: '09:00', // 9 AM
+};
+
+// Resend API configuration
+export const RESEND_CONFIG = {
+  apiKey: process.env.RESEND_API_KEY,
+  baseUrl: 'https://api.resend.com',
+};
+
+// Tracking configuration
+export const TRACKING_CONFIG = {
+  DOMAIN: process.env.TRACKING_DOMAIN || 'track.changeliberia.org',
+  PIXEL_SIZE: 1, // 1x1 pixel
+  PIXEL_FORMAT: 'image/gif',
+};\n

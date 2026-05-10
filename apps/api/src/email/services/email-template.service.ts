@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
 import {
   EmailTemplateProps,
+  EmailTemplatePropsMap,
 } from '../templates/index';
 
 export interface RenderedTemplate {
@@ -19,9 +20,9 @@ export class EmailTemplateService {
    * Note: This is a simplified implementation that generates basic HTML.
    * For production, consider using proper email templating (EJS, Handlebars, etc.)
    */
-  async renderTemplate(
-    templateType: EmailType,
-    props: EmailTemplateProps[EmailType],
+  async renderTemplate<T extends EmailType>(
+    templateType: T,
+    props: EmailTemplatePropsMap[T],
   ): Promise<RenderedTemplate> {
     try {
       const subject = this.getSubjectForType(templateType);
@@ -48,7 +49,7 @@ export class EmailTemplateService {
       [EmailType.PASSWORD_RESET_CONFIRMATION]: 'Password reset successful',
       [EmailType.PETITION_APPROVED]: 'Your petition has been approved',
       [EmailType.PETITION_REJECTED]: 'Your petition submission',
-      [EmailType.MILESTONE_REACHED]: 'Petition milestone reached!',
+      [EmailType.PETITION_MILESTONE_REACHED]: 'Petition milestone reached!',
       [EmailType.GOVERNMENT_SUBMISSION]: 'Petition submitted to government',
       [EmailType.OFFICIAL_RESPONSE]: 'Government response to your petition',
       [EmailType.WELCOME_TO_MOVEMENT]: 'Welcome to the movement',
@@ -144,7 +145,7 @@ export class EmailTemplateService {
         `;
         break;
 
-      case EmailType.MILESTONE_REACHED:
+      case EmailType.PETITION_MILESTONE_REACHED:
         content = `
           <p>Congratulations! Your petition <strong>"${props?.petitionTitle || 'Petition'}"</strong> has reached a milestone:</p>
           <p style="font-size: 18px; color: #059669; font-weight: bold;">${props?.currentSignatures || 0} signatures</p>
