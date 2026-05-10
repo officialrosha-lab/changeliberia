@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, X } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -59,11 +60,7 @@ export function AdminStripeSubscriptions() {
 
   const fetchSubscriptions = async () => {
     try {
-      const response = await fetch('/api/v1/admin/stripe/subscriptions', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetchApi('/api/v1/admin/stripe/subscriptions');
 
       if (!response.ok) throw new Error('Failed to fetch subscriptions');
       const result = await response.json();
@@ -80,14 +77,9 @@ export function AdminStripeSubscriptions() {
 
     setCancelling(subscriptionId);
     try {
-      const response = await fetch(
+      const response = await fetchApi(
         `/api/v1/admin/stripe/subscriptions/${subscriptionId}/cancel`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
+        { method: 'PATCH' }
       );
 
       if (!response.ok) throw new Error('Failed to cancel subscription');

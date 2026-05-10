@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Filter } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -55,13 +56,8 @@ export function AdminStripePayments() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const response = await fetch(
-          `/api/v1/admin/stripe/payments?days=${dateFilter}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
+        const response = await fetchApi(
+          `/api/v1/admin/stripe/payments?days=${dateFilter}`
         );
 
         if (!response.ok) throw new Error('Failed to fetch payments');

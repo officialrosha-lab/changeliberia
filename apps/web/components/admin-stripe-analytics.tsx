@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, TrendingUp } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -45,11 +46,7 @@ export function AdminStripeAnalytics() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response = await fetch('/api/v1/admin/stripe/analytics', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        const response = await fetchApi('/api/v1/admin/stripe/analytics');
 
         if (!response.ok) throw new Error('Failed to fetch analytics');
         const result = await response.json();

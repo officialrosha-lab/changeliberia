@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Plus } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -62,11 +63,7 @@ export function AdminStripeRefunds() {
 
   const fetchRefunds = async () => {
     try {
-      const response = await fetch('/api/v1/admin/stripe/refunds', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetchApi('/api/v1/admin/stripe/refunds');
 
       if (!response.ok) throw new Error('Failed to fetch refunds');
       const result = await response.json();
@@ -86,12 +83,8 @@ export function AdminStripeRefunds() {
 
     setCreating(true);
     try {
-      const response = await fetch('/api/v1/admin/stripe/refunds', {
+      const response = await fetchApi('/api/v1/admin/stripe/refunds', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           paymentId: formData.paymentId,
           amount: parseFloat(formData.amount),

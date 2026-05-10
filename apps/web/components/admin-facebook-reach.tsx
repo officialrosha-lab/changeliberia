@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
-
+import { AlertCircle } from 'lucide-react';import { fetchApi } from '@/lib/api-client';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -52,12 +51,7 @@ export function AdminFacebookReach() {
   useEffect(() => {
     const fetchLinks = async () => {
       try {
-        const response = await fetch('/api/v1/admin/facebook/share-links', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-
+      const response = await fetchApi('/api/v1/admin/facebook/share-links');
         if (!response.ok) throw new Error('Failed to fetch share links');
         const result = await response.json();
         setLinks(result.links || []);

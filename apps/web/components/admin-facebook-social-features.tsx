@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
-
+import { AlertCircle, Trophy } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -65,11 +65,7 @@ export function AdminFacebookSocialFeatures() {
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const response = await fetch('/api/v1/admin/facebook/badges', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        const response = await fetchApi('/api/v1/admin/facebook/badges');
 
         if (!response.ok) throw new Error('Failed to fetch badges');
         const result: BadgesResponse = await response.json();
@@ -97,11 +93,7 @@ export function AdminFacebookSocialFeatures() {
   const handleBadgeSelect = async (badgeType: string) => {
     setSelectedBadge(badgeType);
     try {
-      const response = await fetch(`/api/v1/admin/facebook/badges/${badgeType}/stats`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetchApi(`/api/v1/admin/facebook/badges/${badgeType}/stats`);
 
       if (!response.ok) throw new Error('Failed to fetch badge stats');
       const result: BadgeData = await response.json();

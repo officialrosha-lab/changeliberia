@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Zap, Users, Layers } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -41,11 +42,7 @@ export function AdminFacebookDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('/api/v1/admin/facebook/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        const response = await fetchApi('/api/v1/admin/facebook/dashboard');
 
         if (!response.ok) throw new Error('Failed to fetch dashboard');
         const result = await response.json();

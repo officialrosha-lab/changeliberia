@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Send } from 'lucide-react';
-
+import { fetchApi } from '@/lib/api-client';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -58,11 +58,7 @@ export function AdminFacebookPixel() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/v1/admin/facebook/pixel-events', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetchApi('/api/v1/admin/facebook/pixel-events');
 
       if (!response.ok) throw new Error('Failed to fetch pixel events');
       const result = await response.json();
@@ -74,11 +70,7 @@ export function AdminFacebookPixel() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/v1/admin/facebook/pixel-config', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetchApi('/api/v1/admin/facebook/pixel-config');
 
       if (!response.ok) throw new Error('Failed to fetch pixel config');
       const result = await response.json();
@@ -93,11 +85,8 @@ export function AdminFacebookPixel() {
   const handleTestEvent = async () => {
     setSendingTest(true);
     try {
-      const response = await fetch('/api/v1/admin/facebook/pixel/test-event', {
+      const response = await fetchApi('/api/v1/admin/facebook/pixel/test-event', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
       });
 
       if (!response.ok) throw new Error('Failed to send test event');

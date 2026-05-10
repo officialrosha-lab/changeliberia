@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -42,11 +43,7 @@ export function AdminStripeDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('/api/v1/admin/stripe/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        const response = await fetchApi('/api/v1/admin/stripe/dashboard');
 
         if (!response.ok) throw new Error('Failed to fetch dashboard');
         const result = await response.json();
