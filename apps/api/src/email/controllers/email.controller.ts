@@ -16,7 +16,7 @@ import { EmailService } from '../services/email.service';
 import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
 import { ResendProvider } from '../providers/resend.provider';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
 import { PermissionResource, PermissionAction } from '@prisma/client';
@@ -120,7 +120,8 @@ export class EmailController {
       const prefs = await this.preferenceService.getPreferences(userId);
 
       if (!prefs || prefs.unsubscribeToken !== token) {
-        return res.status(401).json({ error: 'Invalid unsubscribe token' });
+        res.status(401).json({ error: 'Invalid unsubscribe token' });
+        return;
       }
 
       // Unsubscribe
@@ -281,7 +282,10 @@ export class EmailController {
   async healthCheck(): Promise<any> {
     try {
       const health = await this.resendProvider.healthCheck();
-      return { healthy: true, ...health };
+      return { 
+        healthy: true, 
+        ...(typeof health === 'object' && health !== null ? health : {}),
+      };
     } catch (error) {
       return {
         healthy: false,

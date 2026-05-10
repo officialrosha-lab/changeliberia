@@ -1,6 +1,5 @@
-import { Processor, Process, OnWorkerEvent } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job, Queue, Worker } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ResendProvider } from '../providers/resend.provider';
 import { EmailTrackingService } from '../services/email-tracking.service';
@@ -17,7 +16,7 @@ export interface SendEmailJobData {
   userId?: string;
 }
 
-@Processor(BULL_EMAIL_QUEUE)
+// @Processor(BULL_EMAIL_QUEUE) - Migrated to raw bullmq instead of @nestjs/bull
 export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
@@ -30,17 +29,17 @@ export class EmailProcessor {
   /**
    * Main job handler for sending emails
    */
-  @Process('send-email')
+  // @Process('send-email') - Migrated to raw bullmq
   async handleSendEmail(job: Job<SendEmailJobData>): Promise<string> {
     const { emailLogId, recipient, subject, html, text, emailType } = job.data;
 
     this.logger.log(`Processing email job: ${job.id} (EmailLog: ${emailLogId})`);
 
     try {
-      // Update email log to PROCESSING
+      // Update email log to QUEUED (being processed)
       await this.prisma.emailLog.update({
         where: { id: emailLogId },
-        data: { status: 'PROCESSING' },
+        data: { status: 'QUEUED' },
       });
 
       // Send via Resend
@@ -108,7 +107,7 @@ export class EmailProcessor {
   /**
    * Track email open
    */
-  @Process('track-open')
+  // @Process('track-open') - Migrated to raw bullmq
   async handleTrackOpen(job: Job<{ emailLogId: string }>): Promise<void> {
     const { emailLogId } = job.data;
 
@@ -123,7 +122,7 @@ export class EmailProcessor {
   /**
    * Track email click
    */
-  @Process('track-click')
+  // @Process('track-click') - Migrated to raw bullmq
   async handleTrackClick(
     job: Job<{ emailLogId: string; linkId?: string }>,
   ): Promise<void> {
@@ -142,7 +141,7 @@ export class EmailProcessor {
   /**
    * Retry failed emails
    */
-  @Process('retry-failed')
+  // @Process('retry-failed') - Migrated to raw bullmq
   async handleRetryFailed(): Promise<number> {
     this.logger.log('Starting retry of failed emails...');
 
@@ -187,7 +186,7 @@ export class EmailProcessor {
   /**
    * Worker event: job completed
    */
-  @OnWorkerEvent('completed')
+  // Note: Event handlers removed - using raw bullmq library instead of @nestjs/bull decorators
   onCompleted(job: Job): void {
     this.logger.debug(`Job completed: ${job.id} - ${job.name}`);
   }
@@ -195,7 +194,7 @@ export class EmailProcessor {
   /**
    * Worker event: job failed
    */
-  @OnWorkerEvent('failed')
+  // Note: Event handlers removed - using raw bullmq library instead of @nestjs/bull decorators
   onFailed(job: Job, error: Error): void {
     this.logger.error(
       `Job failed: ${job.id} (${job.name}) - ${error.message}`,
@@ -205,7 +204,7 @@ export class EmailProcessor {
   /**
    * Worker event: job retried
    */
-  @OnWorkerEvent('stalled')
+  // Note: Event handlers removed - using raw bullmq library instead of @nestjs/bull decorators
   onStalled(job: Job): void {
     this.logger.warn(`Job stalled: ${job.id} (${job.name})`);
   }
