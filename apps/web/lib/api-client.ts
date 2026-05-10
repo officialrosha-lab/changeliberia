@@ -33,7 +33,21 @@ export async function fetchApi(
   options: RequestInit = {}
 ): Promise<Response> {
   const url = getApiUrl(path);
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  
+  // Get token from Zustand persist storage
+  let token: string | null = null;
+  if (typeof localStorage !== 'undefined') {
+    const authStorage = localStorage.getItem('vlv-auth-storage');
+    if (authStorage) {
+      try {
+        const parsed = JSON.parse(authStorage);
+        token = parsed.state?.token || null;
+      } catch {
+        // Fallback to direct token key
+        token = localStorage.getItem('token');
+      }
+    }
+  }
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
