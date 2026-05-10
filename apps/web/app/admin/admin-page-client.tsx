@@ -23,6 +23,7 @@ import { AdminFacebookReach } from '../../components/admin-facebook-reach';
 import { AdminFacebookSocialFeatures } from '../../components/admin-facebook-social-features';
 import { AdminFacebookEngagement } from '../../components/admin-facebook-engagement';
 import { AdminEmailSettings } from '../../components/admin-email-settings';
+import { AdminSocialMediaDashboard } from '../../components/admin-social-media-dashboard';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -58,7 +59,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -164,6 +165,7 @@ export function AdminPageClient() {
             ['payments', 'Payments'],
             ['integrations', 'Integrations'],
             ['ambassadors', 'Ambassadors'],
+            ['social-media', 'Social Media'],
             ['cms', 'CMS'],
             ['settings', 'Settings'],
             ['email', 'Email'],
@@ -337,6 +339,13 @@ export function AdminPageClient() {
       {activeTab === 'email' && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminEmailSettings />
+        </div>
+      )}
+
+      {/* Social Media Tab - Facebook & WhatsApp */}
+      {activeTab === 'social-media' && (
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <AdminSocialMediaDashboard />
         </div>
       )}
 

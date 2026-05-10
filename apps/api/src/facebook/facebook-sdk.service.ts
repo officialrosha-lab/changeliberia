@@ -34,7 +34,7 @@ export class FacebookSDKService {
    * Validate that all required Facebook credentials are configured
    */
   private validateConfiguration(): void {
-    const missing = [];
+    const missing: string[] = [];
 
     if (!this.appId) missing.push('FACEBOOK_APP_ID');
     if (!this.appSecret) missing.push('FACEBOOK_APP_SECRET');

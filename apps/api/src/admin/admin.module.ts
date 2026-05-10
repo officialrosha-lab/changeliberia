@@ -10,6 +10,10 @@ import { FacebookAdminController } from './facebook-admin.controller';
 import { PaymentService } from '../payments/payment.service';
 import { FacebookPixelService } from '../facebook/facebook-pixel.service';
 import { FacebookService } from '../facebook/facebook.service';
+import { FacebookSDKService } from '../facebook/facebook-sdk.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { GrowthService } from '../whatsapp/growth.service';
+import { AdminSocialMediaService } from './admin-social-media.service';
 
 @Module({
   imports: [AuthModule, VerificationModule, PrismaModule, EventsModule],
@@ -19,6 +23,14 @@ import { FacebookService } from '../facebook/facebook.service';
     StripeAdminController,
     FacebookAdminController,
   ],
-  providers: [PaymentService, FacebookPixelService, FacebookService],
+  providers: [
+    PaymentService,
+    FacebookPixelService,
+    FacebookService,
+    FacebookSDKService,
+    WhatsAppService,
+    GrowthService,
+    AdminSocialMediaService,
+  ],
 })
 export class AdminModule {}

@@ -57,7 +57,7 @@ export class GrowthService {
           achievedAt: new Date(),
         },
       });
-      createdMilestones.push(created);
+      createdMilestones.push(created as any);
       this.logger.log(`🎉 Petition ${petitionId} reached ${milestone.targetValue} signatures!`);
     }
 

@@ -7,6 +7,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import type { RequestUser } from '../auth/roles.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { VerificationService } from '../verification/verification.service';
+import { AdminSocialMediaService } from './admin-social-media.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -25,6 +27,7 @@ export class AdminController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly verification: VerificationService,
+    private readonly socialMedia: AdminSocialMediaService,
   ) {}
 
   @Get('petitions/pending')
@@ -135,5 +138,57 @@ export class AdminController {
     ]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 100);
+  }
+
+  // ==================== Social Media Admin Endpoints ====================
+
+  /**
+   * Social Media Dashboard - Overview of Facebook and WhatsApp integrations
+   */
+  @Get('social-media/dashboard')
+  async getSocialMediaDashboard() {
+    return this.socialMedia.getSocialMediaDashboard();
+  }
+
+  /**
+   * Facebook Integration Health and Configuration
+   */
+  @Get('social-media/facebook/health')
+  async getFacebookHealth() {
+    return this.socialMedia.getFacebookHealth();
+  }
+
+  /**
+   * Facebook Pixel Event Statistics
+   */
+  @Get('social-media/facebook/pixel-stats')
+  async getFacebookPixelStats(@Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.socialMedia.getFacebookPixelStats(daysNum);
+  }
+
+  /**
+   * WhatsApp Integration Health and Configuration
+   */
+  @Get('social-media/whatsapp/health')
+  async getWhatsAppHealth() {
+    return this.socialMedia.getWhatsAppHealth();
+  }
+
+  /**
+   * WhatsApp Viral Growth Metrics
+   */
+  @Get('social-media/whatsapp/growth-metrics')
+  async getWhatsAppGrowthMetrics(@Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.socialMedia.getWhatsAppGrowthMetrics(daysNum);
+  }
+
+  /**
+   * WhatsApp Campaign Statistics
+   */
+  @Get('social-media/whatsapp/campaign-stats')
+  async getWhatsAppCampaignStats() {
+    return this.socialMedia.getWhatsAppCampaignStats();
   }
 }
