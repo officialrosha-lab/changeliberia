@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, TrendingUp } from 'lucide-react';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi } from '../lib/api-client';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
