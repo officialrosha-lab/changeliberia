@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EmailService } from './services/email.service';
+import { EmailService } from './email.service';
 import { EmailType } from '@prisma/client';
 
 /**

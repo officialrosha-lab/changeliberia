@@ -51,7 +51,7 @@ export class ResendWebhookController {
     // Verify webhook signature if secret is configured
     if (this.webhookSecret) {
       const signature = req.get('svix-signature');
-      if (!signature || !this.verifySignature(req.rawBody, signature)) {
+      if (!signature || !req.rawBody || !this.verifySignature(req.rawBody, signature)) {
         this.logger.warn('Invalid Resend webhook signature');
         throw new UnauthorizedException('Invalid webhook signature');
       }
