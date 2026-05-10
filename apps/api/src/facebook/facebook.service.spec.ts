@@ -54,20 +54,20 @@ describe('FacebookService', () => {
           provide: PrismaService,
           useValue: {
             petition: {
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
             },
             user: {
-              findUnique: jest.fn(),
-              update: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
             shareLink: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
             facebookPixelEvent: {
-              create: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
             },
           },
         },

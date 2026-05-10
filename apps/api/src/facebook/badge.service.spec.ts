@@ -50,21 +50,21 @@ describe('BadgeService', () => {
           provide: PrismaService,
           useValue: {
             shareLink: {
-              count: jest.fn(),
-              aggregate: jest.fn(),
-              findMany: jest.fn(),
+              count: jest.fn().mockResolvedValue(0) as any,
+              aggregate: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
             },
             socialEngagementBadge: {
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              create: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              create: jest.fn().mockResolvedValue(null) as any,
             },
             referral: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]) as any,
             },
             user: {
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
             },
           },
         },

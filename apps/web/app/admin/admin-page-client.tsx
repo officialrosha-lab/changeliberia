@@ -12,6 +12,16 @@ import { GlobalAnalytics } from '../../components/admin-analytics';
 import { AdminSettings } from '../../components/admin-settings';
 import { CMSPageManager, CMSTemplateManager } from '../../components/cms';
 import { CMSPageBlockEditor } from '../../components/cms-page-block-editor';
+import { AdminStripeDashboard } from '../../components/admin-stripe-dashboard';
+import { AdminStripePayments } from '../../components/admin-stripe-payments';
+import { AdminStripeSubscriptions } from '../../components/admin-stripe-subscriptions';
+import { AdminStripeRefunds } from '../../components/admin-stripe-refunds';
+import { AdminStripeAnalytics } from '../../components/admin-stripe-analytics';
+import { AdminFacebookDashboard } from '../../components/admin-facebook-dashboard';
+import { AdminFacebookPixel } from '../../components/admin-facebook-pixel';
+import { AdminFacebookReach } from '../../components/admin-facebook-reach';
+import { AdminFacebookSocialFeatures } from '../../components/admin-facebook-social-features';
+import { AdminFacebookEngagement } from '../../components/admin-facebook-engagement';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -47,7 +57,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -150,6 +160,8 @@ export function AdminPageClient() {
             ['users', 'Users'],
             ['analytics', 'Analytics'],
             ['government', 'Government'],
+            ['payments', 'Payments'],
+            ['integrations', 'Integrations'],
             ['ambassadors', 'Ambassadors'],
             ['cms', 'CMS'],
             ['settings', 'Settings'],
@@ -289,6 +301,59 @@ export function AdminPageClient() {
       {activeTab === 'settings' && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminSettings />
+        </div>
+      )}
+
+      {/* Payments Tab - Stripe */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6">
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Payment Dashboard</h2>
+            <AdminStripeDashboard />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminStripePayments />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminStripeSubscriptions />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminStripeRefunds />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Revenue Analytics</h2>
+            <AdminStripeAnalytics />
+          </section>
+        </div>
+      )}
+
+      {/* Integrations Tab - Facebook */}
+      {activeTab === 'integrations' && (
+        <div className="space-y-6">
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Facebook Integration Dashboard</h2>
+            <AdminFacebookDashboard />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminFacebookPixel />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminFacebookReach />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminFacebookSocialFeatures />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminFacebookEngagement />
+          </section>
         </div>
       )}
     </main>

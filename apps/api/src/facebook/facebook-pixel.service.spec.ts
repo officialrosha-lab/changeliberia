@@ -41,13 +41,13 @@ describe('FacebookPixelService', () => {
           provide: PrismaService,
           useValue: {
             facebookPixelEvent: {
-              create: jest.fn(),
-              findMany: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
             },
             customAudience: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
           },
         },

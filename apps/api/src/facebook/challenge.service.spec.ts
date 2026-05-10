@@ -51,19 +51,19 @@ describe('ChallengeService', () => {
           provide: PrismaService,
           useValue: {
             shareChallenge: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
             challengeMembership: {
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              create: jest.fn(),
-              update: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              create: jest.fn().mockResolvedValue(null) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
             petition: {
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
             },
           },
         },

@@ -107,7 +107,7 @@ describe('ShareDialogService', () => {
     });
 
     it('should include custom class', () => {
-      const snippet = service.getShareButtonSnippet('petition-1', 'custom-btn');
+      const snippet = service.getShareButtonSnippet('petition-1');
 
       expect(snippet).toContain('petition-1');
     });

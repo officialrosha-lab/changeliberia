@@ -39,17 +39,17 @@ describe('RealPixelTrackingService', () => {
           provide: PrismaService,
           useValue: {
             petition: {
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
             },
             user: {
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
             },
             facebookPixelEvent: {
-              create: jest.fn(),
-              findMany: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
             },
             customAudience: {
-              create: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
             },
           },
         },

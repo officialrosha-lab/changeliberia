@@ -44,28 +44,28 @@ describe('AnalyticsService', () => {
           provide: PrismaService,
           useValue: {
             facebookPixelEvent: {
-              count: jest.fn(),
-              findMany: jest.fn(),
-              findFirst: jest.fn(),
+              count: jest.fn().mockResolvedValue(0) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              findFirst: jest.fn().mockResolvedValue(null) as any,
             },
             petition: {
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              count: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              count: jest.fn().mockResolvedValue(0) as any,
             },
             user: {
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null) as any,
             },
             signature: {
-              count: jest.fn(),
+              count: jest.fn().mockResolvedValue(0) as any,
             },
             donation: {
-              findMany: jest.fn(),
-              count: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              count: jest.fn().mockResolvedValue(0) as any,
             },
             shareCompletion: {
-              findMany: jest.fn(),
-              count: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              count: jest.fn().mockResolvedValue(0) as any,
             },
           },
         },

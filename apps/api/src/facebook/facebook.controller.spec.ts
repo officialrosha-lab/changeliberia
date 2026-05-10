@@ -38,13 +38,13 @@ describe('FacebookController', () => {
         {
           provide: FacebookService,
           useValue: {
-            generateOpenGraphMeta: jest.fn(),
-            createFacebookShareLink: jest.fn(),
-            buildFacebookShareDialog: jest.fn(),
-            trackFacebookClick: jest.fn(),
-            recordFacebookShare: jest.fn(),
-            calculateNetworkReach: jest.fn(),
-            getFacebookAnalytics: jest.fn(),
+            generateOpenGraphMeta: jest.fn().mockResolvedValue({}) as any,
+            createFacebookShareLink: jest.fn().mockResolvedValue({}) as any,
+            buildFacebookShareDialog: jest.fn().mockResolvedValue('') as any,
+            trackFacebookClick: jest.fn().mockResolvedValue({}) as any,
+            recordFacebookShare: jest.fn().mockResolvedValue({}) as any,
+            calculateNetworkReach: jest.fn().mockReturnValue(0) as any,
+            getFacebookAnalytics: jest.fn().mockResolvedValue({}) as any,
           },
         },
         {

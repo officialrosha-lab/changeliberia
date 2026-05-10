@@ -11,7 +11,7 @@ import Stripe from 'stripe';
 describe('PaymentService', () => {
   let service: PaymentService;
   let prisma: jest.Mocked<PrismaService>;
-  let stripe: jest.Mocked<Stripe>;
+  let stripe: any; // Stripe mock
 
   const mockPetition = {
     id: 'petition-1',
@@ -53,27 +53,36 @@ describe('PaymentService', () => {
         {
           provide: PrismaService,
           useValue: {
-            petition: { findUnique: jest.fn() },
+            petition: {
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              create: jest.fn().mockResolvedValue(null) as any,
+            },
             paymentIntent: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
             donation: {
-              create: jest.fn(),
-              findFirst: jest.fn(),
-              findMany: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findFirst: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
-            checkoutSession: { create: jest.fn() },
+            checkoutSession: {
+              create: jest.fn().mockResolvedValue(null) as any,
+            },
             subscription: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              findFirst: jest.fn(),
-              update: jest.fn(),
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findFirst: jest.fn().mockResolvedValue(null) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
             },
-            facebookPixelEvent: { create: jest.fn() },
-            refund: { create: jest.fn() },
+            facebookPixelEvent: {
+              create: jest.fn().mockResolvedValue(null) as any,
+            },
+            refund: {
+              create: jest.fn().mockResolvedValue(null) as any,
+            },
           },
         },
       ],
