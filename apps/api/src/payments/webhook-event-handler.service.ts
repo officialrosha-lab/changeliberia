@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailQueueService } from '../email/email-queue.service';
@@ -19,7 +19,7 @@ export class WebhookEventHandlerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailQueue: EmailQueueService,
+    @Optional() private readonly emailQueue: EmailQueueService | null,
   ) {}
 
   /**
@@ -716,13 +716,15 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queuePaymentConfirmation(user.email, user.fullName || 'Donor', {
-        amount: payment.amount,
-        currency: payment.currency,
-        petitionTitle: payment.petition?.title,
-        transactionId: payment.stripePaymentIntentId || 'N/A',
-        date: payment.createdAt,
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queuePaymentConfirmation(user.email, user.fullName || 'Donor', {
+          amount: payment.amount,
+          currency: payment.currency,
+          petitionTitle: payment.petition?.title,
+          transactionId: payment.stripePaymentIntentId || 'N/A',
+          date: payment.createdAt,
+        });
+      }
 
       this.logger.debug(`Queued confirmation email for payment ${paymentId}`);
     } catch (error) {
@@ -762,12 +764,14 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
-        amount: payment.amount,
-        currency: payment.currency,
-        reason: payment.failureReason || 'Card declined',
-        retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/payments/retry/${paymentId}`,
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
+          amount: payment.amount,
+          currency: payment.currency,
+          reason: payment.failureReason || 'Card declined',
+          retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/payments/retry/${paymentId}`,
+        });
+      }
 
       this.logger.debug(`Queued failure email for payment ${paymentId}`);
     } catch (error) {
@@ -807,12 +811,14 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queueSubscriptionWelcome(user.email, user.fullName || 'Donor', {
-        amount: subscription.amount,
-        currency: subscription.currency,
-        interval: subscription.interval,
-        nextBillingDate: subscription.nextBillingDate || new Date(),
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queueSubscriptionWelcome(user.email, user.fullName || 'Donor', {
+          amount: subscription.amount,
+          currency: subscription.currency,
+          interval: subscription.interval,
+          nextBillingDate: subscription.nextBillingDate || new Date(),
+        });
+      }
 
       this.logger.debug(`Queued welcome email for user ${userId}`);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { EmailTemplateService } from './email-template.service';
 import {
@@ -19,8 +19,8 @@ export class EmailQueueService {
   private readonly logger = new Logger(EmailQueueService.name);
 
   constructor(
-    private readonly emailService: EmailService,
-    private readonly templateService: EmailTemplateService,
+    @Optional() private readonly emailService: EmailService | null,
+    @Optional() private readonly templateService: EmailTemplateService | null,
   ) {}
 
   /**
@@ -174,6 +174,11 @@ export class EmailQueueService {
   private async sendEmailAsync(template: EmailTemplate): Promise<boolean> {
     // In production, this would queue to a message broker (Redis, RabbitMQ)
     // For now, we send synchronously but catch errors gracefully
+    if (!this.emailService) {
+      this.logger.warn('EmailService not available - cannot send email');
+      return false;
+    }
+
     try {
       const success = await this.emailService.sendEmail(template);
       if (!success) {
