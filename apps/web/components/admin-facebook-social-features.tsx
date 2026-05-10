@@ -65,7 +65,7 @@ export function AdminFacebookSocialFeatures() {
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/facebook/badges', {
+        const response = await fetch('/api/v1/admin/facebook/badges', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
@@ -97,7 +97,7 @@ export function AdminFacebookSocialFeatures() {
   const handleBadgeSelect = async (badgeType: string) => {
     setSelectedBadge(badgeType);
     try {
-      const response = await fetch(`/api/v1/api/admin/facebook/badges/${badgeType}/stats`, {
+      const response = await fetch(`/api/v1/admin/facebook/badges/${badgeType}/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },

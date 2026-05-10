@@ -45,7 +45,7 @@ export function AdminStripeAnalytics() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/stripe/analytics', {
+        const response = await fetch('/api/v1/admin/stripe/analytics', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },

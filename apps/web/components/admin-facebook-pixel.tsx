@@ -58,7 +58,7 @@ export function AdminFacebookPixel() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/v1/api/admin/facebook/pixel-events', {
+      const response = await fetch('/api/v1/admin/facebook/pixel-events', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -74,7 +74,7 @@ export function AdminFacebookPixel() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/v1/api/admin/facebook/pixel-config', {
+      const response = await fetch('/api/v1/admin/facebook/pixel-config', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -93,7 +93,7 @@ export function AdminFacebookPixel() {
   const handleTestEvent = async () => {
     setSendingTest(true);
     try {
-      const response = await fetch('/api/v1/api/admin/facebook/pixel/test-event', {
+      const response = await fetch('/api/v1/admin/facebook/pixel/test-event', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

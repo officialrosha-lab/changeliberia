@@ -41,7 +41,7 @@ export function AdminFacebookDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/facebook/dashboard', {
+        const response = await fetch('/api/v1/admin/facebook/dashboard', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },

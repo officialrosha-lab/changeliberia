@@ -62,7 +62,7 @@ export function AdminStripeRefunds() {
 
   const fetchRefunds = async () => {
     try {
-      const response = await fetch('/api/v1/api/admin/stripe/refunds', {
+      const response = await fetch('/api/v1/admin/stripe/refunds', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -86,7 +86,7 @@ export function AdminStripeRefunds() {
 
     setCreating(true);
     try {
-      const response = await fetch('/api/v1/api/admin/stripe/refunds', {
+      const response = await fetch('/api/v1/admin/stripe/refunds', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

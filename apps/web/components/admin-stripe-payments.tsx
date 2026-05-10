@@ -56,7 +56,7 @@ export function AdminStripePayments() {
     const fetchPayments = async () => {
       try {
         const response = await fetch(
-          `/api/v1/api/admin/stripe/payments?days=${dateFilter}`,
+          `/api/v1/admin/stripe/payments?days=${dateFilter}`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,

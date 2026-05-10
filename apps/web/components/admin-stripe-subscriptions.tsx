@@ -59,7 +59,7 @@ export function AdminStripeSubscriptions() {
 
   const fetchSubscriptions = async () => {
     try {
-      const response = await fetch('/api/v1/api/admin/stripe/subscriptions', {
+      const response = await fetch('/api/v1/admin/stripe/subscriptions', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -81,7 +81,7 @@ export function AdminStripeSubscriptions() {
     setCancelling(subscriptionId);
     try {
       const response = await fetch(
-        `/api/v1/api/admin/stripe/subscriptions/${subscriptionId}/cancel`,
+        `/api/v1/admin/stripe/subscriptions/${subscriptionId}/cancel`,
         {
           method: 'PATCH',
           headers: {

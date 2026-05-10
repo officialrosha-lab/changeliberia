@@ -42,7 +42,7 @@ export function AdminStripeDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/stripe/dashboard', {
+        const response = await fetch('/api/v1/admin/stripe/dashboard', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },

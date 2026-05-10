@@ -52,7 +52,7 @@ export function AdminFacebookReach() {
   useEffect(() => {
     const fetchLinks = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/facebook/share-links', {
+        const response = await fetch('/api/v1/admin/facebook/share-links', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },

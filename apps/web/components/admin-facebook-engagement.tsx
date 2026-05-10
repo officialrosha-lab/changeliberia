@@ -57,7 +57,7 @@ export function AdminFacebookEngagement() {
   useEffect(() => {
     const fetchChallenges = async () => {
       try {
-        const response = await fetch('/api/v1/api/admin/facebook/challenges', {
+        const response = await fetch('/api/v1/admin/facebook/challenges', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
@@ -78,7 +78,7 @@ export function AdminFacebookEngagement() {
 
   const handleChallengeSelect = async (challengeId: string) => {
     try {
-      const response = await fetch(`/api/v1/api/admin/facebook/challenges/${challengeId}`, {
+      const response = await fetch(`/api/v1/admin/facebook/challenges/${challengeId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
