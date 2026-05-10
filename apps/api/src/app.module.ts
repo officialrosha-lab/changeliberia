@@ -45,11 +45,11 @@ import { EmailModule } from './email/email.module';
     AmbassadorsModule,
     AuthModule,
     UsersModule,
+    EmailModule, // Import EmailModule before GovernmentModule
     PetitionsModule,
     SignaturesModule,
     VerificationModule,
     FraudModule,
-    EmailModule,
     AdminModule,
     CaptchaModule,
     WhatsAppModule,
