@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { BULL_EMAIL_QUEUE } from '../email.constants';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -18,15 +18,40 @@ export interface QueuedEmailResult {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+  private emailQueue: Queue | undefined;
 
   constructor(
-    @Inject(BULL_EMAIL_QUEUE) private emailQueue: Queue,
     private readonly prisma: PrismaService,
     private readonly resendProvider: ResendProvider,
     private readonly templateService: EmailTemplateService,
     private readonly trackingService: EmailTrackingService,
     private readonly preferenceService: EmailPreferenceService,
-  ) {}
+  ) {
+    // Initialize queue synchronously
+    this.initializeQueue();
+  }
+
+  private initializeQueue(): void {
+    try {
+      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      // Parse Redis URL to extract connection details
+      const url = new URL(redisUrl);
+      
+      this.emailQueue = new Queue(BULL_EMAIL_QUEUE, {
+        connection: {
+          host: url.hostname || 'localhost',
+          port: parseInt(url.port || '6379', 10),
+          password: url.password || undefined,
+          db: url.pathname ? parseInt(url.pathname.split('/')[1] || '0', 10) : 0,
+        },
+      });
+      this.logger.log('Email queue initialized successfully');
+    } catch (error) {
+      this.logger.warn(
+        `Failed to initialize email queue: ${error instanceof Error ? error.message : String(error)}. Emails will be sent directly via Resend.`,
+      );
+    }
+  }
 
   /**
    * Send transactional email (always sent, no preference check)
@@ -83,24 +108,39 @@ export class EmailService {
       },
     });
 
-    // Queue the job
-    const job = await this.emailQueue.add('send-email', {
-      emailLogId: emailLog.id,
-      recipient,
-      subject,
-      html,
-      text,
-      emailType,
-      isTransactional: true,
-    });
+    // Queue the job if queue is available
+    let jobId: string | number | undefined = 'direct-send';
+    if (this.emailQueue) {
+      const job = await this.emailQueue.add('send-email', {
+        emailLogId: emailLog.id,
+        recipient,
+        subject,
+        html,
+        text,
+        emailType,
+        isTransactional: true,
+      });
 
-    this.logger.log(
-      `Transactional email queued: ${emailLog.id} (Job: ${job.id})`,
-    );
+      jobId = job.id!;
+      this.logger.log(
+        `Transactional email queued: ${emailLog.id} (Job: ${jobId})`,
+      );
+    } else {
+      // Send directly if queue is not available
+      this.logger.log(`Transactional email sent directly: ${emailLog.id}`);
+      await this.resendProvider.send({
+        to: recipient,
+        from: process.env.MAIL_FROM || 'noreply@changeliberia.org',
+        replyTo: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
+        subject,
+        html,
+        text,
+      });
+    }
 
     return {
       emailLogId: emailLog.id,
-      jobId: job.id as string | number,
+      jobId,
       queuedAt: new Date(),
     };
   }
@@ -172,24 +212,39 @@ export class EmailService {
       },
     });
 
-    // Queue the job
-    const job = await this.emailQueue.add('send-email', {
-      emailLogId: emailLog.id,
-      recipient,
-      subject,
-      html,
-      text,
-      emailType,
-      userId,
-    });
+    // Queue the job if queue is available
+    let jobId: string | number | undefined = 'direct-send';
+    if (this.emailQueue) {
+      const job = await this.emailQueue.add('send-email', {
+        emailLogId: emailLog.id,
+        recipient,
+        subject,
+        html,
+        text,
+        emailType,
+        userId,
+      });
 
-    this.logger.log(
-      `Notification email queued: ${emailLog.id} (Job: ${job.id})`,
-    );
+      jobId = job.id!;
+      this.logger.log(
+        `Notification email queued: ${emailLog.id} (Job: ${jobId})`,
+      );
+    } else {
+      // Send directly if queue is not available
+      this.logger.log(`Notification email sent directly: ${emailLog.id}`);
+      await this.resendProvider.send({
+        to: recipient,
+        from: process.env.MAIL_FROM || 'noreply@changeliberia.org',
+        replyTo: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
+        subject,
+        html,
+        text,
+      });
+    }
 
     return {
       emailLogId: emailLog.id,
-      jobId: job.id as string | number,
+      jobId: jobId ?? 'direct-send',
       queuedAt: new Date(),
     };
   }
