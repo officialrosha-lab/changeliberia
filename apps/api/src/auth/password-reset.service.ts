@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, NotFoundException, Optional, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { PasswordProvider } from './password.provider';
@@ -7,9 +7,11 @@ import { createHash } from 'crypto';
 
 @Injectable()
 export class PasswordResetService {
+  private readonly logger = new Logger(PasswordResetService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    @Optional() private readonly emailService: EmailService | null,
     private readonly passwordProvider: PasswordProvider,
   ) {}
 
@@ -57,13 +59,17 @@ export class PasswordResetService {
     // Send password reset email
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
     
-    await this.emailService.sendEmail({
-      recipientEmail: email,
-      subject: 'Reset your Change Liberia password',
-      templateType: 'password_reset',
-      htmlContent: `Click to reset: ${resetUrl}`,
-      textContent: `Click to reset: ${resetUrl}`,
-    });
+    if (this.emailService) {
+      await this.emailService.sendEmail({
+        recipientEmail: email,
+        subject: 'Reset your Change Liberia password',
+        templateType: 'password_reset',
+        htmlContent: `Click to reset: ${resetUrl}`,
+        textContent: `Click to reset: ${resetUrl}`,
+      });
+    } else {
+      this.logger.warn('EmailService not available - cannot send password reset email');
+    }
 
     return {
       success: true,
@@ -128,13 +134,17 @@ export class PasswordResetService {
     ]);
 
     // Send confirmation email
-    await this.emailService.sendEmail({
-      recipientEmail: email,
-      subject: 'Your Change Liberia password has been reset',
-      templateType: 'password_reset_confirmation',
-      htmlContent: `Your password has been successfully reset.`,
-      textContent: `Your password has been successfully reset.`,
-    });
+    if (this.emailService) {
+      await this.emailService.sendEmail({
+        recipientEmail: email,
+        subject: 'Your Change Liberia password has been reset',
+        templateType: 'password_reset_confirmation',
+        htmlContent: `Your password has been successfully reset.`,
+        textContent: `Your password has been successfully reset.`,
+      });
+    } else {
+      this.logger.warn('EmailService not available - cannot send password reset confirmation email');
+    }
 
     return {
       success: true,

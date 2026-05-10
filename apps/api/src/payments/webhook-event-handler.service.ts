@@ -858,15 +858,17 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queueSubscriptionCancellation(
-        user.email,
-        user.fullName || 'Donor',
-        {
-          amount: subscription.amount,
-          currency: subscription.currency,
-          interval: subscription.interval,
-        },
-      );
+      if (this.emailQueue) {
+        await this.emailQueue.queueSubscriptionCancellation(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: subscription.amount,
+            currency: subscription.currency,
+            interval: subscription.interval,
+          },
+        );
+      }
 
       this.logger.debug(`Queued cancellation email for user ${userId}`);
     } catch (error) {
@@ -915,11 +917,13 @@ export class WebhookEventHandlerService {
       });
 
       // Queue email
-      await this.emailQueue.queueSubscriptionReceipt(user.email, user.fullName || 'Donor', {
-        amount: payment.amount,
-        currency: payment.currency,
-        interval: subscription?.interval || 'monthly',
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queueSubscriptionReceipt(user.email, user.fullName || 'Donor', {
+          amount: payment.amount,
+          currency: payment.currency,
+          interval: subscription?.interval || 'monthly',
+        });
+      }
 
       this.logger.debug(`Queued receipt email for invoice ${invoiceId}`);
     } catch (error) {
@@ -962,12 +966,14 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
-        amount: payment.amount,
-        currency: payment.currency,
-        reason: payment.failureReason || 'Card declined',
-        retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/subscriptions/retry/${userId}`,
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
+          amount: payment.amount,
+          currency: payment.currency,
+          reason: payment.failureReason || 'Card declined',
+          retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/subscriptions/retry/${userId}`,
+        });
+      }
 
       this.logger.debug(`Queued failure email for invoice ${invoiceId}`);
     } catch (error) {
@@ -1008,12 +1014,14 @@ export class WebhookEventHandlerService {
       }
 
       // Queue email
-      await this.emailQueue.queueRefund(user.email, user.fullName || 'Donor', {
-        amount: payment.amount,
-        currency: payment.currency,
-        reason: 'Refund processed',
-        originalTransactionId: payment.stripeChargeId || payment.id,
-      });
+      if (this.emailQueue) {
+        await this.emailQueue.queueRefund(user.email, user.fullName || 'Donor', {
+          amount: payment.amount,
+          currency: payment.currency,
+          reason: 'Refund processed',
+          originalTransactionId: payment.stripeChargeId || payment.id,
+        });
+      }
 
       this.logger.debug(`Queued refund email for user ${userId}`);
     } catch (error) {

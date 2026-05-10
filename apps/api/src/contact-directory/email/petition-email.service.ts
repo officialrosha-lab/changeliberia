@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
@@ -16,7 +16,7 @@ export class PetitionEmailService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    @Optional() private readonly emailService: EmailService | null,
   ) {}
 
   /**
@@ -103,6 +103,11 @@ export class PetitionEmailService {
       // Send email to each recipient
       for (const recipientEmail of recipientEmails) {
         try {
+          if (!this.emailService) {
+            this.logger.warn('EmailService not available - cannot send petition email');
+            continue;
+          }
+
           const success = await this.emailService.sendEmail({
             templateType: 'petition_to_institution',
             recipientEmail,
@@ -133,7 +138,7 @@ export class PetitionEmailService {
       }
 
       // Send CC emails if any
-      if (ccEmails.length > 0) {
+      if (ccEmails.length > 0 && this.emailService) {
         for (const ccEmail of ccEmails) {
           try {
             await this.emailService.sendEmail({
