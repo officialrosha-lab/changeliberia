@@ -134,7 +134,7 @@ export class AdminSocialMediaService {
 
       const eventCounts = events.reduce(
         (acc, event) => {
-          acc[event.eventName] = (acc[event.eventName] || 0) + 1;
+          acc[event.eventType] = (acc[event.eventType] || 0) + 1;
           return acc;
         },
         {} as Record<string, number>,
