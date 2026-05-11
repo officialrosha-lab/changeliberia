@@ -37,6 +37,17 @@ test.describe('Donations & Stripe Integration', () => {
     expect(count).toBeGreaterThan(0);
   });
 
+  test('should allow Mobile Money selection in the donation widget', async ({ page }) => {
+    await page.goto('/');
+
+    const mobileMoneyButton = page.locator('[data-testid="donation-widget"] button:has-text("MTN Mobile Money")');
+    await expect(mobileMoneyButton).toBeVisible();
+    await mobileMoneyButton.click();
+
+    const phoneInput = page.locator('[data-testid="donation-widget"] input[name="phoneNumber"]');
+    await expect(phoneInput).toBeVisible();
+  });
+
   test('should allow custom donation amount', async ({ page }) => {
     await page.goto('/');
 

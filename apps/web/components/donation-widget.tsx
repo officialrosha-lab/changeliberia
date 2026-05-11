@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DonationWidgetProps {
-  onDonate?: (amount: number, frequency: 'once' | 'monthly', email: string) => Promise<void>;
+  onDonate?: (
+    amount: number,
+    frequency: 'once' | 'monthly',
+    email: string,
+    paymentMethod: 'CARD' | 'MOBILE_MONEY',
+    phoneNumber?: string,
+  ) => Promise<void>;
   isEnabled?: boolean;
   customAmounts?: number[];
 }
@@ -17,6 +23,8 @@ export function DonationWidget({
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [frequency, setFrequency] = useState<'once' | 'monthly'>('once');
+  const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'MOBILE_MONEY'>('CARD');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,13 +38,20 @@ export function DonationWidget({
       return;
     }
 
+    if (paymentMethod === 'MOBILE_MONEY' && !phoneNumber.trim()) {
+      setError('Please enter your mobile money phone number');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      await onDonate?.(finalAmount, frequency, email);
+      await onDonate?.(finalAmount, frequency, email, paymentMethod, phoneNumber);
       setSelectedAmount(null);
       setCustomAmount('');
       setEmail('');
+      setPhoneNumber('');
+      setPaymentMethod('CARD');
       setShowForm(false);
     } catch (err) {
       setError('Donation failed. Please try again.');
@@ -60,6 +75,7 @@ export function DonationWidget({
 
   return (
     <motion.div
+      data-testid="donation-widget"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -116,6 +132,7 @@ export function DonationWidget({
           <div className="relative">
             <span className="absolute left-3 top-2.5 text-zinc-600 dark:text-zinc-400">$</span>
             <input
+              name="customAmount"
               type="number"
               value={customAmount}
               onChange={e => {
@@ -170,6 +187,7 @@ export function DonationWidget({
                 Email Address *
               </label>
               <input
+                name="email"
                 type="email"
                 value={email}
                 onChange={e => {
@@ -180,6 +198,58 @@ export function DonationWidget({
                 className="w-full px-4 py-3 rounded-lg border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
+
+            {/* Payment Method */}
+            <div>
+              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                Payment Method
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { id: 'CARD', label: 'Credit/Debit Card' },
+                  { id: 'MOBILE_MONEY', label: 'MTN Mobile Money' },
+                ] as const).map((option) => (
+                  <motion.button
+                    key={option.id}
+                    data-testid={`payment-method-${option.id.toLowerCase()}`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={() => setPaymentMethod(option.id)}
+                    className={`py-2 rounded-lg font-semibold transition-all border-2 ${
+                      paymentMethod === option.id
+                        ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                        : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-400 dark:hover:border-emerald-500'
+                    }`}
+                  >
+                    {option.label}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {paymentMethod === 'MOBILE_MONEY' && (
+              <div>
+                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                  Mobile Money Phone Number *
+                </label>
+                <input
+                  data-testid="momo-phone-input"
+                  name="phoneNumber"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="+231 770 000 000"
+                  className="w-full px-4 py-3 rounded-lg border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                />
+                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  You will receive a mobile money prompt on your phone to complete the payment.
+                </p>
+              </div>
+            )}
 
             {/* Amount Summary */}
             <motion.div
@@ -230,17 +300,17 @@ export function DonationWidget({
                 Change Amount
               </motion.button>
 
-              <motion.button
+                <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleDonate}
-                disabled={loading || !finalAmount || !email.trim()}
+                disabled={loading || !finalAmount || !email.trim() || (paymentMethod === 'MOBILE_MONEY' && !phoneNumber.trim())}
                 className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-lg font-semibold transition-all disabled:opacity-60"
               >
                 {loading ? (
                   <>⏳ Processing...</>
                 ) : (
-                  <>💳 Donate ${finalAmount}</>
+                  <>{paymentMethod === 'MOBILE_MONEY' ? '📱 Send MoMo Request' : `💳 Donate $${finalAmount}`}</>
                 )}
               </motion.button>
             </div>

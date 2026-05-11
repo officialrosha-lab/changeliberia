@@ -32,7 +32,12 @@ export class EmailQueueService {
     data: PaymentConfirmationData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generatePaymentConfirmation(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generatePaymentConfirmation(
         recipientEmail,
         recipientName,
         data,
@@ -56,7 +61,12 @@ export class EmailQueueService {
     data: PaymentFailedData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generatePaymentFailed(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generatePaymentFailed(
         recipientEmail,
         recipientName,
         data,
@@ -80,7 +90,12 @@ export class EmailQueueService {
     data: SubscriptionData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generateSubscriptionWelcome(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generateSubscriptionWelcome(
         recipientEmail,
         recipientName,
         data,
@@ -104,7 +119,12 @@ export class EmailQueueService {
     data: SubscriptionData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generateSubscriptionReceipt(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generateSubscriptionReceipt(
         recipientEmail,
         recipientName,
         data,
@@ -128,7 +148,12 @@ export class EmailQueueService {
     data: SubscriptionData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generateSubscriptionCancellation(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generateSubscriptionCancellation(
         recipientEmail,
         recipientName,
         data,
@@ -152,7 +177,12 @@ export class EmailQueueService {
     data: RefundData,
   ): Promise<boolean> {
     try {
-      const template = this.templateService.generateRefund(
+      if (!this.templateService) {
+        this.logger.warn('Email template service not available');
+        return false;
+      }
+
+      const template = this.templateService!.generateRefund(
         recipientEmail,
         recipientName,
         data,
@@ -180,7 +210,7 @@ export class EmailQueueService {
     }
 
     try {
-      const success = await this.emailService.sendEmail(template);
+      const success = await this.emailService!.sendEmail(template);
       if (!success) {
         this.logger.warn(
           `Email failed to send: ${template.templateType} to ${template.recipientEmail}`,

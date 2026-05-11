@@ -4,24 +4,14 @@ import { useTheme } from '../lib/theme-context';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [error, setError] = useState(false);
-  let theme = 'light';
-  let toggleTheme = () => {};
-
-  try {
-    const context = useTheme();
-    theme = context.theme;
-    toggleTheme = context.toggleTheme;
-  } catch (e) {
-    setError(true);
-  }
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted || error) {
+  if (!mounted) {
     return (
       <button
         className="rounded-lg p-2 text-zinc-700 dark:text-neutral-300"

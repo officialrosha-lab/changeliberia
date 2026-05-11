@@ -1,18 +1,86 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthStore } from '../lib/store';
-import { apiPost } from '../lib/api';
+import { apiGet, apiPost } from '../lib/api';
 import { DonationWidget } from './donation-widget';
 import { FadeInOnScroll } from './scroll-animations';
 
 export function HomeDonationSection() {
   const token = useAuthStore((s) => s.token);
+  const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
 
-  async function handleDonate(amount: number, frequency: 'once' | 'monthly', email: string) {
+  async function pollMoMoStatus(referenceId: string) {
+    if (!token) return;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await apiGet<{ success: boolean; data: { status: string } }>(
+        `/payments/status/${referenceId}`,
+        token,
+      );
+
+      const status = response.data.status;
+      if (status === 'COMPLETED' || status === 'SUCCESSFUL') {
+        setPaymentStatusMessage(
+          `✅ Mobile Money payment confirmed for reference ${referenceId}. Thank you!`,
+        );
+        return;
+      }
+
+      if (status === 'FAILED') {
+        setPaymentStatusMessage(
+          `⚠️ Mobile Money payment failed for reference ${referenceId}. Please retry or use card.`,
+        );
+        return;
+      }
+
+      if (attempt < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+
+    setPaymentStatusMessage(
+      `⏳ Mobile Money request sent. Reference ${referenceId}. If your phone prompt completed, check again in a minute.`,
+    );
+  }
+
+  async function handleDonate(
+    amount: number,
+    frequency: 'once' | 'monthly',
+    email: string,
+    paymentMethod: 'CARD' | 'MOBILE_MONEY',
+    phoneNumber?: string,
+  ) {
+    setPaymentStatusMessage(null);
     if (!token) {
       window.location.href = '/auth/login?next=%2F%23donate';
       return;
     }
+
+    if (paymentMethod === 'MOBILE_MONEY') {
+      const res = await apiPost<{
+        success: boolean;
+        data: { referenceId: string; status: string; expiresAt: string };
+      }>(
+        '/payments/create',
+        {
+          amount,
+          currency: 'USD',
+          donorEmail: email,
+          paymentMethod: 'MOBILE_MONEY',
+          phoneNumber,
+          description: 'Change Liberia platform support',
+        },
+        token,
+      );
+
+      setPaymentStatusMessage(
+        `📱 Mobile Money request sent to ${phoneNumber}. Reference ${res.data.referenceId}. Checking payment status...`,
+      );
+      await pollMoMoStatus(res.data.referenceId);
+      return;
+    }
+
     const res = await apiPost<{ success: boolean; data: { url: string } }>(
       '/payments/checkout',
       {
@@ -69,6 +137,11 @@ export function HomeDonationSection() {
                 onDonate={handleDonate}
                 customAmounts={[5, 10, 25, 50, 100]}
               />
+              {paymentStatusMessage && (
+                <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                  {paymentStatusMessage}
+                </div>
+              )}
             </div>
           </div>
         </div>

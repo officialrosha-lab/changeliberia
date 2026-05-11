@@ -2,6 +2,8 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Stripe from 'stripe';
 import { Payment, Subscription, PaymentStatus, SubscriptionStatus } from '@prisma/client';
+import { MoMoService } from './providers/momo.service';
+import * as crypto from 'crypto';
 
 export interface CreatePaymentIntentDto {
   petitionId?: string;
@@ -10,6 +12,8 @@ export interface CreatePaymentIntentDto {
   currency: string;
   donorName?: string;
   donorEmail: string;
+  paymentMethod: 'CARD' | 'MOBILE_MONEY';
+  phoneNumber?: string; // Required for MoMo
   metadata?: Record<string, any>;
 }
 
@@ -79,14 +83,17 @@ export class PaymentService {
   private stripe: InstanceType<typeof Stripe> | null = null;
   private readonly logger = new Logger(PaymentService.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly momoService: MoMoService,
+  ) {
     const apiKey = process.env.STRIPE_API_KEY;
     if (apiKey) {
       this.stripe = new Stripe(apiKey, {
         apiVersion: '2024-11-20' as any,
       });
     } else {
-      this.logger.warn('STRIPE_API_KEY is not set — payment endpoints will be unavailable.');
+      this.logger.warn('STRIPE_API_KEY is not set — Stripe payments will be unavailable.');
     }
   }
 
@@ -156,6 +163,86 @@ export class PaymentService {
       };
     } catch (error) {
       this.logger.error('Failed to create payment intent', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create payment using specified method (Stripe or MoMo)
+   */
+  async createPayment(dto: CreatePaymentIntentDto): Promise<PaymentIntentResponse | { referenceId: string; status: string; expiresAt: Date }> {
+    if (dto.paymentMethod === 'MOBILE_MONEY') {
+      return this.createMoMoPayment(dto);
+    } else {
+      return this.createStripePayment(dto);
+    }
+  }
+
+  /**
+   * Create Stripe payment (legacy method for backward compatibility)
+   */
+  private async createStripePayment(dto: CreatePaymentIntentDto): Promise<PaymentIntentResponse> {
+    return this.createPaymentIntent(dto);
+  }
+
+  /**
+   * Create MoMo payment
+   */
+  private async createMoMoPayment(dto: CreatePaymentIntentDto): Promise<{ referenceId: string; status: string; expiresAt: Date }> {
+    if (!dto.phoneNumber) {
+      throw new BadRequestException('Phone number is required for mobile money payments');
+    }
+
+    if (!this.momoService.isAvailable()) {
+      throw new BadRequestException('Mobile money payments are not available');
+    }
+
+    try {
+      // Generate idempotency key
+      const externalId = this.momoService.generateIdempotencyKey(dto.userId, crypto.randomUUID());
+
+      // Store payment in database first
+      const payment = await this.prisma.payment.create({
+        data: {
+          userId: dto.userId,
+          petitionId: dto.petitionId,
+          amount: dto.amount,
+          currency: dto.currency,
+          status: 'PENDING' as PaymentStatus,
+          paymentMethod: 'MOBILE_MONEY',
+          momoExternalId: externalId,
+          momoPhoneNumber: dto.phoneNumber,
+          description: `Mobile Money Donation${dto.petitionId ? ` to petition` : ''}`,
+          metadata: dto.metadata ? JSON.stringify(dto.metadata) : undefined,
+        },
+      });
+
+      // Initiate MoMo payment
+      const momoResponse = await this.momoService.requestToPay({
+        amount: dto.amount,
+        currency: dto.currency,
+        phoneNumber: dto.phoneNumber,
+        externalId,
+        description: `Donation${dto.petitionId ? ` to petition` : ''}`,
+        userId: dto.userId,
+        paymentId: payment.id,
+      });
+
+      // Update payment with MoMo reference
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          momoTransactionId: momoResponse.transactionId,
+        },
+      });
+
+      return {
+        referenceId: momoResponse.referenceId,
+        status: momoResponse.status,
+        expiresAt: momoResponse.expiresAt,
+      };
+    } catch (error) {
+      this.logger.error('Failed to create MoMo payment', error);
       throw error;
     }
   }
@@ -318,12 +405,51 @@ export class PaymentService {
    */
   async getPaymentStatus(paymentId: string): Promise<PaymentHistoryResponse> {
     try {
-      const payment = await this.prisma.payment.findUnique({
+      let payment = await this.prisma.payment.findUnique({
         where: { id: paymentId },
       });
 
       if (!payment) {
+        payment = await this.prisma.payment.findFirst({
+          where: { momoExternalId: paymentId },
+        });
+      }
+
+      if (!payment) {
         throw new BadRequestException('Payment not found');
+      }
+
+      if (
+        payment.paymentMethod === 'MOBILE_MONEY' &&
+        payment.status === 'PENDING' &&
+        payment.momoExternalId
+      ) {
+        const momoStatus = await this.momoService.getTransactionStatus(
+          payment.momoExternalId,
+        );
+
+        if (momoStatus.status === 'SUCCESSFUL') {
+          const updated = await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: 'COMPLETED',
+              completedAt: new Date(),
+              momoTransactionId: momoStatus.transactionId,
+              momoErrorMessage: undefined,
+            },
+          });
+          payment = updated;
+        } else if (momoStatus.status === 'FAILED') {
+          const updated = await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: 'FAILED',
+              momoErrorMessage: momoStatus.failureReason,
+              momoTransactionId: momoStatus.transactionId,
+            },
+          });
+          payment = updated;
+        }
       }
 
       return this.formatPaymentHistory(payment);
@@ -339,6 +465,17 @@ export class PaymentService {
   async createSubscription(
     dto: CreateSubscriptionDto,
   ): Promise<SubscriptionResponse> {
+    if (dto.paymentMethod === 'MOBILE_MONEY') {
+      return this.createMoMoSubscription(dto);
+    } else {
+      return this.createStripeSubscription(dto);
+    }
+  }
+
+  /**
+   * Create Stripe subscription (legacy method)
+   */
+  private async createStripeSubscription(dto: CreateSubscriptionDto): Promise<SubscriptionResponse> {
     try {
       if (!dto.recurringInterval) {
         throw new BadRequestException('Recurring interval is required');
@@ -426,6 +563,76 @@ export class PaymentService {
       return this.formatSubscription(stored);
     } catch (error) {
       this.logger.error('Failed to create subscription', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create MoMo subscription using pre-approval
+   */
+  private async createMoMoSubscription(dto: CreateSubscriptionDto): Promise<SubscriptionResponse> {
+    if (!dto.phoneNumber) {
+      throw new BadRequestException('Phone number is required for mobile money subscriptions');
+    }
+
+    if (!dto.userId) {
+      throw new BadRequestException('User ID is required for subscriptions');
+    }
+
+    if (!this.momoService.isAvailable()) {
+      throw new BadRequestException('Mobile money payments are not available');
+    }
+
+    try {
+      // Calculate validity time (1 year for subscriptions)
+      const validityTimeInSeconds = 365 * 24 * 60 * 60; // 1 year
+
+      // Generate pre-approval ID
+      const preapprovalId = this.momoService.generateIdempotencyKey(dto.userId, crypto.randomUUID());
+
+      // Create pre-approval
+      const preApproval = await this.momoService.createPreApproval({
+        phoneNumber: dto.phoneNumber,
+        maxAmount: dto.amount * 12, // Allow up to 12 months worth
+        validityTimeInSeconds,
+        externalId: preapprovalId,
+        description: `Subscription: ${dto.recurringInterval} donation${dto.petitionId ? ` to petition` : ''}`,
+      });
+
+      // Store subscription in database
+      const stored = await this.prisma.subscription.create({
+        data: {
+          userId: dto.userId,
+          petitionId: dto.petitionId,
+          amount: dto.amount,
+          currency: dto.currency,
+          interval: dto.recurringInterval,
+          status: 'PENDING' as SubscriptionStatus, // Wait for pre-approval confirmation
+          paymentMethod: 'MOBILE_MONEY',
+          momoPreapprovalId: preapprovalId,
+          momoPhoneNumber: dto.phoneNumber,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: this.calculateNextBillingDate(dto.recurringInterval),
+          nextBillingDate: this.calculateNextBillingDate(dto.recurringInterval),
+        },
+      });
+
+      // Store pre-approval authorization
+      await this.prisma.moMoSubscriptionAuthorization.create({
+        data: {
+          subscriptionId: stored.id,
+          preapprovalId,
+          phoneNumber: dto.phoneNumber,
+          maxAmount: dto.amount * 12,
+          validityTimeInSeconds,
+          status: 'PENDING',
+          expiresAt: preApproval.expiresAt,
+        },
+      });
+
+      return this.formatSubscription(stored);
+    } catch (error) {
+      this.logger.error('Failed to create MoMo subscription', error);
       throw error;
     }
   }
@@ -676,12 +883,35 @@ export class PaymentService {
   }
 
   private formatPaymentHistory(payment: Payment): PaymentHistoryResponse {
+    const paymentType = payment.paymentMethod === 'MOBILE_MONEY'
+      ? 'mobile-money'
+      : payment.stripePaymentIntentId
+        ? 'one-time'
+        : payment.stripeCheckoutId
+          ? 'checkout'
+          : 'unknown';
+
     return {
       paymentId: payment.id,
       amount: payment.amount,
       currency: payment.currency,
       status: payment.status,
-      type: payment.stripePaymentIntentId ? 'one-time' : 'checkout',
+      type: paymentType,
+      method: payment.paymentMethod === 'CARD'
+        ? {
+            id: payment.stripePaymentIntentId || payment.stripeCheckoutId || '',
+            type: 'card',
+            brand: null,
+            lastFourDigits: null,
+          }
+        : payment.paymentMethod === 'MOBILE_MONEY'
+          ? {
+              id: payment.momoExternalId || '',
+              type: 'mobile_money',
+              brand: null,
+              lastFourDigits: null,
+            }
+          : null,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };
@@ -716,6 +946,45 @@ export class PaymentService {
         return 'year';
       default:
         return 'month';
+    }
+  }
+
+  /**
+   * Get MoMo account balance
+   */
+  async getMoMoBalance(): Promise<{ balance: number; currency: string }> {
+    return this.momoService.getAccountBalance();
+  }
+
+  /**
+   * Validate phone number format
+   */
+  async validatePhoneNumber(phoneNumber: string): Promise<boolean> {
+    return this.momoService.validatePhoneNumber(phoneNumber);
+  }
+
+  /**
+   * Format phone number for display
+   */
+  async formatPhoneNumber(phoneNumber: string): Promise<string> {
+    const normalized = this.momoService.normalizePhoneNumber(phoneNumber);
+    return this.momoService.formatPhoneForDisplay(normalized);
+  }
+
+  /**
+   * Calculate next billing date for subscription
+   */
+  private calculateNextBillingDate(interval: string): Date {
+    const now = new Date();
+    switch (interval) {
+      case 'monthly':
+        return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      case 'quarterly':
+        return new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+      case 'yearly':
+        return new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+      default:
+        return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
     }
   }
 }

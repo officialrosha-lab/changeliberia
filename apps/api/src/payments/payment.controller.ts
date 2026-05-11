@@ -15,6 +15,7 @@ import { Request } from 'express';
 import Stripe from 'stripe';
 import { PaymentService, CreatePaymentIntentDto, CreateSubscriptionDto } from './payment.service';
 import { PaymentWebhookService } from './payment-webhook.service';
+import { MoMoWebhookService } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('payments')
@@ -24,6 +25,7 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly webhookService: PaymentWebhookService,
+    private readonly momoWebhookService: MoMoWebhookService,
   ) {
     const apiKey = process.env.STRIPE_API_KEY;
     this.stripe = apiKey ? new Stripe(apiKey, { apiVersion: '2024-11-20' as any }) : null;
@@ -179,7 +181,98 @@ export class PaymentController {
   }
 
   /**
-   * Handle Stripe webhook
+   * Create a payment (unified endpoint for Stripe and MoMo)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('create')
+  async createPayment(@Body() dto: CreatePaymentIntentDto) {
+    const result = await this.paymentService.createPayment(dto);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  /**
+   * Create recurring subscription (unified for Stripe and MoMo)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('subscription/create')
+  async createUnifiedSubscription(@Body() dto: CreateSubscriptionDto) {
+    const subscription = await this.paymentService.createSubscription(dto);
+
+    return {
+      success: true,
+      data: subscription,
+    };
+  }
+
+  /**
+   * Handle MTN MoMo webhook
+   * Processes payment confirmations and subscription updates
+   */
+  @Post('momo/webhook')
+  async handleMoMoWebhook(
+    @Body() payload: any,
+    @Req() req: Request,
+  ) {
+    // Extract signature from headers (case-insensitive)
+    const signature = req.headers['x-momo-signature'] as string ||
+                     req.headers['X-MOMO-SIGNATURE'] as string ||
+                     req.headers['x-momo-signature'.toLowerCase()] as string;
+
+    try {
+      await this.momoWebhookService.handleWebhook(payload, signature);
+
+      return {
+        success: true,
+        received: true,
+      };
+    } catch (error) {
+      // Log error but return success to prevent MoMo retries
+      // MoMo expects 200 OK even for processing errors
+      console.error('MoMo webhook processing error:', error);
+
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  }
+
+  /**   * Get MoMo account balance (admin only)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('momo/balance')
+  async getMoMoBalance() {
+    // TODO: Add admin role check
+    const balance = await this.paymentService.getMoMoBalance();
+
+    return {
+      success: true,
+      data: balance,
+    };
+  }
+
+  /**
+   * Validate phone number format
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('validate-phone')
+  async validatePhoneNumber(@Body('phoneNumber') phoneNumber: string) {
+    const isValid = await this.paymentService.validatePhoneNumber(phoneNumber);
+
+    return {
+      success: true,
+      data: {
+        valid: isValid,
+        formatted: isValid ? await this.paymentService.formatPhoneNumber(phoneNumber) : null,
+      },
+    };
+  }
+
+  /**   * Handle Stripe webhook
    * Routes to PaymentWebhookService for signature verification,
    * deduplication, and event processing
    */
