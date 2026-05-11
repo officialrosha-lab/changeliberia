@@ -1,0 +1,385 @@
+<testsuites id="" name="" tests="16" failures="2" skipped="0" errors="7" time="282.924056">
+<testsuite name="donations.spec.ts" timestamp="2026-05-11T22:07:46.387Z" hostname="chromium" tests="16" failures="2" skipped="0" time="441.66" errors="7">
+<testcase name="Donations &amp; Stripe Integration › should display donation widget on home page" classname="donations.spec.ts" time="56.734">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-5369c-onation-widget-on-home-page-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-5369c-onation-widget-on-home-page-chromium/error-context.md]]
+]]>
+</system-out>
+<failure message="expect(locator).toBeVisible() failed" type="expect.toBeVisible">
+<![CDATA[  [chromium] › donations.spec.ts:21:7 › Donations & Stripe Integration › should display donation widget on home page 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: [data-testid="donation-widget"]|[data-testid="donate-section"]
+    Expected: visible
+    Error: Unexpected token "|" while parsing css selector "[data-testid="donation-widget"]|[data-testid="donate-section"]". Did you mean to CSS.escape it?
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for [data-testid="donation-widget"]|[data-testid="donate-section"]
+
+
+      24 |     // Check for donation widget
+      25 |     const donationWidget = page.locator('[data-testid="donation-widget"]|[data-testid="donate-section"]');
+    > 26 |     await expect(donationWidget).toBeVisible();
+         |                                  ^
+      27 |   });
+      28 |
+      29 |   test('should display donation preset amounts', async ({ page }) => {
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:26:34
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-5369c-onation-widget-on-home-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-5369c-onation-widget-on-home-page-chromium/error-context.md
+]]>
+</failure>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should display donation preset amounts" classname="donations.spec.ts" time="56.048">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should allow Mobile Money selection in the donation widget" classname="donations.spec.ts" time="22.897">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/error-context.md]]
+]]>
+</system-out>
+<failure message="expect(locator).toBeVisible() failed" type="expect.toBeVisible">
+<![CDATA[  [chromium] › donations.spec.ts:40:7 › Donations & Stripe Integration › should allow Mobile Money selection in the donation widget 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="donation-widget"] button:has-text("MTN Mobile Money")')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for locator('[data-testid="donation-widget"] button:has-text("MTN Mobile Money")')
+
+
+      42 |
+      43 |     const mobileMoneyButton = page.locator('[data-testid="donation-widget"] button:has-text("MTN Mobile Money")');
+    > 44 |     await expect(mobileMoneyButton).toBeVisible();
+         |                                     ^
+      45 |     await mobileMoneyButton.click();
+      46 |
+      47 |     const phoneInput = page.locator('[data-testid="donation-widget"] input[name="phoneNumber"]');
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:44:37
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-16304-tion-in-the-donation-widget-chromium/error-context.md
+]]>
+</failure>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should allow custom donation amount" classname="donations.spec.ts" time="45.506">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.isVisible: Unexpected token &quot;|&quot; while parsing css selector &quot;input[name=&quot;customAmount&quot;]|input[type=&quot;number&quot;][name*=&quot;amount&quot;]&quot;. Did you mean to CSS.escape it?" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:51:7 › Donations & Stripe Integration › should allow custom donation amount 
+
+    Error: locator.isVisible: Unexpected token "|" while parsing css selector "input[name="customAmount"]|input[type="number"][name*="amount"]". Did you mean to CSS.escape it?
+    Call log:
+        - checking visibility of input[name="customAmount"]|input[type="number"][name*="amount"]
+
+
+      55 |     const customInput = page.locator('input[name="customAmount"]|input[type="number"][name*="amount"]');
+      56 |     
+    > 57 |     if (await customInput.isVisible()) {
+         |                           ^
+      58 |       await fillInput(page, 'input[name="customAmount"]|input[type="number"][name*="amount"]', '50');
+      59 |
+      60 |       // Verify value updated
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:57:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-f0c64-llow-custom-donation-amount-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should open donation checkout on preset amount click" classname="donations.spec.ts" time="44.763">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.isVisible: Error: strict mode violation: locator(&apos;[data-testid=&quot;donation-widget&quot;] button:has-text(&quot;$10&quot;)&apos;) resolved to 2 elements:" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:66:7 › Donations & Stripe Integration › should open donation checkout on preset amount click 
+
+    Error: locator.isVisible: Error: strict mode violation: locator('[data-testid="donation-widget"] button:has-text("$10")') resolved to 2 elements:
+        1) <button tabindex="0" class="py-3 rounded-lg font-bold transition-all border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-400 dark:hover:border-emerald-500">$10</button> aka getByRole('button', { name: '$10', exact: true })
+        2) <button tabindex="0" class="py-3 rounded-lg font-bold transition-all border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-400 dark:hover:border-emerald-500">$100</button> aka getByRole('button', { name: '$100' })
+
+    Call log:
+        - checking visibility of locator('[data-testid="donation-widget"] button:has-text("$10")')
+
+
+      70 |     const donationButton = page.locator('[data-testid="donation-widget"] button:has-text("$10")');
+      71 |     
+    > 72 |     if (await donationButton.isVisible()) {
+         |                              ^
+      73 |       await clickElement(page, '[data-testid="donation-widget"] button:has-text("$10")');
+      74 |
+      75 |       // Wait for checkout modal or page
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:72:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-68aba-kout-on-preset-amount-click-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should fill donation form with email" classname="donations.spec.ts" time="24.992">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.isVisible: Unexpected token &quot;|&quot; while parsing css selector &quot;input[name=&quot;email&quot;]|input[type=&quot;email&quot;]&quot;. Did you mean to CSS.escape it?" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:95:7 › Donations & Stripe Integration › should fill donation form with email 
+
+    Error: locator.isVisible: Unexpected token "|" while parsing css selector "input[name="email"]|input[type="email"]". Did you mean to CSS.escape it?
+    Call log:
+        - checking visibility of input[name="email"]|input[type="email"] >> nth=0
+
+
+      105 |       // Fill email if not logged in
+      106 |       const emailInput = page.locator('input[name="email"]|input[type="email"]').first();
+    > 107 |       if (await emailInput.isVisible()) {
+          |                            ^
+      108 |         const testEmail = generateTestEmail();
+      109 |         await fillInput(page, 'input[name="email"]', testEmail);
+      110 |       }
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:107:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-9e092-ll-donation-form-with-email-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should display donation amount in checkout" classname="donations.spec.ts" time="25.032">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.textContent: Unexpected token &quot;|&quot; while parsing css selector &quot;[data-testid=&quot;donation-amount&quot;]|[data-testid=&quot;total-amount&quot;]&quot;. Did you mean to CSS.escape it?" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:114:7 › Donations & Stripe Integration › should display donation amount in checkout 
+
+    Error: locator.textContent: Unexpected token "|" while parsing css selector "[data-testid="donation-amount"]|[data-testid="total-amount"]". Did you mean to CSS.escape it?
+    Call log:
+      - waiting for [data-testid="donation-amount"]|[data-testid="total-amount"]
+
+
+      124 |       // Look for amount display
+      125 |       const amountDisplay = page.locator('[data-testid="donation-amount"]|[data-testid="total-amount"]');
+    > 126 |       const text = await amountDisplay.textContent();
+          |                                        ^
+      127 |       expect(text).toContain('50');
+      128 |     }
+      129 |   });
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:126:40
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-baee4-donation-amount-in-checkout-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should make successful donation with test card" classname="donations.spec.ts" time="21.889">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should display donation receipt after payment" classname="donations.spec.ts" time="3.537">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should reject invalid card" classname="donations.spec.ts" time="23.414">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should send donation receipt email" classname="donations.spec.ts" time="2.246">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should display recurring donation option" classname="donations.spec.ts" time="28.467">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.isVisible: Unexpected token &quot;|&quot; while parsing css selector &quot;input[type=&quot;checkbox&quot;][name=&quot;recurring&quot;]|input[type=&quot;checkbox&quot;][name=&quot;monthly&quot;]&quot;. Did you mean to CSS.escape it?" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:259:7 › Donations & Stripe Integration › should display recurring donation option 
+
+    Error: locator.isVisible: Unexpected token "|" while parsing css selector "input[type="checkbox"][name="recurring"]|input[type="checkbox"][name="monthly"]". Did you mean to CSS.escape it?
+    Call log:
+        - checking visibility of input[type="checkbox"][name="recurring"]|input[type="checkbox"][name="monthly"]
+
+
+      262 |     const recurringCheckbox = page.locator('input[type="checkbox"][name="recurring"]|input[type="checkbox"][name="monthly"]');
+      263 |     
+    > 264 |     if (await recurringCheckbox.isVisible()) {
+          |                                 ^
+      265 |       await recurringCheckbox.check();
+      266 |
+      267 |       // Check for recurring frequency options
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:264:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-f6baf-y-recurring-donation-option-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should handle donation form validation" classname="donations.spec.ts" time="27.581">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="locator.isVisible: Error: strict mode violation: locator(&apos;[data-testid=&quot;donation-widget&quot;] button:has-text(&quot;$10&quot;)&apos;) resolved to 2 elements:" type="Error">
+<![CDATA[  [chromium] › donations.spec.ts:273:7 › Donations & Stripe Integration › should handle donation form validation 
+
+    Error: locator.isVisible: Error: strict mode violation: locator('[data-testid="donation-widget"] button:has-text("$10")') resolved to 2 elements:
+        1) <button tabindex="0" class="py-3 rounded-lg font-bold transition-all border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-400 dark:hover:border-emerald-500">…</button> aka getByRole('button', { name: '$10', exact: true })
+        2) <button tabindex="0" class="py-3 rounded-lg font-bold transition-all border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-400 dark:hover:border-emerald-500">…</button> aka getByRole('button', { name: '$100' })
+
+    Call log:
+        - checking visibility of locator('[data-testid="donation-widget"] button:has-text("$10")')
+
+
+      275 |
+      276 |     const donationButton = page.locator('[data-testid="donation-widget"] button:has-text("$10")');
+    > 277 |     if (await donationButton.isVisible()) {
+          |                              ^
+      278 |       await clickElement(page, '[data-testid="donation-widget"] button:has-text("$10")');
+      279 |       await page.waitForLoadState('networkidle');
+      280 |
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:277:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-bda0f-le-donation-form-validation-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should track donation analytics" classname="donations.spec.ts" time="27.258">
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should display donation goal/progress" classname="donations.spec.ts" time="21.218">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/video.webm]]
+
+[[ATTACHMENT|donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/error-context.md]]
+]]>
+</system-out>
+<error message="page.waitForSelector: Timeout 5000ms exceeded." type="TimeoutError">
+<![CDATA[  [chromium] › donations.spec.ts:318:7 › Donations & Stripe Integration › should display donation goal/progress 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+      - waiting for locator('input[name="email"]') to be visible
+
+
+       at test-helpers.ts:24
+
+      22 |  */
+      23 | export async function fillInput(page: Page, selector: string, value: string, timeout = 5000) {
+    > 24 |   await page.waitForSelector(selector, { timeout });
+         |              ^
+      25 |   await page.fill(selector, value);
+      26 | }
+      27 |
+        at fillInput (/Users/visionalventure/Change Liberia/apps/web/tests/e2e/test-helpers.ts:24:14)
+        at /Users/visionalventure/Change Liberia/apps/web/tests/e2e/donations.spec.ts:325:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/donations-Donations-Stripe-95a87-play-donation-goal-progress-chromium/error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Donations &amp; Stripe Integration › should prevent double charge on retry" classname="donations.spec.ts" time="10.078">
+</testcase>
+</testsuite>
+</testsuites>

@@ -5,9 +5,10 @@ import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
 import { PaymentWebhookService } from './payment-webhook.service';
 import { WebhookEventHandlerService } from './webhook-event-handler.service';
+import { MoMoModule } from './momo.module';
 
 @Module({
-  imports: [PrismaModule, EmailModule],
+  imports: [PrismaModule, EmailModule, MoMoModule],
   controllers: [PaymentController],
   providers: [
     PaymentService,

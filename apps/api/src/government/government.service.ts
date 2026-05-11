@@ -381,7 +381,7 @@ export class GovernmentService {
 
     if (!this.emailService) {
       this.logger.error('EmailService not available - cannot send petition submission email');
-      return;
+      return false;
     }
 
     return this.emailService.sendEmail({

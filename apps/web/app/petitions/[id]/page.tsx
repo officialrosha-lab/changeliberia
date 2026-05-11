@@ -6,6 +6,7 @@ import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
 import { PetitionTimeline } from '../../../components/petition-timeline';
 import { JoinMovement } from '../../../components/join-movement';
+import { PetitionDonationSection } from '../../../components/petition-donation-section';
 import { CommentForm } from './comment-form';
 import { SignForm } from './sign-form';
 import { PetitionClientPage } from './petition-client-page';
@@ -358,6 +359,10 @@ export default async function PetitionPage({
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}
               goal={petition.goal}
+            />
+            <PetitionDonationSection
+              petitionId={petition.id}
+              petitionTitle={petition.title}
             />
             <JoinMovement />
           </aside>

@@ -585,6 +585,7 @@ enum PaymentMethod {
   CARD
   PAYPAL
   BANK_TRANSFER
+  MOBILE_MONEY
 }
 
 enum SubscriptionStatus {
@@ -611,6 +612,16 @@ model Payment {
   stripeInvoiceId       String?           @unique
   stripeCheckoutId      String?           @unique
   lastWebhookEventId    String?
+  // MoMo Mobile Money fields
+  momoExternalId        String?           @unique // Idempotency key for MoMo
+  momoTransactionId     String?           @unique // MoMo transaction reference
+  momoPhoneNumber       String?           // User's phone number for MoMo
+  momoStatus            String?           // MoMo status: PENDING, SUCCESSFUL, FAILED
+  momoAuthCode          String?           // MoMo authorization code
+  momoErrorMessage      String?           // MoMo error details
+  momoMetadata          String?           @db.Text() // JSON: MoMo-specific data
+  subscriptionId        String?           // Link to subscription for recurring payments
+  subscription          Subscription?     @relation("SubscriptionPayments", fields: [subscriptionId], references: [id], onDelete: SetNull)
   description           String?
   metadata              String?           @db.Text() // JSON: additional info
   completedAt           DateTime?
@@ -663,18 +674,24 @@ model Subscription {
   currency             String               @default("USD")
   interval             String               @default("monthly") // monthly, quarterly, yearly
   status               SubscriptionStatus   @default(ACTIVE)
+  paymentMethod        PaymentMethod        @default(CARD) // Payment method type
   stripeSubscriptionId String?              @unique(map: "stripe_subscription_unique")
   stripeCustomerId     String?
   lastWebhookEventId   String?
+  // MoMo Mobile Money fields
+  momoPreapprovalId    String?              @unique // MoMo pre-approval reference
+  momoPhoneNumber      String?              // User's phone number for MoMo
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   nextBillingDate      DateTime?
   cancelledAt          DateTime?
   cancellationReason   String?
   paymentMethodId      String?
-  paymentMethod        PaymentMethodRecord? @relation("SubscriptionPaymentMethod", fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  paymentMethodRecord  PaymentMethodRecord? @relation("SubscriptionPaymentMethod", fields: [paymentMethodId], references: [id], onDelete: SetNull)
   metadata             String?              @db.Text() // JSON: frequency, notifications
   webhookEvents        WebhookEventLog[]
+  momoAuthorization    MoMoSubscriptionAuthorization? @relation("MoMoSubscriptionAuth")
+  payments             Payment[]           @relation("SubscriptionPayments")
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
@@ -685,6 +702,23 @@ model Subscription {
   @@index([status, createdAt])
   @@index([stripeSubscriptionId])
   @@index([lastWebhookEventId])
+}
+
+model MoMoSubscriptionAuthorization {
+  id                   String    @id @default(cuid())
+  subscriptionId       String    @unique
+  subscription         Subscription @relation("MoMoSubscriptionAuth", fields: [subscriptionId], references: [id], onDelete: Cascade)
+  preapprovalId        String    @unique // MoMo pre-approval reference
+  phoneNumber          String    // User's phone number
+  maxAmount            Float     // Maximum amount that can be charged
+  validityTimeInSeconds Int      // How long pre-approval is valid
+  status               String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  expiresAt            DateTime  // When pre-approval expires
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([preapprovalId])
+  @@index([status, expiresAt])
 }
 
 model Refund {
