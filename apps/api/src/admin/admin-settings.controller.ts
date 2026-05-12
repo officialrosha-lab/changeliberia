@@ -8,11 +8,28 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { FeatureToggle, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
+
+export function mapSystemSettings(toggles: FeatureToggle[]) {
+  const byName = Object.fromEntries(toggles.map((t) => [t.name, t]));
+
+  return {
+    petitionApprovalThreshold: Number(byName['petitionApprovalThreshold']?.config ?? 10),
+    autoApprovalSignatureThreshold: Number(byName['autoApprovalSignatureThreshold']?.config ?? 1000),
+    routingDefaultPriority: byName['routingDefaultPriority']?.config ?? 'NORMAL',
+    emailNotificationEnabled: byName['emailNotificationEnabled']?.enabled ?? true,
+    fraudDetectionLevel: byName['fraudDetectionLevel']?.config ?? 'MEDIUM',
+    maxSignaturesPerUser: Number(byName['maxSignaturesPerUser']?.config ?? 5),
+    donationsEnabled: byName['donationsEnabled']?.enabled ?? true,
+    platformDonationsEnabled: byName['platformDonationsEnabled']?.enabled ?? true,
+    petitionDonationsEnabled: byName['petitionDonationsEnabled']?.enabled ?? true,
+    phoneVerificationRequired: byName['phoneVerificationRequired']?.enabled ?? true,
+  };
+}
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -105,16 +122,7 @@ export class AdminSettingsController {
     const toggles = await this.prisma.featureToggle.findMany({
       where: { name: { not: { startsWith: 'moderator_scope_' } } },
     });
-    const byName = Object.fromEntries(toggles.map((t) => [t.name, t]));
-
-    return {
-      petitionApprovalThreshold: Number(byName['petitionApprovalThreshold']?.config ?? 10),
-      autoApprovalSignatureThreshold: Number(byName['autoApprovalSignatureThreshold']?.config ?? 1000),
-      routingDefaultPriority: byName['routingDefaultPriority']?.config ?? 'NORMAL',
-      emailNotificationEnabled: byName['emailNotificationEnabled']?.enabled ?? true,
-      fraudDetectionLevel: byName['fraudDetectionLevel']?.config ?? 'MEDIUM',
-      maxSignaturesPerUser: Number(byName['maxSignaturesPerUser']?.config ?? 5),
-    };
+    return mapSystemSettings(toggles);
   }
 
   @Patch('system')
