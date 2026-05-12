@@ -73,6 +73,7 @@ export function CreatePetitionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [verificationLoaded, setVerificationLoaded] = useState(!token);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<{ phoneVerificationRequired: boolean } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
   const [authEmail, setAuthEmail] = useState('');
@@ -97,6 +98,11 @@ export function CreatePetitionForm() {
   const prefillTitle = searchParams.get('title') ?? '';
 
   useEffect(() => {
+    // Always fetch system settings (public endpoint)
+    apiGet<{ phoneVerificationRequired: boolean }>('/settings/system')
+      .then(setSystemSettings)
+      .catch(() => setSystemSettings({ phoneVerificationRequired: true })); // Default to required if fetch fails
+
     if (!token) { setVerificationLoaded(true); return; }
     apiGet<{ phone: boolean }>('/verification/completed', token)
       .then(({ phone }) => { setPhoneVerified(phone); setVerificationLoaded(true); })
@@ -249,7 +255,7 @@ export function CreatePetitionForm() {
         </div>
       )}
 
-      {verificationLoaded && token && !phoneVerified && (
+      {verificationLoaded && token && systemSettings?.phoneVerificationRequired && !phoneVerified && (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
             <svg className="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -264,7 +270,7 @@ export function CreatePetitionForm() {
         </div>
       )}
 
-      {verificationLoaded && (!token || phoneVerified) && (
+      {verificationLoaded && (!token || phoneVerified || !systemSettings?.phoneVerificationRequired) && (
         <>
           {/* Step progress indicator */}
           <nav className="mt-8 mb-6 hidden sm:flex items-center gap-1 overflow-x-auto" aria-label="Form sections">

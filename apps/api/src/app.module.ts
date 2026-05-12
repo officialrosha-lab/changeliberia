@@ -27,6 +27,7 @@ import { MembershipModule } from './membership/membership.module';
 import { SupportersModule } from './supporters/supporters.module';
 import { AmbassadorsModule } from './ambassadors/ambassadors.module';
 import { EmailModule } from './email/email.module';
+import { SystemSettingsModule } from './admin/system-settings.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { EmailModule } from './email/email.module';
     FacebookModule,
     AnalyticsModule,
     PaymentModule,
+    SystemSettingsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
