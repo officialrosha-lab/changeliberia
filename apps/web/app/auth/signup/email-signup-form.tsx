@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { apiPost } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
@@ -16,6 +17,7 @@ export function EmailSignupForm() {
   const [submitting, setSubmitting] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState<string>('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const validatePassword = (pwd: string) => {
     const feedback: string[] = [];
@@ -121,19 +123,32 @@ export function EmailSignupForm() {
         <label htmlFor="password" className="block text-sm font-semibold text-zinc-700 dark:text-neutral-200">
           Password
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            validatePassword(e.target.value);
-          }}
-          className={inputClass}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              validatePassword(e.target.value);
+            }}
+            className={inputClass}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
+        </div>
         {passwordFeedback && (
           <p
             className={`mt-2 text-xs font-medium ${
