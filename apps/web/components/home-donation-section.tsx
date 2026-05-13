@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
 import { apiGet, apiPost } from '../lib/api';
 import { DonationWidget } from './donation-widget';
@@ -9,6 +9,29 @@ import { FadeInOnScroll } from './scroll-animations';
 export function HomeDonationSection() {
   const token = useAuthStore((s) => s.token);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
+  const [donationsEnabled, setDonationsEnabled] = useState(true);
+  const [platformDonationsEnabled, setPlatformDonationsEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const settings = await apiGet<{
+          donationsEnabled: boolean;
+          platformDonationsEnabled: boolean;
+        }>('/admin/settings/system', token || undefined);
+        setDonationsEnabled(settings.donationsEnabled);
+        setPlatformDonationsEnabled(settings.platformDonationsEnabled);
+      } catch (err) {
+        // If error, default to enabled
+        setDonationsEnabled(true);
+        setPlatformDonationsEnabled(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSettings();
+  }, [token]);
 
   async function pollMoMoStatus(referenceId: string) {
     if (!token) return;
@@ -93,6 +116,10 @@ export function HomeDonationSection() {
       token,
     );
     window.location.href = res.data.url;
+  }
+
+  if (loading || !donationsEnabled || !platformDonationsEnabled) {
+    return null;
   }
 
   return (
