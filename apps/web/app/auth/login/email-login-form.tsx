@@ -39,9 +39,25 @@ export function EmailLoginForm() {
       const next = searchParams.get('next') || '/dashboard';
       setMessage('Signed in. Redirecting...');
       window.setTimeout(() => router.push(next), 400);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsError(true);
-      setMessage('Invalid email or password. Please try again.');
+      let messageText = 'Invalid email or password. Please try again.';
+
+      if (error instanceof Error) {
+        const normalized = error.message || '';
+        if (
+          normalized === 'Request failed' ||
+          normalized.includes('Failed to fetch') ||
+          normalized.includes('NetworkError') ||
+          normalized.includes('timeout')
+        ) {
+          messageText = 'Unable to reach the server. Please check your connection or try again later.';
+        } else if (normalized.length > 0) {
+          messageText = normalized;
+        }
+      }
+
+      setMessage(messageText);
     } finally {
       setSubmitting(false);
     }
