@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
+import { apiGet } from '../lib/api';
 import { JoinMovementButton } from './join-movement-button';
 
 const PUBLIC_NAV_ITEMS = [
@@ -15,10 +16,26 @@ const PUBLIC_NAV_ITEMS = [
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [donationsEnabled, setDonationsEnabled] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadDonationSettings() {
+      try {
+        const settings = await apiGet<{
+          donationsEnabled: boolean;
+        }>('/admin/settings/system', token || undefined);
+        setDonationsEnabled(settings.donationsEnabled);
+      } catch (err) {
+        // If error, default to enabled
+        setDonationsEnabled(true);
+      }
+    }
+    loadDonationSettings();
+  }, [token]);
 
   function signOut() {
     setToken(null);
@@ -90,30 +107,58 @@ export function MobileNav() {
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {token && (
+          {/* Dashboard or Auth buttons */}
+          {token ? (
             <Link
               href="/dashboard"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
             >
               <span className="text-base">📋</span>
-              My petitions
+              Dashboard
             </Link>
+          ) : (
+            <>
+              <Link
+                href="/auth/signup"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">👤</span>
+                Sign up
+              </Link>
+              <Link
+                href="/auth/login"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">🔑</span>
+                Log in
+              </Link>
+            </>
           )}
-          {PUBLIC_NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-            >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+
+          {/* Public nav items */}
+          {PUBLIC_NAV_ITEMS.map((item) => {
+            // Hide donate link if donations are disabled
+            if (item.href === '/#donate' && !donationsEnabled) {
+              return null;
+            }
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
 
           <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-neutral-800">
-            {token ? (
+            {token && (
               <button
                 onClick={signOut}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
@@ -121,25 +166,6 @@ export function MobileNav() {
                 <span className="text-base">🚪</span>
                 Log out
               </button>
-            ) : (
-              <>
-                <Link
-                  href="/auth/signup"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-                >
-                  <span className="text-base">👤</span>
-                  Sign up
-                </Link>
-                <Link
-                  href="/auth/login"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-                >
-                  <span className="text-base">🔑</span>
-                  Log in
-                </Link>
-              </>
             )}
           </div>
         </nav>

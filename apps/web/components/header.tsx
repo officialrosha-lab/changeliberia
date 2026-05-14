@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
+import { apiGet } from '../lib/api';
 import { ThemeToggle } from './theme-toggle';
 import { MobileNav } from './mobile-nav';
 import { NotificationDropdown } from './notification-dropdown';
@@ -12,6 +14,22 @@ export function Header() {
   const token = useAuthStore((s) => s.token);
   const setToken = useAuthStore((s) => s.setToken);
   const router = useRouter();
+  const [donationsEnabled, setDonationsEnabled] = useState(true);
+
+  useEffect(() => {
+    async function loadDonationSettings() {
+      try {
+        const settings = await apiGet<{
+          donationsEnabled: boolean;
+        }>('/admin/settings/system', token || undefined);
+        setDonationsEnabled(settings.donationsEnabled);
+      } catch (err) {
+        // If error, default to enabled
+        setDonationsEnabled(true);
+      }
+    }
+    loadDonationSettings();
+  }, [token]);
 
   function signOut() {
     setToken(null);
@@ -48,9 +66,11 @@ export function Header() {
               <span aria-hidden>🔍</span>
               <span className="hidden lg:inline">Search</span>
             </Link>
-            <Link href="/#donate" className="font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500 rounded px-2 py-1">
-              Donate
-            </Link>
+            {donationsEnabled && (
+              <Link href="/#donate" className="font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500 rounded px-2 py-1">
+                Donate
+              </Link>
+            )}
           </nav>
         </div>
         
