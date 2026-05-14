@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Filter } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -48,6 +49,7 @@ interface Payment {
 }
 
 export function AdminStripePayments() {
+  const token = useAuthStore((s) => s.token);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,13 +57,15 @@ export function AdminStripePayments() {
 
   useEffect(() => {
     const fetchPayments = async () => {
-      try {
-        const response = await fetchApi(
-          `/api/v1/admin/stripe/payments?days=${dateFilter}`
-        );
+      if (!token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
 
-        if (!response.ok) throw new Error('Failed to fetch payments');
-        const result = await response.json();
+      try {
+        const result = await apiGet<{ payments: Payment[] }>
+          (`/admin/stripe/payments?days=${dateFilter}`, token);
         setPayments(result.payments || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -71,7 +75,7 @@ export function AdminStripePayments() {
     };
 
     fetchPayments();
-  }, [dateFilter]);
+  }, [dateFilter, token]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

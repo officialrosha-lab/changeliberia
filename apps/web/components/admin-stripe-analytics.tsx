@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, TrendingUp } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -39,17 +40,21 @@ interface AnalyticsData {
 }
 
 export function AdminStripeAnalytics() {
+  const token = useAuthStore((s) => s.token);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      try {
-        const response = await fetchApi('/api/v1/admin/stripe/analytics');
+      if (!token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
 
-        if (!response.ok) throw new Error('Failed to fetch analytics');
-        const result = await response.json();
+      try {
+        const result = await apiGet<AnalyticsData>('/admin/stripe/analytics', token);
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -59,7 +64,7 @@ export function AdminStripeAnalytics() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [token]);
 
   if (loading) {
     return (

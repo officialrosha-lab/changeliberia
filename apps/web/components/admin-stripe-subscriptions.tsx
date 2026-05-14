@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, X } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet, apiPatch } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -49,40 +50,44 @@ interface Subscription {
 }
 
 export function AdminStripeSubscriptions() {
+  const token = useAuthStore((s) => s.token);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+  const fetchSubscriptions = useCallback(async () => {
+    if (!token) {
+      setError('Not authenticated');
+      setLoading(false);
+      return;
+    }
 
-  const fetchSubscriptions = async () => {
     try {
-      const response = await fetchApi('/api/v1/admin/stripe/subscriptions');
-
-      if (!response.ok) throw new Error('Failed to fetch subscriptions');
-      const result = await response.json();
+      const result = await apiGet<{ subscriptions: Subscription[] }>('/admin/stripe/subscriptions', token);
       setSubscriptions(result.subscriptions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
   const handleCancel = async (subscriptionId: string) => {
     if (!confirm('Cancel this subscription?')) return;
+    if (!token) return;
 
     setCancelling(subscriptionId);
     try {
-      const response = await fetchApi(
-        `/api/v1/admin/stripe/subscriptions/${subscriptionId}/cancel`,
-        { method: 'PATCH' }
+      await apiPatch(
+        `/admin/stripe/subscriptions/${subscriptionId}/cancel`,
+        {},
+        token
       );
-
-      if (!response.ok) throw new Error('Failed to cancel subscription');
       await fetchSubscriptions();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error cancelling subscription');

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, Users, AlertCircle } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -36,17 +37,21 @@ interface DashboardData {
 }
 
 export function AdminStripeDashboard() {
+  const token = useAuthStore((s) => s.token);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
-      try {
-        const response = await fetchApi('/api/v1/admin/stripe/dashboard');
+      if (!token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
 
-        if (!response.ok) throw new Error('Failed to fetch dashboard');
-        const result = await response.json();
+      try {
+        const result = await apiGet<DashboardData>('/admin/stripe/dashboard', token);
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -56,7 +61,7 @@ export function AdminStripeDashboard() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [token]);
 
   if (loading) {
     return (

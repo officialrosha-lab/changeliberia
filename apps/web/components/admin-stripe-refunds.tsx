@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Plus } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet, apiPost } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -50,6 +51,7 @@ interface Refund {
 }
 
 export function AdminStripeRefunds() {
+  const token = useAuthStore((s) => s.token);
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,42 +59,48 @@ export function AdminStripeRefunds() {
   const [formData, setFormData] = useState({ paymentId: '', amount: '', reason: '' });
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchRefunds();
-  }, []);
+  const fetchRefunds = useCallback(async () => {
+    if (!token) {
+      setError('Not authenticated');
+      setLoading(false);
+      return;
+    }
 
-  const fetchRefunds = async () => {
     try {
-      const response = await fetchApi('/api/v1/admin/stripe/refunds');
-
-      if (!response.ok) throw new Error('Failed to fetch refunds');
-      const result = await response.json();
+      const result = await apiGet<{ refunds: Refund[] }>('/admin/stripe/refunds', token);
       setRefunds(result.refunds || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchRefunds();
+  }, [fetchRefunds]);
 
   const handleCreateRefund = async () => {
     if (!formData.paymentId || !formData.amount || !formData.reason) {
       alert('Please fill all fields');
       return;
     }
+    if (!token) {
+      alert('Not authenticated');
+      return;
+    }
 
     setCreating(true);
     try {
-      const response = await fetchApi('/api/v1/admin/stripe/refunds', {
-        method: 'POST',
-        body: JSON.stringify({
+      await apiPost(
+        '/admin/stripe/refunds',
+        {
           paymentId: formData.paymentId,
           amount: parseFloat(formData.amount),
           reason: formData.reason,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to create refund');
+        },
+        token
+      );
       await fetchRefunds();
       setFormData({ paymentId: '', amount: '', reason: '' });
       setShowForm(false);
