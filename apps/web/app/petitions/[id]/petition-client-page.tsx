@@ -220,6 +220,8 @@ export function PetitionClientPage({ id }: { id: string }) {
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}
               goal={petition.goal}
+              title={petition.title}
+              imageUrl={petition.imageUrl}
             />
           </aside>
         </div>
