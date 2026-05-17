@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Trophy } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -57,59 +58,52 @@ interface BadgesResponse {
 }
 
 export function AdminFacebookSocialFeatures() {
+  const token = useAuthStore((s) => s.token);
   const [badges, setBadges] = useState<BadgeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchBadges = async () => {
-      try {
-        const response = await fetchApi('/api/v1/admin/facebook/badges');
-
-        if (!response.ok) throw new Error('Failed to fetch badges');
-        const result: BadgesResponse = await response.json();
-        
-        // Convert summary to badge data
-        const badgeData = Object.entries(result.summary).map(([type, count]) => ({
-          badgeType: type,
-          totalUnlocks: count,
-        }));
-        
-        setBadges(badgeData);
-        if (badgeData.length > 0) {
-          setSelectedBadge(badgeData[0].badgeType);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBadges();
-  }, []);
-
-  const handleBadgeSelect = async (badgeType: string) => {
-    setSelectedBadge(badgeType);
+  const fetchBadges = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await fetchApi(`/api/v1/admin/facebook/badges/${badgeType}/stats`);
-
-      if (!response.ok) throw new Error('Failed to fetch badge stats');
-      const result: BadgeData = await response.json();
-      
-      // Update the badge with detailed stats
-      setBadges(prev =>
-        prev.map(b =>
-          b.badgeType === badgeType
-            ? { ...b, recentUnlocks: result.recentUnlocks }
-            : b
-        )
-      );
+      const result = await apiGet<BadgesResponse>('/admin/facebook/badges', token);
+      const badgeData = Object.entries(result.summary).map(([type, count]) => ({
+        badgeType: type,
+        totalUnlocks: count,
+      }));
+      setBadges(badgeData);
+      if (badgeData.length > 0) {
+        setSelectedBadge(badgeData[0].badgeType);
+      }
     } catch (err) {
-      console.error('Error fetching badge stats:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [token]);
+
+  const handleBadgeSelect = useCallback(
+    async (badgeType: string) => {
+      if (!token) return;
+      setSelectedBadge(badgeType);
+      try {
+        const result = await apiGet<BadgeData>(`/admin/facebook/badges/${badgeType}/stats`, token);
+        setBadges((prev) =>
+          prev.map((b) =>
+            b.badgeType === badgeType ? { ...b, recentUnlocks: result.recentUnlocks } : b,
+          ),
+        );
+      } catch (err) {
+        console.error('Error fetching badge stats:', err);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    fetchBadges();
+  }, [fetchBadges]);
 
   if (error) {
     return (

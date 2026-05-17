@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -45,26 +46,26 @@ interface ShareLink {
 }
 
 export function AdminFacebookReach() {
+  const token = useAuthStore((s) => s.token);
   const [links, setLinks] = useState<ShareLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLinks = async () => {
-      try {
-      const response = await fetchApi('/api/v1/admin/facebook/share-links');
-        if (!response.ok) throw new Error('Failed to fetch share links');
-        const result = await response.json();
-        setLinks(result.links || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchLinks = useCallback(async () => {
+    if (!token) return;
+    try {
+      const result = await apiGet<{ links: ShareLink[] }>('/admin/facebook/share-links', token);
+      setLinks(result.links || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
+  useEffect(() => {
     fetchLinks();
-  }, []);
+  }, [fetchLinks]);
 
   const getConversionRate = (link: ShareLink) => {
     if (link.clicks === 0) return 0;

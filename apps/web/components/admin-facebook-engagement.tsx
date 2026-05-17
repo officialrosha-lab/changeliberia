@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Flame } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -49,40 +50,40 @@ interface ChallengeDetails extends Challenge {
 }
 
 export function AdminFacebookEngagement() {
+  const token = useAuthStore((s) => s.token);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeDetails | null>(null);
 
-  useEffect(() => {
-    const fetchChallenges = async () => {
-      try {
-        const response = await fetchApi('/api/v1/admin/facebook/challenges');
-
-        if (!response.ok) throw new Error('Failed to fetch challenges');
-        const result = await response.json();
-        setChallenges(result.challenges || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChallenges();
-  }, []);
-
-  const handleChallengeSelect = async (challengeId: string) => {
+  const fetchChallenges = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await fetchApi(`/api/v1/admin/facebook/challenges/${challengeId}`);
-
-      if (!response.ok) throw new Error('Failed to fetch challenge details');
-      const result = await response.json();
-      setSelectedChallenge(result);
+      const result = await apiGet<{ challenges: Challenge[] }>('/admin/facebook/challenges', token);
+      setChallenges(result.challenges || []);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error loading challenge details');
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [token]);
+
+  const handleChallengeSelect = useCallback(
+    async (challengeId: string) => {
+      if (!token) return;
+      try {
+        const result = await apiGet<ChallengeDetails>(`/admin/facebook/challenges/${challengeId}`, token);
+        setSelectedChallenge(result);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Error loading challenge details');
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    fetchChallenges();
+  }, [fetchChallenges]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
