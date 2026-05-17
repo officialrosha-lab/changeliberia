@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Send } from 'lucide-react';
-import { fetchApi } from '../lib/api-client';
+import { apiGet, apiPost } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -46,50 +47,44 @@ interface PixelConfig {
 }
 
 export function AdminFacebookPixel() {
+  const token = useAuthStore((s) => s.token);
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [config, setConfig] = useState<PixelConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingTest, setSendingTest] = useState(false);
 
-  useEffect(() => {
-    Promise.all([fetchEvents(), fetchConfig()]);
-  }, []);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await fetchApi('/api/v1/admin/facebook/pixel-events');
-
-      if (!response.ok) throw new Error('Failed to fetch pixel events');
-      const result = await response.json();
+      const result = await apiGet<{ events: PixelEvent[] }>('/admin/facebook/pixel-events', token);
       setEvents(result.events?.slice(0, 10) || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  };
+  }, [token]);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await fetchApi('/api/v1/admin/facebook/pixel-config');
-
-      if (!response.ok) throw new Error('Failed to fetch pixel config');
-      const result = await response.json();
+      const result = await apiGet<PixelConfig>('/admin/facebook/pixel-config', token);
       setConfig(result);
     } catch (err) {
       console.error('Config error:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    Promise.all([fetchEvents(), fetchConfig()]);
+  }, [fetchEvents, fetchConfig]);
 
   const handleTestEvent = async () => {
+    if (!token) return;
     setSendingTest(true);
     try {
-      const response = await fetchApi('/api/v1/admin/facebook/pixel/test-event', {
-        method: 'POST',
-      });
-
-      if (!response.ok) throw new Error('Failed to send test event');
+      await apiPost('/admin/facebook/pixel/test-event', {}, token);
       await fetchEvents();
       alert('Test event sent successfully');
     } catch (err) {
