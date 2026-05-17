@@ -12,6 +12,8 @@ type AuthState = {
   setAuthMethod: (method: AuthMethod) => void;
   userEmail: string | null;
   setUserEmail: (email: string | null) => void;
+  hydrated: boolean;
+  setHydrated: (hydrated: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -23,7 +25,14 @@ export const useAuthStore = create<AuthState>()(
       setAuthMethod: (method) => set({ authMethod: method }),
       userEmail: null,
       setUserEmail: (email) => set({ userEmail: email }),
+      hydrated: false,
+      setHydrated: (hydrated) => set({ hydrated }),
     }),
-    { name: 'vlv-auth-storage' },
+    { 
+      name: 'vlv-auth-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state) state.hydrated = true;
+      },
+    },
   ),
 );
