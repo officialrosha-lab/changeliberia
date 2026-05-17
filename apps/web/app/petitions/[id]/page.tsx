@@ -359,6 +359,8 @@ export default async function PetitionPage({
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}
               goal={petition.goal}
+              title={petition.title}
+              imageUrl={petition.imageUrl}
             />
             <PetitionDonationSection
               petitionId={petition.id}
