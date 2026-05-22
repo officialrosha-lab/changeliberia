@@ -4,6 +4,7 @@ import React, { Suspense } from 'react';
 import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
+import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
 import { LayoutProvider } from './layout-provider';
 
 function BottomNavContent() {
@@ -25,6 +26,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<div />}>
         <BottomNavContent />
       </Suspense>
+      <FloatingFeedbackWidget enabled={true} />
     </LayoutProvider>
   );
 }
