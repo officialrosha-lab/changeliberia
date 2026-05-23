@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { OtpProvider } from './otp.provider';
 import { PasswordProvider } from './password.provider';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly otpProvider: OtpProvider,
     private readonly passwordProvider: PasswordProvider,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -25,11 +27,34 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-    });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    return this.issueToken(user.id, user.phone);
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { phone: dto.phone },
+      });
+      if (!user) throw new UnauthorizedException('Invalid credentials');
+      
+      // Log successful login
+      this.activityLogger.logAsync({
+        userId: user.id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+        description: `User logged in via phone: ${dto.phone}`,
+        status: 'SUCCESS',
+      });
+      
+      return this.issueToken(user.id, user.phone);
+    } catch (error) {
+      // Log failed login
+      this.activityLogger.logAsync({
+        action: 'LOGIN_FAILED',
+        entityType: 'USER',
+        description: `Login attempt failed for phone: ${dto.phone}`,
+        status: 'FAILED',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
   }
 
   requestOtp(phone: string) {
@@ -102,24 +127,46 @@ export class AuthService {
    * Log in with email and password
    */
   async loginWithEmail(dto: EmailLoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid email or password');
+      if (!user || !user.passwordHash) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const passwordValid = await this.passwordProvider.verifyPassword(
+        dto.password,
+        user.passwordHash,
+      );
+
+      if (!passwordValid) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      // Log successful email login
+      this.activityLogger.logAsync({
+        userId: user.id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+        description: `User logged in via email: ${dto.email}`,
+        status: 'SUCCESS',
+      });
+
+      return this.issueToken(user.id, user.phone);
+    } catch (error) {
+      // Log failed email login
+      this.activityLogger.logAsync({
+        action: 'LOGIN_FAILED',
+        entityType: 'USER',
+        description: `Email login attempt failed for: ${dto.email}`,
+        status: 'FAILED',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
     }
-
-    const passwordValid = await this.passwordProvider.verifyPassword(
-      dto.password,
-      user.passwordHash,
-    );
-
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    return this.issueToken(user.id, user.phone);
   }
 
   /**

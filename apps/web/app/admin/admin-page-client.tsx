@@ -24,6 +24,7 @@ import { AdminFacebookSocialFeatures } from '../../components/admin-facebook-soc
 import { AdminFacebookEngagement } from '../../components/admin-facebook-engagement';
 import { AdminEmailSettings } from '../../components/admin-email-settings';
 import { AdminSocialMediaDashboard } from '../../components/admin-social-media-dashboard';
+import { AdminActivityLog } from '../../components/admin-activity-log';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -59,7 +60,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -166,6 +167,7 @@ export function AdminPageClient() {
             ['integrations', 'Integrations'],
             ['ambassadors', 'Ambassadors'],
             ['social-media', 'Social Media'],
+            ['activity-log', 'Activity Log'],
             ['cms', 'CMS'],
             ['settings', 'Settings'],
             ['email', 'Email'],
@@ -346,6 +348,13 @@ export function AdminPageClient() {
       {activeTab === 'social-media' && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminSocialMediaDashboard />
+        </div>
+      )}
+
+      {/* Activity Log Tab */}
+      {activeTab === 'activity-log' && (
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <AdminActivityLog />
         </div>
       )}
 

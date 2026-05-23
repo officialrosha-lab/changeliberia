@@ -6,13 +6,16 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { FeatureToggle, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import type { RequestUser } from '../auth/roles.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 export function mapSystemSettings(toggles: FeatureToggle[]) {
   const byName = Object.fromEntries(toggles.map((t) => [t.name, t]));
@@ -35,7 +38,10 @@ export function mapSystemSettings(toggles: FeatureToggle[]) {
 @Roles(UserRole.ADMIN)
 @Controller('admin/settings')
 export class AdminSettingsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityLogger: ActivityLoggerService,
+  ) {}
 
   // ── Moderator Scopes ──────────────────────────────────────────────────────
 
@@ -71,6 +77,7 @@ export class AdminSettingsController {
 
   @Post('moderator-scopes/:userId')
   async saveModeratorScope(
+    @Req() req: { user: RequestUser },
     @Param('userId') userId: string,
     @Body() body: { allowedCategories?: string[]; categories?: string[] },
   ) {
@@ -84,6 +91,16 @@ export class AdminSettingsController {
       },
       update: { config: JSON.stringify(categories) },
     });
+
+    this.activityLogger.logAsync({
+      adminId: req.user.userId,
+      action: 'UPDATE_MODERATOR_SCOPE',
+      entityType: 'MODERATOR_SCOPE',
+      entityId: userId,
+      description: `Updated moderator scope for user ${userId}`,
+      changes: { categories },
+    });
+
     return { success: true };
   }
 
@@ -101,17 +118,43 @@ export class AdminSettingsController {
   }
 
   @Post('permission-templates')
-  createPermissionTemplate(@Body() body: { name: string; description?: string }) {
-    return this.prisma.role.create({
+  async createPermissionTemplate(
+    @Req() req: { user: RequestUser },
+    @Body() body: { name: string; description?: string },
+  ) {
+    const role = await this.prisma.role.create({
       data: { name: body.name, description: body.description, isSystem: false },
     });
+
+    this.activityLogger.logAsync({
+      adminId: req.user.userId,
+      action: 'CREATE_PERMISSION_TEMPLATE',
+      entityType: 'ROLE',
+      entityId: role.id,
+      description: `Created permission template ${role.name}`,
+      changes: { description: role.description },
+    });
+
+    return role;
   }
 
   @Delete('permission-templates/:id')
-  async deletePermissionTemplate(@Param('id') id: string) {
+  async deletePermissionTemplate(
+    @Req() req: { user: RequestUser },
+    @Param('id') id: string,
+  ) {
     await this.prisma.rolePermission.deleteMany({ where: { roleId: id } });
     await this.prisma.userRoleAssignment.deleteMany({ where: { roleId: id } });
     await this.prisma.role.delete({ where: { id } });
+
+    this.activityLogger.logAsync({
+      adminId: req.user.userId,
+      action: 'DELETE_PERMISSION_TEMPLATE',
+      entityType: 'ROLE',
+      entityId: id,
+      description: `Deleted permission template ${id}`,
+    });
+
     return { success: true };
   }
 
@@ -126,7 +169,10 @@ export class AdminSettingsController {
   }
 
   @Patch('system')
-  async saveSystemSettings(@Body() body: Record<string, boolean | string | number>) {
+  async saveSystemSettings(
+    @Req() req: { user: RequestUser },
+    @Body() body: Record<string, boolean | string | number>,
+  ) {
     await Promise.all(
       Object.entries(body).map(([name, value]) => {
         const isBoolean = typeof value === 'boolean';
@@ -137,6 +183,15 @@ export class AdminSettingsController {
         });
       }),
     );
+
+    this.activityLogger.logAsync({
+      adminId: req.user.userId,
+      action: 'UPDATE_SYSTEM_SETTINGS',
+      entityType: 'SYSTEM_SETTINGS',
+      description: `Updated system settings`,
+      changes: { settings: body },
+    });
+
     return { success: true };
   }
 }

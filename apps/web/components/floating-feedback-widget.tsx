@@ -21,10 +21,13 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
   const [errorMsg, setErrorMsg] = useState('');
   const widgetRef = useRef<HTMLDivElement>(null);
 
+  // Mount effect - runs once on client side only
   useEffect(() => {
     setMounted(true);
+  }, []);
 
-    // Handle click outside to collapse
+  // Click outside effect - handles collapsing when clicking outside
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
         if (state === 'expanded') {
