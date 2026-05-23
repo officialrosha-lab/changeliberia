@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
@@ -27,6 +28,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
         <BottomNavContent />
       </Suspense>
       <FloatingFeedbackWidget enabled={true} />
+      <SpeedInsights />
     </LayoutProvider>
   );
 }
