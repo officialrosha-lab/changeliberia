@@ -15,9 +15,17 @@ import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { FacebookPixelService } from '../facebook/facebook-pixel.service';
 import { FacebookService } from '../facebook/facebook.service';
+
+interface AuthUser {
+  userId: string;
+  email: string;
+  role: UserRole;
+}
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -29,6 +37,7 @@ export class FacebookAdminController {
     private readonly prisma: PrismaService,
     private readonly facebookPixelService: FacebookPixelService,
     private readonly facebookService: FacebookService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   /**
@@ -255,6 +264,7 @@ export class FacebookAdminController {
       pixelId?: string;
       apiVersion?: string;
     },
+    @CurrentUser() user: AuthUser,
   ) {
     try {
       if (dto.pixelId && dto.pixelId.length < 10) {
@@ -274,6 +284,14 @@ export class FacebookAdminController {
         },
       };
 
+      this.activityLogger.logAsync({
+        adminId: user.userId,
+        action: 'UPDATE_FACEBOOK_PIXEL_CONFIG',
+        entityType: 'FACEBOOK_PIXEL_CONFIG',
+        description: 'Updated Facebook pixel configuration',
+        changes: dto,
+      });
+
       return response;
     } catch (error) {
       if (error instanceof InternalServerErrorException) throw error;
@@ -288,7 +306,7 @@ export class FacebookAdminController {
    * Send test pixel event
    */
   @Post('pixel/test-event')
-  async sendTestPixelEvent() {
+  async sendTestPixelEvent(@CurrentUser() user: AuthUser) {
     try {
       const testEvent = await this.prisma.facebookPixelEvent.create({
         data: {
@@ -299,6 +317,14 @@ export class FacebookAdminController {
             source: 'admin_test',
           }),
         },
+      });
+
+      this.activityLogger.logAsync({
+        adminId: user.userId,
+        action: 'SEND_FACEBOOK_TEST_PIXEL',
+        entityType: 'FACEBOOK_PIXEL_EVENT',
+        entityId: testEvent.id,
+        description: 'Sent Facebook pixel test event',
       });
 
       return {

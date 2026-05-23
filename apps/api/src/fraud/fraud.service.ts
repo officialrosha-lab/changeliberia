@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { FraudJobStatus, FraudJobType, VerificationType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 import {
   fraudAnomalyAlertsTotal,
   fraudQueueDepthGauge,
@@ -9,7 +10,10 @@ import {
 
 @Injectable()
 export class FraudService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityLogger: ActivityLoggerService,
+  ) {}
 
   async onModuleInit() {
     try {
@@ -91,7 +95,24 @@ export class FraudService implements OnModuleInit {
     details: string;
     riskPoints: number;
   }) {
-    return this.prisma.fraudEvent.create({ data: input });
+    const fraudEvent = await this.prisma.fraudEvent.create({ data: input });
+
+    this.activityLogger.logAsync({
+      userId: input.userId,
+      action: 'FRAUD_DETECTED',
+      entityType: 'FRAUD_EVENT',
+      entityId: fraudEvent.id,
+      description: `Fraud event detected for petition ${input.petitionId ?? 'unknown'}`,
+      status: 'FAILED',
+      changes: {
+        ruleKey: input.ruleKey,
+        riskPoints: input.riskPoints,
+        ipAddress: input.ipAddress,
+        deviceId: input.deviceId,
+      },
+    });
+
+    return fraudEvent;
   }
 
   async getAnalytics() {
