@@ -38,6 +38,7 @@ interface PaginationInfo {
 
 export function AdminActivityLog() {
   const token = useAuthStore((s) => s.token);
+  const authToken = token ?? undefined;
   const [activeTab, setActiveTab] = useState<'global' | 'user' | 'stats'>('global');
   
   // Global timeline state
@@ -91,7 +92,7 @@ export function AdminActivityLog() {
         const result = await apiGet<{
           data: ActivityLogEntry[];
           pagination: PaginationInfo;
-        }>(`/admin/activity-logs?${query}`, token);
+        }>(`/admin/activity-logs?${query}`, authToken);
         
         setLogs(result.data);
         setPagination(result.pagination);
@@ -112,7 +113,7 @@ export function AdminActivityLog() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const result = await apiGet<any>('/admin/activity-logs/stats?days=30', token);
+        const result = await apiGet<any>('/admin/activity-logs/stats?days=30', authToken);
         setStats(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load stats');
@@ -134,7 +135,7 @@ export function AdminActivityLog() {
       setError(null);
       const result = await apiGet<ActivityLogEntry[]>(
         `/admin/activity-logs/user/${searchUserId}?limit=100`,
-        token,
+        authToken,
       );
       setUserLogs(result);
     } catch (err) {
