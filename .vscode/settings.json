@@ -17,6 +17,7 @@
         "/^cd /Users/visionalventure/Change\\\\ Liberia/apps/web && node -e \"require\\('@/components/admin/admin-ambassadors-panel'\\)\" 2>&1 \\| head -20 \\|\\| echo \"Expected to fail - checking syntax\"$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "false": true
     }
 }

@@ -4,6 +4,21 @@ import { FacebookSDKService } from '../facebook/facebook-sdk.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { GrowthService } from '../whatsapp/growth.service';
 
+interface SocialMediaConfiguration {
+  facebook: {
+    appId: string;
+    appSecret: string;
+    pixelId: string;
+    accessToken: string;
+  };
+  whatsapp: {
+    apiToken: string;
+    phoneNumberId: string;
+    businessAccountId: string;
+    webhookToken: string;
+  };
+}
+
 /**
  * Admin Social Media Service
  * Provides admin endpoints for monitoring and managing Facebook and WhatsApp integrations
@@ -19,24 +34,61 @@ export class AdminSocialMediaService {
     private readonly growth: GrowthService,
   ) {}
 
+  private async loadSocialMediaConfig(): Promise<SocialMediaConfiguration> {
+    const keys = [
+      'FACEBOOK_APP_ID',
+      'FACEBOOK_APP_SECRET',
+      'FACEBOOK_PIXEL_ID',
+      'FACEBOOK_ACCESS_TOKEN',
+      'WHATSAPP_API_TOKEN',
+      'WHATSAPP_PHONE_NUMBER_ID',
+      'WHATSAPP_BUSINESS_ACCOUNT_ID',
+      'WHATSAPP_WEBHOOK_TOKEN',
+    ];
+
+    const toggles = await this.prisma.featureToggle.findMany({
+      where: { name: { in: keys } },
+    });
+
+    const byName = Object.fromEntries(toggles.map((toggle) => [toggle.name, toggle]));
+    const resolve = (key: string): string =>
+      byName[key]?.config ?? process.env[key] ?? '';
+
+    return {
+      facebook: {
+        appId: resolve('FACEBOOK_APP_ID'),
+        appSecret: resolve('FACEBOOK_APP_SECRET'),
+        pixelId: resolve('FACEBOOK_PIXEL_ID'),
+        accessToken: resolve('FACEBOOK_ACCESS_TOKEN'),
+      },
+      whatsapp: {
+        apiToken: resolve('WHATSAPP_API_TOKEN'),
+        phoneNumberId: resolve('WHATSAPP_PHONE_NUMBER_ID'),
+        businessAccountId: resolve('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+        webhookToken: resolve('WHATSAPP_WEBHOOK_TOKEN'),
+      },
+    };
+  }
+
   /**
    * Get Facebook SDK health and configuration status
    */
   async getFacebookHealth() {
     try {
-      const config = {
-        appId: !!process.env.FACEBOOK_APP_ID,
-        appSecret: !!process.env.FACEBOOK_APP_SECRET,
-        pixelId: !!process.env.FACEBOOK_PIXEL_ID,
-        accessToken: !!process.env.FACEBOOK_ACCESS_TOKEN,
+      const config = await this.loadSocialMediaConfig();
+      const configured = {
+        appId: !!config.facebook.appId,
+        appSecret: !!config.facebook.appSecret,
+        pixelId: !!config.facebook.pixelId,
+        accessToken: !!config.facebook.accessToken,
       };
 
-      const hasAllConfig = Object.values(config).every((v) => v);
+      const hasAllConfig = Object.values(configured).every((v) => v);
 
       return {
         status: hasAllConfig ? 'healthy' : 'degraded',
-        configured: config,
-        pixelId: process.env.FACEBOOK_PIXEL_ID?.substring(0, 8) + '***' || 'NOT_SET',
+        configured,
+        pixelId: config.facebook.pixelId ? `${config.facebook.pixelId.substring(0, 8)}***` : 'NOT_SET',
       };
     } catch (error) {
       this.logger.error('Facebook health check failed:', error);
@@ -52,20 +104,21 @@ export class AdminSocialMediaService {
    */
   async getWhatsAppHealth() {
     try {
-      const config = {
-        apiToken: !!process.env.WHATSAPP_API_TOKEN,
-        phoneNumberId: !!process.env.WHATSAPP_PHONE_NUMBER_ID,
-        businessAccountId: !!process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-        webhookToken: !!process.env.WHATSAPP_WEBHOOK_TOKEN,
+      const config = await this.loadSocialMediaConfig();
+      const configured = {
+        apiToken: !!config.whatsapp.apiToken,
+        phoneNumberId: !!config.whatsapp.phoneNumberId,
+        businessAccountId: !!config.whatsapp.businessAccountId,
+        webhookToken: !!config.whatsapp.webhookToken,
       };
 
-      const hasAllConfig = Object.values(config).every((v) => v);
+      const hasAllConfig = Object.values(configured).every((v) => v);
 
       return {
         status: hasAllConfig ? 'healthy' : 'degraded',
-        configured: config,
+        configured,
         phoneNumberId:
-          process.env.WHATSAPP_PHONE_NUMBER_ID?.substring(0, 8) + '***' ||
+          config.whatsapp.phoneNumberId?.substring(0, 8) + '***' ||
           'NOT_SET',
       };
     } catch (error) {
