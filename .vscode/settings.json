@@ -18,6 +18,7 @@
             "approve": true,
             "matchCommandLine": true
         },
-        "false": true
+        "false": true,
+        "git ls-remote": true
     }
 }
