@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Unauthor
 import { VerificationStatus, VerificationType } from '@prisma/client';
 import { SmsService } from '../sms/sms.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 function normalizePhone(raw: string): string {
   // Strip spaces, dashes, dots, parentheses
@@ -32,6 +33,7 @@ export class VerificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sms: SmsService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   private readonly otpStore = new Map<string, { code: string; expiresAt: number }>();
@@ -81,7 +83,19 @@ export class VerificationService {
       throw new UnauthorizedException('Invalid or expired OTP code');
     }
     this.otpStore.delete(normalized);
-    return this.applyEvent(userId, VerificationType.OTP, 40, `Phone verified: ${normalized}`);
+    const result = await this.applyEvent(userId, VerificationType.OTP, 40, `Phone verified: ${normalized}`);
+
+    this.activityLogger.logAsync({
+      userId,
+      action: 'VERIFY_PHONE_OTP',
+      entityType: 'VERIFICATION',
+      description: `User verified phone with OTP: ${normalized}`,
+      changes: {
+        verificationType: VerificationType.OTP,
+      },
+    });
+
+    return result;
   }
 
   async recomputeTrust(userId: string) {

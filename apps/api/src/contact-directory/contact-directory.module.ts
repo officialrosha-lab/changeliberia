@@ -4,9 +4,10 @@ import { SmartRoutingService } from './routing/smart-routing.service';
 import { AdminDirectoryController } from './admin-directory.controller';
 import { BulkImportService } from '../bulk-import/bulk-import.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { ActivityModule } from '../activity/activity.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ActivityModule],
   providers: [
     ContactDirectoryService,
     SmartRoutingService,

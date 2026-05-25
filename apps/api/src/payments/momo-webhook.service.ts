@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MoMoService } from './providers/momo.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class MoMoWebhookService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly momoService: MoMoService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   /**
@@ -94,6 +96,20 @@ export class MoMoWebhookService {
     });
 
     this.logger.debug(`Updated payment ${payment.id} status to ${newStatus}`);
+
+    this.activityLogger.logAsync({
+      userId: payment.userId ?? undefined,
+      action: newStatus === 'COMPLETED' ? 'PAYMENT_COMPLETED' : 'PAYMENT_FAILED',
+      entityType: 'PAYMENT',
+      entityId: payment.id,
+      description: `MoMo payment ${newStatus.toLowerCase()} for payment ${payment.id}`,
+      status: newStatus === 'FAILED' ? 'FAILED' : 'SUCCESS',
+      errorMessage: failureReason,
+      changes: {
+        momoExternalId: externalId,
+        momoStatus: status,
+      },
+    });
   }
 
   /**
@@ -207,6 +223,19 @@ export class MoMoWebhookService {
     }
 
     this.logger.debug(`Updated subscription payment ${payment.id} status to ${newStatus}`);
+
+    this.activityLogger.logAsync({
+      userId: payment.userId ?? undefined,
+      action: newStatus === 'COMPLETED' ? 'SUBSCRIPTION_PAYMENT_COMPLETED' : 'SUBSCRIPTION_PAYMENT_FAILED',
+      entityType: 'PAYMENT',
+      entityId: payment.id,
+      description: `MoMo subscription payment ${newStatus.toLowerCase()} for payment ${payment.id}`,
+      status: newStatus === 'FAILED' ? 'FAILED' : 'SUCCESS',
+      changes: {
+        momoExternalId: externalId,
+        momoStatus: status,
+      },
+    });
   }
 
   /**

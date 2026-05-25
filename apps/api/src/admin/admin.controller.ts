@@ -19,6 +19,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { VerificationService } from '../verification/verification.service';
 import { AdminSocialMediaService } from './admin-social-media.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -28,6 +29,7 @@ export class AdminController {
     private readonly prisma: PrismaService,
     private readonly verification: VerificationService,
     private readonly socialMedia: AdminSocialMediaService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   @Get('petitions/pending')
@@ -49,7 +51,7 @@ export class AdminController {
   }
 
   @Delete('petitions/:id')
-  async deletePetition(@Param('id') id: string) {
+  async deletePetition(@Param('id') id: string, @Req() req: { user: RequestUser }) {
     try {
       const petition = await this.prisma.petition.findUnique({ where: { id } });
       if (!petition) throw new NotFoundException('Petition not found');
@@ -73,6 +75,17 @@ export class AdminController {
         await tx.petition.delete({ where: { id } });
       });
 
+      // Log the deletion action
+      this.activityLogger.logAsync({
+        userId: petition.creatorId,
+        adminId: req.user.userId,
+        action: 'DELETE_PETITION',
+        entityType: 'PETITION',
+        entityId: id,
+        description: `Admin deleted petition: "${petition.title}"`,
+        changes: { status: petition.status, action: 'deletion' },
+      });
+
       return { success: true, message: 'Petition deleted' };
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
@@ -94,6 +107,19 @@ export class AdminController {
       where: { id },
       data: { status: body.status, reviewedBy: req.user.userId },
     });
+    
+    // Log the ID document review action
+    const action = body.status === 'APPROVED' ? 'APPROVE_ID_DOCUMENT' : 'REJECT_ID_DOCUMENT';
+    this.activityLogger.logAsync({
+      userId: doc.userId,
+      adminId: req.user.userId,
+      action,
+      entityType: 'ID_DOCUMENT',
+      entityId: id,
+      description: `Admin ${body.status === 'APPROVED' ? 'approved' : 'rejected'} ID document (${doc.type})`,
+      changes: { previousStatus: doc.status, newStatus: body.status },
+    });
+    
     if (body.status === 'APPROVED') {
       const prior = await this.prisma.verificationLog.findFirst({
         where: { userId: doc.userId, type: VerificationType.ID_UPLOAD },

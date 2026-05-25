@@ -28,6 +28,8 @@ import { SupportersModule } from './supporters/supporters.module';
 import { AmbassadorsModule } from './ambassadors/ambassadors.module';
 import { EmailModule } from './email/email.module';
 import { SystemSettingsModule } from './admin/system-settings.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { ActivityModule } from './activity/activity.module';
 
 @Module({
   imports: [
@@ -59,6 +61,8 @@ import { SystemSettingsModule } from './admin/system-settings.module';
     AnalyticsModule,
     PaymentModule,
     SystemSettingsModule,
+    FeedbackModule,
+    ActivityModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
