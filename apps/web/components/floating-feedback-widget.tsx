@@ -14,7 +14,7 @@ interface FloatingFeedbackWidgetProps {
 
 export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidgetProps) {
   const [state, setState] = useState<FeedbackState>('collapsed');
-  const [mounted, setMounted] = useState(false);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -23,7 +23,13 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
 
   // Mount effect - runs once on client side only
   useEffect(() => {
-    setMounted(true);
+    if (typeof document === 'undefined') return;
+    let root = document.body;
+    if (!root) {
+      root = document.createElement('div');
+      document.documentElement.appendChild(root);
+    }
+    setPortalRoot(root);
   }, []);
 
   // Click outside effect - handles collapsing when clicking outside
@@ -82,12 +88,12 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
     }
   }
 
-  if (!enabled || !mounted) {
+  if (!enabled || !portalRoot) {
     return null;
   }
 
   const portal = createPortal(
-    <div ref={widgetRef} className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 safe-bottom">
+    <div ref={widgetRef} className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 safe-bottom">
       <AnimatePresence mode="wait">
         {/* Collapsed state - just icon button */}
         {state === 'collapsed' && (
@@ -295,7 +301,7 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
         )}
       </AnimatePresence>
     </div>,
-    document.body,
+    portalRoot,
   );
 
   return portal;

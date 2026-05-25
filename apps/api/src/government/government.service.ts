@@ -1,9 +1,10 @@
-import { Injectable, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmissionStatus } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { SignatureAddedEvent } from '../events/domain-events';
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class GovernmentService {
@@ -15,14 +16,18 @@ export class GovernmentService {
   ) {}
 
   /**
-   * Generate a comprehensive HTML report for a petition
+   * Generate a comprehensive PDF report for a petition
    */
-  async generatePetitionReport(petitionId: string): Promise<Buffer> {
+  async generatePetitionReport(
+    petitionId: string,
+    requestorId?: string,
+    enforceCreator = false,
+  ): Promise<Buffer> {
     const petition = await this.prisma.petition.findUnique({
       where: { id: petitionId },
       include: {
         creator: true,
-        signatures: { take: 50 },
+        signatures: { orderBy: { createdAt: 'asc' }, take: 200 },
         milestones: { orderBy: { targetValue: 'asc' } },
       },
     });
@@ -31,130 +36,152 @@ export class GovernmentService {
       throw new NotFoundException(`Petition with ID ${petitionId} not found`);
     }
 
-    // Generate HTML report
-    const report = this.generateHTMLReport(petition);
-    return Buffer.from(report, 'utf-8');
-  }
+    const submissionTypes = ['government', 'ngo'];
+    const isSubmissionType = submissionTypes.includes(petition.petitionType ?? 'government');
+    if (isSubmissionType && enforceCreator) {
+      if (!requestorId) {
+        throw new ForbiddenException('Authentication is required to download this petition report');
+      }
+      if (petition.creatorId !== requestorId) {
+        throw new ForbiddenException('Only the petition creator may download this petition report');
+      }
+    }
 
-  /**
-   * Generate HTML report for petition
-   */
-  private generateHTMLReport(petition: any): string {
     const progressPercent = Math.round((petition.signaturesCount / petition.goal) * 100);
     const governmentReady = petition.signaturesCount >= 1000;
-
     const dailyBreakdown = this.aggregateSignaturesByDay(petition.signatures);
-    const dailyBreakdownHtml = Object.entries(dailyBreakdown)
-      .map(([date, count]: [string, any]) => `<tr><td>${date}</td><td>${count}</td></tr>`)
-      .join('');
+    const breakdownEntries = Object.entries(dailyBreakdown).slice(-14);
 
-    const milestonesHtml = petition.milestones
-      .map(
-        (m: any, idx: number) =>
-          `<tr><td>${idx + 1}</td><td>${m.targetValue} signatures</td><td>${m.achieved ? 'ACHIEVED' : 'PENDING'}</td><td>${m.achievedAt ? m.achievedAt.toLocaleDateString() : 'N/A'}</td></tr>`,
-      )
-      .join('');
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
 
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; color: #333; }
-    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
-    h2 { color: #34495e; margin-top: 30px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .metric { display: inline-block; margin: 15px 20px; padding: 15px 20px; background: #ecf0f1; border-radius: 5px; }
-    .metric-label { font-size: 12px; color: #7f8c8d; }
-    .metric-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-    th { background: #3498db; color: white; padding: 10px; text-align: left; }
-    td { padding: 8px; border-bottom: 1px solid #bdc3c7; }
-    tr:nth-child(even) { background: #ecf0f1; }
-    .status-ready { color: #27ae60; font-weight: bold; }
-    .status-not-ready { color: #e74c3c; font-weight: bold; }
-    .progress-bar { width: 100%; height: 30px; background: #ecf0f1; border-radius: 15px; overflow: hidden; margin: 10px 0; }
-    .progress-fill { height: 100%; background: #27ae60; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
-    .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #bdc3c7; font-size: 12px; color: #7f8c8d; text-align: center; }
-    .creator-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>🇱🇷 CHANGE LIBERIA</h1>
-    <h2>Citizen Petition Report</h2>
-    <p><small>Generated: ${new Date().toLocaleString()}</small></p>
-  </div>
+    doc.fillColor('#0f172a').fontSize(20).text('CHANGE LIBERIA', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.fontSize(12).fillColor('#475569').text(`Report generated: ${this.formatDate(new Date())}`, {
+      align: 'center',
+    });
+    doc.moveDown(1);
 
-  <h2>${petition.title}</h2>
+    doc.fontSize(16).fillColor('#111827').text(petition.title);
+    doc.moveDown(0.5);
 
-  <div class="metric">
-    <div class="metric-label">Total Signatures</div>
-    <div class="metric-value">${petition.signaturesCount}</div>
-  </div>
+    doc.fontSize(11).fillColor('#334155').text(petition.summary, { width: 500, lineGap: 3 });
+    doc.moveDown(0.5);
+    doc.text(petition.description, { width: 500, lineGap: 3 });
+    doc.moveDown(1);
 
-  <div class="metric">
-    <div class="metric-label">Goal</div>
-    <div class="metric-value">${petition.goal}</div>
-  </div>
+    const leftColWidth = 260;
 
-  <div class="metric">
-    <div class="metric-label">Progress</div>
-    <div class="metric-value">${progressPercent}%</div>
-  </div>
+    doc.fontSize(12).fillColor('#0f172a').text('Petition details', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#334155');
+    doc.text(`Type: ${this.textOrEmpty(petition.petitionType || 'General')}`, { width: leftColWidth });
+    doc.text(`Category: ${this.textOrEmpty(petition.category)}`, { width: leftColWidth });
+    doc.text(`County: ${this.textOrEmpty(petition.county)}`, { width: leftColWidth });
+    doc.text(`Goal: ${petition.goal.toLocaleString()}`, { width: leftColWidth });
+    doc.text(`Signatures: ${petition.signaturesCount.toLocaleString()}`, { width: leftColWidth });
+    doc.text(`Progress: ${progressPercent}%`, { width: leftColWidth });
+    doc.text(`Government-ready: ${governmentReady ? 'Yes' : 'No'}`, { width: leftColWidth });
+    if (!governmentReady) {
+      doc.text(`Signatures needed: ${(1000 - petition.signaturesCount).toLocaleString()}`, {
+        width: leftColWidth,
+      });
+    }
+    doc.moveDown(0.5);
 
-  <div class="progress-bar">
-    <div class="progress-fill" style="width: ${Math.min(progressPercent, 100)}%">${progressPercent}%</div>
-  </div>
+    doc.text(`Creator name: ${this.textOrEmpty(petition.creator?.fullName)}`, {
+      width: leftColWidth,
+    });
+    doc.text(`Creator email: ${this.textOrEmpty(petition.creator?.email)}`, {
+      width: leftColWidth,
+    });
+    doc.text(`Creator phone: ${this.textOrEmpty(petition.creator?.phone)}`, {
+      width: leftColWidth,
+    });
+    doc.moveDown(0.5);
+    doc.text(`Prior actions: ${this.textOrEmpty(petition.priorActions, 'None recorded')}`, {
+      width: 500,
+      lineGap: 3,
+    });
+    doc.moveDown(1);
 
-  <h2>Petition Summary</h2>
-  <p>${petition.summary}</p>
-  <p>${petition.description}</p>
+    doc.fontSize(12).fillColor('#0f172a').text('Milestones', { underline: true });
+    doc.moveDown(0.5);
+    if (petition.milestones.length === 0) {
+      doc.fontSize(10).fillColor('#334155').text('No milestones defined for this petition.');
+    } else {
+      petition.milestones.forEach((milestone, index) => {
+        doc.fontSize(10).fillColor('#334155').text(
+          `${index + 1}. ${milestone.targetValue.toLocaleString()} signatures — ${milestone.achieved ? 'ACHIEVED' : 'PENDING'}${milestone.achievedAt ? ` (${this.formatDate(milestone.achievedAt)})` : ''}`,
+          { width: 500, lineGap: 2 },
+        );
+      });
+    }
+    doc.moveDown(1);
 
-  <h2>Petition Creator</h2>
-  <div class="creator-info">
-    <p><strong>Name:</strong> ${petition.creator.fullName}</p>
-    <p><strong>Phone:</strong> ${petition.creator.phone}</p>
-    <p><strong>Email:</strong> ${petition.creator.email || 'Not provided'}</p>
-  </div>
+    doc.fontSize(12).fillColor('#0f172a').text('Recent signature activity', { underline: true });
+    doc.moveDown(0.5);
+    if (breakdownEntries.length === 0) {
+      doc.fontSize(10).fillColor('#334155').text('No signature activity recorded yet.');
+    } else {
+      breakdownEntries.forEach(([date, count]) => {
+        doc.fontSize(10).fillColor('#334155').text(`${date}: ${count.toLocaleString()} signatures`, {
+          width: 500,
+          lineGap: 2,
+        });
+      });
+    }
+    doc.moveDown(1);
 
-  <h2>Milestones Achieved</h2>
-  <table>
-    <tr>
-      <th>#</th>
-      <th>Target Signatures</th>
-      <th>Status</th>
-      <th>Achieved Date</th>
-    </tr>
-    ${milestonesHtml}
-  </table>
+    doc.addPage();
+    doc.fontSize(16).fillColor('#111827').text('Signature ledger', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#334155');
+    doc.text(
+      `Showing ${petition.signatures.length.toLocaleString()} signer records${petition.signaturesCount > petition.signatures.length ? ` (first ${petition.signatures.length.toLocaleString()} of ${petition.signaturesCount.toLocaleString()})` : ''}.`, 
+      { width: 500 },
+    );
+    doc.moveDown(0.5);
 
-  <h2>Recent Activity (Last 7 Days)</h2>
-  <table>
-    <tr>
-      <th>Date</th>
-      <th>Signatures</th>
-    </tr>
-    ${dailyBreakdownHtml}
-  </table>
+    petition.signatures.forEach((signature, index) => {
+      if (doc.y > 720) doc.addPage();
+      const signerName = signature.anonymous ? 'Anonymous' : this.textOrEmpty(signature.name);
+      doc.fontSize(10).text(`${index + 1}. ${signerName}`, 50, doc.y, {
+        width: 260,
+        continued: true,
+      });
+      doc.text(this.formatDate(signature.createdAt), 320, doc.y, {
+        width: 200,
+        align: 'right',
+      });
+    });
 
-  <h2>Government Submission Status</h2>
-  <p>
-    Status: <span class="${governmentReady ? 'status-ready' : 'status-not-ready'}">
-      ${governmentReady ? '✅ READY FOR SUBMISSION' : '⏳ NOT YET READY'}
-    </span>
-  </p>
-  ${!governmentReady ? `<p>Signatures needed: ${1000 - petition.signaturesCount}</p>` : ''}
+    doc.addPage();
+    doc.fontSize(10).fillColor('#64748b').text(
+      'This report was automatically generated by Change Liberia. For questions or corrections, contact support or review the petition details in the administrator dashboard.',
+      { width: 500, align: 'center' },
+    );
 
-  <div class="footer">
-    <p>This report was automatically generated by Change Liberia.</p>
-    <p>For more information, visit <strong>changelib.org</strong></p>
-    <p>Report ID: ${petition.id}</p>
-  </div>
-</body>
-</html>
-    `;
+    doc.end();
+    return new Promise<Buffer>((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
+  }
+
+  private textOrEmpty(value: string | null | undefined, fallback = 'Not specified'): string {
+    return value?.trim() ? value : fallback;
+  }
+
+  private formatDate(date: Date | string | null | undefined): string {
+    if (!date) return 'N/A';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   /**
