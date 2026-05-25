@@ -90,6 +90,7 @@ export function PetitionGovernmentPanel({
   const isSubmissionType = type === 'government' || type === 'ngo';
   const copy = type === 'ngo' ? COPY.ngo : COPY.government;
   const token = useAuthStore((state) => state.token);
+  const hydrated = useAuthStore((state) => state.hydrated);
   const [readiness, setReadiness] = useState<GovernmentReadiness | null>(null);
   const [contacts, setContacts] = useState<GovernmentContact[]>([]);
   const [status, setStatus] = useState<GovernmentStatus | null>(null);
@@ -97,16 +98,83 @@ export function PetitionGovernmentPanel({
   const [customEmail, setCustomEmail] = useState('');
   const [notes, setNotes] = useState('Auto-submit generated when petition reached government readiness.');
   const [loading, setLoading] = useState(true);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isCreator, setIsCreator] = useState<boolean | null>(isSubmissionType ? null : true);
 
   const reportUrl = useMemo(
     () => `${getApiBase()}/government/report/${petitionId}`,
     [petitionId],
   );
 
+  const handleDownloadReport = async () => {
+    setDownloadingReport(true);
+    setDownloadError(null);
+
+    try {
+      const response = await fetch(reportUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        let message = 'Unable to download report.';
+        try {
+          const body = await response.json();
+          if (body?.message) message = body.message;
+        } catch {
+          // ignore parse errors
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `petition-${petitionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download report');
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
   useEffect(() => {
+    if (!isSubmissionType || !hydrated) return;
+
+    let cancelled = false;
+
+    const loadOwnerStatus = async () => {
+      try {
+        const result = await apiGet<{ isCreator: boolean }>(
+          `/petitions/${petitionId}/is-creator`,
+          token ?? undefined,
+        );
+        if (!cancelled) setIsCreator(result.isCreator);
+      } catch (err) {
+        if (!cancelled) {
+          setIsCreator(false);
+          setError(err instanceof Error ? err.message : 'Unable to verify petition ownership');
+        }
+      }
+    };
+
+    void loadOwnerStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [petitionId, token, isSubmissionType, hydrated]);
+
+  useEffect(() => {
+    if (isSubmissionType && isCreator !== true) return;
+
     let cancelled = false;
 
     const load = async () => {
@@ -141,7 +209,7 @@ export function PetitionGovernmentPanel({
     return () => {
       cancelled = true;
     };
-  }, [petitionId, token]);
+  }, [petitionId, token, isSubmissionType, isCreator]);
 
   const chosenEmail = useMemo(() => {
     const contact = contacts.find((item) => item.id === selectedContactId);
@@ -197,6 +265,10 @@ export function PetitionGovernmentPanel({
     }
   }
 
+  if (isSubmissionType && isCreator === false) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -227,14 +299,17 @@ export function PetitionGovernmentPanel({
               you&apos;re ready to act.
             </p>
           </div>
-          <a
-            href={reportUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex shrink-0 items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          <button
+            type="button"
+            onClick={handleDownloadReport}
+            disabled={downloadingReport}
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
           >
-            Download report
-          </a>
+            {downloadingReport ? 'Downloading...' : 'Download report'}
+          </button>
+          {downloadError && (
+            <p className="mt-2 text-xs text-red-600">{downloadError}</p>
+          )}
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -275,14 +350,17 @@ export function PetitionGovernmentPanel({
           <h2 className="text-xl font-extrabold text-zinc-900">{copy.panelTitle}</h2>
           <p className="mt-2 text-sm text-zinc-600">{copy.panelDesc}</p>
         </div>
-        <a
-          href={reportUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        <button
+          type="button"
+          onClick={handleDownloadReport}
+          disabled={downloadingReport}
+          className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
         >
-          Download report
-        </a>
+          {downloadingReport ? 'Downloading...' : 'Download report'}
+        </button>
+        {downloadError && (
+          <p className="mt-2 text-xs text-red-600">{downloadError}</p>
+        )}
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">

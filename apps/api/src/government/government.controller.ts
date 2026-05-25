@@ -106,22 +106,26 @@ export class GovernmentController {
   /**
    * GET /government/report/:petitionId
    * Download PDF report for a petition
-   * Public endpoint for generating reports
+   * Government/NGO petitions are restricted to the petition creator.
    */
   @Get('report/:petitionId')
+  @UseGuards(OptionalJwtAuthGuard)
   async getPetitionReport(
     @Param('petitionId') petitionId: string,
     @Res() res: Response,
+    @CurrentUser() user: any,
   ) {
     try {
       const reportBuffer = await this.governmentService.generatePetitionReport(
         petitionId,
+        user?.userId,
+        true,
       );
 
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="petition-${petitionId}.html"`,
+        `attachment; filename="petition-${petitionId}.pdf"`,
       );
       res.send(reportBuffer);
     } catch (error) {
