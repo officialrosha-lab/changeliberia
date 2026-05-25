@@ -74,7 +74,23 @@ export async function apiPatch<T>(
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error('Request failed');
+  if (!res.ok) {
+    let message = `Request failed (${res.status} ${res.statusText})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.message === 'string') message = data.message;
+      else if (typeof data === 'string' && data.length) message = data;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) message = text;
+      } catch {
+        // ignore parse errors
+      }
+    }
+    throw new Error(message);
+  }
+
   return res.json() as Promise<T>;
 }
 

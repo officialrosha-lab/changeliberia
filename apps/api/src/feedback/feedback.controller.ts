@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Logger } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('feedback')
 export class FeedbackController {

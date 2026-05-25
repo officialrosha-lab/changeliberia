@@ -230,9 +230,17 @@ export class FacebookAdminController {
   @Get('pixel-config')
   async getPixelConfig() {
     try {
-      const pixelId = process.env.FACEBOOK_PIXEL_ID;
-      const apiVersion = process.env.FACEBOOK_API_VERSION || '18.0';
-      const accessToken = process.env.FACEBOOK_ACCESS_TOKEN ? '***' : 'NOT_SET';
+      const toggles = await this.prisma.featureToggle.findMany({
+        where: {
+          name: {
+            in: ['FACEBOOK_PIXEL_ID', 'FACEBOOK_API_VERSION', 'FACEBOOK_ACCESS_TOKEN'],
+          },
+        },
+      });
+      const config = Object.fromEntries(toggles.map((t) => [t.name, t.config])) as Record<string, string | null>;
+      const pixelId = config['FACEBOOK_PIXEL_ID'] || process.env.FACEBOOK_PIXEL_ID;
+      const apiVersion = config['FACEBOOK_API_VERSION'] || process.env.FACEBOOK_API_VERSION || '18.0';
+      const accessToken = (config['FACEBOOK_ACCESS_TOKEN'] || process.env.FACEBOOK_ACCESS_TOKEN) ? '***' : 'NOT_SET';
 
       // Get recent events to test connectivity
       const recentEvents = await this.prisma.facebookPixelEvent.findMany({
@@ -273,14 +281,29 @@ export class FacebookAdminController {
         );
       }
 
-      // Note: In a real implementation, you'd store this in a configuration table
-      // rather than environment variables. This is a simplified example.
+      const values: Record<string, string | undefined> = {
+        FACEBOOK_PIXEL_ID: dto.pixelId,
+        FACEBOOK_API_VERSION: dto.apiVersion,
+      };
+
+      await Promise.all(
+        Object.entries(values)
+          .filter(([, value]) => value !== undefined)
+          .map(([name, value]) =>
+            this.prisma.featureToggle.upsert({
+              where: { name },
+              create: { name, enabled: true, config: String(value) },
+              update: { enabled: true, config: String(value) },
+            }),
+          ),
+      );
+
       const response = {
         success: true,
-        message: 'Pixel configuration updated (environment variables)',
+        message: 'Pixel configuration updated successfully',
         current: {
-          pixelId: process.env.FACEBOOK_PIXEL_ID,
-          apiVersion: process.env.FACEBOOK_API_VERSION,
+          pixelId: dto.pixelId,
+          apiVersion: dto.apiVersion,
         },
       };
 

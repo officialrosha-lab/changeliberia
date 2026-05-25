@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '../lib/api';
+import { useToast } from '../lib/toast-context';
 import { useAuthStore } from '../lib/store';
 
 interface FacebookHealth {
@@ -45,6 +46,7 @@ interface SocialMediaSettings {
     appId: string;
     appSecret: string;
     pixelId: string;
+    apiVersion: string;
     accessToken: string;
   };
   whatsapp: {
@@ -106,6 +108,8 @@ export function AdminSocialMediaDashboard() {
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [token]);
+
+  const { show: showToast } = useToast();
 
   if (loading) {
     return <div className="text-center py-8 text-zinc-600">Loading social media metrics...</div>;
@@ -367,6 +371,7 @@ export function AdminSocialMediaDashboard() {
                       { label: 'App ID', field: 'appId', value: socialMediaConfig.facebook.appId },
                       { label: 'App Secret', field: 'appSecret', value: socialMediaConfig.facebook.appSecret },
                       { label: 'Pixel ID', field: 'pixelId', value: socialMediaConfig.facebook.pixelId },
+                        { label: 'API Version', field: 'apiVersion', value: socialMediaConfig.facebook.apiVersion },
                       { label: 'Access Token', field: 'accessToken', value: socialMediaConfig.facebook.accessToken },
                     ].map(({ label, field, value }) => (
                       <div key={field} className="space-y-2">
@@ -440,10 +445,13 @@ export function AdminSocialMediaDashboard() {
                       try {
                         await apiPatch('/admin/settings/social-media', socialMediaConfig, token);
                         setConfigMessage('Social media settings saved successfully.');
+                        showToast('Social media settings saved successfully.', 'success');
                         const refreshedSettings = await apiGet<SocialMediaSettings>('/admin/settings/social-media', token);
                         setSocialMediaConfig(refreshedSettings);
                       } catch (err) {
-                        setError(err instanceof Error ? err.message : 'Failed to save social media settings');
+                        const msg = err instanceof Error ? err.message : 'Failed to save social media settings';
+                        setError(msg);
+                        showToast(msg, 'error');
                       } finally {
                         setSavingConfig(false);
                       }

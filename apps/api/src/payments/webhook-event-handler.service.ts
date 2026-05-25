@@ -389,8 +389,8 @@ export class WebhookEventHandlerService {
         entityId: subscriptionId,
         description: `Stripe subscription created for user ${user.id}`,
         changes: {
-          amount,
-          currency,
+          amount: subscription.items.data[0]?.price?.unit_amount || 0,
+          currency: (subscription.currency || 'usd').toUpperCase(),
           interval: this.mapStripeInterval(
             subscription.items.data[0]?.price?.recurring?.interval,
           ),
