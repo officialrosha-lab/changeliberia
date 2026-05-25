@@ -2,6 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailQueueService } from '../email/email-queue.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 import {
   StripeEventType,
   PaymentStatus,
@@ -19,6 +20,7 @@ export class WebhookEventHandlerService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activityLogger: ActivityLoggerService,
     @Optional() private readonly emailQueue: EmailQueueService | null,
   ) {}
 
@@ -171,6 +173,19 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Payment ${payment.id} marked as completed`);
 
+      this.activityLogger.logAsync({
+        userId: payment.userId ?? undefined,
+        action: 'PAYMENT_COMPLETED',
+        entityType: 'PAYMENT',
+        entityId: payment.id,
+        description: `Stripe payment completed for payment ${payment.id}`,
+        changes: {
+          stripePaymentIntentId: paymentIntentId,
+          amount,
+          currency,
+        },
+      });
+
       // If associated with a petition, update signature count
       if (payment.petitionId) {
         await this.updatePetitionSignatureCount(payment.petitionId);
@@ -232,6 +247,20 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Payment ${payment.id} marked as failed`);
 
+      this.activityLogger.logAsync({
+        userId: payment.userId ?? undefined,
+        action: 'PAYMENT_FAILED',
+        entityType: 'PAYMENT',
+        entityId: payment.id,
+        description: `Stripe payment failed for payment ${payment.id}`,
+        status: 'FAILED',
+        errorMessage: lastPaymentError?.message ?? 'Unknown error',
+        changes: {
+          stripePaymentIntentId: paymentIntentId,
+          reason: lastPaymentError?.message,
+        },
+      });
+
       // Queue failure notification email
       if (payment.userId) {
         await this.queueFailureEmail(payment.id, payment.userId);
@@ -282,6 +311,17 @@ export class WebhookEventHandlerService {
       });
 
       this.logger.log(`Payment ${payment.id} marked as cancelled`);
+
+      this.activityLogger.logAsync({
+        userId: payment.userId ?? undefined,
+        action: 'PAYMENT_CANCELLED',
+        entityType: 'PAYMENT',
+        entityId: payment.id,
+        description: `Stripe payment cancelled for payment ${payment.id}`,
+        changes: {
+          stripePaymentIntentId: paymentIntentId,
+        },
+      });
     } catch (error) {
       this.logger.error(
         `Error handling payment intent canceled: ${(error as Error).message}`,
@@ -342,6 +382,21 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Subscription ${subscriptionId} created in database`);
 
+      this.activityLogger.logAsync({
+        userId: user.id,
+        action: 'SUBSCRIPTION_CREATED',
+        entityType: 'SUBSCRIPTION',
+        entityId: subscriptionId,
+        description: `Stripe subscription created for user ${user.id}`,
+        changes: {
+          amount: subscription.items.data[0]?.price?.unit_amount || 0,
+          currency: (subscription.currency || 'usd').toUpperCase(),
+          interval: this.mapStripeInterval(
+            subscription.items.data[0]?.price?.recurring?.interval,
+          ),
+        },
+      });
+
       // Queue welcome email
       await this.queueSubscriptionWelcomeEmail(user.id);
 
@@ -392,6 +447,17 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Subscription ${subscriptionId} updated`);
 
+      this.activityLogger.logAsync({
+        userId: dbSubscription.userId,
+        action: 'SUBSCRIPTION_UPDATED',
+        entityType: 'SUBSCRIPTION',
+        entityId: dbSubscription.id,
+        description: `Stripe subscription updated for subscription ${subscriptionId}`,
+        changes: {
+          amount: subscription.items.data[0]?.price?.unit_amount || dbSubscription.amount,
+        },
+      });
+
       // Log analytics event
       await this.logAnalyticsEvent('subscription_updated', {
         subscriptionId,
@@ -438,6 +504,17 @@ export class WebhookEventHandlerService {
       });
 
       this.logger.log(`Subscription ${subscriptionId} marked as cancelled`);
+
+      this.activityLogger.logAsync({
+        userId: dbSubscription.userId,
+        action: 'SUBSCRIPTION_CANCELLED',
+        entityType: 'SUBSCRIPTION',
+        entityId: dbSubscription.id,
+        description: `Stripe subscription cancelled for subscription ${subscriptionId}`,
+        changes: {
+          status: SubscriptionStatus.CANCELLED,
+        },
+      });
 
       // Queue cancellation email
       await this.queueSubscriptionCancellationEmail(dbSubscription.userId);
@@ -500,6 +577,18 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Invoice ${invoiceId} payment recorded`);
 
+      this.activityLogger.logAsync({
+        userId: subscription.userId,
+        action: 'SUBSCRIPTION_PAYMENT_COMPLETED',
+        entityType: 'PAYMENT',
+        entityId: invoiceId,
+        description: `Stripe invoice payment succeeded for subscription ${subscriptionId}`,
+        changes: {
+          subscriptionId,
+          amount: invoice.amount_paid || 0,
+        },
+      });
+
       // Queue receipt email
       await this.queueInvoiceReceiptEmail(subscription.userId, invoiceId);
 
@@ -561,6 +650,19 @@ export class WebhookEventHandlerService {
       });
 
       this.logger.log(`Invoice ${invoiceId} payment failure recorded`);
+
+      this.activityLogger.logAsync({
+        userId: subscription.userId,
+        action: 'SUBSCRIPTION_PAYMENT_FAILED',
+        entityType: 'PAYMENT',
+        entityId: invoiceId,
+        description: `Stripe invoice payment failed for subscription ${subscriptionId}`,
+        status: 'FAILED',
+        changes: {
+          subscriptionId,
+          amountDue: invoice.amount_due || 0,
+        },
+      });
 
       // Queue retry notification
       await this.queuePaymentFailureEmail(subscription.userId, invoiceId);
@@ -628,6 +730,17 @@ export class WebhookEventHandlerService {
       });
 
       this.logger.log(`Payment ${payment.id} marked as refunded`);
+
+      this.activityLogger.logAsync({
+        userId: payment.userId ?? undefined,
+        action: 'PAYMENT_REFUNDED',
+        entityType: 'PAYMENT',
+        entityId: payment.id,
+        description: `Stripe payment refunded for payment ${payment.id}`,
+        changes: {
+          stripeChargeId: charge.id,
+        },
+      });
 
       // Queue refund confirmation email
       await this.queueRefundEmail(payment.userId || '');

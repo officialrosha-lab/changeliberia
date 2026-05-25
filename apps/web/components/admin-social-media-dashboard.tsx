@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet } from '../lib/api';
+import { apiGet, apiPatch } from '../lib/api';
+import { useToast } from '../lib/toast-context';
 import { useAuthStore } from '../lib/store';
 
 interface FacebookHealth {
@@ -40,6 +41,22 @@ interface CampaignStats {
   totalCampaigns: number;
 }
 
+interface SocialMediaSettings {
+  facebook: {
+    appId: string;
+    appSecret: string;
+    pixelId: string;
+    apiVersion: string;
+    accessToken: string;
+  };
+  whatsapp: {
+    apiToken: string;
+    phoneNumberId: string;
+    businessAccountId: string;
+    webhookToken: string;
+  };
+}
+
 interface SocialMediaDashboard {
   facebook: FacebookHealth;
   whatsapp: WhatsAppHealth;
@@ -54,9 +71,13 @@ export function AdminSocialMediaDashboard() {
   const token = useAuthStore((s) => s.token);
   const [data, setData] = useState<SocialMediaDashboard | null>(null);
   const [campaignStats, setCampaignStats] = useState<CampaignStats | null>(null);
+  const [socialMediaConfig, setSocialMediaConfig] = useState<SocialMediaSettings | null>(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configMessage, setConfigMessage] = useState<string | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'facebook' | 'whatsapp'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'facebook' | 'whatsapp' | 'configuration'>('overview');
 
   useEffect(() => {
     if (!token) return;
@@ -65,16 +86,21 @@ export function AdminSocialMediaDashboard() {
       try {
         setLoading(true);
         setError(null);
-        const [dashboard, campaigns] = await Promise.all([
+        setConfigLoading(true);
+        const [dashboard, campaigns, settings] = await Promise.all([
           apiGet<SocialMediaDashboard>('/admin/social-media/dashboard', token),
           apiGet<CampaignStats>('/admin/social-media/whatsapp/campaign-stats', token),
+          apiGet<SocialMediaSettings>('/admin/settings/social-media', token),
         ]);
         setData(dashboard);
         setCampaignStats(campaigns);
+        setSocialMediaConfig(settings);
+        setConfigMessage(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load social media data');
       } finally {
         setLoading(false);
+        setConfigLoading(false);
       }
     };
 
@@ -82,6 +108,8 @@ export function AdminSocialMediaDashboard() {
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [token]);
+
+  const { show: showToast } = useToast();
 
   if (loading) {
     return <div className="text-center py-8 text-zinc-600">Loading social media metrics...</div>;
@@ -117,7 +145,7 @@ export function AdminSocialMediaDashboard() {
     <div className="space-y-6">
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b border-zinc-200">
-        {(['overview', 'facebook', 'whatsapp'] as const).map((tab) => (
+        {(['overview', 'facebook', 'whatsapp', 'configuration'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -127,7 +155,13 @@ export function AdminSocialMediaDashboard() {
                 : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            {tab === 'facebook' ? 'Facebook Pixel' : tab === 'whatsapp' ? 'WhatsApp Growth' : 'Overview'}
+            {tab === 'facebook'
+              ? 'Facebook Pixel'
+              : tab === 'whatsapp'
+              ? 'WhatsApp Growth'
+              : tab === 'configuration'
+              ? 'Configuration'
+              : 'Overview'}
           </button>
         ))}
       </div>
@@ -301,6 +335,135 @@ export function AdminSocialMediaDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Configuration Tab */}
+      {activeTab === 'configuration' && (
+        <div className="space-y-6">
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Social Media Configuration</h3>
+                <p className="text-sm text-zinc-500 dark:text-neutral-400 mt-1">
+                  Update the Facebook and WhatsApp integration credentials used by the platform.
+                </p>
+              </div>
+            </div>
+
+            {configMessage ? (
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-700 mb-6">
+                {configMessage}
+              </div>
+            ) : null}
+
+            {configLoading ? (
+              <div className="text-center py-8 text-zinc-600">Loading configuration…</div>
+            ) : !socialMediaConfig ? (
+              <div className="text-center py-8 text-zinc-600">No social media settings found.</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-neutral-700 dark:bg-neutral-950">
+                    <h4 className="text-lg font-semibold text-zinc-900 dark:text-neutral-100 mb-4">Facebook</h4>
+                    {[
+                      { label: 'App ID', field: 'appId', value: socialMediaConfig.facebook.appId },
+                      { label: 'App Secret', field: 'appSecret', value: socialMediaConfig.facebook.appSecret },
+                      { label: 'Pixel ID', field: 'pixelId', value: socialMediaConfig.facebook.pixelId },
+                        { label: 'API Version', field: 'apiVersion', value: socialMediaConfig.facebook.apiVersion },
+                      { label: 'Access Token', field: 'accessToken', value: socialMediaConfig.facebook.accessToken },
+                    ].map(({ label, field, value }) => (
+                      <div key={field} className="space-y-2">
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">{label}</label>
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(event) =>
+                            setSocialMediaConfig((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    facebook: {
+                                      ...prev.facebook,
+                                      [field]: event.target.value,
+                                    },
+                                  }
+                                : prev,
+                            )
+                          }
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        />
+                      </div>
+                    ))}
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-neutral-700 dark:bg-neutral-950">
+                    <h4 className="text-lg font-semibold text-zinc-900 dark:text-neutral-100 mb-4">WhatsApp</h4>
+                    {[
+                      { label: 'API Token', field: 'apiToken', value: socialMediaConfig.whatsapp.apiToken },
+                      { label: 'Phone Number ID', field: 'phoneNumberId', value: socialMediaConfig.whatsapp.phoneNumberId },
+                      { label: 'Business Account ID', field: 'businessAccountId', value: socialMediaConfig.whatsapp.businessAccountId },
+                      { label: 'Webhook Token', field: 'webhookToken', value: socialMediaConfig.whatsapp.webhookToken },
+                    ].map(({ label, field, value }) => (
+                      <div key={field} className="space-y-2">
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">{label}</label>
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(event) =>
+                            setSocialMediaConfig((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    whatsapp: {
+                                      ...prev.whatsapp,
+                                      [field]: event.target.value,
+                                    },
+                                  }
+                                : prev,
+                            )
+                          }
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        />
+                      </div>
+                    ))}
+                  </section>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-zinc-500 dark:text-neutral-400">
+                    Saving these values will persist them into the admin configuration store and update the health checks.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!token || !socialMediaConfig) return;
+                      setSavingConfig(true);
+                      setError(null);
+                      setConfigMessage(null);
+                      try {
+                        await apiPatch('/admin/settings/social-media', socialMediaConfig, token);
+                        setConfigMessage('Social media settings saved successfully.');
+                        showToast('Social media settings saved successfully.', 'success');
+                        const refreshedSettings = await apiGet<SocialMediaSettings>('/admin/settings/social-media', token);
+                        setSocialMediaConfig(refreshedSettings);
+                      } catch (err) {
+                        const msg = err instanceof Error ? err.message : 'Failed to save social media settings';
+                        setError(msg);
+                        showToast(msg, 'error');
+                      } finally {
+                        setSavingConfig(false);
+                      }
+                    }}
+                    disabled={!socialMediaConfig || savingConfig}
+                    className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {savingConfig ? 'Saving…' : 'Save Social Media Settings'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

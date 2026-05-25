@@ -39,6 +39,7 @@ import {
 } from './dto';
 import { PetitionsService } from './petitions.service';
 import { SignatureAddedEvent } from '../events/domain-events';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 @Controller('petitions')
 export class PetitionsController {
@@ -46,6 +47,7 @@ export class PetitionsController {
     private readonly service: PetitionsService,
     private readonly eventEmitter: EventEmitter2,
     private readonly mediaStorage: PetitionMediaStorageService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {}
 
   @Get()
@@ -109,13 +111,40 @@ export class PetitionsController {
     return this.service.getById(id);
   }
 
+  @Get(':id/is-creator')
+  @UseGuards(OptionalJwtAuthGuard)
+  async isCreator(
+    @Param('id') id: string,
+    @Req() req: { user?: { userId: string } },
+  ) {
+    const petition = await this.service.getById(id);
+    if (!petition) {
+      throw new NotFoundException('Petition not found');
+    }
+    return {
+      isCreator: !!req.user && petition.creatorId === req.user.userId,
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(
+  async create(
     @Req() req: { user: { userId: string } },
     @Body() dto: CreatePetitionDto,
   ) {
-    return this.service.create(req.user.userId, dto);
+    const result = await this.service.create(req.user.userId, dto);
+    
+    // Log the petition creation
+    this.activityLogger.logAsync({
+      userId: req.user.userId,
+      action: 'CREATE_PETITION',
+      entityType: 'PETITION',
+      entityId: result.id,
+      description: `User created petition: "${result.title}"`,
+      changes: { status: 'PENDING', category: result.category },
+    });
+    
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -199,15 +228,54 @@ export class PetitionsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id/approve')
-  approve(@Param('id') id: string, @Body() body: { category?: string }) {
-    return this.service.approve(id, body.category);
+  async approve(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+    @Body() body: { category?: string },
+  ) {
+    const petition = await this.service.getById(id);
+    if (!petition) throw new NotFoundException('Petition not found');
+    
+    const result = await this.service.approve(id, body.category);
+    
+    // Log the approval action
+    this.activityLogger.logAsync({
+      userId: petition.creatorId,
+      adminId: req.user.userId,
+      action: 'APPROVE_PETITION',
+      entityType: 'PETITION',
+      entityId: id,
+      description: `Admin approved petition: "${petition.title}"`,
+      changes: { previousStatus: 'PENDING', newStatus: 'APPROVED', category: body.category },
+    });
+    
+    return result;
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id/reject')
-  reject(@Param('id') id: string) {
-    return this.service.reject(id);
+  async reject(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+  ) {
+    const petition = await this.service.getById(id);
+    if (!petition) throw new NotFoundException('Petition not found');
+    
+    const result = await this.service.reject(id);
+    
+    // Log the rejection action
+    this.activityLogger.logAsync({
+      userId: petition.creatorId,
+      adminId: req.user.userId,
+      action: 'REJECT_PETITION',
+      entityType: 'PETITION',
+      entityId: id,
+      description: `Admin rejected petition: "${petition.title}"`,
+      changes: { previousStatus: 'PENDING', newStatus: 'REJECTED' },
+    });
+    
+    return result;
   }
 
   @Get(':id/status-log')

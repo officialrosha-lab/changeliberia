@@ -115,6 +115,10 @@ model User {
   passwordResetTokens PasswordResetToken[]
   memberships         Membership[]
   emailLogs           EmailLog[]          // Email system relation
+  
+  // Activity log relations
+  activityLogs        ActivityLog[]       @relation("ActivityLogUser")
+  adminActivityLogs   ActivityLog[]       @relation("ActivityLogAdmin")
 }
 
 model Petition {
@@ -1623,4 +1627,32 @@ model EmailLog {
   @@index([status, createdAt])
   @@index([trackingPixelId])
   @@index([resendMessageId])
+}
+
+model ActivityLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  adminId         String?
+  
+  action          String   // CREATE_PETITION, LOGIN, SIGN_PETITION, APPROVE_PETITION, PAYMENT_PROCESSED, ID_APPROVED, FRAUD_EVENT, etc.
+  entityType      String   // PETITION, USER, SIGNATURE, PAYMENT, ID_DOCUMENT, REFERRAL, etc.
+  entityId        String?
+  description     String?
+  
+  ipAddress       String?
+  userAgent       String?
+  changes         Json?    // JSON diff of what changed (for UPDATE actions)
+  status          String   // SUCCESS, FAILED
+  errorMessage    String?
+  
+  createdAt       DateTime @default(now())
+  
+  user            User?    @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  admin           User?    @relation("ActivityLogAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  
+  @@index([userId, createdAt])
+  @@index([adminId, createdAt])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

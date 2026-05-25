@@ -2,10 +2,14 @@ import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/comm
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CreateSignatureDto } from './dto';
 import { SignaturesService } from './signatures.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 
 @Controller('signatures')
 export class SignaturesController {
-  constructor(private readonly service: SignaturesService) {}
+  constructor(
+    private readonly service: SignaturesService,
+    private readonly activityLogger: ActivityLoggerService,
+  ) {}
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':petitionId/has-signed')
@@ -20,7 +24,7 @@ export class SignaturesController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Post()
-  create(
+  async create(
     @Req()
     req: {
       user?: { userId: string };
@@ -30,6 +34,20 @@ export class SignaturesController {
     @Body() dto: CreateSignatureDto,
   ) {
     const ip = req.ip ?? req.headers['x-forwarded-for'] ?? 'unknown';
-    return this.service.create(req.user?.userId, String(ip), dto);
+    const result = await this.service.create(req.user?.userId, String(ip), dto);
+    
+    // Log signature creation only if signature was actually created (not rejected by CAPTCHA)
+    if (result.signature && req.user?.userId) {
+      this.activityLogger.logAsync({
+        userId: req.user.userId,
+        action: 'CREATE_SIGNATURE',
+        entityType: 'SIGNATURE',
+        entityId: result.signature.id,
+        description: `User signed petition: "${dto.petitionId}"`,
+        changes: { petitionId: dto.petitionId },
+      });
+    }
+    
+    return result;
   }
 }

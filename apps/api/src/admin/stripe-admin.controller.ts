@@ -9,14 +9,17 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import type { RequestUser } from '../auth/roles.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentService } from '../payments/payment.service';
 import { UserRole } from '@prisma/client';
 
@@ -30,6 +33,7 @@ export class StripeAdminController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentService: PaymentService,
+    private readonly activityLogger: ActivityLoggerService,
   ) {
     const apiKey = process.env.STRIPE_API_KEY;
     if (apiKey) {
@@ -250,7 +254,10 @@ export class StripeAdminController {
    * Cancel a subscription
    */
   @Patch('subscriptions/:id/cancel')
-  async cancelSubscription(@Param('id') id: string) {
+  async cancelSubscription(
+    @Req() req: { user: RequestUser },
+    @Param('id') id: string,
+  ) {
     try {
       const subscription = await this.prisma.subscription.findUnique({
         where: { id },
@@ -275,6 +282,15 @@ export class StripeAdminController {
           cancelledAt: new Date(),
         },
         include: { user: { select: { id: true, email: true } } },
+      });
+
+      this.activityLogger.logAsync({
+        adminId: req.user.userId,
+        action: 'CANCEL_SUBSCRIPTION',
+        entityType: 'SUBSCRIPTION',
+        entityId: id,
+        description: `Cancelled subscription ${id}`,
+        changes: { status: updated.status },
       });
 
       return { success: true, subscription: updated };
@@ -330,6 +346,7 @@ export class StripeAdminController {
    */
   @Post('refunds')
   async createRefund(
+    @Req() req: { user: RequestUser },
     @Body()
     dto: {
       paymentId: string;
@@ -373,6 +390,18 @@ export class StripeAdminController {
           reason: dto.reason,
           stripeRefundId,
           status: 'COMPLETED',
+        },
+      });
+
+      this.activityLogger.logAsync({
+        adminId: req.user.userId,
+        action: 'CREATE_REFUND',
+        entityType: 'REFUND',
+        entityId: refund.id,
+        description: `Created refund ${refund.id} for payment ${dto.paymentId}`,
+        changes: {
+          amount: refundAmount,
+          reason: dto.reason,
         },
       });
 

@@ -40,7 +40,7 @@ interface Payment {
   amount: number;
   currency: string;
   status: string;
-  stripePaymentIntentId: string;
+  stripePaymentIntentId?: string;
   createdAt: string;
   user?: {
     fullName: string;
@@ -178,7 +178,7 @@ export function AdminStripePayments() {
                       {new Date(payment.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-2 px-2 text-xs font-mono">
-                      {payment.stripePaymentIntentId.slice(0, 12)}...
+                      {payment.stripePaymentIntentId ? `${payment.stripePaymentIntentId.slice(0, 12)}...` : 'Unknown'}
                     </td>
                   </tr>
                 ))
