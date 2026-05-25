@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Send } from 'lucide-react';
-import { apiGet, apiPost } from '../lib/api';
+import { apiGet, apiPatch, apiPost } from '../lib/api';
+import { useToast } from '../lib/toast-context';
 import { useAuthStore } from '../lib/store';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -50,9 +51,14 @@ export function AdminFacebookPixel() {
   const token = useAuthStore((s) => s.token);
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [config, setConfig] = useState<PixelConfig | null>(null);
+  const [editedPixelId, setEditedPixelId] = useState('');
+  const [editedApiVersion, setEditedApiVersion] = useState('18.0');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingTest, setSendingTest] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configMessage, setConfigMessage] = useState<string | null>(null);
+  const { show: showToast } = useToast();
 
   const fetchEvents = useCallback(async () => {
     if (!token) return;
@@ -69,12 +75,35 @@ export function AdminFacebookPixel() {
     try {
       const result = await apiGet<PixelConfig>('/admin/facebook/pixel-config', token);
       setConfig(result);
+      setEditedPixelId(result.pixelId === 'NOT_SET' ? '' : result.pixelId);
+      setEditedApiVersion(result.apiVersion || '18.0');
     } catch (err) {
       console.error('Config error:', err);
     } finally {
       setLoading(false);
     }
   }, [token]);
+
+  const handleSaveConfig = async () => {
+    if (!token) return;
+    setSavingConfig(true);
+    setConfigMessage(null);
+    try {
+      await apiPatch('/admin/facebook/pixel-config', {
+        pixelId: editedPixelId,
+        apiVersion: editedApiVersion,
+      }, token);
+      setConfigMessage('Pixel settings saved successfully.');
+      showToast('Pixel settings saved successfully.', 'success');
+      await fetchConfig();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save pixel settings';
+      setConfigMessage(msg);
+      showToast(msg, 'error');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([fetchEvents(), fetchConfig()]);
@@ -113,10 +142,21 @@ export function AdminFacebookPixel() {
             <CardTitle>Pixel Configuration</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {configMessage ? (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {configMessage}
+              </div>
+            ) : null}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Pixel ID</p>
-                <p className="font-mono text-sm">{config.pixelId}</p>
+                <input
+                  type="text"
+                  value={editedPixelId}
+                  onChange={(event) => setEditedPixelId(event.target.value)}
+                  placeholder="Enter Pixel ID"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                />
               </div>
               <Badge className={config.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                 {config.active ? 'Active' : 'Inactive'}
@@ -124,7 +164,23 @@ export function AdminFacebookPixel() {
             </div>
             <div>
               <p className="text-sm text-gray-600">API Version</p>
-              <p className="font-mono text-sm">{config.apiVersion}</p>
+              <input
+                type="text"
+                value={editedApiVersion}
+                onChange={(event) => setEditedApiVersion(event.target.value)}
+                placeholder="18.0"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+              />
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <button
+                type="button"
+                onClick={handleSaveConfig}
+                disabled={savingConfig || !editedPixelId.trim()}
+                className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {savingConfig ? 'Saving…' : 'Save Pixel Settings'}
+              </button>
             </div>
             <button
               onClick={handleTestEvent}

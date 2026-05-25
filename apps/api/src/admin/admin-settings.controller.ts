@@ -39,6 +39,7 @@ export interface SocialMediaSettings {
     appId: string;
     appSecret: string;
     pixelId: string;
+    apiVersion: string;
     accessToken: string;
   };
   whatsapp: {
@@ -57,6 +58,7 @@ export function mapSocialMediaSettings(toggles: FeatureToggle[]) {
       appId: byName['FACEBOOK_APP_ID']?.config ?? '',
       appSecret: byName['FACEBOOK_APP_SECRET']?.config ?? '',
       pixelId: byName['FACEBOOK_PIXEL_ID']?.config ?? '',
+      apiVersion: byName['FACEBOOK_API_VERSION']?.config ?? '18.0',
       accessToken: byName['FACEBOOK_ACCESS_TOKEN']?.config ?? '',
     },
     whatsapp: {
@@ -203,6 +205,7 @@ export class AdminSettingsController {
             'FACEBOOK_APP_ID',
             'FACEBOOK_APP_SECRET',
             'FACEBOOK_PIXEL_ID',
+            'FACEBOOK_API_VERSION',
             'FACEBOOK_ACCESS_TOKEN',
             'WHATSAPP_API_TOKEN',
             'WHATSAPP_PHONE_NUMBER_ID',
@@ -224,6 +227,7 @@ export class AdminSettingsController {
       FACEBOOK_APP_ID: body.facebook?.appId,
       FACEBOOK_APP_SECRET: body.facebook?.appSecret,
       FACEBOOK_PIXEL_ID: body.facebook?.pixelId,
+      FACEBOOK_API_VERSION: body.facebook?.apiVersion,
       FACEBOOK_ACCESS_TOKEN: body.facebook?.accessToken,
       WHATSAPP_API_TOKEN: body.whatsapp?.apiToken,
       WHATSAPP_PHONE_NUMBER_ID: body.whatsapp?.phoneNumberId,

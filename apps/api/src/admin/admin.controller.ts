@@ -77,7 +77,7 @@ export class AdminController {
 
       // Log the deletion action
       this.activityLogger.logAsync({
-        userId: petition.createdBy,
+        userId: petition.creatorId,
         adminId: req.user.userId,
         action: 'DELETE_PETITION',
         entityType: 'PETITION',

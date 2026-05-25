@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   UseGuards,
-  Roles,
   Query,
   Param,
   Res,
@@ -11,6 +10,7 @@ import { Response } from 'express';
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { ActivityLoggerService } from './activity-logger.service';
 
 /**
@@ -88,7 +88,7 @@ export class ActivityLogController {
     @Query('status') status?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Res() res: Response,
+    @Res() res?: Response,
   ) {
     const filters: any = {};
     if (action) filters.action = action;
@@ -102,6 +102,7 @@ export class ActivityLogController {
     const logs = result.data;
 
     if (format === 'json') {
+      if (!res) return { success: true, data: logs };
       res.setHeader('Content-Type', 'application/json');
       res.setHeader(
         'Content-Disposition',
@@ -141,6 +142,10 @@ export class ActivityLogController {
       headers.join(',') +
       '\n' +
       rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    if (!res) {
+      return csv;
+    }
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
