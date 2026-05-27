@@ -28,7 +28,10 @@ type BrowseResponse = {
 const EMPTY: BrowseResponse = { categories: {}, trending: [], total: 0 };
 
 export default async function PetitionsDiscoveryPage() {
-  const data = await apiGet<BrowseResponse>('/petitions/browse/all').catch(() => null);
+  const data = await apiGet<BrowseResponse>('/petitions/browse/all').catch((error) => {
+    console.error('Failed to fetch petitions:', error);
+    return null;
+  });
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-neutral-950">

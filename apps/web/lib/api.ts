@@ -1,6 +1,14 @@
 export function getApiBase(): string {
-  // Use NEXT_PUBLIC_API_URL everywhere (both client and server)
-  // NEXT_PUBLIC_ prefix makes it available in both environments
+  // For Vercel production environment, use hardcoded API URL
+  // This is needed because NEXT_PUBLIC_API_URL may not be available during SSR
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction && typeof window === 'undefined') {
+    // Server-side rendering in production - use hardcoded URL
+    return 'https://api-production-8873.up.railway.app/api/v1';
+  }
+  
+  // Use NEXT_PUBLIC_API_URL if available
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
