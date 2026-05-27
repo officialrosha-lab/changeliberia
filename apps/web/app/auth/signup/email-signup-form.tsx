@@ -19,7 +19,7 @@ export function EmailSignupForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const validatePassword = (pwd: string) => {
+  const getPasswordFeedback = (pwd: string) => {
     const feedback: string[] = [];
     if (pwd.length < 8) feedback.push('At least 8 characters');
     if (!/[A-Z]/.test(pwd)) feedback.push('One uppercase letter');
@@ -27,10 +27,22 @@ export function EmailSignupForm() {
     if (!/\d/.test(pwd)) feedback.push('One number');
 
     if (feedback.length > 0) {
-      setPasswordFeedback(`Password needs: ${feedback.join(', ')}`);
-    } else {
-      setPasswordFeedback('Password looks good ✓');
+      return {
+        isValid: false,
+        message: `Password needs: ${feedback.join(', ')}`,
+      };
     }
+
+    return {
+      isValid: true,
+      message: 'Password looks good ✓',
+    };
+  };
+
+  const validatePassword = (pwd: string) => {
+    const result = getPasswordFeedback(pwd);
+    setPasswordFeedback(result.message);
+    return result;
   };
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -43,8 +55,9 @@ export function EmailSignupForm() {
       const pwd = String(form.get('password'));
 
       // Validate password strength
-      const validation = validatePassword(pwd);
-      if (passwordFeedback.includes('needs:')) {
+      const validation = getPasswordFeedback(pwd);
+      setPasswordFeedback(validation.message);
+      if (!validation.isValid) {
         setIsError(true);
         setMessage('Password does not meet requirements');
         setSubmitting(false);
