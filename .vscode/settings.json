@@ -19,6 +19,8 @@
             "matchCommandLine": true
         },
         "false": true,
-        "git ls-remote": true
+        "git ls-remote": true,
+        "git rev-list": true,
+        "env": true
     }
 }

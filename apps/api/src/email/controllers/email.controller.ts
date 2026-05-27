@@ -21,7 +21,7 @@ import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
 import { PermissionResource, PermissionAction } from '@prisma/client';
 
-@Controller('api/v1/email')
+@Controller('email')
 export class EmailController {
   private readonly logger = new Logger(EmailController.name);
 
@@ -216,11 +216,22 @@ export class EmailController {
     };
   }
 
+}
+
+@Controller('admin/email')
+export class AdminEmailController {
+  private readonly logger = new Logger(AdminEmailController.name);
+
+  constructor(
+    private readonly trackingService: EmailTrackingService,
+    private readonly resendProvider: ResendProvider,
+  ) {}
+
   /**
    * Admin: Get email statistics
    * GET /api/v1/admin/email/stats
    */
-  @Get('admin/email/stats')
+  @Get('stats')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async getEmailStats(
@@ -238,7 +249,7 @@ export class EmailController {
    * Admin: Get email queue statistics
    * GET /api/v1/admin/email/queue-stats
    */
-  @Get('admin/email/queue-stats')
+  @Get('queue-stats')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async getQueueStats(): Promise<any> {
@@ -257,7 +268,7 @@ export class EmailController {
    * Admin: Verify Resend domain
    * POST /api/v1/admin/email/verify-domain
    */
-  @Post('admin/email/verify-domain')
+  @Post('verify-domain')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.UPDATE)
   async verifyDomain(@Body('domain') domain: string): Promise<any> {
@@ -276,14 +287,14 @@ export class EmailController {
    * Admin: Get Resend health status
    * GET /api/v1/admin/email/health
    */
-  @Get('admin/email/health')
+  @Get('health')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async healthCheck(): Promise<any> {
     try {
       const health = await this.resendProvider.healthCheck();
-      return { 
-        healthy: true, 
+      return {
+        healthy: true,
         ...(typeof health === 'object' && health !== null ? health : {}),
       };
     } catch (error) {

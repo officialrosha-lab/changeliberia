@@ -551,6 +551,10 @@ export class RolePermissionService implements OnModuleInit {
       { resource: PermissionResource.CONTENT, action: PermissionAction.UPDATE },
       { resource: PermissionResource.CONTENT, action: PermissionAction.DELETE },
 
+      // Email system
+      { resource: PermissionResource.EMAIL, action: PermissionAction.READ },
+      { resource: PermissionResource.EMAIL, action: PermissionAction.UPDATE },
+
       // Role management
       { resource: PermissionResource.ROLE, action: PermissionAction.CREATE },
       { resource: PermissionResource.ROLE, action: PermissionAction.READ },
