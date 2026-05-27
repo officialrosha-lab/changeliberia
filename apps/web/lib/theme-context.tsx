@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
@@ -101,7 +103,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
+    // Return a safe default for server-side rendering or when Provider is missing.
+    // This prevents SSR from throwing while keeping client behavior unchanged.
+    return {
+      theme: 'system' as Theme,
+      resolvedTheme: 'light' as 'light' | 'dark',
+      setTheme: () => {},
+      toggleTheme: () => {},
+    };
   }
   return context;
 }

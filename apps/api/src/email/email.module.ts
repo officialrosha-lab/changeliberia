@@ -8,7 +8,7 @@ import { EmailEventService } from './services/email-event.service';
 import { EmailScheduleService } from './services/email-schedule.service';
 import { ResendProvider } from './providers/resend.provider';
 import { EmailProcessor } from './processors/email.processor';
-import { EmailController } from './controllers/email.controller';
+import { EmailController, AdminEmailController } from './controllers/email.controller';
 import { ResendWebhookController } from './webhooks/resend-webhook.controller';
 
 @Module({
@@ -25,7 +25,7 @@ import { ResendWebhookController } from './webhooks/resend-webhook.controller';
     ResendProvider,
     EmailProcessor,
   ],
-  controllers: [EmailController, ResendWebhookController],
+  controllers: [EmailController, AdminEmailController, ResendWebhookController],
   exports: [
     EmailService,
     EmailTemplateService,

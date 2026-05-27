@@ -17,6 +17,8 @@ WEB_URL="${WEB_URL:-http://localhost:3000}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 TEST_EMAIL="${TEST_EMAIL:-test@example.com}"
 REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
+AUTH_TOKEN="${AUTH_TOKEN:-}"
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
@@ -36,16 +38,20 @@ print_test() {
 
 print_success() {
   echo -e "${GREEN}✓ PASS: $1${RESET}"
-  ((TESTS_PASSED++))
+  ((TESTS_PASSED+=1))
 }
 
 print_fail() {
   echo -e "${RED}✗ FAIL: $1${RESET}"
-  ((TESTS_FAILED++))
+  ((TESTS_FAILED+=1))
 }
 
 print_info() {
   echo -e "${BLUE}ℹ $1${RESET}"
+}
+
+print_warning() {
+  echo -e "${YELLOW}⚠ WARN: $1${RESET}"
 }
 
 # ====================
@@ -61,25 +67,23 @@ echo ""
 # Test 1: Database Schema
 print_test "1: Database Schema Validation"
 
-if cd apps/api && npx prisma db execute --stdin <<< 'SELECT COUNT(*) FROM "EmailLog"' > /dev/null 2>&1; then
+if (cd apps/api && npx prisma db execute --stdin <<< 'SELECT COUNT(*) FROM "EmailLog"' > /dev/null 2>&1); then
   print_success "EmailLog table exists"
 else
   print_fail "EmailLog table not found"
 fi
 
-if cd apps/api && npx prisma db execute --stdin <<< 'SELECT emailEnabled FROM "NotificationPreference" LIMIT 1' > /dev/null 2>&1; then
+if (cd apps/api && npx prisma db execute --stdin <<< 'SELECT "emailEnabled" FROM "NotificationPreference" LIMIT 1' > /dev/null 2>&1); then
   print_success "NotificationPreference schema correct"
 else
   print_fail "NotificationPreference schema issue"
 fi
 
-if cd apps/api && npx prisma db execute --stdin <<< 'SELECT COUNT(*) FROM "PermissionResource" WHERE name = '\''EMAIL'\''' > /dev/null 2>&1; then
+if (cd apps/api && npx prisma db execute --stdin <<< "SELECT COUNT(*) FROM \"Permission\" WHERE \"resource\" = 'EMAIL' AND \"action\" = 'READ'" > /dev/null 2>&1); then
   print_success "EMAIL permission resource exists"
 else
   print_fail "EMAIL permission not found"
 fi
-
-cd - > /dev/null
 
 # Test 2: Redis Connection
 print_test "2: Redis Connection"
@@ -105,69 +109,75 @@ fi
 # Test 4: Email Module Initialization
 print_test "4: Email Module Health Check"
 
-HEALTH=$(curl -s -f "$API_URL/api/v1/admin/email/health" 2>&1 || echo "{}")
-
-if echo "$HEALTH" | grep -q '"status":"ok"'; then
-  print_success "Email system healthy"
+if [ -n "$ADMIN_TOKEN" ]; then
+  HEALTH=$(curl -s -f -H "Authorization: Bearer $ADMIN_TOKEN" "$API_URL/api/v1/admin/email/health" 2>&1 || echo "{}")
+  if echo "$HEALTH" | grep -q '"healthy":true'; then
+    print_success "Email system healthy"
+  else
+    print_fail "Email system health check failed"
+    print_info "Response: $HEALTH"
+  fi
 else
-  print_fail "Email system health check failed"
-  print_info "Response: $HEALTH"
+  print_warning "Skipping admin email health check - ADMIN_TOKEN not set"
 fi
 
 # Test 5: Send Test Email
 print_test "5: Send Test Email"
-
-SEND_RESPONSE=$(curl -s -X POST "$API_URL/api/v1/email/test-send" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\": \"$TEST_EMAIL\", \"emailType\": \"WELCOME\", \"props\": {\"fullName\": \"Test User\"}}" 2>&1 || echo "{}")
-
-if echo "$SEND_RESPONSE" | grep -q '"status":"queued"'; then
-  print_success "Test email queued"
-  JOB_ID=$(echo "$SEND_RESPONSE" | grep -o '"jobId":"[^"]*' | cut -d'"' -f4)
-  print_info "Job ID: $JOB_ID"
-else
-  print_fail "Failed to queue test email"
-  print_info "Response: $SEND_RESPONSE"
-fi
+print_warning "Skipping send-test route because no public test-send endpoint exists in the current API. Use a real user flow or webhook to validate sending."
 
 # Test 6: Queue Statistics
 print_test "6: Queue Statistics"
 
-QUEUE_STATS=$(curl -s -f "$API_URL/api/v1/admin/email/queue-stats" 2>&1 || echo "{}")
+if [ -n "$ADMIN_TOKEN" ]; then
+  QUEUE_STATS=$(curl -s -f -H "Authorization: Bearer $ADMIN_TOKEN" "$API_URL/api/v1/admin/email/queue-stats" 2>&1 || echo "{}")
 
-if echo "$QUEUE_STATS" | grep -q '"queued"'; then
-  print_success "Queue statistics available"
-  print_info "Response: $QUEUE_STATS"
+  if echo "$QUEUE_STATS" | grep -q '"queued"'; then
+    print_success "Queue statistics available"
+    print_info "Response: $QUEUE_STATS"
+  else
+    print_fail "Queue statistics unavailable"
+    print_info "Response: $QUEUE_STATS"
+  fi
 else
-  print_fail "Queue statistics unavailable"
+  print_warning "Skipping queue statistics test - ADMIN_TOKEN not set"
 fi
 
 # Test 7: Email Log Entry
 print_test "7: Email Log Entry Creation"
 
-sleep 2  # Give processor time
+if [ -n "$AUTH_TOKEN" ]; then
+  sleep 2  # Give processor time
 
-EMAIL_LOG=$(curl -s -f "$API_URL/api/v1/email/logs?limit=1" 2>&1 || echo "[]")
+  EMAIL_LOG=$(curl -s -f "$API_URL/api/v1/email/logs?limit=1" \
+    -H "Authorization: Bearer $AUTH_TOKEN" 2>&1 || echo "[]")
 
-if echo "$EMAIL_LOG" | grep -q '"type":"WELCOME"'; then
-  print_success "Email log entry created"
-  EMAIL_ID=$(echo "$EMAIL_LOG" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
-  print_info "Email Log ID: $EMAIL_ID"
+  if echo "$EMAIL_LOG" | grep -q '"id":"'; then
+    print_success "Email log entry retrieved"
+    EMAIL_ID=$(echo "$EMAIL_LOG" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+    print_info "Email Log ID: $EMAIL_ID"
+  else
+    print_fail "Email log entry not found"
+    print_info "Response: $EMAIL_LOG"
+  fi
 else
-  print_fail "Email log entry not found"
-  print_info "Response: $EMAIL_LOG"
+  print_warning "Skipping email log entry test - AUTH_TOKEN not set"
 fi
 
 # Test 8: Email Preferences
 print_test "8: Email Preference Management"
 
-PREFS=$(curl -s -f "$API_URL/api/v1/email/preferences" \
-  -H "Authorization: Bearer test-token" 2>&1 || echo "{}")
+if [ -n "$AUTH_TOKEN" ]; then
+  PREFS=$(curl -s -f "$API_URL/api/v1/email/preferences" \
+    -H "Authorization: Bearer $AUTH_TOKEN" 2>&1 || echo "{}")
 
-if echo "$PREFS" | grep -q '"emailEnabled"'; then
-  print_success "Email preferences retrievable"
+  if echo "$PREFS" | grep -q '"emailEnabled"'; then
+    print_success "Email preferences retrievable"
+  else
+    print_fail "Email preferences not accessible"
+    print_info "Response: $PREFS"
+  fi
 else
-  print_fail "Email preferences not accessible"
+  print_warning "Skipping email preference test - AUTH_TOKEN not set"
 fi
 
 # Test 9: Tracking Pixel Endpoint
@@ -215,13 +225,18 @@ fi
 # Test 12: Email Statistics
 print_test "12: Email Statistics"
 
-STATS=$(curl -s -f "$API_URL/api/v1/admin/email/stats?startDate=2026-05-01&endDate=2026-05-11" 2>&1 || echo "{}")
+if [ -n "$ADMIN_TOKEN" ]; then
+  STATS=$(curl -s -f -H "Authorization: Bearer $ADMIN_TOKEN" "$API_URL/api/v1/admin/email/stats?startDate=2026-05-01&endDate=2026-05-11" 2>&1 || echo "{}")
 
-if echo "$STATS" | grep -q '"totalSent"'; then
-  print_success "Email statistics available"
-  print_info "Response: $STATS"
+  if echo "$STATS" | grep -q '"totalSent"'; then
+    print_success "Email statistics available"
+    print_info "Response: $STATS"
+  else
+    print_fail "Email statistics not available"
+    print_info "Response: $STATS"
+  fi
 else
-  print_fail "Email statistics not available"
+  print_warning "Skipping email statistics test - ADMIN_TOKEN not set"
 fi
 
 # Summary
@@ -231,7 +246,11 @@ echo ""
 echo -e "${GREEN}Passed: $TESTS_PASSED${RESET}"
 echo -e "${RED}Failed: $TESTS_FAILED${RESET}"
 TOTAL=$((TESTS_PASSED + TESTS_FAILED))
-PASS_RATE=$((TESTS_PASSED * 100 / TOTAL))
+if [ $TOTAL -gt 0 ]; then
+  PASS_RATE=$((TESTS_PASSED * 100 / TOTAL))
+else
+  PASS_RATE=0
+fi
 echo "Pass Rate: $PASS_RATE%"
 echo ""
 
