@@ -20,11 +20,13 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
     let message = `Request failed (${res.status} ${res.statusText})`;
     try {
       const data = await res.json();
-      if (typeof data?.message === 'string') message = data.message;
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status} ${res.statusText})`;
+      }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = text;
+        if (text) message = `${text} (${res.status} ${res.statusText})`;
       } catch {
         // ignore parse errors
       }
@@ -50,11 +52,22 @@ export async function apiPost<T>(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = 'Request failed';
+    let message = `Request failed (${res.status} ${res.statusText})`;
     try {
       const data = await res.json();
-      if (typeof data?.message === 'string') message = data.message;
-    } catch { /* ignore parse errors */ }
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status} ${res.statusText})`;
+      } else if (typeof data === 'string' && data.length) {
+        message = `${data} (${res.status} ${res.statusText})`;
+      }
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) message = `${text} (${res.status} ${res.statusText})`;
+      } catch {
+        // ignore parse errors
+      }
+    }
     throw new Error(message);
   }
   return res.json() as Promise<T>;
@@ -78,12 +91,15 @@ export async function apiPatch<T>(
     let message = `Request failed (${res.status} ${res.statusText})`;
     try {
       const data = await res.json();
-      if (typeof data?.message === 'string') message = data.message;
-      else if (typeof data === 'string' && data.length) message = data;
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status} ${res.statusText})`;
+      } else if (typeof data === 'string' && data.length) {
+        message = `${data} (${res.status} ${res.statusText})`;
+      }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = text;
+        if (text) message = `${text} (${res.status} ${res.statusText})`;
       } catch {
         // ignore parse errors
       }
@@ -107,11 +123,13 @@ export async function apiDelete<T = unknown>(
     let message = `Request failed (${res.status} ${res.statusText})`;
     try {
       const data = await res.json();
-      if (typeof data?.message === 'string') message = data.message;
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status} ${res.statusText})`;
+      }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = text;
+        if (text) message = `${text} (${res.status} ${res.statusText})`;
       } catch {
         // ignore parse errors
       }
