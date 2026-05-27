@@ -20,7 +20,8 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 # Logging
-LOG_FILE="/var/log/changeliberia-email-monitor.log"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOG_FILE="${SCRIPT_DIR}/logs/monitor-email.log"
 mkdir -p "$(dirname "$LOG_FILE")"
 
 log() {
