@@ -144,7 +144,7 @@ export class EmailController {
   @Get('preferences')
   @UseGuards(JwtAuthGuard)
   async getPreferences(@Req() req: any): Promise<any> {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     const prefs = await this.preferenceService.getPreferences(userId);
 
     return {
@@ -167,7 +167,7 @@ export class EmailController {
     @Req() req: any,
     @Body() updates: EmailPreferenceDTO,
   ): Promise<any> {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     const prefs = await this.preferenceService.updatePreferences(userId, updates);
 
     return {
@@ -191,7 +191,7 @@ export class EmailController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ): Promise<any> {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     const { emails, total } = await this.emailService.listUserEmails(
       userId,
       parseInt(limit || '50'),

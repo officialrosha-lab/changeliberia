@@ -17,13 +17,34 @@ export class EmailPreferenceService {
 
   /**
    * Get email preferences for a user
+   * Creates default preferences if they don't exist
    */
   async getPreferences(
     userId: string,
-  ): Promise<NotificationPreference | null> {
-    return this.prisma.notificationPreference.findUnique({
+  ): Promise<NotificationPreference> {
+    let prefs = await this.prisma.notificationPreference.findUnique({
       where: { userId },
     });
+
+    // Create default preferences if none exist
+    if (!prefs) {
+      try {
+        prefs = await this.prisma.notificationPreference.create({
+          data: {
+            userId,
+          },
+        });
+      } catch (error) {
+        this.logger.error(
+          `Failed to create default preferences for user ${userId}:`,
+          error,
+        );
+        // Throw the error to be caught by global error handler
+        throw error;
+      }
+    }
+
+    return prefs;
   }
 
   /**
@@ -69,10 +90,6 @@ export class EmailPreferenceService {
     emailType: EmailType,
   ): Promise<{ canSend: boolean; reason?: string }> {
     const prefs = await this.getPreferences(userId);
-
-    if (!prefs) {
-      return { canSend: true }; // Default to allow if no preferences set
-    }
 
     // Check if email is globally enabled
     if (!prefs.emailEnabled) {
