@@ -50,6 +50,30 @@ export class AdminController {
     });
   }
 
+  @Get('users')
+  async listUsers(
+    @Query('page') page = '0',
+    @Query('limit') limit = '20',
+  ) {
+    const pageNum = Math.max(0, parseInt(page, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+
+    return this.prisma.user.findMany({
+      skip: pageNum * limitNum,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        trustScore: true,
+        verificationStatus: true,
+        createdAt: true,
+      },
+    });
+  }
+
   @Delete('petitions/:id')
   async deletePetition(@Param('id') id: string, @Req() req: { user: RequestUser }) {
     try {
