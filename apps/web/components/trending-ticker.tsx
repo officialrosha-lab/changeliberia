@@ -22,11 +22,12 @@ export function TrendingTicker() {
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
     // Fetch real petitions immediately via REST — no waiting for WebSocket
-    fetch(`${apiBase}/petitions/trending`)
+    // Use /petitions/browse/all which returns trending data
+    fetch(`${apiBase}/petitions/browse/all`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: TrendingItem[] | null) => {
-        if (mounted && Array.isArray(data) && data.length > 0) {
-          setItems(data.map((p) => ({ id: p.id, title: p.title, signaturesCount: p.signaturesCount ?? 0 })));
+      .then((data: { trending?: TrendingItem[] } | null) => {
+        if (mounted && data?.trending && Array.isArray(data.trending) && data.trending.length > 0) {
+          setItems(data.trending.map((p) => ({ id: p.id, title: p.title, signaturesCount: p.signaturesCount ?? 0 })));
         }
       })
       .catch(() => {});
