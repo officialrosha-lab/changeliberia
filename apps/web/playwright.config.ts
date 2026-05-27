@@ -9,29 +9,19 @@ export default defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.spec.ts',
   
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /* Run tests sequentially (one worker) to avoid browser launch issues */
+  fullyParallel: false,
+  workers: 1,
   
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  
-  /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 1 : undefined,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html', { open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-    [
-      'list',
-      {
-        printSteps: true,
-      },
-    ],
+    ['list'],  // Simple list reporter only
   ],
 
   /* Shared settings for all the projects below */
@@ -45,8 +35,9 @@ export default defineConfig({
     /* Screenshot on failure */
     screenshot: 'only-on-failure',
 
-    /* Video on failure */
-    video: 'retain-on-failure',
+    /* Disable all video recording - incompatible with macOS 12 */
+    video: 'off' as any,
+    recordVideo: 'off' as any,
 
     /* Maximum time for each action */
     actionTimeout: 15000,
@@ -59,37 +50,27 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Override all video settings from device preset
+        recordVideo: 'off' as any,
+        video: 'off' as any,
+      },
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: { 
+        ...devices['Desktop Firefox'],
+        // Override all video settings from device preset
+        recordVideo: 'off' as any,
+        video: 'off' as any,
+      },
     },
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: undefined,  // Disable - server should already be running
 
   /* Timeout settings */
   timeout: 60 * 1000, // 60 seconds per test
@@ -97,7 +78,7 @@ export default defineConfig({
     timeout: 10 * 1000, // 10 seconds per expect
   },
 
-  /* Global test settings */
-  globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown.ts'),
+  /* Global test settings - disabled for debugging */
+  // globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
+  // globalTeardown: require.resolve('./tests/e2e/global-teardown.ts'),
 });

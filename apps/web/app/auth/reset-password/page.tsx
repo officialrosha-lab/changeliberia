@@ -59,10 +59,13 @@ export default function ResetPasswordPage() {
     // Validate token
     const validateToken = async () => {
       try {
-        await apiPost('/auth/validate-reset-token', {
+        const response = await apiPost<{ valid: boolean }>('/auth/validate-reset-token', {
           email: emailParam,
           token: tokenParam,
         });
+        if (!response.valid) {
+          throw new Error('Invalid or expired reset link');
+        }
         setIsTokenValid(true);
         setStatus('idle');
       } catch (err: any) {

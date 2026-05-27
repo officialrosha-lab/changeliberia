@@ -7,11 +7,13 @@ import { Page, Locator, expect } from '@playwright/test';
 
 /**
  * Wait for and click an element
+ * Supports both CSS selectors and Playwright selectors (:has-text, etc)
  */
 export async function clickElement(page: Page, selector: string | Locator, timeout = 5000) {
   if (typeof selector === 'string') {
-    await page.waitForSelector(selector, { timeout });
-    await page.click(selector);
+    const locator = page.locator(selector);
+    await locator.waitFor({ state: 'visible', timeout });
+    await locator.click();
   } else {
     await selector.click({ timeout });
   }
@@ -21,16 +23,18 @@ export async function clickElement(page: Page, selector: string | Locator, timeo
  * Wait for and fill an input field
  */
 export async function fillInput(page: Page, selector: string, value: string, timeout = 5000) {
-  await page.waitForSelector(selector, { timeout });
-  await page.fill(selector, value);
+  const locator = page.locator(selector);
+  await locator.waitFor({ state: 'visible', timeout });
+  await locator.fill(value);
 }
 
 /**
  * Wait for and get text content
  */
 export async function getText(page: Page, selector: string, timeout = 5000): Promise<string> {
-  await page.waitForSelector(selector, { timeout });
-  const text = await page.textContent(selector);
+  const locator = page.locator(selector);
+  await locator.waitFor({ state: 'visible', timeout });
+  const text = await locator.textContent();
   return text || '';
 }
 
@@ -52,8 +56,9 @@ export async function fillForm(
  */
 export async function isVisible(page: Page, selector: string, timeout = 5000): Promise<boolean> {
   try {
-    await page.waitForSelector(selector, { timeout });
-    return page.isVisible(selector);
+    const locator = page.locator(selector);
+    await locator.waitFor({ state: 'visible', timeout });
+    return await locator.isVisible();
   } catch {
     return false;
   }
@@ -297,7 +302,9 @@ export function generateTestEmail(): string {
 }
 
 export function generateTestPassword(): string {
-  return `TestP@ss${Math.random().toString(36).substring(2, 10)}`;
+  // Must have: 8+ chars, uppercase, lowercase, number
+  const random = Math.random().toString(36).substring(2, 8);
+  return `TestPass${Math.floor(Math.random() * 1000)}`;
 }
 
 /**
