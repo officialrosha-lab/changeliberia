@@ -21,6 +21,7 @@
         "false": true,
         "git ls-remote": true,
         "git rev-list": true,
-        "env": true
+        "env": true,
+        "openssl": true
     }
 }
