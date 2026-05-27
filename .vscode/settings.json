@@ -22,6 +22,10 @@
         "git ls-remote": true,
         "git rev-list": true,
         "env": true,
-        "openssl": true
+        "openssl": true,
+        "/^cd /Users/visionalventure/Change\\\\ Liberia && bash scripts/validate-production-config\\.sh$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
