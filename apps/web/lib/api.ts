@@ -1,12 +1,12 @@
 export function getApiBase(): string {
-  if (
-    typeof window === 'undefined' &&
-    process.env.API_URL_INTERNAL &&
-    process.env.API_URL_INTERNAL.length > 0
-  ) {
-    return process.env.API_URL_INTERNAL;
+  // Use NEXT_PUBLIC_API_URL everywhere (both client and server)
+  // NEXT_PUBLIC_ prefix makes it available in both environments
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+  
+  // Fallback for development
+  return 'http://localhost:4000/api/v1';
 }
 
 export async function apiGet<T>(path: string, token?: string): Promise<T> {
