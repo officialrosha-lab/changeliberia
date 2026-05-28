@@ -32,7 +32,7 @@ export class SupportersController {
   constructor(private readonly service: SupportersService) {}
 
   @Get('count')
-  count() {
+  async count() {
     return this.service.getCount();
   }
 

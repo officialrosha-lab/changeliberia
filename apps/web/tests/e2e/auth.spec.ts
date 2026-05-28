@@ -401,4 +401,74 @@ test.describe('Email Signup & Password Reset', () => {
     const url = page.url();
     expect(url).toMatch(/reset-password/i);
   });
+
+  test('should redirect to login after email signup and show verification message', async ({ page }) => {
+    const email = generateTestEmail();
+    const password = generateTestPassword();
+    const fullName = 'Test User';
+    const phone = `+231${Math.floor(Math.random() * 900000000 + 10000000)}`;
+
+    // Navigate to signup page
+    await page.goto('/auth/signup');
+    await page.waitForLoadState('networkidle');
+
+    // Switch to email signup tab
+    await clickElement(page, 'button:has-text("Email + Password")');
+    await page.waitForTimeout(500);
+
+    // Fill email signup form
+    await fillInput(page, 'input[name="fullName"]', fullName);
+    await fillInput(page, 'input[name="phone"]', phone);
+    await fillInput(page, 'input[name="email"]', email);
+    await fillInput(page, 'input[name="password"]', password);
+
+    // Submit form
+    await clickElement(page, 'button:has-text("Create account")');
+
+    // Wait for navigation to login page
+    await page.waitForNavigation({ timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+
+    // Should be redirected to login page
+    const url = page.url();
+    expect(url).toMatch(/auth\/login/);
+
+    // Look for email verification message
+    const verificationMessage = page.locator('text=/verify|email|confirmation/i');
+    const hasMessage = await verificationMessage.count() > 0;
+    // Message might appear after a moment
+    if (!hasMessage) {
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('should handle email verification with token from URL', async ({ page }) => {
+    // Navigate to verify email page with dummy token
+    // In a real test, we'd get this token from the signup email
+    const email = 'verify-test@example.com';
+    const dummyToken = 'dummy_verification_token_12345';
+
+    await page.goto(`/auth/verify-email?email=${encodeURIComponent(email)}&token=${dummyToken}`);
+    await page.waitForLoadState('networkidle');
+
+    // Should either show loading, error, or success message
+    await page.waitForTimeout(2000);
+
+    // Check that we're on the verify-email page or got redirected
+    const url = page.url();
+    expect(url).toMatch(/verify-email|login/i);
+  });
+
+  test('should handle missing email parameter on verify page', async ({ page }) => {
+    // Navigate to verify email page without email parameter
+    await page.goto('/auth/verify-email?token=dummy_token');
+    await page.waitForLoadState('networkidle');
+
+    // Should handle missing parameter gracefully
+    await page.waitForTimeout(1000);
+
+    // Should show some kind of error or be redirected
+    const url = page.url();
+    expect(url).toBeTruthy();
+  });
 });

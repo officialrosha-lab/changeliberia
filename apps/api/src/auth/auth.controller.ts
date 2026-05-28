@@ -53,12 +53,13 @@ export class AuthController {
 
   @Post('verify-email')
   async verifyEmail(@Body() body: { email: string; token: string }) {
-    return this.emailVerificationService.verifyEmail(body.email, body.token);
+    // Verify token and mark email as confirmed, returns JWT
+    return this.authService.verifyEmailToken(body.email, body.token);
   }
 
   @Post('resend-verification-email')
   async resendVerificationEmail(@Body() body: { email: string }) {
-    return this.emailVerificationService.resendVerificationEmail(body.email);
+    return this.authService.resendVerificationEmail(body.email);
   }
 
   // Password reset flow

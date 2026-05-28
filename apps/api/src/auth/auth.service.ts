@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { OtpProvider } from './otp.provider';
 import { PasswordProvider } from './password.provider';
+import { EmailVerificationService } from './email-verification.service';
+import { EmailService } from '../email/services/email.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +15,8 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly otpProvider: OtpProvider,
     private readonly passwordProvider: PasswordProvider,
+    private readonly emailVerificationService: EmailVerificationService,
+    private readonly emailService: EmailService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -62,6 +66,7 @@ export class AuthService {
   /**
    * Sign up with email and password
    * Requires fullName, phone, email, and password
+   * User must verify email before being able to login
    */
   async signupWithEmail(dto: EmailSignupDto) {
     // Validate password strength
@@ -89,7 +94,7 @@ export class AuthService {
     // Hash password
     const passwordHash = await this.passwordProvider.hashPassword(dto.password);
 
-    // Create user
+    // Create user with isEmailConfirmed = false
     const user = await this.prisma.user.create({
       data: {
         fullName: dto.fullName,
@@ -97,14 +102,23 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         authProvider: 'EMAIL',
+        isEmailConfirmed: false,
       },
     });
 
-    return this.issueToken(user.id, user.phone);
+    // Generate and send verification email
+    await this.emailVerificationService.sendVerificationEmail(dto.email);
+
+    return {
+      success: true,
+      message: 'Account created successfully. Please check your email to verify your account.',
+      email: dto.email,
+    };
   }
 
   /**
    * Log in with email and password
+   * Email must be verified before login is allowed
    */
   async loginWithEmail(dto: EmailLoginDto) {
     try {
@@ -114,6 +128,11 @@ export class AuthService {
 
       if (!user || !user.passwordHash) {
         throw new UnauthorizedException('Invalid email or password');
+      }
+
+      // Check if email is confirmed
+      if (!user.isEmailConfirmed) {
+        throw new UnauthorizedException('Please verify your email before logging in');
       }
 
       const passwordValid = await this.passwordProvider.verifyPassword(
@@ -210,6 +229,55 @@ export class AuthService {
       fullName: payload.name ?? payload.email ?? 'Google User',
       avatarUrl: payload.picture,
     });
+  }
+
+  /**
+   * Verify email token and mark email as confirmed
+   * Returns JWT token if successful
+   */
+  async verifyEmailToken(email: string, token: string) {
+    // Verify the token with email verification service
+    await this.emailVerificationService.verifyEmail(email, token);
+
+    // Find user and mark email as confirmed
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Update user to mark email as confirmed
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isEmailConfirmed: true },
+    });
+
+    // Return JWT token for immediate login
+    return this.issueToken(user.id, user.phone);
+  }
+
+  /**
+   * Resend verification email to user
+   */
+  async resendVerificationEmail(email: string) {
+    // Check if user exists with this email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // If email already confirmed, no need to resend
+    if (user.isEmailConfirmed) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Resend verification email
+    return await this.emailVerificationService.resendVerificationEmail(email);
   }
 }
 

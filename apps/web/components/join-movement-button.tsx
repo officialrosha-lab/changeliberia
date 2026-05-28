@@ -30,12 +30,30 @@ export function JoinMovementButton() {
   const [mounted, setMounted] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Function to fetch count from API
+  const fetchCount = async () => {
+    try {
+      const data = await apiGet<{ count: number }>('/supporters/count');
+      if (typeof data?.count === 'number') {
+        setCount(data.count);
+      } else {
+        // Fallback: if count not provided, set to 0
+        setCount(0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch supporters count:', error);
+      // Fallback to 0 if API fails
+      setCount(0);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     if (localStorage.getItem(JOINED_KEY) === 'true') setPhase('done');
-    void apiGet<{ count: number }>('/supporters/count')
-      .then((d) => setCount(d.count))
-      .catch(() => null);
+    
+    // Fetch count on mount
+    void fetchCount();
+    
     return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
   }, []);
 
@@ -56,7 +74,15 @@ export function JoinMovementButton() {
       // Always persist joined state — whether first join or IP-detected duplicate.
       // This prevents future API calls and keeps the button in the correct state.
       localStorage.setItem(JOINED_KEY, 'true');
-      setCount(res.count);
+      
+      // Update count from API response
+      if (typeof res?.count === 'number') {
+        setCount(res.count);
+      } else {
+        // Refresh count if response doesn't include it
+        void fetchCount();
+      }
+      
       if (res.alreadyJoined) {
         // Already counted from this network — go straight to done, no toast spam
         setPhase('done');
@@ -122,11 +148,13 @@ export function JoinMovementButton() {
               <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-neutral-400">
                 By joining, you show solidarity with our mission to turn citizen voices into real action and accountability.
               </p>
-              {count !== null && (
-                <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  {count.toLocaleString()} people already standing with us
-                </p>
-              )}
+              <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {count !== null ? (
+                  `${count.toLocaleString()} people already standing with us`
+                ) : (
+                  'Loading supporters...'
+                )}
+              </p>
             </div>
             <div className="mt-6 flex flex-col gap-2">
               <button
@@ -224,9 +252,14 @@ export function JoinMovementButton() {
           className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/80"
         >
           <span>+ Join 🇱🇷</span>
-          {count !== null && (
+          {count !== null && count > 0 && (
             <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400">
               {count.toLocaleString()}
+            </span>
+          )}
+          {count === 0 && (
+            <span className="text-[10px] text-emerald-500 dark:text-emerald-400">
+              Be first!
             </span>
           )}
         </button>
