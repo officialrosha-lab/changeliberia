@@ -1,0 +1,31 @@
+{
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "outputs": [
+      {
+        "type": "file",
+        "path": "monitoring/logs/app.log",
+        "maxSize": "100M",
+        "maxDays": 30
+      },
+      {
+        "type": "file",
+        "path": "monitoring/logs/error.log",
+        "level": "error",
+        "maxSize": "50M",
+        "maxDays": 30
+      },
+      {
+        "type": "file",
+        "path": "monitoring/logs/access.log",
+        "format": "combined"
+      }
+    ],
+    "logRotation": {
+      "enabled": true,
+      "interval": "daily",
+      "retention": 30
+    }
+  }
+}
