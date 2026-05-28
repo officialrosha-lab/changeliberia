@@ -30,6 +30,7 @@
         "/^cd \"/Users/visionalventure/Change Liberia\" && bash scripts/validate-production-config\\.sh$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "railway": true
     }
 }

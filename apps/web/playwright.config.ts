@@ -37,7 +37,6 @@ export default defineConfig({
 
     /* Disable all video recording - incompatible with macOS 12 */
     video: 'off' as any,
-    recordVideo: 'off' as any,
 
     /* Maximum time for each action */
     actionTimeout: 15000,

@@ -1,0 +1,76 @@
+{
+  "alerts": [
+    {
+      "id": "api_down",
+      "name": "API Down",
+      "condition": "api_health == false",
+      "severity": "critical",
+      "notification": {
+        "channels": ["email", "slack"],
+        "email": "support@changeliberia.org",
+        "slackWebhook": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+      },
+      "retryAttempts": 3,
+      "retryInterval": 30
+    },
+    {
+      "id": "database_down",
+      "name": "Database Connection Failed",
+      "condition": "database_health == false",
+      "severity": "critical",
+      "notification": {
+        "channels": ["email", "slack"],
+        "email": "support@changeliberia.org"
+      },
+      "retryAttempts": 3,
+      "retryInterval": 30
+    },
+    {
+      "id": "redis_down",
+      "name": "Redis Connection Failed",
+      "condition": "redis_health == false",
+      "severity": "high",
+      "notification": {
+        "channels": ["email", "slack"],
+        "email": "support@changeliberia.org"
+      },
+      "retryAttempts": 3,
+      "retryInterval": 30
+    },
+    {
+      "id": "high_response_time",
+      "name": "High API Response Time",
+      "condition": "api_response_time > 3000",
+      "severity": "medium",
+      "notification": {
+        "channels": ["email"],
+        "email": "ops@changeliberia.org"
+      },
+      "threshold": 3000,
+      "duration": 300
+    },
+    {
+      "id": "high_error_rate",
+      "name": "High Error Rate",
+      "condition": "error_rate > 5",
+      "severity": "high",
+      "notification": {
+        "channels": ["slack"],
+        "slackWebhook": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+      },
+      "threshold": 5,
+      "duration": 600
+    },
+    {
+      "id": "disk_space_low",
+      "name": "Low Disk Space",
+      "condition": "disk_usage > 80",
+      "severity": "high",
+      "notification": {
+        "channels": ["email", "slack"],
+        "email": "ops@changeliberia.org"
+      },
+      "threshold": 80
+    }
+  ]
+}
