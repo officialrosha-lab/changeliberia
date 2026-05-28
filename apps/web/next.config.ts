@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.RAILWAY_API_URL || 'https://api-production-8873.up.railway.app/api/v1';
 
 const nextConfig: NextConfig = {
   images: {
