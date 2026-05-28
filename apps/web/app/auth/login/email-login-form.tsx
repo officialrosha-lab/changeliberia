@@ -50,14 +50,12 @@ export function EmailLoginForm() {
     } catch (error: unknown) {
       setIsError(true);
       let messageText = 'Invalid email or password. Please try again.';
-      let isEmailNotVerifiedError = false;
 
       if (error instanceof Error) {
         const normalized = error.message || '';
         
         // Check for email verification error code
         if (normalized.startsWith('email_not_verified|')) {
-          isEmailNotVerifiedError = true;
           const form = document.querySelector('form') as HTMLFormElement;
           const email = String(form?.get('email') || '');
           setVerificationEmail(email);
