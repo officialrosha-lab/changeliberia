@@ -81,9 +81,29 @@ type LoginMethod = 'phone' | 'email';
 
 function LoginPageClient() {
   const [method, setMethod] = useState<LoginMethod>('phone');
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+
+  useEffect(() => {
+    // Check if user just signed up and needs to verify email
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('emailVerificationSent')) {
+      setShowVerificationMessage(true);
+      // Clear the query param
+      window.history.replaceState({}, '', '/auth/login');
+    }
+  }, []);
 
   return (
     <div>
+      {/* Email verification message */}
+      {showVerificationMessage && (
+        <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 dark:bg-blue-950/40 dark:border-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <span className="font-semibold">Verification email sent!</span> Check your email for a verification link to confirm your account before logging in.
+          </p>
+        </div>
+      )}
+
       {/* Auth method tabs */}
       <div className="flex gap-2 border-b border-zinc-200 dark:border-neutral-700 mb-6">
         <button

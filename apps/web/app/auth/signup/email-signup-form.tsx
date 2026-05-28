@@ -53,6 +53,7 @@ export function EmailSignupForm() {
     try {
       const form = new FormData(e.currentTarget);
       const pwd = String(form.get('password'));
+      const email = String(form.get('email'));
 
       // Validate password strength
       const validation = getPasswordFeedback(pwd);
@@ -64,18 +65,22 @@ export function EmailSignupForm() {
         return;
       }
 
-      const data = await apiPost<{ accessToken: string }>('/auth/signup/email', {
+      const data = await apiPost<{ success: boolean; message: string; email: string }>('/auth/signup/email', {
         fullName: String(form.get('fullName')),
         phone: String(form.get('phone')),
-        email: String(form.get('email')),
+        email: email,
         password: pwd,
       });
 
-      setToken(data.accessToken);
-      setAuthMethod('email');
-      setUserEmail(String(form.get('email')));
-      setMessage('Account created. Redirecting to dashboard...');
-      window.setTimeout(() => router.push('/dashboard'), 400);
+      // Store the email for reference (but don't set token since email not verified yet)
+      setUserEmail(email);
+      
+      // Store info that verification was sent
+      localStorage.setItem('emailVerificationSent', 'true');
+      localStorage.setItem('pendingVerificationEmail', email);
+      
+      setMessage('Account created! Check your email to verify your account.');
+      window.setTimeout(() => router.push('/auth/login?emailVerificationSent=true'), 1500);
     } catch (error: any) {
       setIsError(true);
       setMessage(
