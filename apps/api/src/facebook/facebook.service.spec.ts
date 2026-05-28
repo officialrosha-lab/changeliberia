@@ -6,7 +6,7 @@ import { EventBusService } from '../events/event-bus.service';
 
 describe('FacebookService', () => {
   let service: FacebookService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
   let eventBusService: jest.Mocked<EventBusService>;
 
   const mockPetition = {
@@ -81,7 +81,7 @@ describe('FacebookService', () => {
     }).compile();
 
     service = module.get<FacebookService>(FacebookService);
-    prismaService = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = module.get(PrismaService) as any;
     eventBusService = module.get(EventBusService) as jest.Mocked<EventBusService>;
   });
 

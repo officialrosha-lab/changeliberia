@@ -142,7 +142,7 @@ describe('FacebookController', () => {
         link: 'https://changelib.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       };
-      facebookService.buildFacebookShareDialog.mockResolvedValue(dialogConfig);
+      facebookService.buildFacebookShareDialog.mockReturnValue(dialogConfig);
 
       const result = await controller.getShareDialog('petition-1');
 
@@ -163,7 +163,7 @@ describe('FacebookController', () => {
         link: 'https://changelib.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       };
-      facebookService.buildFacebookShareDialog.mockResolvedValue(dialogConfig);
+      facebookService.buildFacebookShareDialog.mockReturnValue(dialogConfig);
 
       await controller.getShareDialog('petition-1', '500');
 
@@ -265,7 +265,7 @@ describe('FacebookController', () => {
         multiplier: 1.4,
         influencer: false,
       };
-      facebookService.calculateNetworkReach.mockResolvedValue(estimate);
+      facebookService.calculateNetworkReach.mockReturnValue(estimate);
 
       const result = await controller.getReachEstimate('petition-1', mockUser);
 

@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
-  let prisma: jest.Mocked<PrismaService>;
+  let prisma: any;
 
   const mockPetition = {
     id: 'petition-1',
@@ -73,7 +73,7 @@ describe('AnalyticsService', () => {
     }).compile();
 
     service = moduleFixture.get<AnalyticsService>(AnalyticsService);
-    prisma = moduleFixture.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = moduleFixture.get(PrismaService) as any;
   });
 
   describe('Conversion Funnel Analysis', () => {

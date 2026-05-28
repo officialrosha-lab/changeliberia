@@ -12,7 +12,7 @@ import {
  */
 describe('NotificationsService', () => {
   let service: NotificationsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
 
   const mockUser = {
     id: 'user-1',
@@ -79,7 +79,7 @@ describe('NotificationsService', () => {
     }).compile();
 
     service = moduleFixture.get<NotificationsService>(NotificationsService);
-    prismaService = moduleFixture.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = moduleFixture.get(PrismaService) as any;
   });
 
   describe('createNotification', () => {

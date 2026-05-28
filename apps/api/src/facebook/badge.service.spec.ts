@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('BadgeService', () => {
   let service: BadgeService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
 
   const mockUser = {
     id: 'user-1',
@@ -72,7 +72,7 @@ describe('BadgeService', () => {
     }).compile();
 
     service = module.get<BadgeService>(BadgeService);
-    prismaService = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = module.get(PrismaService) as any;
   });
 
   describe('checkAndAwardBadges', () => {

@@ -12,13 +12,13 @@ export interface CreatePaymentIntentDto {
   currency: string;
   donorName?: string;
   donorEmail: string;
-  paymentMethod: 'CARD' | 'MOBILE_MONEY';
+  paymentMethod?: 'CARD' | 'MOBILE_MONEY';
   phoneNumber?: string; // Required for MoMo
   metadata?: Record<string, any>;
 }
 
 export interface CreateSubscriptionDto extends CreatePaymentIntentDto {
-  recurringInterval: 'monthly' | 'quarterly' | 'yearly';
+  recurringInterval?: 'monthly' | 'quarterly' | 'yearly';
 }
 
 export interface PaymentIntentResponse {
@@ -573,6 +573,10 @@ export class PaymentService {
   private async createMoMoSubscription(dto: CreateSubscriptionDto): Promise<SubscriptionResponse> {
     if (!dto.phoneNumber) {
       throw new BadRequestException('Phone number is required for mobile money subscriptions');
+    }
+
+    if (!dto.recurringInterval) {
+      throw new BadRequestException('Recurring interval is required');
     }
 
     if (!dto.userId) {

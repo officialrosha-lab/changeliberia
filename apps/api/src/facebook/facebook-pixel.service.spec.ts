@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('FacebookPixelService', () => {
   let service: FacebookPixelService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
 
   const mockPixelEvent = {
     id: 'event-1',
@@ -55,7 +55,7 @@ describe('FacebookPixelService', () => {
     }).compile();
 
     service = module.get<FacebookPixelService>(FacebookPixelService);
-    prismaService = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = module.get(PrismaService) as any;
   });
 
   describe('getPixelId', () => {
