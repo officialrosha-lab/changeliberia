@@ -25,6 +25,7 @@ import { AdminFacebookEngagement } from '../../components/admin-facebook-engagem
 import { AdminEmailSettings } from '../../components/admin-email-settings';
 import { AdminSocialMediaDashboard } from '../../components/admin-social-media-dashboard';
 import { AdminActivityLog } from '../../components/admin-activity-log';
+import { ErrorBoundary } from '../../components/error-boundary';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -312,36 +313,40 @@ export function AdminPageClient() {
 
       {/* Payments Tab - Stripe */}
       {activeTab === 'payments' && (
-        <div className="space-y-6">
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Payment Dashboard</h2>
-            <AdminStripeDashboard />
-          </section>
+        <ErrorBoundary name="Payments">
+          <div className="space-y-6">
+            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Payment Dashboard</h2>
+              <AdminStripeDashboard />
+            </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-            <AdminStripePayments />
-          </section>
+            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <AdminStripePayments />
+            </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-            <AdminStripeSubscriptions />
-          </section>
+            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <AdminStripeSubscriptions />
+            </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-            <AdminStripeRefunds />
-          </section>
+            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <AdminStripeRefunds />
+            </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-            <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Revenue Analytics</h2>
-            <AdminStripeAnalytics />
-          </section>
-        </div>
+            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Revenue Analytics</h2>
+              <AdminStripeAnalytics />
+            </section>
+          </div>
+        </ErrorBoundary>
       )}
 
       {/* Email Tab */}
       {activeTab === 'email' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-          <AdminEmailSettings />
-        </div>
+        <ErrorBoundary name="Email">
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <AdminEmailSettings />
+          </div>
+        </ErrorBoundary>
       )}
 
       {/* Social Media Tab - Facebook & WhatsApp */}
