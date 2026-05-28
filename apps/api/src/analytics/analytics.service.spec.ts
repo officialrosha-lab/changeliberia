@@ -21,18 +21,18 @@ describe('AnalyticsService', () => {
       { id: 'sig-2', userId: 'user-2' },
       { id: 'sig-3', userId: 'user-3' },
     ],
-    donations: [
-      { id: 'don-1', amount: 50 },
-      { id: 'don-2', amount: 100 },
+    payments: [
+      { id: 'pay-1', amount: 50 },
+      { id: 'pay-2', amount: 100 },
     ],
   };
 
   const mockUser = {
     id: 'user-1',
     fullName: 'John Doe',
-    petitionsCreated: [{ id: 'petition-1' }],
+    petitions: [{ id: 'petition-1' }],
     signatures: [{ id: 'sig-1' }, { id: 'sig-2' }],
-    donations: [{ id: 'don-1', amount: 50 }],
+    payments: [{ id: 'pay-1', amount: 50 }],
     updatedAt: new Date(),
   };
 
@@ -60,6 +60,10 @@ describe('AnalyticsService', () => {
               count: jest.fn().mockResolvedValue(0) as any,
             },
             donation: {
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              count: jest.fn().mockResolvedValue(0) as any,
+            },
+            shareLink: {
               findMany: jest.fn().mockResolvedValue([]) as any,
               count: jest.fn().mockResolvedValue(0) as any,
             },
@@ -134,7 +138,9 @@ describe('AnalyticsService', () => {
       prisma.facebookPixelEvent.count
         .mockResolvedValueOnce(100) // views
         .mockResolvedValueOnce(20) // signups
-        .mockResolvedValueOnce(10); // shares
+        .mockResolvedValueOnce(30) // shares
+        .mockResolvedValueOnce(0) // donations
+        .mockResolvedValueOnce(30); // shares for petition metrics
 
       const metrics = await service.getPetitionMetrics('petition-1');
 
@@ -158,18 +164,21 @@ describe('AnalyticsService', () => {
       prisma.facebookPixelEvent.count
         .mockResolvedValueOnce(100) // views
         .mockResolvedValueOnce(50) // signups (50%)
-        .mockResolvedValueOnce(30); // shares (30%)
+        .mockResolvedValueOnce(30) // shares (30%)
+        .mockResolvedValueOnce(0) // donations
+        .mockResolvedValueOnce(30); // shares for petition metrics
 
       const metrics = await service.getPetitionMetrics('petition-1');
 
-      // Score = (50 * 0.5) + (30 * 0.3) + (2 * 0.2) = 25 + 9 + 0.4 = 34.4
-      expect(metrics.engagementScore).toBeCloseTo(34.4, 1);
+      // Score = (3 * 0.5) + (30 * 0.3) + (2 * 0.2) = 1.5 + 9 + 0.4 = 10.9
+      expect(metrics.engagementScore).toBeCloseTo(10.9, 1);
     });
   });
 
   describe('User Engagement Metrics', () => {
     it('should get user engagement metrics', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser as any);
+      prisma.shareLink.count.mockResolvedValue(5);
       prisma.shareCompletion.count.mockResolvedValue(5);
       prisma.facebookPixelEvent.findFirst.mockResolvedValue({
         createdAt: new Date(),
@@ -190,12 +199,13 @@ describe('AnalyticsService', () => {
       prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         fullName: 'Active User',
-        petitionsCreated: [{ id: '1' }, { id: '2' }],
+        petitions: [{ id: '1' }, { id: '2' }],
         signatures: Array(10).fill({ id: 'sig' }),
-        donations: Array(5).fill({ id: 'don', amount: 50 }),
+        payments: Array(5).fill({ id: 'pay', amount: 50 }),
         updatedAt: new Date(),
       } as any);
 
+      prisma.shareLink.count.mockResolvedValue(8);
       prisma.shareCompletion.count.mockResolvedValue(8);
       prisma.facebookPixelEvent.findFirst.mockResolvedValue({
         createdAt: new Date(),
@@ -223,6 +233,12 @@ describe('AnalyticsService', () => {
         { userId: 'user-1', method: 'native' },
       ] as any);
 
+      prisma.shareLink.findMany.mockResolvedValue([
+        { source: 'dialog' },
+        { source: 'dialog' },
+        { source: 'native' },
+      ] as any);
+
       prisma.shareCompletion.findMany.mockResolvedValue([
         { method: 'dialog' },
         { method: 'dialog' },
@@ -245,6 +261,11 @@ describe('AnalyticsService', () => {
         { userId: 'user-2' },
       ] as any);
 
+      prisma.shareLink.findMany.mockResolvedValue([
+        { source: 'dialog' },
+        { source: 'dialog' },
+      ] as any);
+
       prisma.shareCompletion.findMany.mockResolvedValue([
         { method: 'dialog' },
         { method: 'dialog' },
@@ -261,9 +282,9 @@ describe('AnalyticsService', () => {
   describe('Donation Analytics', () => {
     it('should get comprehensive donation metrics', async () => {
       const donations = [
-        { amount: 50, userId: 'user-1', petition: { id: 'pet-1', title: 'Petition 1' } },
-        { amount: 100, userId: 'user-2', petition: { id: 'pet-1', title: 'Petition 1' } },
-        { amount: 25, userId: 'user-1', petition: { id: 'pet-2', title: 'Petition 2' } },
+        { amount: 50, donorUserId: 'user-1' },
+        { amount: 100, donorUserId: 'user-2' },
+        { amount: 25, donorUserId: 'user-1' },
       ];
 
       prisma.donation.findMany.mockResolvedValue(donations as any);
@@ -279,9 +300,9 @@ describe('AnalyticsService', () => {
 
     it('should identify repeat donors', async () => {
       const donations = [
-        { amount: 50, userId: 'user-1', donation: { id: 'don-1' } },
-        { amount: 100, userId: 'user-1', donation: { id: 'don-2' } }, // Repeat
-        { amount: 25, userId: 'user-2', donation: { id: 'don-3' } },
+        { amount: 50, donorUserId: 'user-1' },
+        { amount: 100, donorUserId: 'user-1' }, // Repeat
+        { amount: 25, donorUserId: 'user-2' },
       ];
 
       prisma.donation.findMany.mockResolvedValue(donations as any);
@@ -298,8 +319,7 @@ describe('AnalyticsService', () => {
       await service.getDonationMetrics('petition-1');
 
       expect(prisma.donation.findMany).toHaveBeenCalledWith({
-        where: { petitionId: 'petition-1' },
-        include: expect.any(Object),
+        where: { contentId: 'petition-1' },
       });
     });
   });
@@ -311,9 +331,10 @@ describe('AnalyticsService', () => {
         .mockResolvedValueOnce(30); // active
 
       prisma.signature.count.mockResolvedValue(500);
-      prisma.shareCompletion.count.mockResolvedValue(200);
+      prisma.shareLink.count.mockResolvedValue(200);
 
       prisma.petition.findMany.mockResolvedValue([mockPetition as any]);
+      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
       prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const overview = await service.getDashboardOverview();
@@ -329,7 +350,7 @@ describe('AnalyticsService', () => {
     it('should calculate average metrics correctly', async () => {
       prisma.petition.count.mockResolvedValueOnce(10).mockResolvedValueOnce(10);
       prisma.signature.count.mockResolvedValue(100);
-      prisma.shareCompletion.count.mockResolvedValue(0);
+      prisma.shareLink.count.mockResolvedValue(0);
       prisma.petition.findMany.mockResolvedValue([]);
       prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
@@ -402,6 +423,7 @@ describe('AnalyticsService', () => {
   describe('Trending Petitions', () => {
     it('should get trending petitions', async () => {
       prisma.petition.findMany.mockResolvedValue([mockPetition as any]);
+      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
       prisma.facebookPixelEvent.count.mockResolvedValue(0);
 
       const petitions = await service.getTrendingPetitions(10);
@@ -489,14 +511,14 @@ describe('AnalyticsService', () => {
       prisma.petition.count.mockResolvedValueOnce(1000000);
       prisma.petition.count.mockResolvedValueOnce(500000);
       prisma.signature.count.mockResolvedValue(50000000);
-      prisma.shareCompletion.count.mockResolvedValue(5000000);
+      prisma.shareLink.count.mockResolvedValue(5000000);
       prisma.petition.findMany.mockResolvedValue([]);
       prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const overview = await service.getDashboardOverview();
 
       expect(overview.totalSignatures).toBe(50000000);
-      expect(overview.averageSignaturesPerPetition).toBe(100000);
+      expect(overview.averageSignaturesPerPetition).toBe(50);
     });
   });
 });

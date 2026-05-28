@@ -161,7 +161,7 @@ export function AdminEmailSettings() {
                           : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
                     }`}
                   >
-                    {healthStatus.status.toUpperCase()}
+                    {(healthStatus.status || 'unknown').toUpperCase()}
                   </span>
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-neutral-400">{healthStatus.message}</p>
