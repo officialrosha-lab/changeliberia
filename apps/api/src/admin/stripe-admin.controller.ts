@@ -100,6 +100,7 @@ export class StripeAdminController {
             : 0,
         averageOrderValue:
           totalPayments.length > 0 ? totalRevenue / totalPayments.length : 0,
+        currency: process.env.STRIPE_CURRENCY || 'USD',
         metrics: {
           payments: totalPayments.length,
           subscriptions: activeSubscriptions.length,
@@ -141,7 +142,7 @@ export class StripeAdminController {
         take: Math.min(parseInt(limit), 500),
       });
 
-      return payments;
+      return { payments };
     } catch (error) {
       this.logger.error('Failed to list payments', error);
       throw new InternalServerErrorException('Failed to list payments');
@@ -205,7 +206,7 @@ export class StripeAdminController {
         take: Math.min(parseInt(limit), 500),
       });
 
-      return subscriptions;
+      return { subscriptions };
     } catch (error) {
       this.logger.error('Failed to list subscriptions', error);
       throw new InternalServerErrorException('Failed to list subscriptions');
@@ -334,7 +335,7 @@ export class StripeAdminController {
         take: Math.min(parseInt(limit), 500),
       });
 
-      return refunds;
+      return { refunds };
     } catch (error) {
       this.logger.error('Failed to list refunds', error);
       throw new InternalServerErrorException('Failed to list refunds');
@@ -455,27 +456,34 @@ export class StripeAdminController {
         revenueByDay[day] = (revenueByDay[day] || 0) + p.amount;
       });
 
+      // Convert to revenueTrend array
+      const revenueTrend = Object.entries(revenueByDay).map(([date, amount]) => ({
+        date,
+        amount,
+      }));
+
       const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
       const avgDailyRevenue = totalRevenue / numDays;
       const projectedMonthly = avgDailyRevenue * 30;
 
+      // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
+      const activeSubscriptions = subscriptions.filter(
+        s => s.status === 'ACTIVE'
+      );
+      const mrrFromSubscriptions = activeSubscriptions.reduce(
+        (sum, s) => sum + (s.amount || 0),
+        0
+      );
+      const mrr = mrrFromSubscriptions;
+      const mrrTrend =
+        activeSubscriptions.length > 0 ? (mrr / activeSubscriptions.length) * 100 : 0;
+
       return {
-        summary: {
-          totalRevenue,
-          avgDailyRevenue: Math.round(avgDailyRevenue * 100) / 100,
-          projectedMonthly: Math.round(projectedMonthly * 100) / 100,
-          paymentCount: payments.length,
-          subscriptionCount: subscriptions.length,
-          refundCount: refunds.length,
-        },
-        revenueByDay,
-        subscriptionsByInterval: subscriptions.reduce(
-          (acc, s) => {
-            acc[s.interval] = (acc[s.interval] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
+        revenueTrend,
+        mrr: Math.round(mrr * 100) / 100,
+        mrrTrend: Math.round(mrrTrend * 100) / 100,
+        dailyBreakdown: revenueByDay,
+        currency: process.env.STRIPE_CURRENCY || 'USD',
       };
     } catch (error) {
       this.logger.error('Failed to get analytics', error);
