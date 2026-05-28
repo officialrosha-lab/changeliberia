@@ -52,7 +52,6 @@ export default defineConfig({
       use: { 
         ...devices['Desktop Chrome'],
         // Override all video settings from device preset
-        recordVideo: 'off' as any,
         video: 'off' as any,
       },
     },
@@ -62,7 +61,6 @@ export default defineConfig({
       use: { 
         ...devices['Desktop Firefox'],
         // Override all video settings from device preset
-        recordVideo: 'off' as any,
         video: 'off' as any,
       },
     },
