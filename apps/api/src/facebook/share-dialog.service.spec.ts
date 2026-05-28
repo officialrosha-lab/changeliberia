@@ -11,7 +11,7 @@ import { EventBusService } from '../events/event-bus.service';
 describe('ShareDialogService', () => {
   let service: ShareDialogService;
   let facebookSdk: jest.Mocked<FacebookSDKService>;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
   let eventBusService: jest.Mocked<EventBusService>;
 
   const mockPetition = {
@@ -68,7 +68,7 @@ describe('ShareDialogService', () => {
 
     service = moduleFixture.get<ShareDialogService>(ShareDialogService);
     facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
-    prismaService = moduleFixture.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = moduleFixture.get(PrismaService) as any;
     eventBusService = moduleFixture.get(EventBusService) as jest.Mocked<EventBusService>;
   });
 
@@ -123,7 +123,7 @@ describe('ShareDialogService', () => {
         id: 'share-1',
         shortCode: 'abc12345',
       } as any);
-      eventBusService.publish.mockReturnValue(undefined);
+      eventBusService.publish.mockResolvedValue(undefined);
 
       const result = await service.recordShareCompletion(
         'user-1',

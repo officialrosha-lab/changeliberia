@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MoMoService } from './providers/momo.service';
 import Stripe from 'stripe';
 
 /**
@@ -10,7 +11,7 @@ import Stripe from 'stripe';
  */
 describe('PaymentService', () => {
   let service: PaymentService;
-  let prisma: jest.Mocked<PrismaService>;
+  let prisma: any;
   let stripe: any; // Stripe mock
 
   const mockPetition = {
@@ -44,6 +45,9 @@ describe('PaymentService', () => {
     status: 'active',
     current_period_start: Math.floor(Date.now() / 1000),
     current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+    items: {
+      data: [{ id: 'si_test123' }],
+    },
   };
 
   beforeEach(async () => {
@@ -57,6 +61,14 @@ describe('PaymentService', () => {
               findUnique: jest.fn().mockResolvedValue(null) as any,
               create: jest.fn().mockResolvedValue(null) as any,
             },
+            payment: {
+              create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
+              findFirst: jest.fn().mockResolvedValue(null) as any,
+              findMany: jest.fn().mockResolvedValue([]) as any,
+              update: jest.fn().mockResolvedValue(null) as any,
+              updateMany: jest.fn().mockResolvedValue(null) as any,
+            },
             paymentIntent: {
               create: jest.fn().mockResolvedValue(null) as any,
               findUnique: jest.fn().mockResolvedValue(null) as any,
@@ -64,6 +76,7 @@ describe('PaymentService', () => {
             },
             donation: {
               create: jest.fn().mockResolvedValue(null) as any,
+              findUnique: jest.fn().mockResolvedValue(null) as any,
               findFirst: jest.fn().mockResolvedValue(null) as any,
               findMany: jest.fn().mockResolvedValue([]) as any,
               update: jest.fn().mockResolvedValue(null) as any,
@@ -76,8 +89,9 @@ describe('PaymentService', () => {
               findUnique: jest.fn().mockResolvedValue(null) as any,
               findFirst: jest.fn().mockResolvedValue(null) as any,
               update: jest.fn().mockResolvedValue(null) as any,
+              updateMany: jest.fn().mockResolvedValue(null) as any,
             },
-            facebookPixelEvent: {
+            paymentMethodRecord: {
               create: jest.fn().mockResolvedValue(null) as any,
             },
             refund: {
@@ -85,11 +99,32 @@ describe('PaymentService', () => {
             },
           },
         },
+        {
+          provide: MoMoService,
+          useValue: {
+            isAvailable: jest.fn().mockReturnValue(true),
+            generateIdempotencyKey: jest.fn().mockReturnValue('momo-key'),
+            requestToPay: jest.fn().mockResolvedValue({
+              referenceId: 'ref_test123',
+              status: 'PENDING',
+              expiresAt: new Date(),
+              transactionId: 'tx_test123',
+            }),
+            getTransactionStatus: jest.fn().mockResolvedValue({
+              status: 'SUCCESSFUL',
+              transactionId: 'tx_test123',
+              failureReason: undefined,
+            }),
+            createPreApproval: jest.fn().mockResolvedValue({
+              expiresAt: new Date(),
+            }),
+          },
+        },
       ],
     }).compile();
 
     service = moduleFixture.get<PaymentService>(PaymentService);
-    prisma = moduleFixture.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = moduleFixture.get(PrismaService) as any;
 
     // Mock Stripe
     stripe = {
@@ -222,52 +257,64 @@ describe('PaymentService', () => {
   });
 
   describe('Payment Confirmation', () => {
-    it('should confirm payment and create donation', async () => {
-      const storedIntent = {
-        stripeIntentId: 'pi_test123',
+    it('should confirm payment and update payment status', async () => {
+      const storedPayment = {
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
         petitionId: 'petition-1',
         userId: 'user-1',
         amount: 50,
         currency: 'USD',
       };
 
-      prisma.paymentIntent.findUnique.mockResolvedValue(storedIntent as any);
-      prisma.donation.create.mockResolvedValue({
-        id: 'donation-1',
-        ...storedIntent,
+      prisma.payment.findUnique.mockResolvedValue(storedPayment as any);
+      prisma.payment.update.mockResolvedValue({
+        ...storedPayment,
+        status: 'COMPLETED',
       } as any);
+      prisma.paymentMethodRecord.create.mockResolvedValue({} as any);
 
       const result = await service.confirmPayment('pi_test123', 'pm_test123');
 
-      expect(result.paymentId).toBe('donation-1');
+      expect(result.paymentId).toBe('payment-1');
       expect(stripe.paymentIntents.confirm).toHaveBeenCalledWith(
         'pi_test123',
         expect.objectContaining({
           payment_method: 'pm_test123',
         }),
       );
-      expect(prisma.donation.create).toHaveBeenCalled();
+      expect(prisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'payment-1' },
+          data: expect.objectContaining({ status: 'COMPLETED' }),
+        }),
+      );
+      expect(prisma.paymentMethodRecord.create).toHaveBeenCalled();
     });
 
-    it('should track donation as Facebook Purchase event', async () => {
-      prisma.paymentIntent.findUnique.mockResolvedValue({
-        stripeIntentId: 'pi_test123',
+    it('should create a payment method record after confirmation', async () => {
+      prisma.payment.findUnique.mockResolvedValue({
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
         petitionId: 'petition-1',
         userId: 'user-1',
         amount: 50,
         currency: 'USD',
       } as any);
-
-      prisma.donation.create.mockResolvedValue({
-        id: 'donation-1',
+      prisma.payment.update.mockResolvedValue({
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
         petitionId: 'petition-1',
         userId: 'user-1',
         amount: 50,
+        currency: 'USD',
+        status: 'COMPLETED',
       } as any);
+      prisma.paymentMethodRecord.create.mockResolvedValue({} as any);
 
       await service.confirmPayment('pi_test123', 'pm_test123');
 
-      expect(prisma.facebookPixelEvent.create).toHaveBeenCalled();
+      expect(prisma.paymentMethodRecord.create).toHaveBeenCalled();
     });
   });
 
@@ -321,6 +368,7 @@ describe('PaymentService', () => {
         id: 'sub-1',
         petitionId: 'petition-1',
         status: 'active',
+        interval: 'monthly',
         currentPeriodStart: new Date(),
         currentPeriodEnd: new Date(),
         nextBillingDate: new Date(),
@@ -395,15 +443,10 @@ describe('PaymentService', () => {
 
   describe('Payment Status', () => {
     it('should retrieve payment status', async () => {
-      const storedIntent = {
-        stripeIntentId: 'pi_test123',
-        petitionId: 'petition-1',
-      };
-
-      const donation = {
-        id: 'donation-1',
-        paymentIntentId: 'pi_test123',
-        paymentMethodId: 'pm_test123',
+      const paymentRecord = {
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
+        paymentMethod: 'CARD',
         amount: 50,
         currency: 'USD',
         status: 'COMPLETED',
@@ -411,36 +454,37 @@ describe('PaymentService', () => {
         updatedAt: new Date(),
       };
 
-      prisma.paymentIntent.findUnique.mockResolvedValue(storedIntent as any);
-      prisma.donation.findFirst.mockResolvedValue(donation as any);
+      prisma.payment.findUnique.mockResolvedValue(paymentRecord as any);
+      prisma.payment.findFirst.mockResolvedValue(null);
 
       const result = await service.getPaymentStatus('pi_test123');
 
-      expect(result?.paymentId).toBe('donation-1');
+      expect(result?.paymentId).toBe('payment-1');
       expect(result?.amount).toBe(50);
     });
 
-    it('should return null for non-existent payment', async () => {
-      prisma.paymentIntent.findUnique.mockResolvedValue(null);
+    it('should throw error for non-existent payment', async () => {
+      prisma.payment.findUnique.mockResolvedValue(null);
+      prisma.payment.findFirst.mockResolvedValue(null);
 
-      const result = await service.getPaymentStatus('invalid');
-
-      expect(result).toBeNull();
+      await expect(service.getPaymentStatus('invalid')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('Payment History', () => {
     it('should get user payment history', async () => {
-      const donations = [
+      const payments = [
         {
-          id: 'donation-1',
+          id: 'payment-1',
           paymentIntentId: 'pi_test1',
           paymentMethodId: 'pm_test1',
           amount: 50,
           currency: 'USD',
         },
         {
-          id: 'donation-2',
+          id: 'payment-2',
           paymentIntentId: 'pi_test2',
           paymentMethodId: 'pm_test2',
           amount: 100,
@@ -448,7 +492,7 @@ describe('PaymentService', () => {
         },
       ];
 
-      prisma.donation.findMany.mockResolvedValue(donations as any);
+      prisma.payment.findMany.mockResolvedValue(payments as any);
       prisma.paymentIntent.findUnique.mockResolvedValue({} as any);
 
       const history = await service.getUserPaymentHistory('user-1');
@@ -458,11 +502,11 @@ describe('PaymentService', () => {
     });
 
     it('should order payment history by date descending', async () => {
-      prisma.donation.findMany.mockResolvedValue([]);
+      prisma.payment.findMany.mockResolvedValue([]);
 
       await service.getUserPaymentHistory('user-1');
 
-      expect(prisma.donation.findMany).toHaveBeenCalledWith(
+      expect(prisma.payment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { createdAt: 'desc' },
         }),
@@ -472,17 +516,17 @@ describe('PaymentService', () => {
 
   describe('Refunds', () => {
     it('should refund a payment', async () => {
-      const donation = {
-        id: 'donation-1',
-        paymentIntentId: 'pi_test123',
+      const payment = {
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
         amount: 50,
         currency: 'USD',
       };
 
-      prisma.donation.findUnique.mockResolvedValue(donation as any);
+      prisma.payment.findUnique.mockResolvedValue(payment as any);
       prisma.refund.create.mockResolvedValue({
         id: 'refund-1',
-        donationId: 'donation-1',
+        paymentId: 'payment-1',
         stripeRefundId: 'ref_test123',
         amount: 50,
         currency: 'USD',
@@ -492,19 +536,19 @@ describe('PaymentService', () => {
       } as any);
 
       const result = await service.refundPayment(
-        'donation-1',
+        'payment-1',
         'requested_by_customer',
       );
 
       expect(result.refundId).toBe('refund-1');
       expect(stripe.refunds.create).toHaveBeenCalledWith({
-        payment_intent: 'pi_test123',
+        charge: 'ch_test123',
         reason: 'requested_by_customer',
       });
     });
 
-    it('should throw error for non-existent donation', async () => {
-      prisma.donation.findUnique.mockResolvedValue(null);
+    it('should throw error for non-existent payment', async () => {
+      prisma.payment.findUnique.mockResolvedValue(null);
 
       await expect(
         service.refundPayment('invalid', 'requested_by_customer'),
@@ -514,91 +558,51 @@ describe('PaymentService', () => {
 
   describe('Webhook Handling', () => {
     it('should handle payment intent succeeded webhook', async () => {
-      prisma.paymentIntent.update.mockResolvedValue({} as any);
+      prisma.payment.updateMany.mockResolvedValue({} as any);
 
       await service.handleWebhookEvent({
         type: 'payment_intent.succeeded',
         data: { object: mockPaymentIntent },
-      } as Stripe.Event);
-
-      expect(prisma.paymentIntent.update).toHaveBeenCalled();
-    });
-
-    it('should handle charge refunded webhook', async () => {
-      const charge = {
-        id: 'ch_test123',
-        payment_intent: 'pi_test123',
-        refunded: true,
-      };
-
-      const donation = { id: 'donation-1' };
-
-      prisma.donation.findFirst.mockResolvedValue(donation as any);
-      prisma.donation.update.mockResolvedValue({} as any);
-
-      await service.handleWebhookEvent({
-        type: 'charge.refunded',
-        data: { object: charge },
       } as any);
 
-      expect(prisma.donation.update).toHaveBeenCalledWith({
-        where: { id: 'donation-1' },
-        data: { status: 'REFUNDED' },
-      });
+      expect(prisma.payment.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { stripePaymentIntentId: mockPaymentIntent.id },
+          data: expect.objectContaining({ status: 'COMPLETED' }),
+        }),
+      );
     });
 
-    it('should handle subscription updated webhook', async () => {
-      const subscription = {
-        id: 'sub_test123',
-        status: 'active',
-        current_period_start: Math.floor(Date.now() / 1000),
-        current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-      };
-
-      const stored = { id: 'sub-1', stripeSubscriptionId: 'sub_test123' };
-
-      prisma.subscription.findFirst.mockResolvedValue(stored as any);
-      prisma.subscription.update.mockResolvedValue({} as any);
+    it('should handle subscription deleted webhook', async () => {
+      prisma.subscription.updateMany.mockResolvedValue({} as any);
 
       await service.handleWebhookEvent({
-        type: 'customer.subscription.updated',
-        data: { object: subscription },
+        type: 'customer.subscription.deleted',
+        data: { object: mockSubscription },
       } as any);
 
-      expect(prisma.subscription.update).toHaveBeenCalled();
+      expect(prisma.subscription.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { stripeSubscriptionId: mockSubscription.id },
+          data: expect.objectContaining({ status: 'CANCELLED' }),
+        }),
+      );
     });
 
     it('should handle invoice payment succeeded webhook', async () => {
-      const invoice = {
-        id: 'inv_test123',
-        subscription: 'sub_test123',
-        payment_intent: 'pi_test123',
-      };
-
-      const subscription = {
-        id: 'sub-1',
-        stripeSubscriptionId: 'sub_test123',
-        petitionId: 'petition-1',
-        userId: 'user-1',
-        amount: 50,
-        currency: 'USD',
-      };
-
-      prisma.subscription.findFirst.mockResolvedValue(subscription as any);
-      prisma.donation.create.mockResolvedValue({} as any);
+      prisma.subscription.updateMany.mockResolvedValue({} as any);
 
       await service.handleWebhookEvent({
         type: 'invoice.payment_succeeded',
-        data: { object: invoice },
+        data: { object: { subscription: mockSubscription.id } },
       } as any);
 
-      expect(prisma.donation.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          petitionId: 'petition-1',
-          userId: 'user-1',
-          subscriptionId: 'sub-1',
+      expect(prisma.subscription.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { stripeSubscriptionId: mockSubscription.id },
+          data: expect.objectContaining({ status: 'ACTIVE' }),
         }),
-      });
+      );
     });
   });
 

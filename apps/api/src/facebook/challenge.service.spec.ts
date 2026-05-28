@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChallengeService } from './challenge.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ChallengeStatus, ChallengePeriod, NotFoundException } from '@prisma/client';
+import { ChallengeStatus, ChallengePeriod } from '@prisma/client';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ChallengeService', () => {
   let service: ChallengeService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
 
   const mockChallenge = {
     id: 'challenge-1',
@@ -71,7 +72,7 @@ describe('ChallengeService', () => {
     }).compile();
 
     service = module.get<ChallengeService>(ChallengeService);
-    prismaService = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = module.get(PrismaService) as any;
   });
 
   describe('createWeeklyChallenge', () => {

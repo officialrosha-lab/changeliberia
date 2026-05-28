@@ -31,6 +31,10 @@
             "approve": true,
             "matchCommandLine": true
         },
-        "railway": true
+        "railway": true,
+        "/^cd /Users/visionalventure/Change\\\\ Liberia && python3 - <<'PY'\nimport pathlib\nroot=pathlib\\.Path\\('apps/api/src'\\)\nfor path in sorted\\(root\\.rglob\\('\\*\\.spec\\.ts'\\)\\):\n    text=path\\.read_text\\(\\)\n    if 'prisma  module' in text or 'prismaService  module' in text:\n        text = text\\.replace\\('prisma  module', 'prisma = module'\\)\n        text = text\\.replace\\('prismaService  module', 'prismaService = module'\\)\n        path\\.write_text\\(text\\)\n        print\\('fixed', path\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

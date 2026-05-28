@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 describe('RealPixelTrackingService', () => {
   let service: RealPixelTrackingService;
   let facebookSdk: jest.Mocked<FacebookSDKService>;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
 
   const mockPetition = {
     id: 'petition-1',
@@ -60,7 +60,7 @@ describe('RealPixelTrackingService', () => {
       RealPixelTrackingService,
     );
     facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
-    prismaService = moduleFixture.get(PrismaService) as jest.Mocked<PrismaService>;
+    prismaService = moduleFixture.get(PrismaService) as any;
   });
 
   describe('Track View Content', () => {
