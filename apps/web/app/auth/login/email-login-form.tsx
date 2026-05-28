@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { apiPost } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
@@ -17,12 +17,20 @@ export function EmailLoginForm() {
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [resendIsError, setResendIsError] = useState(false);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     setMessage('');
     setIsError(false);
+    setEmailNotVerified(false);
+    setResendMessage('');
+    
     try {
       const form = new FormData(e.currentTarget);
       const email = String(form.get('email'));
@@ -42,10 +50,20 @@ export function EmailLoginForm() {
     } catch (error: unknown) {
       setIsError(true);
       let messageText = 'Invalid email or password. Please try again.';
+      let isEmailNotVerifiedError = false;
 
       if (error instanceof Error) {
         const normalized = error.message || '';
-        if (
+        
+        // Check for email verification error code
+        if (normalized.startsWith('email_not_verified|')) {
+          isEmailNotVerifiedError = true;
+          const form = document.querySelector('form') as HTMLFormElement;
+          const email = String(form?.get('email') || '');
+          setVerificationEmail(email);
+          setEmailNotVerified(true);
+          messageText = normalized.split('|')[1] || 'Your email needs to be verified.';
+        } else if (
           normalized === 'Request failed' ||
           normalized.includes('Failed to fetch') ||
           normalized.includes('NetworkError') ||
@@ -60,6 +78,36 @@ export function EmailLoginForm() {
       setMessage(messageText);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!verificationEmail) return;
+    
+    setResendingEmail(true);
+    setResendMessage('');
+    setResendIsError(false);
+    
+    try {
+      await apiPost('/auth/resend-verification-email', {
+        email: verificationEmail,
+      });
+      setResendIsError(false);
+      setResendMessage('Verification email sent! Check your inbox for a fresh link.');
+    } catch (error: unknown) {
+      setResendIsError(true);
+      let errorText = 'Unable to resend verification email. Please try again.';
+      
+      if (error instanceof Error) {
+        const normalized = error.message || '';
+        if (normalized.length > 0) {
+          errorText = normalized;
+        }
+      }
+      
+      setResendMessage(errorText);
+    } finally {
+      setResendingEmail(false);
     }
   }
 
@@ -127,6 +175,43 @@ export function EmailLoginForm() {
         >
           {message}
         </p>
+      )}
+
+      {emailNotVerified && (
+        <div className="space-y-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-950/40">
+          <div className="flex items-start gap-3">
+            <Mail className="h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                Verification email not received?
+              </p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                Check your spam folder or request a new verification link
+              </p>
+            </div>
+          </div>
+          
+          {resendMessage && (
+            <p
+              className={`rounded-lg px-3 py-2 text-xs font-medium ${
+                resendIsError
+                  ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300'
+                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+              }`}
+            >
+              {resendMessage}
+            </p>
+          )}
+          
+          <button
+            type="button"
+            onClick={handleResendEmail}
+            disabled={resendingEmail}
+            className="w-full rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-amber-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-600 dark:hover:bg-amber-500"
+          >
+            {resendingEmail ? 'Sending...' : 'Resend verification email'}
+          </button>
+        </div>
       )}
 
       <button
