@@ -6,6 +6,7 @@ import { AdminFraudPanel } from '../../components/admin-fraud-panel';
 import { AdminIdDocsPanel } from '../../components/admin-id-docs-panel';
 import { AdminGovernmentPanel } from '../../components/admin-government-panel';
 import { AdminPendingPetitionsPanel } from '../../components/admin-pending-petitions-panel';
+import { AdminPendingPollsPanel } from '../../components/admin-pending-polls-panel';
 import { AdminDeletePetitionPanel } from '../../components/admin-delete-petition-panel';
 import { AdminUserManager } from '../../components/admin-users';
 import { GlobalAnalytics } from '../../components/admin-analytics';
@@ -62,9 +63,10 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
+  const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
   const [flags, setFlags] = useState<FraudEvent[]>([]);
   const [rules, setRules] = useState<FraudRule[]>([]);
@@ -84,8 +86,9 @@ export function AdminPageClient() {
           setPhase('denied');
           return;
         }
-        const [p, ids, f, r, a] = await Promise.all([
+        const [p, polls, ids, f, r, a] = await Promise.all([
           apiGet<{ id: string; title: string; category?: string | null; summary: string }[]>('/admin/petitions/pending', token),
+          apiGet<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>('/admin/polls/pending', token),
           apiGet<PendingIdDoc[]>('/admin/id-documents/pending', token),
           apiGet<FraudEvent[]>('/admin/fraud/flags', token),
           apiGet<FraudRule[]>('/fraud/rules', token),
@@ -93,6 +96,11 @@ export function AdminPageClient() {
         ]);
         if (cancelled) return;
         setPending(p);
+        setPendingPolls(polls.map(poll => ({
+          ...poll,
+          creatorName: poll.creator.fullName,
+          creatorEmail: poll.creator.email,
+        })));
         setPendingIds(ids);
         setFlags(f);
         setRules(r);
@@ -162,6 +170,7 @@ export function AdminPageClient() {
           [
             ['dashboard', 'Dashboard'],
             ['directory', 'Directory'],
+            ['polls', 'Pending Polls'],
             ['users', 'Users'],
             ['analytics', 'Analytics'],
             ['government', 'Government'],
@@ -254,6 +263,13 @@ export function AdminPageClient() {
               Go to Directory Management →
             </Link>
           </p>
+        </div>
+      )}
+
+      {/* Pending Polls Tab */}
+      {activeTab === 'polls' && (
+        <div className="space-y-6">
+          <AdminPendingPollsPanel initial={pendingPolls} />
         </div>
       )}
 

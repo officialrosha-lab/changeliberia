@@ -28,7 +28,7 @@ export class PollsController {
 
   /**
    * POST /polls
-   * Create a new poll (admin/verified users only)
+   * Create a new poll (admin direct creation = ACTIVE status)
    */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,6 +39,42 @@ export class PollsController {
     }
 
     return this.pollsService.createPoll(createPollDto, req.user.id);
+  }
+
+  /**
+   * POST /polls/submit
+   * Submit a poll idea (any authenticated user = PENDING status, awaiting admin approval)
+   */
+  @Post('submit')
+  @UseGuards(JwtAuthGuard)
+  async submitPoll(@Body() createPollDto: CreatePollDto, @Request() req: any) {
+    if (!req.user?.id) {
+      throw new BadRequestException('Authentication required');
+    }
+
+    return this.pollsService.submitPoll(createPollDto, req.user.id);
+  }
+
+  /**
+   * POST /polls/:id/approve
+   * Approve a pending poll (admin only)
+   */
+  @Post(':id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async approvePoll(@Param('id') pollId: string) {
+    return this.pollsService.approvePoll(pollId);
+  }
+
+  /**
+   * POST /polls/:id/reject
+   * Reject a pending poll (admin only)
+   */
+  @Post(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async rejectPoll(@Param('id') pollId: string, @Body('reason') reason?: string) {
+    return this.pollsService.rejectPoll(pollId, reason);
   }
 
   /**

@@ -41,6 +41,29 @@ export class AdminController {
     });
   }
 
+  @Get('polls/pending')
+  pendingPolls() {
+    return this.prisma.poll.findMany({
+      where: { status: 'PENDING' },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        category: true,
+        county: true,
+        createdAt: true,
+        creator: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   @Get('id-documents/pending')
   pendingIdDocuments() {
     return this.prisma.iDDocument.findMany({

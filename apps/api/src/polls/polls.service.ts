@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { PollResponse, PollListResponse } from './dto/poll-response.dto';
@@ -6,10 +7,13 @@ import { slugify } from '../common/utils/slugify';
 
 @Injectable()
 export class PollsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   /**
-   * Create a new poll (admin/verified users only)
+   * Create a new poll - admin direct creation (status = ACTIVE)
    */
   async createPoll(createPollDto: CreatePollDto, createdBy: string) {
     // Validate options
@@ -32,7 +36,7 @@ export class PollsService {
       counter++;
     }
 
-    // Create poll with options
+    // Create poll with options (admin direct creation = ACTIVE status)
     const poll = await this.prisma.poll.create({
       data: {
         slug,
@@ -41,6 +45,7 @@ export class PollsService {
         category: createPollDto.category,
         county: createPollDto.county || null,
         createdBy,
+        status: 'ACTIVE', // Admin direct creation is immediately active
         expiresAt: new Date(createPollDto.expiresAt),
         relatedPetitionIds: JSON.stringify(
           createPollDto.relatedPetitionIds || [],
@@ -58,6 +63,7 @@ export class PollsService {
           select: {
             id: true,
             fullName: true,
+            email: true,
           },
         },
       },
@@ -67,18 +73,199 @@ export class PollsService {
   }
 
   /**
+   * Submit a poll idea - user submission (status = PENDING, awaiting admin approval)
+   */
+  async submitPoll(createPollDto: CreatePollDto, submittedBy: string) {
+    // Validate options
+    if (!createPollDto.options || createPollDto.options.length < 2) {
+      throw new BadRequestException(
+        'Poll must have at least 2 options',
+      );
+    }
+
+    // Generate slug
+    const baseSlug = slugify(createPollDto.title);
+    let slug = baseSlug;
+    let counter = 1;
+
+    // Ensure unique slug
+    while (
+      await this.prisma.poll.findUnique({ where: { slug } })
+    ) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // Create poll with PENDING status
+    const poll = await this.prisma.poll.create({
+      data: {
+        slug,
+        title: createPollDto.title,
+        description: createPollDto.description,
+        category: createPollDto.category,
+        county: createPollDto.county || null,
+        createdBy: submittedBy,
+        status: 'PENDING', // User submission requires admin approval
+        expiresAt: new Date(createPollDto.expiresAt),
+        relatedPetitionIds: JSON.stringify(
+          createPollDto.relatedPetitionIds || [],
+        ),
+        options: {
+          create: createPollDto.options.map((text, index) => ({
+            text,
+            order: index + 1,
+          })),
+        },
+      },
+      include: {
+        options: true,
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return this.formatPollResponse(poll);
+  }
+
+  /**
+   * Approve a pending poll (admin only)
+   */
+  async approvePoll(pollId: string): Promise<PollResponse> {
+    const poll = await this.prisma.poll.findUnique({
+      where: { id: pollId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!poll) {
+      throw new NotFoundException('Poll not found');
+    }
+
+    if (poll.status !== 'PENDING') {
+      throw new BadRequestException('Only pending polls can be approved');
+    }
+
+    // Update poll status to APPROVED
+    const approvedPoll = await this.prisma.poll.update({
+      where: { id: pollId },
+      data: {
+        status: 'APPROVED',
+      },
+      include: {
+        options: {
+          orderBy: { order: 'asc' },
+        },
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Emit approval event for email notification
+    this.eventEmitter.emit('poll.approved', {
+      pollId: approvedPoll.id,
+      pollSlug: approvedPoll.slug,
+      pollTitle: approvedPoll.title,
+      creatorId: approvedPoll.creator.id,
+      creatorEmail: approvedPoll.creator.email,
+      creatorName: approvedPoll.creator.fullName,
+      pollUrl: `/civic-pulse/${approvedPoll.slug}`,
+    });
+
+    return this.formatPollResponse(approvedPoll);
+  }
+
+  /**
+   * Reject a pending poll (admin only)
+   */
+  async rejectPoll(pollId: string, reason?: string): Promise<PollResponse> {
+    const poll = await this.prisma.poll.findUnique({
+      where: { id: pollId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!poll) {
+      throw new NotFoundException('Poll not found');
+    }
+
+    if (poll.status !== 'PENDING') {
+      throw new BadRequestException('Only pending polls can be rejected');
+    }
+
+    // Update poll status to REJECTED
+    const rejectedPoll = await this.prisma.poll.update({
+      where: { id: pollId },
+      data: {
+        status: 'REJECTED',
+      },
+      include: {
+        options: {
+          orderBy: { order: 'asc' },
+        },
+        creator: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Emit rejection event for email notification
+    this.eventEmitter.emit('poll.rejected', {
+      pollId: rejectedPoll.id,
+      pollTitle: rejectedPoll.title,
+      creatorId: rejectedPoll.creator.id,
+      creatorEmail: rejectedPoll.creator.email,
+      creatorName: rejectedPoll.creator.fullName,
+      reason: reason || 'Your poll idea was not approved at this time.',
+    });
+
+    return this.formatPollResponse(rejectedPoll);
+  }
+
+  /**
    * Get all active polls with filtering
    */
   async listPolls(
     category?: string,
     county?: string,
-    status: string = 'ACTIVE',
+    status: string = 'APPROVED',
     limit: number = 20,
     offset: number = 0,
   ): Promise<PollListResponse[]> {
+    // Validate status is a valid PollStatus
+    const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'ACTIVE', 'EXPIRED', 'CLOSED'];
+    const finalStatus = validStatuses.includes(status) ? (status as any) : 'APPROVED';
+
     const polls = await this.prisma.poll.findMany({
       where: {
-        status,
+        status: finalStatus,
         visibility: 'PUBLIC',
         category: category ? { equals: category, mode: 'insensitive' } : undefined,
         county: county ? { equals: county, mode: 'insensitive' } : undefined,
@@ -239,7 +426,7 @@ export class PollsService {
     await this.prisma.poll.update({
       where: { id: pollId },
       data: {
-        status: 'ARCHIVED',
+        status: 'CLOSED',
         visibility: 'ARCHIVED',
       },
     });

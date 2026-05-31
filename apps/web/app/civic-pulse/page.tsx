@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { apiGet } from '../../lib/api';
+import { useAuthStore } from '../../lib/store';
+import { PollSubmissionForm } from '../../components/poll-submission-form';
 
 type PollSummary = {
   id: string;
@@ -14,8 +17,23 @@ type PollSummary = {
   expiresAt: string;
 };
 
-export default async function CivicPulsePage() {
-  const polls = await apiGet<PollSummary[]>('/polls').catch(() => []);
+export default function CivicPulsePage() {
+  const token = useAuthStore((s) => s.token);
+  const [polls, setPolls] = useState<PollSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+
+  // Fetch approved polls on mount
+  useEffect(() => {
+    void (async () => {
+      try {
+        const data = await apiGet<PollSummary[]>('/polls?status=APPROVED').catch(() => []);
+        setPolls(data);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -40,20 +58,53 @@ export default async function CivicPulsePage() {
             >
               View all polls
             </Link>
-            <Link
-              href="/admin"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-            >
-              Create a poll
-            </Link>
+            {token ? (
+              <button
+                onClick={() => setShowSubmissionForm(!showSubmissionForm)}
+                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              >
+                {showSubmissionForm ? 'Cancel' : 'Submit Poll Idea'}
+              </button>
+            ) : (
+              <Link
+                href="/admin"
+                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              >
+                Create a poll
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Poll Submission Form */}
+      {showSubmissionForm && token && (
+        <div className="mb-8 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Submit a Poll Idea</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+            Have a question for Liberia? Submit your poll idea below. It will be reviewed by our admin team and published once approved.
+          </p>
+          <PollSubmissionForm
+            onSuccess={() => {
+              setShowSubmissionForm(false);
+              // Refresh polls list
+              void (async () => {
+                const data = await apiGet<PollSummary[]>('/polls?status=APPROVED').catch(() => []);
+                setPolls(data);
+              })();
+            }}
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {polls.length === 0 ? (
+        {loading ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <p className="text-zinc-500 dark:text-zinc-400">No active polls are available right now. Check back soon or create a new Civic Pulse poll.</p>
+            <p className="text-zinc-500 dark:text-zinc-400">Loading polls...</p>
+          </div>
+        ) : polls.length === 0 ? (
+          <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <p className="text-zinc-500 dark:text-zinc-400">No active polls are available right now. Check back soon or submit a poll idea.</p>
           </div>
         ) : (
           polls.map((poll) => (

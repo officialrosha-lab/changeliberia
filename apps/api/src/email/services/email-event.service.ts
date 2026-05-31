@@ -54,6 +54,14 @@ export class EmailEventService {
       this.onPetitionGovernmentResponse(event),
     );
 
+    // Poll events
+    this.eventEmitter.on('poll.approved', (event) =>
+      this.onPollApproved(event),
+    );
+    this.eventEmitter.on('poll.rejected', (event) =>
+      this.onPollRejected(event),
+    );
+
     // Signature/engagement events
     this.eventEmitter.on('signature.received', (event) =>
       this.onSignatureReceived(event),
@@ -352,6 +360,46 @@ export class EmailEventService {
       // Could trigger bulk email sending to ambassadors
     } catch (error) {
       this.logger.error(`Error handling community.update event: ${error}`);
+    }
+  }
+
+  // Poll event handlers
+
+  private async onPollApproved(event: any): Promise<void> {
+    try {
+      const { creatorId, creatorEmail, creatorName, pollTitle, pollUrl } = event;
+      await this.emailService.sendNotification(
+        creatorId,
+        creatorEmail,
+        EmailType.POLL_APPROVED,
+        {
+          creatorName,
+          pollTitle,
+          pollUrl,
+        },
+      );
+      this.logger.log(`Poll approved email sent to ${creatorEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send poll approved email: ${error}`);
+    }
+  }
+
+  private async onPollRejected(event: any): Promise<void> {
+    try {
+      const { creatorId, creatorEmail, creatorName, pollTitle, reason } = event;
+      await this.emailService.sendNotification(
+        creatorId,
+        creatorEmail,
+        EmailType.POLL_REJECTED,
+        {
+          creatorName,
+          pollTitle,
+          reason,
+        },
+      );
+      this.logger.log(`Poll rejected email sent to ${creatorEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send poll rejected email: ${error}`);
     }
   }
 
