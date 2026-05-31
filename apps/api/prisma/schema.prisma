@@ -133,6 +133,11 @@ model User {
   // Civic Pulse relations
   pollsCreated        Poll[]              @relation("PollCreator")
   pollVotes           PollVote[]          @relation("PollVoter")
+
+  // Phase 1: Internal Messaging
+  messagesSent        Message[]           @relation("MessagesSent")
+  messagesReceived    Message[]           @relation("MessagesReceived")
+  groupMemberships    GroupMembership[]   @relation("GroupMemberships")
 }
 
 model Petition {
@@ -179,6 +184,9 @@ model Petition {
   audiences   CustomAudience[]        @relation("CustomAudiences")
 
   followers   PetitionFollower[]
+
+  // Phase 1: Stakeholder Groups
+  stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
 
   @@index([status, createdAt])
 }
@@ -1752,4 +1760,66 @@ model SessionFingerprint {
   @@index([voteCount])
   @@index([flagged])
   @@index([lastSeenAt])
+}
+
+// ============================================================================
+// PHASE 1: Internal Messaging Center & Petition Stakeholder Groups
+// ============================================================================
+
+enum StakeholderGroupType {
+  CREATOR // Petition creator
+  SIGNERS // Users who signed
+  FOLLOWERS // Users following the petition
+  INSTITUTIONS // Related government institutions
+  NGOS // Matched NGO partners
+  AMBASSADORS // County ambassadors
+  MEDIA // Media contacts
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  senderId     String
+  sender       User     @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId  String
+  recipient    User     @relation("MessagesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  subject      String
+  content      String   @db.Text()
+  category     String?  // e.g., "petition_update", "admin_message", "system_alert"
+  isRead       Boolean  @default(false)
+  archivedAt   DateTime? // Soft delete - set when archived
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
+  @@index([senderId, createdAt])
+  @@index([category])
+  @@index([archivedAt]) // For archive queries
+}
+
+model PetitionStakeholderGroup {
+  id         String   @id @default(cuid())
+  petitionId String
+  petition   Petition @relation("StakeholderGroups", fields: [petitionId], references: [id], onDelete: Cascade)
+  groupType  StakeholderGroupType
+  createdAt  DateTime @default(now())
+
+  memberships GroupMembership[]
+
+  @@unique([petitionId, groupType]) // Only one group per type per petition
+  @@index([petitionId])
+  @@index([groupType])
+}
+
+model GroupMembership {
+  id      String   @id @default(cuid())
+  groupId String
+  group   PetitionStakeholderGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation("GroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId]) // No duplicate memberships
+  @@index([groupId])
+  @@index([userId])
 }

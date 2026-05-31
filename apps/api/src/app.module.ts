@@ -31,6 +31,9 @@ import { SystemSettingsModule } from './admin/system-settings.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { ActivityModule } from './activity/activity.module';
 import { PollsModule } from './polls/polls.module';
+import { MessagesModule } from './messages/messages.module';
+import { StakeholderGroupModule } from './stakeholder-groups/stakeholder-group.module';
+import { BroadcastModule } from './broadcast/broadcast.module';
 
 @Module({
   imports: [
@@ -52,6 +55,9 @@ import { PollsModule } from './polls/polls.module';
     EmailModule, // Import EmailModule before GovernmentModule
     PetitionsModule,
     PollsModule, // Civic Pulse: Polling & Public Sentiment
+    MessagesModule, // Phase 1: Internal Messaging
+    StakeholderGroupModule, // Phase 1: Stakeholder Groups
+    BroadcastModule, // Phase 1: Broadcast messaging
     SignaturesModule,
     VerificationModule,
     FraudModule,
