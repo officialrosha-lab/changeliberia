@@ -62,6 +62,9 @@ export function Header() {
                 My petitions
               </Link>
             )}
+            <Link href="/civic-pulse" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
+              Civic Pulse
+            </Link>
             <Link href="/petitions" className="inline-flex items-center gap-1 font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
               <span aria-hidden>🔍</span>
               <span className="hidden lg:inline">Search</span>

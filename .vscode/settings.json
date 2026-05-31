@@ -37,6 +37,11 @@
             "matchCommandLine": true
         },
         "printf": true,
-        "read": true
+        "read": true,
+        "/^cd '/Users/visionalventure/Change Liberia' && docker --version && docker compose version \\|\\| docker-compose --version$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "exit": true
     }
 }

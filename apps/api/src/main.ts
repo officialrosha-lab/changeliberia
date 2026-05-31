@@ -283,7 +283,12 @@ async function seedCmsPages(prisma: PrismaService) {
 async function bootstrap() {
   validateEnvOrThrow();
   const app = await NestFactory.create(AppModule);
-  app.useWebSocketAdapter(new RedisIoAdapter(app));
+  const useRedisAdapter = process.env.USE_REDIS_ADAPTER !== 'false';
+
+  if (useRedisAdapter) {
+    app.useWebSocketAdapter(new RedisIoAdapter(app));
+  }
+
   const enableSwagger = isSwaggerEnabled();
   
   // Register raw body middleware only for the Stripe webhook route

@@ -9,6 +9,7 @@ import { apiGet } from '../lib/api';
 import { JoinMovementButton } from './join-movement-button';
 
 const PUBLIC_NAV_ITEMS = [
+  { href: '/civic-pulse', icon: '📊', label: 'Civic Pulse' },
   { href: '/petitions', icon: '🔍', label: 'Browse causes' },
   { href: '/#donate',              icon: '💛', label: 'Donate' },
   { href: '/#how-it-works',        icon: '💡', label: 'How it works' },
