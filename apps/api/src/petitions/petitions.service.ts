@@ -8,6 +8,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PetitionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SmartRoutingService } from '../contact-directory/routing/smart-routing.service';
+import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group.service';
 import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
@@ -22,6 +23,7 @@ export class PetitionsService {
     private readonly prisma: PrismaService,
     private readonly smartRouting: SmartRoutingService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly stakeholderGroupService: StakeholderGroupService,
   ) {}
 
   private async rankByRisk(
@@ -170,6 +172,14 @@ export class PetitionsService {
     await this.prisma.petitionStatusLog.create({
       data: { petitionId: id, status: 'gathering_signatures' },
     });
+
+    // Auto-create stakeholder groups for the petition
+    try {
+      await this.stakeholderGroupService.createGroupsForPetition(id);
+    } catch (error) {
+      // Log error but don't fail petition approval
+      console.error(`Error creating stakeholder groups for petition ${id}:`, error);
+    }
 
     // Auto-route petition to institution
     try {
