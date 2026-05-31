@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FacebookSDKService } from './facebook-sdk.service';
+import axios from 'axios';
+
+jest.mock('axios');
 
 /**
  * Facebook SDK Service Unit Tests
@@ -9,6 +12,12 @@ describe('FacebookSDKService', () => {
   let service: FacebookSDKService;
 
   beforeEach(async () => {
+    // Mock axios
+    const mockAxiosInstance = {
+      get: jest.fn().mockResolvedValue({ data: {} }),
+    };
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+
     // Set up environment variables
     process.env.FACEBOOK_APP_ID = 'test-app-id';
     process.env.FACEBOOK_APP_SECRET = 'test-app-secret';

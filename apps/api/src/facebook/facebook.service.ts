@@ -408,7 +408,7 @@ export class FacebookService {
     const descriptions = {
       SHARERS: 'Users who shared the petition on Facebook',
       CONVERTERS: 'Users whose Facebook shares resulted in signatures',
-      INFLUENCERS: 'High-reach users with viral impact (5%+ network conversion)',
+      INFLUENCERS: 'High-reach Influencers with viral impact (5%+ network conversion)',
       ENGAGED: 'Highly engaged sharers with 5+ clicks from their links',
     };
 

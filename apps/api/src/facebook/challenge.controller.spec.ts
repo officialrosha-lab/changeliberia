@@ -14,6 +14,12 @@ describe('ChallengeController', () => {
     role: 'user',
   };
 
+  const mockAdminUser = {
+    id: 'admin-1',
+    name: 'Admin User',
+    role: 'admin',
+  };
+
   const mockActiveChallenges = [
     {
       id: 'challenge-1',
@@ -414,7 +420,7 @@ describe('ChallengeController', () => {
 
       const result = await controller.createChallenge(
         challengeData,
-        mockUser,
+        mockAdminUser,
       );
 
       expect(result).toEqual({
@@ -482,7 +488,7 @@ describe('ChallengeController', () => {
             endDate: '2026-04-20T23:59:59Z',
             rewardMultiplier: 2.0,
           },
-          mockUser,
+          mockAdminUser,
         ),
       ).rejects.toThrow(NotFoundException);
     });

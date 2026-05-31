@@ -398,6 +398,9 @@ export class ChallengeService {
         completed: m.completed,
       }));
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.logger.error(
         `Failed to get challenge leaderboard: ${error instanceof Error ? error.message : String(error)}`,
       );

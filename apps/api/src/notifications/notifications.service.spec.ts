@@ -240,9 +240,7 @@ describe('NotificationsService', () => {
       expect(prismaService.notification.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           message: expect.stringContaining('3x'),
-          metadata: expect.objectContaining({
-            rewardMultiplier: 3.0,
-          }),
+          metadata: expect.stringContaining('"rewardMultiplier":3'),
         }),
       });
     });

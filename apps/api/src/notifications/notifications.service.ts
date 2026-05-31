@@ -56,7 +56,15 @@ export class NotificationsService {
       this.logger.debug(
         `Notification created for user ${userId}: ${payload.title}`,
       );
-      return notification;
+
+      return {
+        ...notification,
+        metadata: notification?.metadata
+          ? typeof notification.metadata === 'string'
+            ? JSON.parse(notification.metadata)
+            : notification.metadata
+          : null,
+      };
     } catch (error) {
       const err = error as Error;
       this.logger.error(`Failed to create notification: ${err?.message || 'Unknown error'}`);

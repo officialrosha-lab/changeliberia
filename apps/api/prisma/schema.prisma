@@ -120,6 +120,10 @@ model User {
   // Activity log relations
   activityLogs        ActivityLog[]       @relation("ActivityLogUser")
   adminActivityLogs   ActivityLog[]       @relation("ActivityLogAdmin")
+
+  // Civic Pulse relations
+  pollsCreated        Poll[]              @relation("PollCreator")
+  pollVotes           PollVote[]          @relation("PollVoter")
 }
 
 model Petition {
@@ -1656,4 +1660,85 @@ model ActivityLog {
   @@index([action])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+// ==================== CIVIC PULSE: Polling & Public Sentiment ====================
+
+model Poll {
+  id                 String         @id @default(cuid())
+  slug               String         @unique
+  title              String
+  description        String?
+  category           String         // e.g., "Infrastructure", "Health", "Education"
+  county             String?        // null = national, otherwise county-specific
+  createdBy          String         // User ID (admin/verified)
+  creator            User           @relation("PollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  visibility         String         @default("PUBLIC") // PUBLIC, DRAFT, ARCHIVED
+  status             String         @default("ACTIVE") // ACTIVE, EXPIRED, CLOSED
+  expiresAt          DateTime
+  totalVotes         Int            @default(0)
+  relatedPetitionIds String         @default("[]") // JSON array of petition IDs
+  featuredAt         DateTime?      // For homepage highlighting
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  
+  options   PollOption[]
+  votes     PollVote[]
+  
+  @@index([slug])
+  @@index([county])
+  @@index([expiresAt])
+  @@index([status])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model PollOption {
+  id        String   @id @default(cuid())
+  pollId    String
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text      String
+  voteCount Int      @default(0)
+  order     Int      // Display order (1, 2, 3...)
+  createdAt DateTime @default(now())
+  
+  votes PollVote[]
+  
+  @@unique([pollId, order])
+  @@index([pollId])
+}
+
+model PollVote {
+  id            String   @id @default(cuid())
+  pollId        String
+  poll          Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId      String
+  option        PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId        String?  // null for anonymous votes
+  user          User?    @relation("PollVoter", fields: [userId], references: [id], onDelete: SetNull)
+  sessionId     String   // Browser session ID
+  ipHash        String   // Hash of IP address
+  fingerprint   String   // Session fingerprint (user-agent + IP)
+  createdAt     DateTime @default(now())
+  
+  @@unique([pollId, sessionId]) // One vote per session per poll
+  @@index([pollId])
+  @@index([userId])
+  @@index([fingerprint])
+  @@index([createdAt])
+}
+
+model SessionFingerprint {
+  id           String   @id @default(cuid())
+  fingerprint  String   @unique
+  ipHash       String
+  userAgent    String
+  lastSeenAt   DateTime @updatedAt
+  voteCount    Int      @default(0) // Across all polls
+  flagged      Boolean  @default(false) // Suspected spam
+  createdAt    DateTime @default(now())
+  
+  @@index([voteCount])
+  @@index([flagged])
+  @@index([lastSeenAt])
 }
