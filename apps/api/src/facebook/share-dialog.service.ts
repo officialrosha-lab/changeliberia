@@ -59,20 +59,24 @@ export class ShareDialogService {
     </div>
 
     <script>
+      function shareOnFacebook() {
+        if (window.FB && window.FB.ui) {
+          window.FB.ui({
+            method: 'share',
+            href: "${process.env.APP_URL || 'http://localhost:3000'}/petitions/${petitionId}",
+            hashtag: '#ChangeLiberia',
+          }, function(response){
+            if (response && !response.error_message) {
+              // Share completed successfully
+              window.location.href = '/api/facebook/share/callback?petitionId=${petitionId}';
+            }
+          });
+        }
+      }
+      
       document.addEventListener('click', function(e) {
         if (e.target.matches('[data-share-petition="${petitionId}"]')) {
-          if (window.FB && window.FB.ui) {
-            window.FB.ui({
-              method: 'share',
-              href: "${process.env.APP_URL || 'http://localhost:3000'}/petitions/${petitionId}",
-              hashtag: '#ChangeLiberia',
-            }, function(response){
-              if (response && !response.error_message) {
-                // Share completed successfully
-                window.location.href = '/api/facebook/share/callback?petitionId=${petitionId}';
-              }
-            });
-          }
+          shareOnFacebook();
         }
       });
     </script>
@@ -327,7 +331,7 @@ export class ShareDialogService {
     );
 
     const averageReach = shares.length > 0 ? totalReach / shares.length : 0;
-    const conversionRate = totalClicks > 0 ? totalConversions / totalClicks : 0;
+    const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
 
     return {
       totalShares: totalFacebookShares,

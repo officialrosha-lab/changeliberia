@@ -203,7 +203,7 @@ export class BadgeController {
         success: true,
         data: {
           petitionId,
-          topBadgeEarners: leaderboard.slice(0, limitValue),
+          leaderboard: leaderboard.slice(0, limitValue),
           count: leaderboard.length,
         },
       };

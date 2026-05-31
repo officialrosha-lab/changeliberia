@@ -51,6 +51,7 @@ describe('ShareDialogService', () => {
             },
             shareLink: {
               create: jest.fn(),
+              findMany: jest.fn(),
             },
             facebookPixelEvent: {
               create: jest.fn(),

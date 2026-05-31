@@ -216,6 +216,10 @@ export class FacebookSDKService {
     scrapedUrl?: string;
     error?: string;
   }> {
+    if (!url || url.trim() === '') {
+      return { valid: false, error: 'URL is required' };
+    }
+
     if (!this.accessToken) {
       return { valid: false, error: 'Access token not configured' };
     }

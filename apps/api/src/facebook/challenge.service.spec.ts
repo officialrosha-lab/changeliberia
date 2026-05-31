@@ -127,13 +127,22 @@ describe('ChallengeService', () => {
   describe('createCampaignChallenge', () => {
     it('should create a campaign challenge', async () => {
       prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareChallenge.create.mockResolvedValue({
-        ...mockChallenge,
-        period: ChallengePeriod.CAMPAIGN,
-      } as any);
-
+      
       const startDate = new Date('2026-04-13');
       const endDate = new Date('2026-04-20');
+      const campaignChallenge = {
+        ...mockChallenge,
+        title: 'Campaign Challenge',
+        goalValue: 15,
+        period: ChallengePeriod.CAMPAIGN,
+        startDate,
+        endDate,
+        rewardMultiplier: 3.0,
+      };
+      
+      prismaService.shareChallenge.create.mockResolvedValue(
+        campaignChallenge as any,
+      );
 
       const result = await service.createCampaignChallenge(
         'petition-1',

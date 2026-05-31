@@ -169,7 +169,7 @@ describe('RealPixelTrackingService', () => {
     it('should parse user name into first and last name', async () => {
       const userWithFullName = {
         ...mockUser,
-        name: 'John Michael Doe',
+        fullName: 'John Michael Doe',
       };
       prismaService.petition.findUnique.mockResolvedValue(
         mockPetition as any,
@@ -396,11 +396,12 @@ describe('RealPixelTrackingService', () => {
       expect(result.success).toBe(true);
       expect(result.audienceId).toBeDefined();
       expect(prismaService.customAudience.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+        data: {
           name: 'Viewers',
+          petitionId: 'petition-1',
           audienceType: 'PIXEL_ViewContent',
-          size: 3,
-        }),
+          userIds: JSON.stringify(['user-1', 'user-2', 'user-3']),
+        },
       });
     });
 
@@ -434,14 +435,10 @@ describe('RealPixelTrackingService', () => {
         'ViewContent',
       );
 
-      expect(prismaService.customAudience.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userIds: expect.arrayContaining([expect.any(String)]),
-        }),
-      });
-
       const callArgs = prismaService.customAudience.create.mock.calls[0][0];
-      expect(callArgs.data.userIds.length).toBeLessThanOrEqual(10000);
+      const userIdsJson = callArgs.data.userIds;
+      const userIdsArray = JSON.parse(userIdsJson);
+      expect(userIdsArray.length).toBeLessThanOrEqual(10000);
     });
   });
 

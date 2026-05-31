@@ -25,6 +25,7 @@ import { AdminFacebookEngagement } from '../../components/admin-facebook-engagem
 import { AdminEmailSettings } from '../../components/admin-email-settings';
 import { AdminSocialMediaDashboard } from '../../components/admin-social-media-dashboard';
 import { AdminActivityLog } from '../../components/admin-activity-log';
+import { AdminPollCreationPanel } from '../../components/admin-poll-creation-panel';
 import { ErrorBoundary } from '../../components/error-boundary';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -223,6 +224,8 @@ export function AdminPageClient() {
             </div>
             <AdminGovernmentPanel />
           </section>
+
+          <AdminPollCreationPanel />
 
           <div className="grid gap-6 md:grid-cols-2">
             <AdminFraudPanel

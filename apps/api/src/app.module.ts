@@ -30,6 +30,7 @@ import { EmailModule } from './email/email.module';
 import { SystemSettingsModule } from './admin/system-settings.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { ActivityModule } from './activity/activity.module';
+import { PollsModule } from './polls/polls.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ActivityModule } from './activity/activity.module';
     UsersModule,
     EmailModule, // Import EmailModule before GovernmentModule
     PetitionsModule,
+    PollsModule, // Civic Pulse: Polling & Public Sentiment
     SignaturesModule,
     VerificationModule,
     FraudModule,

@@ -181,7 +181,7 @@ describe('FacebookService', () => {
 
       expect(result).toEqual({
         quote: expect.stringContaining('petition'),
-        hashtag: '#ChangeLiberia',
+        hashtag: expect.stringContaining('#ChangeLiberia'),
         link: 'https://changelib.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       });

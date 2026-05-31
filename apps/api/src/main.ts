@@ -10,6 +10,29 @@ import { validateEnvOrThrow } from './config/env-validation';
 import { metricsRegister } from './metrics/prometheus.metrics';
 import { PrismaService } from './prisma/prisma.service';
 import { rawBodyMiddleware } from './common/middleware/raw-body.middleware';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+
+class RedisIoAdapter extends IoAdapter {
+  async createIOServer(port: number, options?: any) {
+    const server = await super.createIOServer(port, options);
+
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const pubClient = createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+
+    try {
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      server.adapter(createAdapter(pubClient, subClient));
+      console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
+    } catch (error) {
+      console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
+    }
+
+    return server;
+  }
+}
 
 function parseCorsOrigins(): boolean | string[] {
   const raw = process.env.CORS_ORIGIN?.trim();
@@ -260,6 +283,7 @@ async function seedCmsPages(prisma: PrismaService) {
 async function bootstrap() {
   validateEnvOrThrow();
   const app = await NestFactory.create(AppModule);
+  app.useWebSocketAdapter(new RedisIoAdapter(app));
   const enableSwagger = isSwaggerEnabled();
   
   // Register raw body middleware only for the Stripe webhook route

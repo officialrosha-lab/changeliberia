@@ -6,6 +6,7 @@ import { HomeFeaturedStory } from '../components/home-featured-story';
 import { HomeHero } from '../components/home-hero';
 import { HomeHowItWorks } from '../components/home-how-it-works';
 import { HomeSocialProof } from '../components/home-social-proof';
+import HomePollsSection from '../components/home-polls-section';
 import { PulseMap } from '../components/pulse-map';
 import { SiteFooter } from '../components/site-footer';
 import { SponsorsSection } from '../components/sponsors-section';
@@ -48,6 +49,7 @@ export default async function Home() {
         <HomeHero />
       </div>
       <HomeSocialProof stats={stats} />
+      <HomePollsSection />
       {featured ? <HomeFeaturedStory petition={featured} /> : null}
       <HomeHowItWorks />
       <HomeDiscoverGrid petitions={petitions} />
