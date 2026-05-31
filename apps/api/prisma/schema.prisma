@@ -52,6 +52,15 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum PollStatus {
+  PENDING    // Submitted by user, awaiting admin approval
+  APPROVED   // Admin approved, now active
+  REJECTED   // Admin rejected
+  ACTIVE     // Admin direct creation (immediate publication)
+  EXPIRED    // Poll date has passed
+  CLOSED     // Manually closed
+}
+
 model User {
   id                 String             @id @default(cuid())
   email              String?            @unique
@@ -1586,6 +1595,8 @@ enum EmailType {
   PETITION_MILESTONE_REACHED
   GOVERNMENT_SUBMISSION
   OFFICIAL_RESPONSE
+  POLL_APPROVED
+  POLL_REJECTED
   WELCOME_TO_MOVEMENT
   WEEKLY_DIGEST
   AMBASSADOR_UPDATE
@@ -1674,7 +1685,7 @@ model Poll {
   createdBy          String         // User ID (admin/verified)
   creator            User           @relation("PollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   visibility         String         @default("PUBLIC") // PUBLIC, DRAFT, ARCHIVED
-  status             String         @default("ACTIVE") // ACTIVE, EXPIRED, CLOSED
+  status             PollStatus     @default(ACTIVE)   // Approval workflow: PENDING -> APPROVED/REJECTED -> ACTIVE/EXPIRED/CLOSED
   expiresAt          DateTime
   totalVotes         Int            @default(0)
   relatedPetitionIds String         @default("[]") // JSON array of petition IDs

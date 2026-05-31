@@ -23,7 +23,9 @@ export type EmailTemplateProps =
   | CommentReplyProps
   | SignatureReceivedProps
   | WeeklyDigestProps
-  | DonationReceivedProps;
+  | DonationReceivedProps
+  | PollApprovedProps
+  | PollRejectedProps;
 
 // Type mapping for email types to their props
 export type EmailTemplatePropsMap = {
@@ -42,6 +44,8 @@ export type EmailTemplatePropsMap = {
   [EmailType.SIGNATURE_RECEIVED]: SignatureReceivedProps;
   [EmailType.WEEKLY_DIGEST]: WeeklyDigestProps;
   [EmailType.DONATION_RECEIVED]: DonationReceivedProps;
+  [EmailType.POLL_APPROVED]: PollApprovedProps;
+  [EmailType.POLL_REJECTED]: PollRejectedProps;
 };
 
 // Export individual template prop types for type safety
@@ -153,4 +157,18 @@ export interface DonationReceivedProps {
   currency: string;
   dedicationMessage?: string;
   receiptUrl: string;
+}
+
+export interface PollApprovedProps {
+  recipientName: string;
+  pollTitle: string;
+  pollUrl: string;
+  category?: string;
+}
+
+export interface PollRejectedProps {
+  recipientName: string;
+  pollTitle: string;
+  reason?: string;
+  appUrl: string;
 }

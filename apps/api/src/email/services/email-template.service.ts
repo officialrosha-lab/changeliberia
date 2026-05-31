@@ -58,6 +58,8 @@ export class EmailTemplateService {
       [EmailType.SIGNATURE_RECEIVED]: 'Thank you for your signature',
       [EmailType.WEEKLY_DIGEST]: 'Your weekly digest',
       [EmailType.DONATION_RECEIVED]: 'Thank you for your donation',
+      [EmailType.POLL_APPROVED]: 'Your poll has been approved',
+      [EmailType.POLL_REJECTED]: 'Your poll submission',
     };
     return subjects[templateType] || 'Notification from Change Liberia';
   }
