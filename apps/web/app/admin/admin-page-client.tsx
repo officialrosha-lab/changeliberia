@@ -66,7 +66,7 @@ export function AdminPageClient() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
-  const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>([]);
+  const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creatorName: string; creatorEmail: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
   const [flags, setFlags] = useState<FraudEvent[]>([]);
   const [rules, setRules] = useState<FraudRule[]>([]);

@@ -62,6 +62,14 @@ export class EmailEventService {
       this.onPollRejected(event),
     );
 
+    // Message and broadcast events
+    this.eventEmitter.on('message.created', (event) =>
+      this.onMessageCreated(event),
+    );
+    this.eventEmitter.on('broadcast.sent', (event) =>
+      this.onBroadcastSent(event),
+    );
+
     // Signature/engagement events
     this.eventEmitter.on('signature.received', (event) =>
       this.onSignatureReceived(event),
@@ -400,6 +408,69 @@ export class EmailEventService {
       this.logger.log(`Poll rejected email sent to ${creatorEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send poll rejected email: ${error}`);
+    }
+  }
+
+  private async onMessageCreated(event: any): Promise<void> {
+    try {
+      const {
+        recipientId,
+        recipientEmail,
+        senderName,
+        subject,
+        content,
+      } = event;
+      const messagePreview = content?.slice(0, 180) || '';
+      await this.emailService.sendNotification(
+        recipientId,
+        recipientEmail,
+        EmailType.MESSAGE_NOTIFICATION,
+        {
+          recipientName: event.recipientName || 'Community Member',
+          senderName,
+          subject,
+          messagePreview,
+          messageUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/messages`,
+        },
+      );
+      this.logger.log(`Message notification email sent to ${recipientEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send message notification email: ${error}`);
+    }
+  }
+
+  private async onBroadcastSent(event: any): Promise<void> {
+    try {
+      const {
+        senderId,
+        senderEmail,
+        senderName,
+        groupType,
+        recipientCount,
+        successCount,
+        failedCount,
+      } = event;
+      if (!senderEmail) {
+        this.logger.warn('Broadcast sent event missing senderEmail, skipping summary email');
+        return;
+      }
+      await this.emailService.sendNotification(
+        senderId,
+        senderEmail,
+        EmailType.BROADCAST_NOTIFICATION,
+        {
+          recipientName: event.senderName || 'Team Member',
+          senderName,
+          groupType,
+          recipientCount,
+          successCount,
+          failedCount,
+          broadcastUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/broadcasts`,
+        },
+      );
+      this.logger.log(`Broadcast summary email sent to ${senderEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send broadcast summary email: ${error}`);
     }
   }
 

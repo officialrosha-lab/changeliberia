@@ -2,17 +2,21 @@ import { IsString, IsOptional, IsEmail, IsBoolean, IsDateString } from 'class-va
 
 export class CreateMessageDto {
   @IsString()
-  recipientId: string;
+  recipientId!: string;
 
   @IsString()
-  subject: string;
+  subject!: string;
 
   @IsString()
-  content: string;
+  content!: string;
 
   @IsOptional()
   @IsString()
   category?: string;
+
+  @IsOptional()
+  @IsString()
+  replyToId?: string;
 }
 
 export class SearchMessagesDto {
@@ -39,5 +43,5 @@ export class SearchMessagesDto {
 
 export class MarkAsReadDto {
   @IsString({ each: true })
-  messageIds: string[];
+  messageIds!: string[];
 }

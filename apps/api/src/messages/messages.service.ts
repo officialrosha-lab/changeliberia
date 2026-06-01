@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto, SearchMessagesDto } from './dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -20,7 +21,8 @@ export class MessagesService {
         recipientId: dto.recipientId,
         subject: dto.subject,
         content: dto.content,
-        category: dto.category || null,
+        category: dto.category || (dto.replyToId ? 'reply' : null),
+        replyToId: dto.replyToId || null,
       },
       include: {
         sender: {
@@ -45,7 +47,9 @@ export class MessagesService {
       messageId: message.id,
       senderId: message.senderId,
       senderName: message.sender.fullName,
+      senderEmail: message.sender.email,
       recipientId: message.recipientId,
+      recipientName: message.recipient.fullName,
       recipientEmail: message.recipient.email,
       subject: message.subject,
       content: message.content,
@@ -184,15 +188,9 @@ export class MessagesService {
     skip: number = 0,
     take: number = 20,
   ) {
-    const where = {
+    const where: Prisma.MessageWhereInput = {
       recipientId: userId,
       archivedAt: null,
-      ...(dto.query && {
-        OR: [
-          { subject: { contains: dto.query, mode: 'insensitive' } },
-          { content: { contains: dto.query, mode: 'insensitive' } },
-        ],
-      }),
       ...(dto.category && { category: dto.category }),
       ...(dto.startDate && { createdAt: { gte: dto.startDate } }),
       ...(dto.endDate && {
@@ -200,6 +198,17 @@ export class MessagesService {
       }),
       ...(dto.isRead !== undefined && { isRead: dto.isRead }),
     };
+
+    if (dto.query) {
+      where.OR = [
+        {
+          subject: { contains: dto.query, mode: 'insensitive' as const },
+        },
+        {
+          content: { contains: dto.query, mode: 'insensitive' as const },
+        },
+      ];
+    }
 
     const [messages, total] = await Promise.all([
       this.prisma.message.findMany({
@@ -287,6 +296,50 @@ export class MessagesService {
             email: true,
           },
         },
+        recipient: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+            recipient: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        replies: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+            recipient: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
@@ -300,5 +353,83 @@ export class MessagesService {
     }
 
     return message;
+  }
+
+  async getMessageThread(messageId: string, userId: string) {
+    const rootMessage = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            email: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+            recipient: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!rootMessage) {
+      throw new Error('Message not found');
+    }
+
+    if (rootMessage.recipientId !== userId && rootMessage.senderId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    const threadMessages = await this.prisma.message.findMany({
+      where: {
+        OR: [{ id: messageId }, { replyToId: messageId }],
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            email: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return {
+      root: rootMessage,
+      thread: threadMessages,
+    };
   }
 }

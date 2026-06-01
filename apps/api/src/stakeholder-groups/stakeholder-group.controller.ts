@@ -14,9 +14,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { StakeholderGroupService } from './stakeholder-group.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('admin/stakeholder-groups')
 @UseGuards(JwtAuthGuard, RolesGuard)

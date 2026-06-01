@@ -118,6 +118,43 @@ export async function apiPatch<T>(
   return res.json() as Promise<T>;
 }
 
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  token?: string,
+): Promise<T> {
+  const base = getApiBase();
+  const res = await fetch(`${base}${path}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let message = `Request failed (${res.status} ${res.statusText})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status} ${res.statusText})`;
+      } else if (typeof data === 'string' && data.length) {
+        message = `${data} (${res.status} ${res.statusText})`;
+      }
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) message = `${text} (${res.status} ${res.statusText})`;
+      } catch {
+        // ignore parse errors
+      }
+    }
+    throw new Error(message);
+  }
+
+  return res.json() as Promise<T>;
+}
+
 export async function apiDelete<T = unknown>(
   path: string,
   token?: string,

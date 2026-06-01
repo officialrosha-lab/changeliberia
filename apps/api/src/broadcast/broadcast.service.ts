@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MessagesService } from './messages.service';
+import { MessagesService } from '../messages/messages.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -42,6 +42,15 @@ export class BroadcastService {
     if (!group) {
       throw new Error('Stakeholder group not found');
     }
+
+    const sender = await this.prisma.user.findUnique({
+      where: { id: senderUserId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+      },
+    });
 
     const members = group.memberships;
     const recipientCount = members.length;
@@ -90,6 +99,8 @@ export class BroadcastService {
       groupType: group.groupType,
       petitionId: group.petitionId,
       senderId: senderUserId,
+      senderName: sender?.fullName,
+      senderEmail: sender?.email,
       subject,
       recipientCount,
       successCount,
@@ -123,11 +134,17 @@ export class BroadcastService {
     );
 
     const totalRecipients = results.reduce(
-      (sum, r) => sum + r.recipientCount,
+      (sum, r) => sum + (r.recipientCount ?? 0),
       0,
     );
-    const totalSuccess = results.reduce((sum, r) => sum + r.successCount, 0);
-    const totalFailed = results.reduce((sum, r) => sum + r.failedCount, 0);
+    const totalSuccess = results.reduce(
+      (sum, r) => sum + (r.successCount ?? 0),
+      0,
+    );
+    const totalFailed = results.reduce(
+      (sum, r) => sum + (r.failedCount ?? 0),
+      0,
+    );
 
     return {
       groupCount: groupIds.length,

@@ -25,7 +25,9 @@ export type EmailTemplateProps =
   | WeeklyDigestProps
   | DonationReceivedProps
   | PollApprovedProps
-  | PollRejectedProps;
+  | PollRejectedProps
+  | MessageNotificationProps
+  | BroadcastNotificationProps;
 
 // Type mapping for email types to their props
 export type EmailTemplatePropsMap = {
@@ -46,7 +48,27 @@ export type EmailTemplatePropsMap = {
   [EmailType.DONATION_RECEIVED]: DonationReceivedProps;
   [EmailType.POLL_APPROVED]: PollApprovedProps;
   [EmailType.POLL_REJECTED]: PollRejectedProps;
+  [EmailType.MESSAGE_NOTIFICATION]: MessageNotificationProps;
+  [EmailType.BROADCAST_NOTIFICATION]: BroadcastNotificationProps;
 };
+
+export interface MessageNotificationProps {
+  recipientName: string;
+  senderName: string;
+  subject: string;
+  messagePreview: string;
+  messageUrl: string;
+}
+
+export interface BroadcastNotificationProps {
+  recipientName: string;
+  senderName: string;
+  groupType: string;
+  recipientCount: number;
+  successCount: number;
+  failedCount: number;
+  broadcastUrl: string;
+}
 
 // Export individual template prop types for type safety
 export interface WelcomeEmailProps {
