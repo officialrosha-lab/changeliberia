@@ -15,9 +15,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { CreateMessageDto, SearchMessagesDto } from './dto';
 
 @Controller('messages')
@@ -60,11 +60,9 @@ export class MessagesController {
   }
 
   /**
-   * Send a direct message to another user (admin only)
+   * Send a direct message to another user
    */
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
   async sendMessage(@Body() dto: CreateMessageDto, @Req() req: any) {
     return this.messagesService.createMessage(dto, req.user.id);
   }
@@ -89,6 +87,23 @@ export class MessagesController {
     }
 
     return message;
+  }
+
+  /**
+   * Get message thread
+   */
+  @Get(':id/thread')
+  async getMessageThread(@Param('id') messageId: string, @Req() req: any) {
+    const thread = await this.messagesService.getMessageThread(
+      messageId,
+      req.user.id,
+    );
+
+    if (!thread) {
+      throw new NotFoundException('Message thread not found');
+    }
+
+    return thread;
   }
 
   /**

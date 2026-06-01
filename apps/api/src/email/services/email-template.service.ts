@@ -60,6 +60,8 @@ export class EmailTemplateService {
       [EmailType.DONATION_RECEIVED]: 'Thank you for your donation',
       [EmailType.POLL_APPROVED]: 'Your poll has been approved',
       [EmailType.POLL_REJECTED]: 'Your poll submission',
+      [EmailType.MESSAGE_NOTIFICATION]: 'New message from Change Liberia',
+      [EmailType.BROADCAST_NOTIFICATION]: 'Broadcast message delivered',
     };
     return subjects[templateType] || 'Notification from Change Liberia';
   }
@@ -177,6 +179,24 @@ export class EmailTemplateService {
         `;
         break;
 
+      case EmailType.MESSAGE_NOTIFICATION:
+        content = `
+          <p><strong>${props?.senderName || 'Someone'}</strong> sent you a message.</p>
+          <p><strong>Subject:</strong> ${props?.subject || 'No subject'}</p>
+          <p>${props?.messagePreview || 'Open the app to read the full message.'}</p>
+          <p><a href="${props?.messageUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Message</a></p>
+        `;
+        break;
+
+      case EmailType.BROADCAST_NOTIFICATION:
+        content = `
+          <p><strong>${props?.senderName || 'Admin'}</strong> sent a broadcast to the <strong>${props?.groupType || 'stakeholder group'}</strong>.</p>
+          <p>Delivered to <strong>${props?.recipientCount || 0}</strong> members with <strong>${props?.successCount || 0}</strong> successful sends.</p>
+          ${props?.failedCount ? `<p>${props.failedCount} messages failed to deliver.</p>` : ''}
+          <p><a href="${props?.broadcastUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Broadcast</a></p>
+        `;
+        break;
+
       default:
         content = `
           <p>You have received a notification from Change Liberia.</p>
@@ -210,6 +230,26 @@ export class EmailTemplateService {
 
       case EmailType.PASSWORD_RESET:
         text += `We received a request to reset your password.\n\nReset your password: ${props?.resetUrl || appUrl}\n\nThis link expires in ${props?.expiresIn || 60} minutes.`;
+        break;
+
+      case EmailType.MESSAGE_NOTIFICATION:
+        text += `You have a new message from ${props?.senderName || 'someone'}.
+
+Subject: ${props?.subject || 'No subject'}
+
+${props?.messagePreview || 'Open the app to read the full message.'}
+
+View message: ${props?.messageUrl || appUrl}`;
+        break;
+
+      case EmailType.BROADCAST_NOTIFICATION:
+        text += `${props?.senderName || 'An admin'} sent a broadcast to ${props?.groupType || 'a stakeholder group'}.
+
+Delivered to ${props?.recipientCount || 0} members with ${props?.successCount || 0} successful messages.`;
+        if (props?.failedCount) {
+          text += `\nFailed deliveries: ${props.failedCount}`;
+        }
+        text += `\n\nView broadcast: ${props?.broadcastUrl || appUrl}`;
         break;
 
       default:

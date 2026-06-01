@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { apiGet, apiPost, apiPut } from '@/lib/api';
+import { useAuthStore } from '../lib/store';
+import { apiGet, apiPut, apiDelete } from '../lib/api';
 import {
   Mail,
   Archive,
@@ -11,6 +12,8 @@ import {
   Filter,
   Check,
   ChevronDown,
+  RefreshCw,
+  Bell,
 } from 'lucide-react';
 
 interface Message {
@@ -54,6 +57,9 @@ export function MessagesInbox() {
   const [expandedMessageId, setExpandedMessageId] = useState<string | null>(
     null,
   );
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
   const pageSize = 20;
 
@@ -62,6 +68,18 @@ export function MessagesInbox() {
     loadMessages();
     loadUnreadCount();
   }, [page, filters]);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      loadMessages();
+      loadUnreadCount();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
 
   const loadMessages = async () => {
     setLoading(true);
@@ -77,9 +95,7 @@ export function MessagesInbox() {
         }),
       });
 
-      const response = await apiGet(`/messages/inbox?${params}`, token!);
-      const data = (await response.json()) as InboxResponse;
-
+      const data = await apiGet<InboxResponse>(`/messages/inbox?${params}`, token!);
       setMessages(data.messages);
     } catch (err: any) {
       setError(err.message || 'Failed to load messages');
@@ -90,8 +106,7 @@ export function MessagesInbox() {
 
   const loadUnreadCount = async () => {
     try {
-      const response = await apiGet('/messages/unread-count', token!);
-      const data = (await response.json()) as { unreadCount: number };
+      const data = await apiGet<{ unreadCount: number }>('/messages/unread-count', token!);
       setUnreadCount(data.unreadCount);
     } catch (err) {
       console.error('Failed to load unread count:', err);
@@ -114,9 +129,7 @@ export function MessagesInbox() {
         pageSize: pageSize.toString(),
       });
 
-      const response = await apiGet(`/messages/search/query?${params}`, token!);
-      const data = (await response.json()) as InboxResponse;
-
+      const data = await apiGet<InboxResponse>(`/messages/search/query?${params}`, token!);
       setMessages(data.messages);
       setPage(1);
     } catch (err: any) {
@@ -147,6 +160,72 @@ export function MessagesInbox() {
     } catch (err) {
       console.error('Failed to archive message:', err);
     }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    try {
+      await apiDelete(`/messages/${messageId}`, token!);
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+      setExpandedMessageId(null);
+      showNotification('Message deleted');
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+      showNotification('Failed to delete message');
+    }
+  };
+
+  const archiveMultiple = async () => {
+    if (selectedMessages.size === 0) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedMessages).map((id) =>
+          apiPut(`/messages/${id}/archive`, {}, token!),
+        ),
+      );
+
+      setMessages((prev) =>
+        prev.filter((msg) => !selectedMessages.has(msg.id)),
+      );
+      setSelectedMessages(new Set());
+      showNotification(`${selectedMessages.size} messages archived`);
+    } catch (err) {
+      console.error('Failed to archive multiple messages:', err);
+      showNotification('Failed to archive messages');
+    }
+  };
+
+  const deleteMultiple = async () => {
+    if (selectedMessages.size === 0) return;
+    if (
+      !confirm(
+        `Delete ${selectedMessages.size} selected messages? This cannot be undone.`,
+      )
+    )
+      return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedMessages).map((id) =>
+          apiDelete(`/messages/${id}`, token!),
+        ),
+      );
+
+      setMessages((prev) =>
+        prev.filter((msg) => !selectedMessages.has(msg.id)),
+      );
+      setSelectedMessages(new Set());
+      showNotification(`${selectedMessages.size} messages deleted`);
+    } catch (err) {
+      console.error('Failed to delete multiple messages:', err);
+      showNotification('Failed to delete messages');
+    }
+  };
+
+  const showNotification = (message: string) => {
+    setNotification(message);
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const markMultipleAsRead = async () => {
@@ -204,6 +283,14 @@ export function MessagesInbox() {
 
   return (
     <div className="space-y-4">
+      {/* Notification Toast */}
+      {notification && (
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-200 rounded-lg flex items-center gap-2">
+          <Bell className="w-4 h-4" />
+          {notification}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -214,6 +301,27 @@ export function MessagesInbox() {
               {unreadCount}
             </span>
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              loadMessages();
+              showNotification('Messages refreshed');
+            }}
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition"
+            title="Refresh messages"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            Auto-refresh
+          </label>
         </div>
       </div>
 
@@ -294,6 +402,18 @@ export function MessagesInbox() {
                 <option value="read">Read</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+            </div>
           </div>
         )}
       </div>
@@ -310,6 +430,20 @@ export function MessagesInbox() {
           >
             <Check className="w-4 h-4" />
             Mark as Read
+          </button>
+          <button
+            onClick={archiveMultiple}
+            className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition flex items-center gap-2"
+          >
+            <Archive className="w-4 h-4" />
+            Archive
+          </button>
+          <button
+            onClick={deleteMultiple}
+            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
           </button>
         </div>
       )}
@@ -405,10 +539,17 @@ export function MessagesInbox() {
                       Archive
                     </button>
 
+                    <Link
+                      href={`/messages/${message.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 transition flex items-center gap-2"
+                    >
+                      <Mail className="w-4 h-4" />
+                      View thread
+                    </Link>
+
                     <button
-                      onClick={() => {
-                        /* Delete functionality */
-                      }}
+                      onClick={() => deleteMessage(message.id)}
                       className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-900/40 transition flex items-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />

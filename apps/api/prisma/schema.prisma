@@ -138,6 +138,7 @@ model User {
   messagesSent        Message[]           @relation("MessagesSent")
   messagesReceived    Message[]           @relation("MessagesReceived")
   groupMemberships    GroupMembership[]   @relation("GroupMemberships")
+  broadcastsCreated   Broadcast[]         @relation("BroadcastsCreated")
 }
 
 model Petition {
@@ -1611,6 +1612,8 @@ enum EmailType {
   DONATION_RECEIVED
   COMMENT_REPLY
   SIGNATURE_RECEIVED
+  MESSAGE_NOTIFICATION
+  BROADCAST_NOTIFICATION
 }
 
 enum EmailStatus {
@@ -1776,12 +1779,22 @@ enum StakeholderGroupType {
   MEDIA // Media contacts
 }
 
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  FAILED
+}
+
 model Message {
   id           String   @id @default(cuid())
   senderId     String
   sender       User     @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
   recipientId  String
   recipient    User     @relation("MessagesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  replyToId    String? 
+  replyTo      Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      Message[] @relation("MessageReplies")
   subject      String
   content      String   @db.Text()
   category     String?  // e.g., "petition_update", "admin_message", "system_alert"
@@ -1793,8 +1806,28 @@ model Message {
   @@index([recipientId, isRead])
   @@index([recipientId, createdAt])
   @@index([senderId, createdAt])
+  @@index([replyToId])
   @@index([category])
   @@index([archivedAt]) // For archive queries
+}
+
+model Broadcast {
+  id              String          @id @default(cuid())
+  creatorId       String
+  creator         User            @relation("BroadcastsCreated", fields: [creatorId], references: [id], onDelete: Cascade)
+  title           String
+  content         String          @db.Text()
+  category        String?         // e.g., "announcement", "update", "alert"
+  status          BroadcastStatus @default(DRAFT)
+  recipientCount  Int             @default(0)  // Number of recipients targeted
+  sentAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([creatorId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model PetitionStakeholderGroup {

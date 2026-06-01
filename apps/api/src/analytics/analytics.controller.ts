@@ -7,6 +7,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
+import { MessageAnalyticsService } from './services/message-analytics.service';
+import { BroadcastAnalyticsService } from './services/broadcast-analytics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -15,7 +17,11 @@ import { UserRole } from '@prisma/client';
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
-  constructor(private readonly analytics: AnalyticsService) {}
+  constructor(
+    private readonly analytics: AnalyticsService,
+    private readonly messageAnalytics: MessageAnalyticsService,
+    private readonly broadcastAnalytics: BroadcastAnalyticsService,
+  ) {}
 
   /**
    * Get conversion funnel for a petition
@@ -209,5 +215,47 @@ export class AnalyticsController {
   @Get('fraud-stats')
   getFraudStats(@Query('days') days = '30') {
     return this.analytics.getFraudStats(Math.max(1, Number(days) || 30));
+  }
+
+  // ── Message Analytics (admin only) ───────────────────────────────────────
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('messages')
+  async getMessageAnalytics(
+    @Query('period') period: 'day' | 'week' | 'month' = 'week',
+    @Query('endDate') endDate?: string,
+  ) {
+    const end = endDate ? new Date(endDate) : new Date();
+    if (isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    const analytics = await this.messageAnalytics.getMessageAnalytics(period, end);
+    return {
+      success: true,
+      data: analytics,
+    };
+  }
+
+  // ── Broadcast Analytics (admin only) ──────────────────────────────────────
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('broadcasts')
+  async getBroadcastAnalytics(
+    @Query('period') period: 'day' | 'week' | 'month' = 'week',
+    @Query('endDate') endDate?: string,
+  ) {
+    const end = endDate ? new Date(endDate) : new Date();
+    if (isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    const analytics = await this.broadcastAnalytics.getBroadcastAnalytics(period, end);
+    return {
+      success: true,
+      data: analytics,
+    };
   }
 }

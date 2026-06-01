@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { apiGet, apiPost } from '@/lib/api';
+import { useAuthStore } from '../lib/store';
+import { apiGet, apiPost } from '../lib/api';
 import { Send, Users, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface StakeholderGroup {
@@ -41,13 +41,10 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
     setError(null);
 
     try {
-      const response = await apiGet(
+      const data = await apiGet<{ groups: StakeholderGroup[] }>(
         `/admin/stakeholder-groups/petition/${petitionId}`,
         token!,
       );
-      const data = (await response.json()) as {
-        groups: StakeholderGroup[];
-      };
 
       setGroups(data.groups || []);
     } catch (err: any) {
@@ -80,7 +77,7 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
         throw new Error('Selected group not found');
       }
 
-      const response = await apiPost(
+      const result = await apiPost<BroadcastResult>(
         `/admin/broadcast/group/${selectedGroup.id}`,
         {
           subject,
@@ -89,8 +86,6 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
         },
         token!,
       );
-
-      const result = (await response.json()) as BroadcastResult;
 
       if (result.success || result.successCount > 0) {
         setSuccess(result);

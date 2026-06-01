@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { BroadcastService } from './broadcast.service';
 import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('admin/broadcast')
 @UseGuards(JwtAuthGuard, RolesGuard)

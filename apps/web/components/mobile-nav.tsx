@@ -110,14 +110,24 @@ export function MobileNav() {
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
           {/* Dashboard or Auth buttons */}
           {token ? (
-            <Link
-              href="/dashboard"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-            >
-              <span className="text-base">📋</span>
-              Dashboard
-            </Link>
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">📋</span>
+                Dashboard
+              </Link>
+              <Link
+                href="/messages"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">✉️</span>
+                Messages
+              </Link>
+            </>
           ) : (
             <>
               <Link

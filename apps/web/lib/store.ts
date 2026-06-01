@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 
 export type AuthMethod = 'phone' | 'email' | 'google';
 
-type AuthState = {
+export type AuthState = {
   token: string | null;
   setToken: (token: string | null) => void;
   authMethod: AuthMethod;
