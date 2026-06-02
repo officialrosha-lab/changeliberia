@@ -63,6 +63,7 @@ type Me = { role: string };
 
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
@@ -76,7 +77,11 @@ export function AdminPageClient() {
   });
 
   useEffect(() => {
-    if (!token) return;
+    if (!hydrated) return;
+    if (!token) {
+      setPhase('denied');
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {
@@ -113,7 +118,16 @@ export function AdminPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, hydrated]);
+
+  if (!hydrated) {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="text-3xl font-bold">Admin Panel</h1>
+        <p className="mt-4 text-zinc-600">Loading…</p>
+      </main>
+    );
+  }
 
   if (!token) {
     return (
