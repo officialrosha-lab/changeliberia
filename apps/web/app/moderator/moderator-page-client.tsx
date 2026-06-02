@@ -10,11 +10,16 @@ type UserRole = { role: string };
 
 export function ModeratorPageClient() {
   const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [activeTab, setActiveTab] = useState<'pending' | 'fraud' | 'stats'>('pending');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
 
   useEffect(() => {
-    if (!token) return;
+    if (!hydrated) return;
+    if (!token) {
+      setPhase('denied');
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {
@@ -32,7 +37,16 @@ export function ModeratorPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, hydrated]);
+
+  if (!hydrated) {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
+        <p className="mt-4 text-zinc-600">Loading…</p>
+      </main>
+    );
+  }
 
   if (!token) {
     return (
