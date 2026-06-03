@@ -10,7 +10,10 @@
     "seed": "pnpm --filter api prisma:seed",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "migrate:status": "railway run 'cd apps/api && npx prisma migrate status'",
+    "migrate:deploy": "railway run bash scripts/run-migrations.sh",
+    "migrate:docker": "bash scripts/run-migrations-docker.sh"
   },
   "devDependencies": {
     "turbo": "^2.9.6",
