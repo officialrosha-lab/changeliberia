@@ -42,26 +42,32 @@ export class AdminController {
   }
 
   @Get('polls/pending')
-  pendingPolls() {
-    return this.prisma.poll.findMany({
-      where: { status: 'PENDING' },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-        category: true,
-        county: true,
-        createdAt: true,
-        creator: {
-          select: {
-            fullName: true,
-            email: true,
+  async pendingPolls() {
+    try {
+      return await this.prisma.poll.findMany({
+        where: { status: 'PENDING' },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          category: true,
+          county: true,
+          createdAt: true,
+          creator: {
+            select: {
+              fullName: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error) {
+      // Return empty array if Poll table doesn't exist
+      console.warn('Poll table not found or query failed:', error);
+      return [];
+    }
   }
 
   @Get('id-documents/pending')
