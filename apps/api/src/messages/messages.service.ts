@@ -67,38 +67,52 @@ export class MessagesService {
     take: number = 20,
     filters?: { category?: string; isRead?: boolean },
   ) {
-    const where = {
-      recipientId: userId,
-      archivedAt: null, // Exclude archived
-      ...(filters?.category && { category: filters.category }),
-      ...(filters?.isRead !== undefined && { isRead: filters.isRead }),
-    };
+    try {
+      const where = {
+        recipientId: userId,
+        archivedAt: null, // Exclude archived
+        ...(filters?.category && { category: filters.category }),
+        ...(filters?.isRead !== undefined && { isRead: filters.isRead }),
+      };
 
-    const [messages, total] = await Promise.all([
-      this.prisma.message.findMany({
-        where,
-        include: {
-          sender: {
-            select: {
-              id: true,
-              fullName: true,
-              avatarUrl: true,
+      const [messages, total] = await Promise.all([
+        this.prisma.message.findMany({
+          where,
+          include: {
+            sender: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take,
-      }),
-      this.prisma.message.count({ where }),
-    ]);
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+        this.prisma.message.count({ where }),
+      ]);
 
-    return {
-      messages,
-      total,
-      page: Math.floor(skip / take) + 1,
-      pageSize: take,
-    };
+      return {
+        messages,
+        total,
+        page: Math.floor(skip / take) + 1,
+        pageSize: take,
+      };
+    } catch (error: any) {
+      // Handle missing Message table in production (P2021)
+      if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+        console.warn('Message table not yet migrated in database', error.message);
+        return {
+          messages: [],
+          total: 0,
+          page: 1,
+          pageSize: take,
+        };
+      }
+      throw error;
+    }
   }
 
   /**
@@ -241,13 +255,22 @@ export class MessagesService {
    * Get unread count for user
    */
   async getUnreadCount(userId: string) {
-    return this.prisma.message.count({
-      where: {
-        recipientId: userId,
-        isRead: false,
-        archivedAt: null,
-      },
-    });
+    try {
+      return await this.prisma.message.count({
+        where: {
+          recipientId: userId,
+          isRead: false,
+          archivedAt: null,
+        },
+      });
+    } catch (error: any) {
+      // Handle missing Message table in production (P2021)
+      if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+        console.warn('Message table not yet migrated in database', error.message);
+        return 0;
+      }
+      throw error;
+    }
   }
 
   /**
