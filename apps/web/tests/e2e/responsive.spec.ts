@@ -10,6 +10,18 @@ import {
   isFocused,
 } from './test-helpers';
 
+const mobile = test.extend({
+  ...devices['Pixel 5'],
+});
+
+const tablet = test.extend({
+  viewport: { width: 1024, height: 1366 },
+});
+
+const landscape = test.extend({
+  viewport: { width: 812, height: 375 },
+});
+
 /**
  * Responsive & Mobile E2E tests
  * Tests: mobile layout, touch interactions, responsive navigation
@@ -17,8 +29,7 @@ import {
 
 test.describe('Responsive Design & Mobile', () => {
   // Test on mobile viewports
-  test.describe('Mobile Layout (Pixel 5)', () => {
-    test.use({ ...devices['Pixel 5'] });
+  mobile.describe('Mobile Layout (Pixel 5)', () => {
 
     test('should display responsive navigation', async ({ page }) => {
       await page.goto('/');
@@ -270,10 +281,7 @@ test.describe('Responsive Design & Mobile', () => {
   });
 
   // Test on tablet viewport
-  test.describe('Tablet Layout (iPad)', () => {
-    test.use({
-      viewport: { width: 1024, height: 1366 },
-    });
+  tablet.describe('Tablet Layout (iPad)', () => {
 
     test('should display side navigation on tablet', async ({ page }) => {
       await page.goto('/');
@@ -338,10 +346,7 @@ test.describe('Responsive Design & Mobile', () => {
   });
 
   // Test on landscape mode
-  test.describe('Landscape Orientation', () => {
-    test.use({
-      viewport: { width: 812, height: 375 }, // iPhone landscape
-    });
+  landscape.describe('Landscape Orientation', () => {
 
     test('should adapt layout to landscape', async ({ page }) => {
       await page.goto('/');

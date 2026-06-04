@@ -13,9 +13,11 @@ type Props = {
 
 export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
   const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!token) {
       setPhase('denied');
       return;
