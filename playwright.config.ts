@@ -62,12 +62,17 @@ export default defineConfig({
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      cwd: __dirname,
     },
     {
       command: 'pnpm --filter api dev',
       url: apiBaseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      cwd: __dirname,
+      env: {
+        USE_REDIS_ADAPTER: 'false',
+      },
     },
   ],
 
