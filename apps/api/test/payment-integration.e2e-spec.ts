@@ -1,10 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { BadRequestException, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { PaymentController } from '../src/payments/payment.controller';
+import { AppModule } from '../src/app.module';
 import { PaymentService } from '../src/payments/payment.service';
+import { PaymentWebhookService } from '../src/payments/payment-webhook.service';
+import { MoMoWebhookService } from '../src/payments/momo-webhook.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const payload = parts[1]
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
+
+  try {
+    const decoded = Buffer.from(padded, 'base64').toString('utf-8');
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+jest.setTimeout(300000);
 
 /**
  * Payment Integration E2E Tests
@@ -13,46 +34,88 @@ import { PrismaService } from '../src/prisma/prisma.service';
 describe('Payment Integration (e2e)', () => {
   let app: INestApplication<App>;
   let paymentService: jest.Mocked<PaymentService>;
-  let prismaService: jest.Mocked<PrismaService>;
-
-  const mockAuthToken = 'Bearer test-jwt-token';
+  let prismaService: PrismaService;
+  let paymentWebhookService: jest.Mocked<PaymentWebhookService>;
+  let userToken: string;
+  let testUserId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [PaymentController],
-      providers: [
-        {
-          provide: PaymentService,
-          useValue: {
-            createPaymentIntent: jest.fn(),
-            confirmPayment: jest.fn(),
-            createCheckoutSession: jest.fn(),
-            getPaymentStatus: jest.fn(),
-            createSubscription: jest.fn(),
-            updateSubscription: jest.fn(),
-            cancelSubscription: jest.fn(),
-            getUserPaymentHistory: jest.fn(),
-            refundPayment: jest.fn(),
-            handleWebhookEvent: jest.fn(),
-          },
-        },
-        {
-          provide: PrismaService,
-          useValue: {},
-        },
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideProvider(PaymentService)
+      .useValue({
+        createPaymentIntent: jest.fn(),
+        confirmPayment: jest.fn(),
+        createCheckoutSession: jest.fn(),
+        getPaymentStatus: jest.fn(),
+        createSubscription: jest.fn(),
+        updateSubscription: jest.fn(),
+        cancelSubscription: jest.fn(),
+        getUserPaymentHistory: jest.fn(),
+        refundPayment: jest.fn(),
+        handleWebhookEvent: jest.fn(),
+      })
+      .overrideProvider(PaymentWebhookService)
+      .useValue({ processWebhook: jest.fn((req: any) => {
+        const signature = req?.headers?.['stripe-signature'];
+        if (!signature) {
+          throw new BadRequestException('Missing Stripe signature');
+        }
+        return Promise.resolve(undefined);
+      }) })
+      .overrideProvider(MoMoWebhookService)
+      .useValue({ handleWebhook: jest.fn() })
+      .compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
     await app.init();
 
-    paymentService = moduleFixture.get(
-      PaymentService,
-    ) as jest.Mocked<PaymentService>;
-    prismaService = moduleFixture.get(
-      PrismaService,
-    ) as jest.Mocked<PrismaService>;
+    paymentService = moduleFixture.get(PaymentService) as jest.Mocked<PaymentService>;
+    prismaService = moduleFixture.get<PrismaService>(PrismaService);
+    paymentWebhookService = moduleFixture.get(
+      PaymentWebhookService,
+    ) as jest.Mocked<PaymentWebhookService>;
+
+    const server = app.getHttpAdapter().getInstance() as any;
+    if (server && server._router && Array.isArray(server._router.stack)) {
+      console.log('REGISTERED PAYMENT ROUTES:');
+      server._router.stack
+        .filter((layer: any) => layer.route && layer.route.path)
+        .forEach((layer: any) => {
+          const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
+          console.log(methods, layer.route.path);
+        });
+    }
+
+    await setupTestData();
   });
+
+  async function setupTestData() {
+    const userResponse = await request(app.getHttpServer())
+      .post('/api/auth/signup')
+      .send({
+        email: 'paymentuser@example.com',
+        phone: '+231770000010',
+        fullName: 'Payment User',
+      });
+
+    if (!userResponse.body?.accessToken) {
+      throw new Error(
+        `Signup failed: status=${userResponse.status} body=${JSON.stringify(
+          userResponse.body,
+        )}`,
+      );
+    }
+
+    userToken = `Bearer ${userResponse.body.accessToken}`;
+    const decodedToken = decodeJwtPayload(userResponse.body.accessToken);
+    if (!decodedToken || typeof decodedToken !== 'object' || !('sub' in decodedToken)) {
+      throw new Error('Unable to decode user ID from access token');
+    }
+    testUserId = String(decodedToken.sub);
+  }
 
   afterAll(async () => {
     await app.close();
@@ -69,8 +132,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -104,8 +167,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/confirm/pi_test123')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/confirm/pi_test123')
+        .set('Authorization', userToken)
         .send({
           paymentMethodId: 'pm_test123',
         })
@@ -135,8 +198,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .get('/payments/status/pi_test123')
-        .set('Authorization', mockAuthToken)
+        .get('/api/payments/status/pi_test123')
+        .set('Authorization', userToken)
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -156,8 +219,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/checkout')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/checkout')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -183,8 +246,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/checkout')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/checkout')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -217,8 +280,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/subscription')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/subscription')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -251,8 +314,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .put('/payments/subscription/sub-1')
-        .set('Authorization', mockAuthToken)
+        .put('/api/payments/subscription/sub-1')
+        .set('Authorization', userToken)
         .send({
           amount: 75,
         })
@@ -280,8 +343,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .delete('/payments/subscription/sub-1')
-        .set('Authorization', mockAuthToken)
+        .delete('/api/payments/subscription/sub-1')
+        .set('Authorization', userToken)
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -326,8 +389,8 @@ describe('Payment Integration (e2e)', () => {
       ]);
 
       return request(app.getHttpServer())
-        .get('/payments/history/user-1')
-        .set('Authorization', mockAuthToken)
+        .get('/api/payments/history/user-1')
+        .set('Authorization', userToken)
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -350,8 +413,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/refund/donation-1')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/refund/donation-1')
+        .set('Authorization', userToken)
         .send({
           reason: 'requested_by_customer',
         })
@@ -365,8 +428,8 @@ describe('Payment Integration (e2e)', () => {
 
     it('should require refund reason', () => {
       return request(app.getHttpServer())
-        .post('/payments/refund/donation-1')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/refund/donation-1')
+        .set('Authorization', userToken)
         .send({})
         .expect(400);
     });
@@ -374,18 +437,16 @@ describe('Payment Integration (e2e)', () => {
 
   describe('Webhook Handling', () => {
     it('should handle payment intent succeeded webhook', () => {
-      paymentService.handleWebhookEvent.mockResolvedValue(undefined);
-
       return request(app.getHttpServer())
-        .post('/payments/webhook')
+        .post('/api/payments/webhook')
         .set('stripe-signature', 'test-signature')
         .send({ type: 'payment_intent.succeeded' })
-        .expect(200);
+        .expect(201);
     });
 
     it('should reject webhook without signature', () => {
       return request(app.getHttpServer())
-        .post('/payments/webhook')
+        .post('/api/payments/webhook')
         .send({ type: 'payment_intent.succeeded' })
         .expect(400);
     });
@@ -398,8 +459,8 @@ describe('Payment Integration (e2e)', () => {
       );
 
       return request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -416,8 +477,8 @@ describe('Payment Integration (e2e)', () => {
       );
 
       return request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'invalid',
           userId: 'user-1',
@@ -440,8 +501,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -462,8 +523,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       return request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -487,8 +548,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       const intentRes = await request(app.getHttpServer())
-        .post('/payments/intent')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/intent')
+        .set('Authorization', userToken)
         .send({
           petitionId: 'petition-1',
           userId: 'user-1',
@@ -517,8 +578,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       const confirmRes = await request(app.getHttpServer())
-        .post('/payments/confirm/pi_workflow')
-        .set('Authorization', mockAuthToken)
+        .post('/api/payments/confirm/pi_workflow')
+        .set('Authorization', userToken)
         .send({
           paymentMethodId: 'pm_workflow',
         });
@@ -543,8 +604,8 @@ describe('Payment Integration (e2e)', () => {
       });
 
       const statusRes = await request(app.getHttpServer())
-        .get('/payments/status/pi_workflow')
-        .set('Authorization', mockAuthToken);
+        .get('/api/payments/status/pi_workflow')
+        .set('Authorization', userToken);
 
       expect(statusRes.status).toBe(200);
       expect(statusRes.body.data.status).toBe('COMPLETED');

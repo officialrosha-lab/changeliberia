@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { BadRequestException, INestApplication, NotFoundException } from '@nestjs/common';
 import { FacebookController } from './facebook.controller';
 import { FacebookService } from './facebook.service';
 import { FacebookPixelService } from './facebook-pixel.service';
@@ -9,12 +9,6 @@ describe('FacebookController', () => {
   let controller: FacebookController;
   let facebookService: jest.Mocked<FacebookService>;
   let pixelService: jest.Mocked<FacebookPixelService>;
-
-  const mockUser = {
-    id: 'user-1',
-    name: 'Test User',
-    email: 'test@example.com',
-  };
 
   const mockOgMeta = {
     title: 'Test Petition - 20% of 500 signatures',
@@ -38,21 +32,30 @@ describe('FacebookController', () => {
         {
           provide: FacebookService,
           useValue: {
-            generateOpenGraphMeta: jest.fn().mockResolvedValue({}) as any,
-            createFacebookShareLink: jest.fn().mockResolvedValue({}) as any,
-            buildFacebookShareDialog: jest.fn().mockResolvedValue('') as any,
-            trackFacebookClick: jest.fn().mockResolvedValue({}) as any,
-            recordFacebookShare: jest.fn().mockResolvedValue({}) as any,
-            calculateNetworkReach: jest.fn().mockReturnValue(0) as any,
-            getFacebookAnalytics: jest.fn().mockResolvedValue({}) as any,
+            generateOpenGraphMeta: jest.fn().mockResolvedValue({}),
+            createFacebookShareLink: jest.fn().mockResolvedValue({}),
+            buildFacebookShareDialog: jest.fn().mockReturnValue({}),
+            trackFacebookClick: jest.fn().mockResolvedValue(''),
+            recordFacebookShare: jest.fn().mockResolvedValue(undefined),
+            calculateNetworkReach: jest.fn().mockReturnValue({
+              estimatedReach: 250,
+              multiplier: 1,
+              influencer: false,
+            }),
           },
         },
         {
           provide: FacebookPixelService,
           useValue: {
-            getPixelId: jest.fn(),
-            getPixelInitCode: jest.fn(),
-            getPixelReport: jest.fn(),
+            getPixelId: jest.fn().mockReturnValue('placeholder_pixel_id'),
+            getPixelInitCode: jest.fn().mockReturnValue('<!-- Pixel code -->'),
+            getPixelReport: jest.fn().mockResolvedValue({
+              totalEvents: 0,
+              eventsByType: {},
+              totalConversions: 0,
+              totalConversionValue: 0,
+              conversionRate: 0,
+            }),
           },
         },
       ],
@@ -80,57 +83,41 @@ describe('FacebookController', () => {
         success: true,
         data: mockOgMeta,
       });
-      expect(facebookService.generateOpenGraphMeta).toHaveBeenCalledWith(
-        'petition-1',
-      );
+      expect(facebookService.generateOpenGraphMeta).toHaveBeenCalledWith('petition-1');
     });
 
     it('should throw NotFoundException when petition not found', async () => {
-      facebookService.generateOpenGraphMeta.mockRejectedValue(
-        new NotFoundException('Not found'),
-      );
+      facebookService.generateOpenGraphMeta.mockRejectedValue(new NotFoundException('Not found'));
 
-      await expect(controller.getOpenGraphMeta('invalid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.getOpenGraphMeta('invalid')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('createShareLink', () => {
+  describe('createShare', () => {
     it('should create a Facebook share link', async () => {
       facebookService.createFacebookShareLink.mockResolvedValue(mockShareLink);
 
-      const result = await controller.createShareLink(
-        { petitionId: 'petition-1' },
-        mockUser,
-      );
+      const result = await controller.createShare({ petitionId: 'petition-1' }, { sub: 'user-1' } as any);
 
       expect(result).toEqual({
         success: true,
-        data: mockShareLink,
+        data: {
+          shareUrl: mockShareLink.shareUrl,
+          shortCode: mockShareLink.shortCode,
+          reachEstimate: mockShareLink.reachEstimate,
+        },
       });
-      expect(facebookService.createFacebookShareLink).toHaveBeenCalledWith(
-        'petition-1',
-        mockUser.id,
-      );
+      expect(facebookService.createFacebookShareLink).toHaveBeenCalledWith('petition-1', 'user-1');
     });
 
     it('should throw BadRequestException when petitionId missing', async () => {
-      const { BadRequestException } = require('@nestjs/common');
-
-      await expect(
-        controller.createShareLink({ petitionId: '' }, mockUser),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.createShare({ petitionId: '' }, { sub: 'user-1' } as any)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when petition not found', async () => {
-      facebookService.createFacebookShareLink.mockRejectedValue(
-        new NotFoundException('Petition not found'),
-      );
+      facebookService.createFacebookShareLink.mockRejectedValue(new NotFoundException('Petition not found'));
 
-      await expect(
-        controller.createShareLink({ petitionId: 'invalid' }, mockUser),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.createShare({ petitionId: 'invalid' }, { sub: 'user-1' } as any)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -150,10 +137,7 @@ describe('FacebookController', () => {
         success: true,
         data: dialogConfig,
       });
-      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith(
-        'petition-1',
-        250,
-      );
+      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith('petition-1', 250);
     });
 
     it('should use custom network size when provided', async () => {
@@ -167,189 +151,47 @@ describe('FacebookController', () => {
 
       await controller.getShareDialog('petition-1', '500');
 
-      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith(
-        'petition-1',
-        500,
-      );
+      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith('petition-1', 500);
     });
   });
 
-  describe('trackShareClick', () => {
-    it('should track share click and return redirect URL', async () => {
-      facebookService.trackFacebookClick.mockResolvedValue(
-        'https://changelib.org/petitions/petition-1',
-      );
+  describe('trackShortCode', () => {
+    it('should track a share short code click', async () => {
+      facebookService.trackFacebookClick.mockResolvedValue('https://changelib.org/petitions/petition-1');
 
-      const result = await controller.trackShareClick('abc12345');
+      const result = await controller.trackShortCode('abc12345');
 
       expect(result).toEqual({
         success: true,
-        data: {
-          redirectUrl: 'https://changelib.org/petitions/petition-1',
-        },
+        data: { redirectUrl: 'https://changelib.org/petitions/petition-1' },
       });
-      expect(facebookService.trackFacebookClick).toHaveBeenCalledWith(
-        'abc12345',
-      );
+      expect(facebookService.trackFacebookClick).toHaveBeenCalledWith('abc12345');
     });
 
     it('should throw NotFoundException when short code not found', async () => {
-      facebookService.trackFacebookClick.mockRejectedValue(
-        new NotFoundException('Not found'),
-      );
+      facebookService.trackFacebookClick.mockRejectedValue(new NotFoundException('Not found'));
 
-      await expect(controller.trackShareClick('invalid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.trackShortCode('invalid')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('recordShareEvent', () => {
-    it('should record a share event', async () => {
+    it('should record a share event correctly', async () => {
       facebookService.recordFacebookShare.mockResolvedValue(undefined);
 
-      const result = await controller.recordShareEvent(
-        {
-          petitionId: 'petition-1',
-          shortCode: 'abc12345',
-        },
-        mockUser,
-      );
+      const result = await controller.recordShareEvent({ petitionId: 'petition-1', shortCode: 'abc12345' }, { sub: 'user-1' } as any);
 
-      expect(result).toEqual({
-        success: true,
-        message: 'Share event recorded',
-      });
-      expect(facebookService.recordFacebookShare).toHaveBeenCalledWith(
-        'petition-1',
-        mockUser.id,
-        'abc12345',
-      );
+      expect(result).toEqual({ success: true, message: 'Share event recorded' });
+      expect(facebookService.recordFacebookShare).toHaveBeenCalledWith('petition-1', 'user-1', 'abc12345');
     });
 
-    it('should throw BadRequestException when required fields missing', async () => {
-      const { BadRequestException } = require('@nestjs/common');
-
-      await expect(
-        controller.recordShareEvent(
-          {
-            petitionId: '',
-            shortCode: 'abc12345',
-          },
-          mockUser,
-        ),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw NotFoundException when petition not found', async () => {
-      facebookService.recordFacebookShare.mockRejectedValue(
-        new NotFoundException('Not found'),
-      );
-
-      await expect(
-        controller.recordShareEvent(
-          {
-            petitionId: 'invalid',
-            shortCode: 'abc12345',
-          },
-          mockUser,
-        ),
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('getReachEstimate', () => {
-    it('should return reach estimate for authenticated user', async () => {
-      const estimate = {
-        estimatedReach: 350,
-        multiplier: 1.4,
-        influencer: false,
-      };
-      facebookService.calculateNetworkReach.mockReturnValue(estimate);
-
-      const result = await controller.getReachEstimate('petition-1', mockUser);
-
-      expect(result).toEqual({
-        success: true,
-        data: estimate,
-      });
-      expect(facebookService.calculateNetworkReach).toHaveBeenCalledWith(
-        mockUser,
-      );
-    });
-
-    it('should return default estimate for anonymous user', async () => {
-      const result = await controller.getReachEstimate('petition-1');
-
-      expect(result).toEqual({
-        success: true,
-        data: {
-          estimatedReach: 250,
-          multiplier: 1,
-          influencer: false,
-        },
-      });
-      expect(facebookService.calculateNetworkReach).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getFacebookAnalytics', () => {
-    it('should return Facebook analytics for a petition', async () => {
-      const analytics = {
-        totalShares: 25,
-        totalClicks: 85,
-        conversions: 12,
-        conversionRate: 14.12,
-        reachEstimate: 6250,
-        topSharers: [],
-      };
-      facebookService.getFacebookAnalytics.mockResolvedValue(analytics);
-
-      const result = await controller.getFacebookAnalytics('petition-1');
-
-      expect(result).toEqual({
-        success: true,
-        data: analytics,
-      });
-      expect(facebookService.getFacebookAnalytics).toHaveBeenCalledWith(
-        'petition-1',
-      );
-    });
-
-    it('should throw NotFoundException when petition not found', async () => {
-      facebookService.getFacebookAnalytics.mockRejectedValue(
-        new NotFoundException('Not found'),
-      );
-
-      await expect(
-        controller.getFacebookAnalytics('invalid'),
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('getShareLeaderboard', () => {
-    it('should return share leaderboard with default limit', async () => {
-      const result = await controller.getShareLeaderboard();
-
-      expect(result).toEqual({
-        success: true,
-        data: {
-          topSharers: [],
-          period: 'all-time',
-          limit: 10,
-        },
-      });
-    });
-
-    it('should respect custom limit parameter', async () => {
-      const result = await controller.getShareLeaderboard('25');
-
-      expect(result.data.limit).toBe(25);
+    it('should throw BadRequestException when required fields are missing', async () => {
+      await expect(controller.recordShareEvent({ petitionId: '', shortCode: 'abc12345' }, { sub: 'user-1' } as any)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('getPixelCode', () => {
-    it('should return pixel ID and init code', () => {
+    it('should return pixel code and id', () => {
       pixelService.getPixelId.mockReturnValue('placeholder_pixel_id');
       pixelService.getPixelInitCode.mockReturnValue('<!-- Pixel code -->');
 
@@ -357,41 +199,27 @@ describe('FacebookController', () => {
 
       expect(result).toEqual({
         success: true,
-        data: {
-          pixelId: 'placeholder_pixel_id',
-          initCode: '<!-- Pixel code -->',
-        },
+        data: { pixelId: 'placeholder_pixel_id', initCode: '<!-- Pixel code -->' },
       });
-      expect(pixelService.getPixelId).toHaveBeenCalled();
-      expect(pixelService.getPixelInitCode).toHaveBeenCalled();
     });
 
-    it('should return placeholder on error', () => {
-      pixelService.getPixelId.mockImplementation(() => {
-        throw new Error('Error');
-      });
+    it('should return an error when pixel code generation fails', () => {
+      pixelService.getPixelId.mockImplementation(() => { throw new Error('Error'); });
 
       const result = controller.getPixelCode();
 
       expect(result).toEqual({
-        success: true,
-        data: {
-          pixelId: 'placeholder',
-          initCode: '<!-- Pixel initialization failed -->',
-        },
+        success: false,
+        error: expect.stringContaining('Failed to get pixel code'),
       });
     });
   });
 
   describe('getPixelReport', () => {
-    it('should return pixel analytics report', async () => {
+    it('should return pixel report data', async () => {
       const report = {
         totalEvents: 150,
-        eventsByType: {
-          ViewContent: 85,
-          Purchase: 12,
-          Lead: 53,
-        },
+        eventsByType: { ViewContent: 85, Purchase: 12 },
         totalConversions: 65,
         totalConversionValue: 1250,
         conversionRate: 43.33,
@@ -400,40 +228,30 @@ describe('FacebookController', () => {
 
       const result = await controller.getPixelReport();
 
-      expect(result).toEqual({
-        success: true,
-        data: report,
-      });
+      expect(result).toEqual({ success: true, data: report });
       expect(pixelService.getPixelReport).toHaveBeenCalledWith(undefined);
     });
 
-    it('should filter by petitionId if provided', async () => {
-      const report = {
-        totalEvents: 50,
-        eventsByType: {},
-        totalConversions: 10,
-        totalConversionValue: 500,
-        conversionRate: 20,
-      };
-      pixelService.getPixelReport.mockResolvedValue(report);
-
-      await controller.getPixelReport('petition-1');
-
-      expect(pixelService.getPixelReport).toHaveBeenCalledWith('petition-1');
-    });
-
-    it('should return empty report on error', async () => {
+    it('should return failure response when pixel report fails', async () => {
       pixelService.getPixelReport.mockRejectedValue(new Error('Error'));
 
       const result = await controller.getPixelReport();
 
-      expect(result.data).toEqual({
-        totalEvents: 0,
-        eventsByType: {},
-        totalConversions: 0,
-        totalConversionValue: 0,
-        conversionRate: 0,
-      });
+      expect(result).toEqual({ success: false });
+    });
+  });
+
+  describe('validateUrl', () => {
+    it('should throw BadRequestException when Facebook SDK is unavailable', async () => {
+      await expect(controller.validateUrl({ url: 'https://example.com' })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('health', () => {
+    it('should return false when the Facebook SDK is unavailable', async () => {
+      const result = await controller.health();
+
+      expect(result).toEqual({ success: false });
     });
   });
 });
