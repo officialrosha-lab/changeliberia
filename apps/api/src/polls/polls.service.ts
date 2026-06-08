@@ -13,6 +13,17 @@ export class PollsService {
   ) {}
 
   /**
+   * Helper method to format poll options for database insertion
+   */
+  private formatPollOptions(options: { text: string; imageUrl?: string }[]) {
+    return options.map((option, index) => ({
+      text: option.text,
+      imageUrl: option.imageUrl || undefined,
+      order: index + 1,
+    }));
+  }
+
+  /**
    * Create a new poll - admin direct creation (status = ACTIVE)
    */
   async createPoll(createPollDto: CreatePollDto, createdBy: string) {
@@ -51,10 +62,7 @@ export class PollsService {
           createPollDto.relatedPetitionIds || [],
         ),
         options: {
-          create: createPollDto.options.map((text, index) => ({
-            text,
-            order: index + 1,
-          })),
+          create: this.formatPollOptions(createPollDto.options),
         },
       },
       include: {
@@ -111,10 +119,7 @@ export class PollsService {
           createPollDto.relatedPetitionIds || [],
         ),
         options: {
-          create: createPollDto.options.map((text, index) => ({
-            text,
-            order: index + 1,
-          })),
+          create: this.formatPollOptions(createPollDto.options),
         },
       },
       include: {
@@ -403,6 +408,7 @@ export class PollsService {
       options: poll.options.map((option) => ({
         id: option.id,
         text: option.text,
+        imageUrl: option.imageUrl ?? undefined,
         voteCount: option.voteCount,
         percentage: poll.totalVotes > 0
           ? Math.round((option.voteCount / poll.totalVotes) * 100)
@@ -486,6 +492,7 @@ export class PollsService {
       options: poll.options.map((option) => ({
         id: option.id,
         text: option.text,
+        imageUrl: option.imageUrl ?? undefined,
         voteCount: option.voteCount,
         percentage: poll.totalVotes > 0
           ? Math.round((option.voteCount / poll.totalVotes) * 100)

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -103,13 +103,21 @@ export class NotificationsService {
    * Mark notification as read
    */
   async markAsRead(notificationId: string): Promise<void> {
-    await this.prisma.notification.update({
-      where: { id: notificationId },
-      data: {
-        status: 'READ',
-        readAt: new Date(),
-      },
-    });
+    try {
+      await this.prisma.notification.update({
+        where: { id: notificationId },
+        data: {
+          status: 'READ',
+          readAt: new Date(),
+        },
+      });
+    } catch (error) {
+      const err = error as any;
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('Notification not found');
+      }
+      throw error;
+    }
   }
 
   /**
@@ -132,9 +140,17 @@ export class NotificationsService {
    * Delete notification
    */
   async deleteNotification(notificationId: string): Promise<void> {
-    await this.prisma.notification.delete({
-      where: { id: notificationId },
-    });
+    try {
+      await this.prisma.notification.delete({
+        where: { id: notificationId },
+      });
+    } catch (error) {
+      const err = error as any;
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('Notification not found');
+      }
+      throw error;
+    }
   }
 
   /**
