@@ -16,6 +16,20 @@ export type AuthState = {
   setHydrated: (hydrated: boolean) => void;
 };
 
+type MenuState = {
+  isMenuOpen: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+  toggleMenu: () => void;
+};
+
+export const useMenuStore = create<MenuState>()((set) => ({
+  isMenuOpen: false,
+  openMenu: () => set({ isMenuOpen: true }),
+  closeMenu: () => set({ isMenuOpen: false }),
+  toggleMenu: () => set((s) => ({ isMenuOpen: !s.isMenuOpen })),
+}));
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '../lib/store';
+import { usePathname } from 'next/navigation';
+import { useAuthStore, useMenuStore } from '../lib/store';
 
 const NAV_ITEMS = [
   {
@@ -44,43 +44,23 @@ const NAV_ITEMS = [
   },
 ];
 
-const AUTH_ITEMS = [
-  {
-    href: '/auth/signup',
-    label: 'Sign Up',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-        <path d="M5.25 6.375a6.375 6.375 0 1 1 12.75 0A6.375 6.375 0 0 1 5.25 6.375ZM15.75 12.75a4.875 4.875 0 1 1-9.75 0 4.875 4.875 0 0 1 9.75 0Z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/auth/login',
-    label: 'Sign In',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-        <path fillRule="evenodd" d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V5.25a1.5 1.5 0 0 1 1.5-1.5h6Zm-12 6a.75.75 0 0 0 0 1.5h14.25a.75.75 0 0 0 0-1.5H4.5Z" clipRule="evenodd" />
-      </svg>
-    ),
-  },
-];
+
+const MenuIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+    <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+  </svg>
+);
 
 export function BottomNav() {
   const pathname = usePathname();
   const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
-  const router = useRouter();
+  const { openMenu } = useMenuStore();
 
   if (pathname?.includes('/admin') || pathname?.includes('/auth')) {
     return null;
   }
 
-  function handleLogout() {
-    setToken(null);
-    router.push('/');
-  }
-
-  // Build navigation items based on auth status
+  // Always show: Home, Browse, Create, Dashboard (when logged in), Menu
   const displayItems = token ? NAV_ITEMS : [NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[2]];
 
   return (
@@ -133,47 +113,15 @@ export function BottomNav() {
           );
         })}
 
-        {/* Auth buttons when not logged in */}
-        {!token && (
-          <>
-            {AUTH_ITEMS.map((item) => {
-              const isActive = pathname?.startsWith(item.href);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`relative flex flex-1 flex-col items-center justify-center py-1.5 px-2 min-h-12 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded ${
-                    isActive
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-zinc-400 hover:text-zinc-700 dark:text-neutral-500 dark:hover:text-neutral-200'
-                  }`}
-                >
-                  {isActive && (
-                    <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-emerald-500" />
-                  )}
-                  {item.icon}
-                  <span className={`mt-1 text-[10px] font-medium ${isActive ? 'font-semibold' : ''}`}>
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </>
-        )}
-
-        {/* Logout button when logged in */}
-        {token && (
-          <button
-            onClick={handleLogout}
-            className="relative flex flex-1 flex-col items-center justify-center py-1.5 px-2 min-h-12 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500 rounded text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <path fillRule="evenodd" d="M7.5 3.75A1.5 1.5 0 0 0 6 5.25v13.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5V15a.75.75 0 1 1 1.5 0v3.75a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3V5.25a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V9a.75.75 0 1 1-1.5 0V5.25a1.5 1.5 0 0 0-1.5-1.5h-6Zm5.03 4.72a.75.75 0 0 0 0 1.06l1.72 1.72H10.5a.75.75 0 0 0 0 1.5h3.75l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 0 0-1.06 0Z" clipRule="evenodd" />
-            </svg>
-            <span className="mt-1 text-[10px] font-medium">Logout</span>
-          </button>
-        )}
+        {/* Menu button — opens the full navigation drawer */}
+        <button
+          onClick={openMenu}
+          aria-label="Open menu"
+          className="relative flex flex-1 flex-col items-center justify-center py-1.5 px-2 min-h-12 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded text-zinc-400 hover:text-zinc-700 dark:text-neutral-500 dark:hover:text-neutral-200"
+        >
+          <MenuIcon />
+          <span className="mt-1 text-[10px] font-medium">Menu</span>
+        </button>
       </div>
     </nav>
   );

@@ -1,19 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PhoneSignupForm } from './phone-signup-form';
 import { EmailSignupForm } from './email-signup-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
 import { useAuthStore } from '../../../lib/store';
 
-type SignupMethod = 'phone' | 'email';
-
 export default function SignupPage() {
   const token = useAuthStore((s) => s.token);
   const router = useRouter();
-  const [method, setMethod] = useState<SignupMethod>('phone');
 
   useEffect(() => {
     if (token) router.replace('/dashboard');
@@ -33,38 +29,9 @@ export default function SignupPage() {
             Create an account so you can launch petitions, build trust with verification, and keep supporters updated.
           </p>
 
-          {/* Auth method tabs */}
-          <div className="mt-6 flex gap-2 border-b border-zinc-200 dark:border-neutral-700">
-            <button
-              onClick={() => setMethod('phone')}
-              className={`pb-3 text-sm font-semibold transition-colors ${
-                method === 'phone'
-                  ? 'border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
-            >
-              Phone + OTP
-            </button>
-            <button
-              onClick={() => setMethod('email')}
-              className={`pb-3 text-sm font-semibold transition-colors ${
-                method === 'email'
-                  ? 'border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
-            >
-              Email + Password
-            </button>
-          </div>
-
-          {/* Form content */}
+          {/* Sign up form */}
           <div className="mt-6">
-            {method === 'phone' && (
-              <Suspense fallback={<div className="text-sm text-zinc-500">Loading...</div>}>
-                <PhoneSignupForm />
-              </Suspense>
-            )}
-            {method === 'email' && <EmailSignupForm />}
+            <EmailSignupForm />
           </div>
 
           {/* Divider or Google OAuth */}

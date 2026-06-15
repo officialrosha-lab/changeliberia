@@ -31,12 +31,20 @@ export async function exportCardAsPNG(
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
+    windowWidth: dimensions.width,
+    windowHeight: dimensions.height,
+    x: 0,
+    y: 0,
+    scrollX: 0,
+    scrollY: 0,
   });
 
   const link = document.createElement('a');
   link.href = canvas.toDataURL('image/png');
   link.download = `${filename}-${size}.png`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 }
 
 export async function exportCardAsPDF(
@@ -55,6 +63,12 @@ export async function exportCardAsPDF(
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
+    windowWidth: dimensions.width,
+    windowHeight: dimensions.height,
+    x: 0,
+    y: 0,
+    scrollX: 0,
+    scrollY: 0,
   });
 
   const imgData = canvas.toDataURL('image/png');
@@ -96,7 +110,9 @@ export async function exportCardAsSVG(
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}-${size}.svg`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 

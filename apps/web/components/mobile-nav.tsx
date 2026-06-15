@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../lib/store';
+import { useAuthStore, useMenuStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
 import { apiGet } from '../lib/api';
 import { JoinMovementButton } from './join-movement-button';
@@ -16,7 +16,7 @@ const PUBLIC_NAV_ITEMS = [
 ];
 
 export function MobileNav() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isMenuOpen: isOpen, openMenu, closeMenu, toggleMenu } = useMenuStore();
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const token = useAuthStore((s) => s.token);
@@ -28,7 +28,7 @@ export function MobileNav() {
       try {
         const settings = await apiGet<{
           donationsEnabled: boolean;
-        }>('/admin/settings/system', token || undefined);
+        }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
       } catch (err) {
         // If error, default to enabled
@@ -40,7 +40,7 @@ export function MobileNav() {
 
   function signOut() {
     setToken(null);
-    setIsOpen(false);
+    closeMenu();
     router.push('/');
   }
   const isDark =
@@ -53,7 +53,7 @@ export function MobileNav() {
     <>
       {/* Hamburger */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleMenu}
         className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
         aria-label="Toggle menu"
         aria-expanded={isOpen}
@@ -73,7 +73,7 @@ export function MobileNav() {
       {isOpen && (
         <div
           className="fixed inset-0 top-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={() => closeMenu()}
           aria-hidden
         />
       )}
@@ -91,7 +91,7 @@ export function MobileNav() {
           <img src="/logo.png" alt="Change Liberia" className="h-8 w-auto max-w-[150px] object-contain dark:hidden" />
           <span className="hidden dark:block text-base font-extrabold text-emerald-400">Change Liberia</span>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => closeMenu()}
             className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
             aria-label="Close menu"
           >
@@ -113,7 +113,7 @@ export function MobileNav() {
             <>
               <Link
                 href="/dashboard"
-                onClick={() => setIsOpen(false)}
+                onClick={() => closeMenu()}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
               >
                 <span className="text-base">📋</span>
@@ -121,7 +121,7 @@ export function MobileNav() {
               </Link>
               <Link
                 href="/messages"
-                onClick={() => setIsOpen(false)}
+                onClick={() => closeMenu()}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
               >
                 <span className="text-base">✉️</span>
@@ -132,7 +132,7 @@ export function MobileNav() {
             <>
               <Link
                 href="/auth/signup"
-                onClick={() => setIsOpen(false)}
+                onClick={() => closeMenu()}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
               >
                 <span className="text-base">👤</span>
@@ -140,7 +140,7 @@ export function MobileNav() {
               </Link>
               <Link
                 href="/auth/login"
-                onClick={() => setIsOpen(false)}
+                onClick={() => closeMenu()}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
               >
                 <span className="text-base">🔑</span>
@@ -159,7 +159,7 @@ export function MobileNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsOpen(false)}
+                onClick={() => closeMenu()}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
               >
                 <span className="text-base">{item.icon}</span>
@@ -184,7 +184,7 @@ export function MobileNav() {
         {/* Footer — theme toggle */}
         <div className="border-t border-zinc-100 px-5 py-4 dark:border-neutral-800">
           <button
-            onClick={() => { toggleTheme(); setIsOpen(false); }}
+            onClick={() => { toggleTheme(); closeMenu(); }}
             className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:text-neutral-400 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
           >
             <span className="text-base">{isDark ? '☀️' : '🌙'}</span>

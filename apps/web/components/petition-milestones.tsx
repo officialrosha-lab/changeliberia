@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Target, Trophy, Zap } from 'lucide-react';
 import { apiGet } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 interface Milestone {
   id: string;
@@ -24,6 +25,8 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
 }) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreatorOrAdmin, setIsCreatorOrAdmin] = useState(false);
+  const token = useAuthStore((s) => s.token);
   const milestoneThresholds = [10, 50, 100, 500, 1000, 5000];
 
   useEffect(() => {
@@ -40,6 +43,16 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
 
     fetchMilestones();
   }, [petitionId]);
+
+  useEffect(() => {
+    if (!token) {
+      setIsCreatorOrAdmin(false);
+      return;
+    }
+    apiGet<{ isCreator: boolean }>(`/petitions/${petitionId}/is-creator`, token)
+      .then((res) => setIsCreatorOrAdmin(res.isCreator))
+      .catch(() => setIsCreatorOrAdmin(false));
+  }, [petitionId, token]);
 
   const getNextMilestone = () => {
     for (const threshold of milestoneThresholds) {
@@ -177,8 +190,8 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
         </div>
       </div>
 
-      {/* Government Ready Badge */}
-      {currentSignatures >= 1000 && (
+      {/* Government Ready Badge — visible only to petition creator or admin */}
+      {currentSignatures >= 1000 && isCreatorOrAdmin && (
         <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
           <div className="flex items-start gap-3">
             <span className="text-2xl">🏛️</span>

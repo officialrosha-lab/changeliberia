@@ -21,7 +21,7 @@ export function Header() {
       try {
         const settings = await apiGet<{
           donationsEnabled: boolean;
-        }>('/admin/settings/system', token || undefined);
+        }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
       } catch (err) {
         // If error, default to enabled

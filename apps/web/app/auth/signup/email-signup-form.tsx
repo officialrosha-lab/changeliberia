@@ -67,7 +67,6 @@ export function EmailSignupForm() {
 
       const data = await apiPost<{ success: boolean; message: string; email: string }>('/auth/signup/email', {
         fullName: String(form.get('fullName')),
-        phone: String(form.get('phone')),
         email: email,
         password: pwd,
       });
@@ -105,20 +104,6 @@ export function EmailSignupForm() {
           name="fullName"
           required
           placeholder="e.g. James Weah"
-          className={inputClass}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="phone" className="block text-sm font-semibold text-zinc-700 dark:text-neutral-200">
-          Phone number
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          required
-          placeholder="+231 77 000 0000"
           className={inputClass}
         />
       </div>

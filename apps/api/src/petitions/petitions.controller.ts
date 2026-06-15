@@ -115,14 +115,16 @@ export class PetitionsController {
   @UseGuards(OptionalJwtAuthGuard)
   async isCreator(
     @Param('id') id: string,
-    @Req() req: { user?: { userId: string } },
+    @Req() req: { user?: { userId: string; role?: string } },
   ) {
     const petition = await this.service.getById(id);
     if (!petition) {
       throw new NotFoundException('Petition not found');
     }
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isOwner = !!req.user && petition.creatorId === req.user.userId;
     return {
-      isCreator: !!req.user && petition.creatorId === req.user.userId,
+      isCreator: isOwner || isAdmin,
     };
   }
 
