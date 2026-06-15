@@ -19,7 +19,7 @@ export function HomeDonationSection() {
         const settings = await apiGet<{
           donationsEnabled: boolean;
           platformDonationsEnabled: boolean;
-        }>('/admin/settings/system', token || undefined);
+        }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
         setPlatformDonationsEnabled(settings.platformDonationsEnabled);
       } catch (err) {

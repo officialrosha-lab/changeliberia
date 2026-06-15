@@ -5,6 +5,12 @@ import { X } from 'lucide-react';
 import { PetitionCard, type CardSize } from './petition-card';
 import { exportCardAsPNG, exportCardAsPDF, exportCardAsSVG } from '../lib/card-exporter';
 
+const CARD_DIMENSIONS: Record<CardSize, { width: number; height: number }> = {
+  square: { width: 1080, height: 1080 },
+  story: { width: 1080, height: 1920 },
+  landscape: { width: 1200, height: 628 },
+};
+
 interface PetitionCardGeneratorProps {
   petitionId: string;
   title: string;
@@ -25,8 +31,8 @@ export function PetitionCardGenerator({
   onClose,
 }: PetitionCardGeneratorProps) {
   const [selectedSize, setSelectedSize] = useState<CardSize>('square');
-  const [exporting, setExporting] = useState<CardSize | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<boolean>(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const sizes: { size: CardSize; label: string; desc: string }[] = [
     { size: 'square', label: 'Square', desc: '1080×1080 (Instagram)' },
@@ -35,23 +41,23 @@ export function PetitionCardGenerator({
   ];
 
   const handleExport = async (format: 'png' | 'pdf' | 'svg') => {
-    if (!cardRef.current) return;
+    if (!exportRef.current) return;
 
-    setExporting(selectedSize);
+    setExporting(true);
     try {
       const filename = `petition-${petitionId}`;
       if (format === 'png') {
-        await exportCardAsPNG(cardRef.current, selectedSize, filename);
+        await exportCardAsPNG(exportRef.current, selectedSize, filename);
       } else if (format === 'pdf') {
-        await exportCardAsPDF(cardRef.current, selectedSize, filename);
+        await exportCardAsPDF(exportRef.current, selectedSize, filename);
       } else if (format === 'svg') {
-        await exportCardAsSVG(cardRef.current, selectedSize, filename);
+        await exportCardAsSVG(exportRef.current, selectedSize, filename);
       }
     } catch (error) {
       console.error(`Export failed:`, error);
       alert('Failed to export card. Please try again.');
     } finally {
-      setExporting(null);
+      setExporting(false);
     }
   };
 
@@ -71,13 +77,40 @@ export function PetitionCardGenerator({
           </button>
         </div>
 
+        {/* Off-screen export target — full resolution, not visible to user */}
+        <div
+          aria-hidden
+          style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }}
+        >
+          <div ref={exportRef}>
+            <PetitionCard
+              title={title}
+              goal={goal}
+              signatures={signatures}
+              imageUrl={imageUrl}
+              petitionUrl={petitionUrl}
+              size={selectedSize}
+            />
+          </div>
+        </div>
+
         {/* Main content - two columns layout */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
           {/* Left: Preview panel */}
           <div className="flex-1 border-r border-zinc-200 dark:border-neutral-800 p-6 overflow-y-auto flex flex-col">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">Preview</h3>
-            <div className="border border-zinc-200 rounded-lg bg-zinc-50 p-6 dark:border-neutral-700 dark:bg-neutral-800 flex items-center justify-center flex-grow">
-              <div ref={cardRef} className="flex items-center justify-center">
+            <div className="border border-zinc-200 rounded-lg bg-zinc-50 p-6 dark:border-neutral-700 dark:bg-neutral-800 flex items-center justify-center flex-grow overflow-hidden">
+              <div
+                style={{
+                  transform: `scale(${Math.min(
+                    (typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.35, 400) : 300) /
+                      CARD_DIMENSIONS[selectedSize].width,
+                    (typeof window !== 'undefined' ? Math.min(window.innerHeight * 0.5, 500) : 400) /
+                      CARD_DIMENSIONS[selectedSize].height,
+                  )})`,
+                  transformOrigin: 'top center',
+                }}
+              >
                 <PetitionCard
                   title={title}
                   goal={goal}
@@ -131,16 +164,16 @@ export function PetitionCardGenerator({
                   <button
                     key={format}
                     onClick={() => handleExport(format)}
-                    disabled={exporting === selectedSize}
+                    disabled={exporting}
                     className={`w-full flex items-center gap-2 p-3 rounded-lg border-2 transition font-semibold ${
-                      exporting === selectedSize
+                      exporting
                         ? 'opacity-50 cursor-not-allowed border-zinc-200 dark:border-neutral-700'
                         : 'border-zinc-200 hover:border-emerald-500 hover:bg-emerald-50 dark:border-neutral-700 dark:hover:bg-emerald-950/30'
                     }`}
                   >
                     <span className="text-2xl">{icon}</span>
                     <span className="text-sm text-zinc-900 dark:text-white">{label}</span>
-                    {exporting === selectedSize && (
+                    {exporting && (
                       <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">…</span>
                     )}
                   </button>
