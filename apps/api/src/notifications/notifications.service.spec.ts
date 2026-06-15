@@ -263,16 +263,12 @@ describe('NotificationsService', () => {
 
   describe('Mark Notification As Read', () => {
     it('should mark notification as read', async () => {
-      prismaService.notification.update.mockResolvedValue({
-        id: 'notif-1',
-        status: 'READ',
-        readAt: new Date(),
-      } as any);
+      prismaService.notification.updateMany.mockResolvedValue({ count: 1 } as any);
 
-      await service.markAsRead('notif-1');
+      await service.markAsRead('notif-1', 'user-1');
 
-      expect(prismaService.notification.update).toHaveBeenCalledWith({
-        where: { id: 'notif-1' },
+      expect(prismaService.notification.updateMany).toHaveBeenCalledWith({
+        where: { id: 'notif-1', userId: 'user-1' },
         data: {
           status: 'READ',
           readAt: expect.any(Date),
@@ -301,14 +297,12 @@ describe('NotificationsService', () => {
 
   describe('Delete Notification', () => {
     it('should delete notification', async () => {
-      prismaService.notification.delete.mockResolvedValue({
-        id: 'notif-1',
-      } as any);
+      prismaService.notification.deleteMany.mockResolvedValue({ count: 1 } as any);
 
-      await service.deleteNotification('notif-1');
+      await service.deleteNotification('notif-1', 'user-1');
 
-      expect(prismaService.notification.delete).toHaveBeenCalledWith({
-        where: { id: 'notif-1' },
+      expect(prismaService.notification.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'notif-1', userId: 'user-1' },
       });
     });
   });

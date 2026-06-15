@@ -86,10 +86,13 @@ export class FacebookController {
     try {
       const userNetworkSize = networkSize ? parseInt(networkSize, 10) : 250;
 
-      const dialogConfig =
-        typeof this.shareDialog?.getShareDialogConfig === 'function'
-          ? this.shareDialog!.getShareDialogConfig(petitionId, 'Title', 'https://example.com/img.jpg')
-          : this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
+      let dialogConfig: any;
+      if (typeof this.shareDialog?.getShareDialogConfig === 'function') {
+        const ogMeta = await this.facebookService.generateOpenGraphMeta(petitionId);
+        dialogConfig = this.shareDialog.getShareDialogConfig(petitionId, ogMeta.title, ogMeta.image);
+      } else {
+        dialogConfig = this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
+      }
 
       return { success: true, data: dialogConfig };
     } catch (err) {
@@ -121,8 +124,11 @@ export class FacebookController {
     }
 
     try {
-      if (method && typeof this.shareDialog?.recordShareCompletion === 'function') {
-        await this.shareDialog!.recordShareCompletion(userId, petitionId, method);
+      if (method) {
+        if (typeof this.shareDialog?.recordShareCompletion !== 'function') {
+          throw new BadRequestException('shareDialog service unavailable for method-based shares');
+        }
+        await this.shareDialog.recordShareCompletion(userId, petitionId, method);
       } else if (shortCode) {
         await this.facebookService.recordFacebookShare(petitionId, userId, shortCode);
       }

@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, CanActivate, ExecutionContext, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
@@ -122,20 +123,28 @@ describe('NotificationsController (e2e)', () => {
         .expect(200);
     });
 
-    it('should accept negative limit values', () => {
+    it('should clamp negative limit to 0', async () => {
       notificationsService.getUnreadNotifications.mockResolvedValue([]);
 
-      return request(app.getHttpServer())
+      await request(app.getHttpServer())
         .get('/api/v1/notifications?limit=-1')
         .expect(200);
+
+      expect(notificationsService.getUnreadNotifications).toHaveBeenCalledWith(
+        mockUser.sub, 0, 0,
+      );
     });
 
-    it('should accept negative offset values', () => {
+    it('should clamp negative offset to 0', async () => {
       notificationsService.getUnreadNotifications.mockResolvedValue([]);
 
-      return request(app.getHttpServer())
+      await request(app.getHttpServer())
         .get('/api/v1/notifications?offset=-5')
         .expect(200);
+
+      expect(notificationsService.getUnreadNotifications).toHaveBeenCalledWith(
+        mockUser.sub, 10, 0,
+      );
     });
   });
 

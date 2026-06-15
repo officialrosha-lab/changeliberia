@@ -5,6 +5,7 @@ import {
   Patch,
   Delete,
   Param,
+  Query,
   Body,
   UseGuards,
   Request,
@@ -25,15 +26,21 @@ export class NotificationsController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async getUnreadNotifications(@Request() req: AuthenticatedRequest) {
+  async getUnreadNotifications(
+    @Request() req: AuthenticatedRequest,
+    @Query('limit') rawLimit?: string,
+    @Query('offset') rawOffset?: string,
+  ) {
     const userId = req.user.sub;
-    return this.notificationsService.getUnreadNotifications(userId);
+    const limit = Math.min(100, Math.max(0, rawLimit ? parseInt(rawLimit, 10) || 0 : 10));
+    const offset = Math.max(0, rawOffset ? parseInt(rawOffset, 10) || 0 : 0);
+    return this.notificationsService.getUnreadNotifications(userId, limit, offset);
   }
 
   @Post(':id/read')
   @UseGuards(JwtAuthGuard)
-  async markAsRead(@Param('id') notificationId: string) {
-    await this.notificationsService.markAsRead(notificationId);
+  async markAsRead(@Param('id') notificationId: string, @Request() req: AuthenticatedRequest) {
+    await this.notificationsService.markAsRead(notificationId, req.user.sub);
     return { success: true };
   }
 
@@ -47,8 +54,8 @@ export class NotificationsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async deleteNotification(@Param('id') notificationId: string) {
-    await this.notificationsService.deleteNotification(notificationId);
+  async deleteNotification(@Param('id') notificationId: string, @Request() req: AuthenticatedRequest) {
+    await this.notificationsService.deleteNotification(notificationId, req.user.sub);
     return { success: true };
   }
 
