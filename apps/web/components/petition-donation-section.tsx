@@ -26,7 +26,7 @@ export function PetitionDonationSection({
         const settings = await apiGet<{
           donationsEnabled: boolean;
           petitionDonationsEnabled: boolean;
-        }>('/admin/settings/system', token || undefined);
+        }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
         setPetitionDonationsEnabled(settings.petitionDonationsEnabled);
       } catch (err) {

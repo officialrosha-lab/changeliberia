@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginForm } from './login-form';
 import { EmailLoginForm } from './email-login-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
 import { useAuthStore } from '../../../lib/store';
@@ -77,25 +76,19 @@ export default function LoginPage() {
   );
 }
 
-type LoginMethod = 'phone' | 'email';
-
 function LoginPageClient() {
-  const [method, setMethod] = useState<LoginMethod>('phone');
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
 
   useEffect(() => {
-    // Check if user just signed up and needs to verify email
     const params = new URLSearchParams(window.location.search);
     if (params.has('emailVerificationSent')) {
       setShowVerificationMessage(true);
-      // Clear the query param
       window.history.replaceState({}, '', '/auth/login');
     }
   }, []);
 
   return (
     <div>
-      {/* Email verification message */}
       {showVerificationMessage && (
         <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 dark:bg-blue-950/40 dark:border-blue-800">
           <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -104,41 +97,8 @@ function LoginPageClient() {
         </div>
       )}
 
-      {/* Auth method tabs */}
-      <div className="flex gap-2 border-b border-zinc-200 dark:border-neutral-700 mb-6">
-        <button
-          onClick={() => setMethod('phone')}
-          className={`pb-3 text-sm font-semibold transition-colors ${
-            method === 'phone'
-              ? 'border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
-              : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-          }`}
-        >
-          Phone + OTP
-        </button>
-        <button
-          onClick={() => setMethod('email')}
-          className={`pb-3 text-sm font-semibold transition-colors ${
-            method === 'email'
-              ? 'border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
-              : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-          }`}
-        >
-          Email + Password
-        </button>
-      </div>
+      <EmailLoginForm />
 
-      {/* Form content */}
-      <div>
-        {method === 'phone' && (
-          <Suspense fallback={<div className="text-sm text-zinc-500">Loading...</div>}>
-            <LoginForm />
-          </Suspense>
-        )}
-        {method === 'email' && <EmailLoginForm />}
-      </div>
-
-      {/* Divider or Google OAuth */}
       <div className="mt-6">
         <GoogleAuthButton />
       </div>
