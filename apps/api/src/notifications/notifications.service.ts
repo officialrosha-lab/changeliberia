@@ -88,35 +88,25 @@ export class NotificationsService {
   /**
    * Get user's unread notifications
    */
-  async getUnreadNotifications(userId: string, limit = 10) {
+  async getUnreadNotifications(userId: string, limit = 10, offset = 0) {
     return this.prisma.notification.findMany({
-      where: {
-        userId,
-        status: 'UNREAD',
-      },
+      where: { userId, status: 'UNREAD' },
       orderBy: { createdAt: 'desc' },
       take: limit,
+      skip: offset,
     });
   }
 
   /**
    * Mark notification as read
    */
-  async markAsRead(notificationId: string): Promise<void> {
-    try {
-      await this.prisma.notification.update({
-        where: { id: notificationId },
-        data: {
-          status: 'READ',
-          readAt: new Date(),
-        },
-      });
-    } catch (error) {
-      const err = error as any;
-      if (err?.code === 'P2025') {
-        throw new NotFoundException('Notification not found');
-      }
-      throw error;
+  async markAsRead(notificationId: string, userId: string): Promise<void> {
+    const result = await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId },
+      data: { status: 'READ', readAt: new Date() },
+    });
+    if (result.count === 0) {
+      throw new NotFoundException('Notification not found');
     }
   }
 
@@ -139,17 +129,12 @@ export class NotificationsService {
   /**
    * Delete notification
    */
-  async deleteNotification(notificationId: string): Promise<void> {
-    try {
-      await this.prisma.notification.delete({
-        where: { id: notificationId },
-      });
-    } catch (error) {
-      const err = error as any;
-      if (err?.code === 'P2025') {
-        throw new NotFoundException('Notification not found');
-      }
-      throw error;
+  async deleteNotification(notificationId: string, userId: string): Promise<void> {
+    const result = await this.prisma.notification.deleteMany({
+      where: { id: notificationId, userId },
+    });
+    if (result.count === 0) {
+      throw new NotFoundException('Notification not found');
     }
   }
 
