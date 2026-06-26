@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MoMoService } from './providers/momo.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
@@ -244,12 +245,19 @@ export class MoMoWebhookService {
   private verifyWebhookSignature(payload: any, signature: string): boolean {
     const secret = process.env.MOMO_WEBHOOK_SECRET;
     if (!secret) {
-      this.logger.warn('MoMo webhook secret not configured - skipping signature verification');
-      return true; // Allow in development
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('MOMO_WEBHOOK_SECRET is required in production');
+      }
+      this.logger.warn('MoMo webhook secret not configured - skipping signature verification (development only)');
+      return true;
     }
 
     const expectedSignature = this.momoService.generateWebhookSignature(payload, secret);
-    return signature === expectedSignature;
+    try {
+      return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+    } catch {
+      return false;
+    }
   }
 
   /**

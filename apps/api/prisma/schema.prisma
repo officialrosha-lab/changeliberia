@@ -226,6 +226,7 @@ model PetitionComment {
   user       User?    @relation(fields: [userId], references: [id])
 
   @@index([petitionId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Signature {
@@ -268,6 +269,8 @@ model IDDocument {
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
   user       User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
 
 model Device {
@@ -279,6 +282,7 @@ model Device {
   user        User?       @relation(fields: [userId], references: [id])
   signatures  Signature[]
 
+  @@index([userId])
   @@index([ipAddress])
 }
 
@@ -662,6 +666,7 @@ model Payment {
   @@index([userId, createdAt])
   @@index([petitionId, createdAt])
   @@index([contentId, createdAt])
+  @@index([subscriptionId, createdAt])
   @@index([status, createdAt])
   @@index([stripePaymentIntentId])
   @@index([stripeChargeId])
@@ -1716,13 +1721,15 @@ model Poll {
 }
 
 model PollOption {
-  id        String   @id @default(cuid())
-  pollId    String
-  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  text      String
-  voteCount Int      @default(0)
-  order     Int      // Display order (1, 2, 3...)
-  createdAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  pollId            String
+  poll              Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text              String
+  imageUrl          String?  // Public URL or Base64 of the image
+  imageStoragePath  String?  // Storage path for management
+  voteCount         Int      @default(0)
+  order             Int      // Display order (1, 2, 3...)
+  createdAt         DateTime @default(now())
   
   votes PollVote[]
   

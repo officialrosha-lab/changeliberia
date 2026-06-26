@@ -1,9 +1,17 @@
 import { Body, Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetService } from './password-reset.service';
 import { LoginDto, OtpRequestDto, OtpVerifyDto, SignupDto, EmailSignupDto, EmailLoginDto } from './dto';
+import { IsString, IsNotEmpty } from 'class-validator';
+
+class GoogleCallbackDto {
+  @IsString()
+  @IsNotEmpty()
+  token!: string;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -14,32 +22,38 @@ export class AuthController {
   ) {}
 
   // Phone-based authentication (existing)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup')
   signup(@Body() dto: SignupDto) {
     return this.authService.signup(dto);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('otp/request')
   requestOtp(@Body() dto: OtpRequestDto) {
     return this.authService.requestOtp(dto.phone);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('otp/verify')
   verifyOtp(@Body() dto: OtpVerifyDto) {
     return this.authService.verifyOtp(dto.phone, dto.code);
   }
 
   // Email-based authentication (new)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup/email')
   async signupWithEmail(@Body() dto: EmailSignupDto) {
     return this.authService.signupWithEmail(dto);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login/email')
   async loginWithEmail(@Body() dto: EmailLoginDto) {
     return this.authService.loginWithEmail(dto);
@@ -95,8 +109,8 @@ export class AuthController {
 
   // Google Identity Services (One-Tap) — receives an ID token from the frontend
   @Post('google/callback')
-  async googleTokenCallback(@Body() body: { token: string }) {
-    return this.authService.verifyGoogleToken(body.token);
+  async googleTokenCallback(@Body() dto: GoogleCallbackDto) {
+    return this.authService.verifyGoogleToken(dto.token);
   }
 }
 

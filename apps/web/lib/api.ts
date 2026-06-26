@@ -195,6 +195,22 @@ export async function apiPostFormData<T>(
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
-  if (!res.ok) throw new Error('Request failed');
+  if (!res.ok) {
+    let message = `Upload failed (${res.status} ${res.statusText})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.message === 'string') {
+        message = `${data.message} (${res.status})`;
+      } else if (Array.isArray(data?.message)) {
+        message = `${(data.message as string[]).join(', ')} (${res.status})`;
+      }
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) message = `${text} (${res.status})`;
+      } catch { /* ignore */ }
+    }
+    throw new Error(message);
+  }
   return res.json() as Promise<T>;
 }

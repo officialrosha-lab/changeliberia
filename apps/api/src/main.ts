@@ -15,28 +15,47 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 
 class RedisIoAdapter extends IoAdapter {
-  async createIOServer(port: number, options?: any) {
-    const server = await super.createIOServer(port, options);
+  private pubClient?: ReturnType<typeof createClient>;
+  private subClient?: ReturnType<typeof createClient>;
+
+  createIOServer(port: number, options?: any) {
+    const server = super.createIOServer(port, options);
 
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    const pubClient = createClient({ url: redisUrl });
-    const subClient = pubClient.duplicate();
+    this.pubClient = createClient({ url: redisUrl });
+    this.subClient = this.pubClient.duplicate();
 
-    try {
-      await Promise.all([pubClient.connect(), subClient.connect()]);
-      server.adapter(createAdapter(pubClient, subClient));
-      console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
-    } catch (error) {
-      console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
-    }
+    Promise.all([this.pubClient.connect(), this.subClient.connect()])
+      .then(() => {
+        if (this.pubClient && this.subClient) {
+          server.adapter(createAdapter(this.pubClient, this.subClient));
+          console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
+        }
+      })
+      .catch(async (error) => {
+        console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
+        // Disconnect whichever client connected successfully to avoid resource leaks
+        if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
+        if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
+      });
 
     return server;
+  }
+
+  async closeRedisConnections(): Promise<void> {
+    if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
+    if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
   }
 }
 
 function parseCorsOrigins(): boolean | string[] {
   const raw = process.env.CORS_ORIGIN?.trim();
-  if (!raw) return true;
+  if (!raw) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CORS_ORIGIN environment variable is required in production');
+    }
+    return ['http://localhost:3000'];
+  }
   return raw
     .split(',')
     .map((s) => s.trim())
@@ -284,16 +303,19 @@ async function bootstrap() {
   validateEnvOrThrow();
   const app = await NestFactory.create(AppModule);
   const useRedisAdapter = process.env.USE_REDIS_ADAPTER !== 'false';
+  let redisAdapter: RedisIoAdapter | undefined;
 
   if (useRedisAdapter) {
-    app.useWebSocketAdapter(new RedisIoAdapter(app));
+    redisAdapter = new RedisIoAdapter(app);
+    app.useWebSocketAdapter(redisAdapter);
   }
 
   const enableSwagger = isSwaggerEnabled();
   
-  // Register raw body middleware only for the Stripe webhook route
+  // Register raw body middleware only for webhook routes (signature verification requires raw body)
   // Applying it globally would consume the body stream before NestJS parses req.body
   app.use('/api/v1/payments/webhook', rawBodyMiddleware());
+  app.use('/api/v1/webhooks/resend', rawBodyMiddleware());
   
   app.use(
     helmet({
@@ -349,6 +371,13 @@ async function bootstrap() {
   }
 
   await app.listen(process.env.PORT ? Number(process.env.PORT) : 4000);
+
+  if (redisAdapter) {
+    const adapter = redisAdapter;
+    const cleanup = () => { void adapter.closeRedisConnections(); };
+    process.on('SIGTERM', cleanup);
+    process.on('SIGINT', cleanup);
+  }
 }
 
 void bootstrap();

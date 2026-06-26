@@ -29,10 +29,10 @@ export function PetitionDonationSection({
         }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
         setPetitionDonationsEnabled(settings.petitionDonationsEnabled);
-      } catch (err) {
-        // If error, default to enabled
-        setDonationsEnabled(true);
-        setPetitionDonationsEnabled(true);
+      } catch {
+        // Default to hidden on error — showing a broken donation widget is worse than hiding it
+        setDonationsEnabled(false);
+        setPetitionDonationsEnabled(false);
       } finally {
         setLoading(false);
       }

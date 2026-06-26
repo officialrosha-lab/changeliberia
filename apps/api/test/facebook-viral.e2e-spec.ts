@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, CanActivate, ExecutionContext } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { FacebookController } from '../src/facebook/facebook.controller';
@@ -11,6 +11,8 @@ import { ChallengeService } from '../src/facebook/challenge.service';
 import { FacebookPixelService } from '../src/facebook/facebook-pixel.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { EventBusService } from '../src/events/event-bus.service';
+import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../src/auth/optional-jwt-auth.guard';
 
 /**
  * Facebook Viral Growth System E2E Tests
@@ -18,8 +20,24 @@ import { EventBusService } from '../src/events/event-bus.service';
  */
 describe('Facebook Viral Growth System (e2e)', () => {
   let app: INestApplication<App>;
-  let prismaService: jest.Mocked<PrismaService>;
-  let eventBusService: jest.Mocked<EventBusService>;
+  let prismaService: any;
+  let eventBusService: any;
+
+  class MockJwtAuthGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+      const request = context.switchToHttp().getRequest();
+      request.user = { sub: 'user-1', role: 'user' };
+      return true;
+    }
+  }
+
+  class MockOptionalJwtAuthGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+      const request = context.switchToHttp().getRequest();
+      request.user = { sub: 'user-1', role: 'user' };
+      return true;
+    }
+  }
 
   const mockPetition = {
     id: 'petition-1',
@@ -56,6 +74,7 @@ describe('Facebook Viral Growth System (e2e)', () => {
             },
             user: {
               findUnique: jest.fn(),
+              findMany: jest.fn(),
               update: jest.fn(),
             },
             shareLink: {
@@ -107,7 +126,12 @@ describe('Facebook Viral Growth System (e2e)', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useClass(MockJwtAuthGuard)
+      .overrideGuard(OptionalJwtAuthGuard)
+      .useClass(MockOptionalJwtAuthGuard)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

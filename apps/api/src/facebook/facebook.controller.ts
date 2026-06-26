@@ -13,6 +13,7 @@ import {
   Headers,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { FacebookService } from './facebook.service';
 import { FacebookPixelService } from './facebook-pixel.service';
 import { FacebookSDKService } from './facebook-sdk.service';
@@ -89,7 +90,11 @@ export class FacebookController {
       let dialogConfig: any;
       if (typeof this.shareDialog?.getShareDialogConfig === 'function') {
         const ogMeta = await this.facebookService.generateOpenGraphMeta(petitionId);
-        dialogConfig = this.shareDialog.getShareDialogConfig(petitionId, ogMeta.title, ogMeta.image);
+        if (ogMeta?.title && ogMeta?.image) {
+          dialogConfig = this.shareDialog.getShareDialogConfig(petitionId, ogMeta.title, ogMeta.image);
+        } else {
+          dialogConfig = this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
+        }
       } else {
         dialogConfig = this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
       }
@@ -243,6 +248,7 @@ export class FacebookController {
   // ---------------------------------------------------------------------------
   @Post('share')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async createShare(
     @Body() body: { petitionId: string },
     @CurrentUser() user: { sub: string },

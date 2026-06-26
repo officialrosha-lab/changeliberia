@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
-@Controller('api/challenges')
+@Controller('challenges')
 export class ChallengeController {
   private readonly logger = new Logger(ChallengeController.name);
 
@@ -26,6 +26,12 @@ export class ChallengeController {
    * Get active challenges for a petition
    * Public endpoint
    */
+  @Get('active')
+  @UseGuards(OptionalJwtAuthGuard)
+  getActiveChallengesMissingId() {
+    throw new BadRequestException('petitionId is required');
+  }
+
   @Get('active/:petitionId')
   @UseGuards(OptionalJwtAuthGuard)
   async getActiveChallenges(@Param('petitionId') petitionId: string) {

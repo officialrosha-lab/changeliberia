@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PollsService } from './polls.service';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
@@ -8,7 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PollsGateway } from './polls.gateway';
 
 @Module({
-  imports: [],
+  imports: [EventEmitterModule.forRoot()],
   controllers: [PollsController, VotingController],
   providers: [
     PollsService,

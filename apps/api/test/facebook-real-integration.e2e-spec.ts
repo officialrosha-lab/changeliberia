@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, CanActivate, ExecutionContext } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { FacebookController } from '../src/facebook/facebook.controller';
+import { FacebookService } from '../src/facebook/facebook.service';
+import { FacebookPixelService } from '../src/facebook/facebook-pixel.service';
 import { FacebookSDKService } from '../src/facebook/facebook-sdk.service';
 import { ShareDialogService } from '../src/facebook/share-dialog.service';
 import { RealPixelTrackingService } from '../src/facebook/real-pixel-tracking.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { EventBusService } from '../src/events/event-bus.service';
+import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../src/auth/optional-jwt-auth.guard';
 
 /**
  * Facebook Real Integration E2E Tests
@@ -15,6 +19,8 @@ import { EventBusService } from '../src/events/event-bus.service';
  */
 describe('Facebook Real Integration (e2e)', () => {
   let app: INestApplication<App>;
+  let facebookService: jest.Mocked<FacebookService>;
+  let facebookPixelService: jest.Mocked<FacebookPixelService>;
   let facebookSdk: jest.Mocked<FacebookSDKService>;
   let shareDialog: jest.Mocked<ShareDialogService>;
   let pixelTracking: jest.Mocked<RealPixelTrackingService>;
@@ -25,6 +31,29 @@ describe('Facebook Real Integration (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [FacebookController],
       providers: [
+        {
+          provide: FacebookService,
+          useValue: {
+            generateOpenGraphMeta: jest.fn(),
+            createFacebookShareLink: jest.fn(),
+            buildFacebookShareDialog: jest.fn(),
+            trackFacebookClick: jest.fn(),
+            recordFacebookShare: jest.fn(),
+            calculateNetworkReach: jest.fn(),
+            getFacebookAnalytics: jest.fn(),
+          },
+        },
+        {
+          provide: FacebookPixelService,
+          useValue: {
+            getPixelId: jest.fn(),
+            getPixelInitCode: jest.fn(),
+            trackConversion: jest.fn(),
+            trackEvent: jest.fn(),
+            createAndSyncAudience: jest.fn(),
+            getPixelReport: jest.fn(),
+          },
+        },
         {
           provide: FacebookSDKService,
           useValue: {
@@ -83,6 +112,8 @@ describe('Facebook Real Integration (e2e)', () => {
     app.setGlobalPrefix('api');
     await app.init();
 
+    facebookService = moduleFixture.get(FacebookService) as jest.Mocked<FacebookService>;
+    facebookPixelService = moduleFixture.get(FacebookPixelService) as jest.Mocked<FacebookPixelService>;
     facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
     shareDialog = moduleFixture.get(ShareDialogService) as jest.Mocked<ShareDialogService>;
     pixelTracking = moduleFixture.get(RealPixelTrackingService) as jest.Mocked<RealPixelTrackingService>;
@@ -410,8 +441,8 @@ describe('Facebook Real Integration (e2e)', () => {
         .expect(201);
 
       expect(shareDialog.recordShareCompletion).toHaveBeenCalled();
-      expect(pixelTracking.trackView).toBeDefined();
-      expect(pixelTracking.trackLead).toBeDefined();
+      expect(pixelTracking.trackViewContent).toHaveBeenCalled();
+      expect(pixelTracking.trackLead).toHaveBeenCalled();
     });
   });
 
