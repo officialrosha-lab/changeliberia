@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -17,6 +18,8 @@ import { PaymentService, CreatePaymentIntentDto, CreateSubscriptionDto } from '.
 import { PaymentWebhookService } from './payment-webhook.service';
 import { MoMoWebhookService } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('payments')
 export class PaymentController {
@@ -150,7 +153,8 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('history/:userId')
-  async getUserPaymentHistory(@Param('userId') userId: string) {
+  async getUserPaymentHistory(@Param('userId') userId: string, @Req() req: Request & { user: { userId: string } }) {
+    if (req.user.userId !== userId) throw new ForbiddenException('Cannot access another user\'s payment history');
     const history = await this.paymentService.getUserPaymentHistory(userId);
 
     return {
@@ -241,12 +245,13 @@ export class PaymentController {
     }
   }
 
-  /**   * Get MoMo account balance (admin only)
+  /**
+   * Get MoMo account balance (admin only)
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Get('momo/balance')
   async getMoMoBalance() {
-    // TODO: Add admin role check
     const balance = await this.paymentService.getMoMoBalance();
 
     return {

@@ -2,7 +2,7 @@
 
 import { Turnstile } from '@marsidev/react-turnstile';
 import { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiPost, apiDelete } from '../../../lib/api';
+import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { ShareModal } from '../../../components/share-modal';
 import { PetitionCardGenerator } from '../../../components/petition-card-generator';
@@ -47,26 +47,27 @@ export function SignForm({
     }
   }, []);
 
-  // Layer A: localStorage (instant, works for all users)
-  // Layer B: API check (authoritative, logged-in users only)
+  // Signed-state check:
+  // - Authenticated users: always ask the server (localStorage may be stale across devices)
+  // - Anonymous users: use localStorage as a best-effort hint
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (localStorage.getItem(localKey(petitionId))) {
-      setHasSigned(true);
+    if (token) {
+      apiGet<{ signed: boolean }>(`/signatures/${petitionId}/has-signed`, token)
+        .then(({ signed }) => {
+          setHasSigned(signed);
+          if (signed) localStorage.setItem(localKey(petitionId), '1');
+          else localStorage.removeItem(localKey(petitionId));
+        })
+        .catch(() => {
+          // Fall back to localStorage on network error
+          setHasSigned(localStorage.getItem(localKey(petitionId)) !== null);
+        });
       return;
     }
 
-    if (!token) return;
-
-    apiGet<{ signed: boolean }>(`/signatures/${petitionId}/has-signed`, token)
-      .then(({ signed }) => {
-        if (signed) {
-          localStorage.setItem(localKey(petitionId), '1');
-          setHasSigned(true);
-        }
-      })
-      .catch(() => {/* silent — form stays visible */});
+    setHasSigned(localStorage.getItem(localKey(petitionId)) !== null);
   }, [petitionId, token]);
 
   useEffect(() => {
@@ -78,8 +79,7 @@ export function SignForm({
 
   // Live signature counter via SSE
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-    const es = new EventSource(`${apiBase}/petitions/${petitionId}/live`);
+    const es = new EventSource(`${getApiBase()}/petitions/${petitionId}/live`);
     es.onmessage = () => { setCount((prev) => prev + 1); };
     es.onerror = () => { es.close(); };
     return () => { es.close(); };

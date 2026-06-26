@@ -7,6 +7,7 @@ import {
   UseGuards,
   Res,
   BadRequestException,
+  HttpCode,
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
@@ -16,6 +17,7 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { CreateGovernmentContactDto } from './dto/create-government-contact.dto';
 
 @Controller('government')
 export class GovernmentController {
@@ -34,7 +36,9 @@ export class GovernmentController {
     @Body() submitData: { petitionId: string; governmentEmail: string; notes?: string },
     @CurrentUser() user: any,
   ) {
-    const { petitionId, governmentEmail, notes } = submitData;
+    const petitionId = submitData.petitionId?.trim();
+    const governmentEmail = submitData.governmentEmail?.trim();
+    const notes = submitData.notes?.trim();
 
     if (!petitionId || !governmentEmail) {
       throw new BadRequestException('petitionId and governmentEmail are required');
@@ -185,27 +189,16 @@ export class GovernmentController {
   @Post('contacts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async createGovernmentContact(
-    @Body()
-    contactData: {
-      name: string;
-      email: string;
-      phone?: string;
-      category: string;
-      region?: string;
-      priority: number;
-    },
-  ) {
-    if (!contactData.name || !contactData.email || !contactData.category) {
-      throw new BadRequestException(
-        'name, email, and category are required',
-      );
-    }
-
+  async createGovernmentContact(@Body() dto: CreateGovernmentContactDto) {
     try {
-      const contact = await this.governmentService.createGovernmentContact(
-        contactData,
-      );
+      const contact = await this.governmentService.createGovernmentContact({
+        name: dto.name.trim(),
+        email: dto.email.trim().toLowerCase(),
+        category: dto.category.trim(),
+        phone: dto.phone?.trim(),
+        region: dto.region?.trim(),
+        priority: dto.priority,
+      });
 
       return {
         success: true,
@@ -226,6 +219,7 @@ export class GovernmentController {
   @Post('status/:petitionId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @HttpCode(200)
   async updateSubmissionStatus(
     @Param('petitionId') petitionId: string,
     @Body() updateData: { status: string },
