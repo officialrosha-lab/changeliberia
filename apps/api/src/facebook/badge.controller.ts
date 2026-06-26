@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
-@Controller('api/badges')
+@Controller('badges')
 export class BadgeController {
   private readonly logger = new Logger(BadgeController.name);
 

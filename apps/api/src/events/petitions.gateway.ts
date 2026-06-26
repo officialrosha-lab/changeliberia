@@ -17,11 +17,9 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @WebSocketGateway({
   cors: {
-    origin: [
-      'http://localhost:3000',
-      'http://10.158.217.47:3000',
-      process.env.WEB_URL || 'http://localhost:3000',
-    ],
+    origin: process.env.WEBSOCKET_CORS_ORIGIN
+      ? process.env.WEBSOCKET_CORS_ORIGIN.split(',').map((o) => o.trim())
+      : [process.env.WEB_URL || 'http://localhost:3000'],
     credentials: true,
   },
   namespace: 'petitions',

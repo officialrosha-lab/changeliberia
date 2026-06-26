@@ -80,31 +80,28 @@ export class SignaturesService {
       }
     }
 
-    const signature = await this.prisma.signature.create({
-      data: {
-        petitionId: dto.petitionId,
-        userId,
-        name: dto.name,
-        anonymous: dto.anonymous ?? false,
-        ipAddress,
-        deviceId,
-        trustScoreSnapshot: Math.max(0, 100 - risk.riskPoints),
-      },
+    const { signature, updatedPetition } = await this.prisma.$transaction(async (tx) => {
+      const signature = await tx.signature.create({
+        data: {
+          petitionId: dto.petitionId,
+          userId,
+          name: dto.name,
+          anonymous: dto.anonymous ?? false,
+          ipAddress,
+          deviceId,
+          trustScoreSnapshot: Math.max(0, 100 - risk.riskPoints),
+        },
+      });
+      const updatedPetition = await tx.petition.update({
+        where: { id: dto.petitionId },
+        data: {
+          signaturesCount: { increment: 1 },
+          todaySignatures: { increment: 1 },
+        },
+      });
+      return { signature, updatedPetition };
     });
     signaturesCreatedTotal.inc();
-
-    await this.prisma.petition.update({
-      where: { id: dto.petitionId },
-      data: {
-        signaturesCount: { increment: 1 },
-        todaySignatures: { increment: 1 },
-      },
-    });
-
-    // Fetch updated petition for realtime broadcast
-    const updatedPetition = await this.prisma.petition.findUnique({
-      where: { id: dto.petitionId },
-    });
 
     await this.eventBus.publish(
       new SignatureAddedEvent(

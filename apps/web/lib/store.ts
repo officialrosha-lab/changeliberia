@@ -30,11 +30,26 @@ export const useMenuStore = create<MenuState>()((set) => ({
   toggleMenu: () => set((s) => ({ isMenuOpen: !s.isMenuOpen })),
 }));
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
-      setToken: (token) => set({ token }),
+      setToken: (token) => {
+        if (token && isTokenExpired(token)) {
+          set({ token: null });
+          return;
+        }
+        set({ token });
+      },
       authMethod: 'phone',
       setAuthMethod: (method) => set({ authMethod: method }),
       userEmail: null,
@@ -42,10 +57,16 @@ export const useAuthStore = create<AuthState>()(
       hydrated: false,
       setHydrated: (hydrated) => set({ hydrated }),
     }),
-    { 
+    {
       name: 'vlv-auth-storage',
       onRehydrateStorage: () => (state) => {
-        if (state) state.hydrated = true;
+        if (state) {
+          // Clear expired token on page load before marking as hydrated
+          if (state.token && isTokenExpired(state.token)) {
+            state.token = null;
+          }
+          state.hydrated = true;
+        }
       },
     },
   ),

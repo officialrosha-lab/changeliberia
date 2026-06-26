@@ -6,10 +6,12 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly prisma: PrismaService) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is required');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET ?? 'super-secret',
+      secretOrKey: secret,
     });
   }
 
@@ -19,6 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: { id: true, phone: true, role: true },
     });
     if (!user) throw new UnauthorizedException();
-    return { userId: user.id, phone: user.phone, role: user.role };
+    return {
+      id: user.id,
+      userId: user.id,
+      phone: user.phone,
+      role: user.role,
+    };
   }
 }

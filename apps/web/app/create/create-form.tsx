@@ -62,6 +62,7 @@ const inputCls =
 
 export function CreatePetitionForm() {
   const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const setToken = useAuthStore((s) => s.setToken);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -96,6 +97,11 @@ export function CreatePetitionForm() {
   const [imagePreviewSrc, setImagePreviewSrc] = useState('');
 
   const prefillTitle = searchParams.get('title') ?? '';
+
+  // Redirect unauthenticated users immediately — don't show the form to guests
+  useEffect(() => {
+    if (hydrated && !token) router.replace('/auth/login?next=/create');
+  }, [hydrated, token, router]);
 
   useEffect(() => {
     // Always fetch system settings (public endpoint)

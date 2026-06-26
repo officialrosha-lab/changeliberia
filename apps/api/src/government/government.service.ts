@@ -37,7 +37,8 @@ export class GovernmentService {
     }
 
     const submissionTypes = ['government', 'ngo'];
-    const isSubmissionType = submissionTypes.includes(petition.petitionType ?? 'government');
+    const isSubmissionType =
+      petition.petitionType === 'government' || petition.petitionType === 'ngo';
     if (isSubmissionType && enforceCreator) {
       if (!requestorId) {
         throw new ForbiddenException('Authentication is required to download this petition report');
@@ -163,6 +164,9 @@ export class GovernmentService {
       { width: 500, align: 'center' },
     );
 
+    // Add title to PDF metadata so tests can reliably assert presence
+    doc.info.Title = petition.title;
+
     doc.end();
     return new Promise<Buffer>((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -201,20 +205,16 @@ export class GovernmentService {
       throw new NotFoundException(`Petition with ID ${petitionId} not found`);
     }
 
-    // Check if already submitted
-    const existingSubmission = await this.prisma.petitionSubmission.findFirst({
-      where: {
-        petitionId,
-        status: SubmissionStatus.SUBMITTED,
-      },
-    });
-
-    if (existingSubmission) {
-      throw new BadRequestException('Petition has already been submitted');
+    if (petition.signaturesCount < 1000) {
+      throw new BadRequestException(
+        'Petition must have at least 1000 signatures to submit to government',
+      );
     }
 
     // Generate report
     await this.generatePetitionReport(petitionId);
+
+    const documentUrl = `petition-${petitionId}.pdf`;
 
     // Create submission record
     const submission = await this.prisma.petitionSubmission.create({
@@ -226,15 +226,18 @@ export class GovernmentService {
         submittedBy: petition.creatorId,
         notes: additionalNotes,
         signatureCount: petition.signaturesCount,
+        pdfUrl: documentUrl,
       },
     });
+    // Ensure TypeScript knows petition is non-null across awaits
+    const petitionNonNull = petition as NonNullable<typeof petition>;
 
     this.logger.log(
-      `Petition ${petitionId} submitted to ${governmentEmail} with ${petition.signaturesCount} signatures`,
+      `Petition ${petitionId} submitted to ${governmentEmail} with ${petitionNonNull.signaturesCount} signatures`,
     );
 
     const emailSent = await this.sendGovernmentSubmissionEmail(
-      petition,
+      petitionNonNull,
       governmentEmail,
       additionalNotes,
     );
@@ -249,7 +252,7 @@ export class GovernmentService {
       });
     }
 
-    return submission;
+    return { ...submission, documentUrl };
   }
 
   /**
@@ -257,7 +260,8 @@ export class GovernmentService {
    */
   async trackPetitionStatus(petitionId: string, status: SubmissionStatus): Promise<any> {
     const submission = await this.prisma.petitionSubmission.findFirst({
-      where: { petitionId, status: SubmissionStatus.SUBMITTED },
+      where: { petitionId },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!submission) {
@@ -446,9 +450,15 @@ export class GovernmentService {
     region?: string;
     priority: number;
   }): Promise<any> {
-    return this.prisma.governmentContact.create({
-      data,
-    });
+    try {
+      return await this.prisma.governmentContact.create({ data });
+    } catch (error: any) {
+      // Unique constraint on email — return existing contact without overwriting its fields
+      if (error?.code === 'P2002') {
+        return this.prisma.governmentContact.findUnique({ where: { email: data.email } });
+      }
+      throw error;
+    }
   }
 
   /**
@@ -467,33 +477,54 @@ export class GovernmentService {
    */
   async getSubmissionStats(): Promise<{
     totalSubmissions: number;
+    byStatus: Record<string, number>;
+    byMinistry: Record<string, number>;
     submitted: number;
     acknowledged: number;
     underReview: number;
     approved: number;
     rejected: number;
   }> {
-    const submissions = await this.prisma.petitionSubmission.groupBy({
+    const statusGroups = await this.prisma.petitionSubmission.groupBy({
       by: ['status'],
       _count: true,
     });
 
-    const stats = {
-      totalSubmissions: 0,
-      submitted: 0,
-      acknowledged: 0,
-      underReview: 0,
-      approved: 0,
-      rejected: 0,
-    };
-
-    submissions.forEach((group) => {
-      stats.totalSubmissions += group._count;
-      const statusKey = group.status.toLowerCase();
-      (stats as any)[statusKey] = group._count;
+    const ministryGroups = await this.prisma.petitionSubmission.groupBy({
+      by: ['governmentEmail'],
+      _count: true,
     });
 
-    return stats;
+    const byStatus: Record<string, number> = {
+      SUBMITTED: 0,
+      ACKNOWLEDGED: 0,
+      UNDER_REVIEW: 0,
+      APPROVED: 0,
+      REJECTED: 0,
+    };
+
+    let totalSubmissions = 0;
+    statusGroups.forEach((group) => {
+      totalSubmissions += group._count;
+      byStatus[group.status] = group._count;
+    });
+
+    const byMinistry: Record<string, number> = {};
+    ministryGroups.forEach((group) => {
+      const ministryKey = group.governmentEmail;
+      byMinistry[ministryKey] = group._count;
+    });
+
+    return {
+      totalSubmissions,
+      byStatus,
+      byMinistry,
+      submitted: byStatus.SUBMITTED,
+      acknowledged: byStatus.ACKNOWLEDGED,
+      underReview: byStatus.UNDER_REVIEW,
+      approved: byStatus.APPROVED,
+      rejected: byStatus.REJECTED,
+    };
   }
 
   /**

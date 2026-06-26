@@ -22,10 +22,10 @@ export function HomeDonationSection() {
         }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
         setPlatformDonationsEnabled(settings.platformDonationsEnabled);
-      } catch (err) {
-        // If error, default to enabled
-        setDonationsEnabled(true);
-        setPlatformDonationsEnabled(true);
+      } catch {
+        // Default to hidden on error — showing a broken donation widget is worse than hiding it
+        setDonationsEnabled(false);
+        setPlatformDonationsEnabled(false);
       } finally {
         setLoading(false);
       }

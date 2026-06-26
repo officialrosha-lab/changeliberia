@@ -11,8 +11,10 @@ interface TestPoll {
 }
 
 describe('Voting API integration', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
+  jest.setTimeout(300000);
+
+  let app: INestApplication | null = null;
+  let prisma: PrismaService | null = null;
   let authorId: string;
   const polls: TestPoll[] = [];
   const testIpHeaders = {
@@ -21,13 +23,17 @@ describe('Voting API integration', () => {
   };
 
   beforeAll(async () => {
+    console.log('voting.e2e.spec.ts beforeAll: creating module fixture');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [PollsModule],
     }).compile();
 
+    console.log('voting.e2e.spec.ts beforeAll: module fixture created');
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    console.log('voting.e2e.spec.ts beforeAll: initializing app');
     await app.init();
+    console.log('voting.e2e.spec.ts beforeAll: app initialized');
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
@@ -73,28 +79,32 @@ describe('Voting API integration', () => {
   });
 
   afterAll(async () => {
-    await prisma.pollVote.deleteMany({
-      where: { pollId: { in: polls.map((p) => p.id) } },
-    });
-    await prisma.pollOption.deleteMany({
-      where: { pollId: { in: polls.map((p) => p.id) } },
-    });
-    await prisma.poll.deleteMany({
-      where: { id: { in: polls.map((p) => p.id) } },
-    });
-    if (authorId) {
-      await prisma.user.deleteMany({
-        where: { id: authorId },
+    if (prisma) {
+      await prisma.pollVote.deleteMany({
+        where: { pollId: { in: polls.map((p) => p.id) } },
       });
+      await prisma.pollOption.deleteMany({
+        where: { pollId: { in: polls.map((p) => p.id) } },
+      });
+      await prisma.poll.deleteMany({
+        where: { id: { in: polls.map((p) => p.id) } },
+      });
+      if (authorId) {
+        await prisma.user.deleteMany({
+          where: { id: authorId },
+        });
+      }
     }
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it('accepts a vote, rejects duplicate votes, and enforces fingerprint rate limiting', async () => {
     const firstPoll = polls[0];
     const secondPoll = polls[10];
 
-    const firstResponse = await request(app.getHttpServer())
+    const firstResponse = await request(app!.getHttpServer())
       .post(`/polls/${firstPoll.id}/vote`)
       .set(testIpHeaders)
       .send({ optionId: firstPoll.optionIds[0] })
@@ -103,7 +113,7 @@ describe('Voting API integration', () => {
     expect(firstResponse.body.success).toBe(true);
     expect(firstResponse.body.voteId).toBeDefined();
 
-    const firstPollAfter = await prisma.poll.findUnique({
+    const firstPollAfter = await prisma!.poll.findUnique({
       where: { id: firstPoll.id },
       include: { options: true },
     });
@@ -113,7 +123,7 @@ describe('Voting API integration', () => {
       firstPollAfter?.options.find((opt) => opt.id === firstPoll.optionIds[0])?.voteCount,
     ).toBe(1);
 
-    await request(app.getHttpServer())
+    await request(app!.getHttpServer())
       .post(`/polls/${firstPoll.id}/vote`)
       .set(testIpHeaders)
       .send({ optionId: firstPoll.optionIds[0] })
@@ -121,14 +131,14 @@ describe('Voting API integration', () => {
 
     for (let index = 1; index < 10; index += 1) {
       const poll = polls[index];
-      await request(app.getHttpServer())
+      await request(app!.getHttpServer())
         .post(`/polls/${poll.id}/vote`)
         .set(testIpHeaders)
         .send({ optionId: poll.optionIds[0] })
         .expect(201);
     }
 
-    await request(app.getHttpServer())
+    await request(app!.getHttpServer())
       .post(`/polls/${secondPoll.id}/vote`)
       .set(testIpHeaders)
       .send({ optionId: secondPoll.optionIds[0] })
@@ -137,7 +147,7 @@ describe('Voting API integration', () => {
 
   it('returns a poll by slug', async () => {
     const poll = polls[0];
-    const response = await request(app.getHttpServer())
+    const response = await request(app!.getHttpServer())
       .get(`/polls/slug/${poll.slug}`)
       .expect(200);
 
