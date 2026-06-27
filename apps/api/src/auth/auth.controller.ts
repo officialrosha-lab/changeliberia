@@ -60,7 +60,7 @@ export class AuthController {
   }
 
   // Email verification flow
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 2, ttl: 300000 } })
   @Post('send-verification-email')
   async sendVerificationEmail(@Body() body: { email: string }) {
     return this.emailVerificationService.sendVerificationEmail(body.email);
@@ -72,17 +72,23 @@ export class AuthController {
     return this.authService.verifyEmailToken(body.email, body.token);
   }
 
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 2, ttl: 300000 } })
   @Post('resend-verification-email')
   async resendVerificationEmail(@Body() body: { email: string }) {
     return this.authService.resendVerificationEmail(body.email);
   }
 
   // Password reset flow
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 2, ttl: 600000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() body: { email: string }) {
-    return this.passwordResetService.sendPasswordResetEmail(body.email);
+    // Always return the same success response to prevent email enumeration
+    try {
+      await this.passwordResetService.sendPasswordResetEmail(body.email);
+    } catch {
+      // Swallow — caller sees same message whether email exists or not
+    }
+    return { success: true, message: 'If an account with that email exists, a reset link has been sent.' };
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
