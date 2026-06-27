@@ -186,9 +186,66 @@ function CountUp({ value }: { value: number }) {
   return <>{display.toLocaleString()}</>;
 }
 
+// --- Vertical bar (column chart) ---
+function VerticalBar({
+  percentage,
+  gradient,
+  label,
+  votes,
+  isWinner,
+  delay,
+}: {
+  percentage: number;
+  gradient: string;
+  label: string;
+  votes: number;
+  isWinner: boolean;
+  delay: number;
+}) {
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setHeight(percentage), delay + 150);
+    return () => clearTimeout(t);
+  }, [percentage, delay]);
+
+  return (
+    <div className="flex flex-1 flex-col items-center gap-2">
+      {/* Percentage label */}
+      <span className={`text-sm font-extrabold tabular-nums ${isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'}`}>
+        {percentage}%
+      </span>
+
+      {/* Bar column */}
+      <div className="relative flex w-full flex-1 items-end overflow-hidden rounded-t-2xl bg-zinc-100 dark:bg-neutral-800">
+        <div
+          className={`w-full rounded-t-2xl bg-gradient-to-t ${gradient} transition-all duration-700 ease-out`}
+          style={{ height: `${height}%` }}
+        />
+        {isWinner && (
+          <div className="absolute -top-0.5 left-1/2 -translate-x-1/2">
+            <span className="block h-1.5 w-8 rounded-full bg-amber-400" />
+          </div>
+        )}
+      </div>
+
+      {/* Vote count */}
+      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 tabular-nums">
+        <CountUp value={votes} />
+      </span>
+
+      {/* Label */}
+      <p className="line-clamp-2 text-center text-[11px] leading-tight text-zinc-500 dark:text-zinc-400">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export default function PollDetailClient({ initialPoll }: { initialPoll: PollDetails }) {
   const [poll, setPoll] = useState<PollDetails>(initialPoll);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -198,13 +255,13 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
   const { onPollUpdate } = usePollSocket({ pollId: initialPoll.id });
 
   useEffect(() => {
-    return onPollUpdate((update) => {
+    return onPollUpdate((update: { pollId: string; totalVotes: number; options: { id: string; voteCount: number }[] }) => {
       if (update.pollId !== poll.id) return;
-      setPoll((current) => ({
+      setPoll((current: PollDetails) => ({
         ...current,
         totalVotes: update.totalVotes,
-        options: current.options.map((option) => {
-          const updatedOption = update.options.find((item) => item.id === option.id);
+        options: current.options.map((option: PollOption) => {
+          const updatedOption = update.options.find((item: { id: string; voteCount: number }) => item.id === option.id);
           return updatedOption ? { ...option, voteCount: updatedOption.voteCount } : option;
         }),
       }));
@@ -212,15 +269,15 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
   }, [onPollUpdate, poll.id]);
 
   const sortedOptions = useMemo(
-    () => [...poll.options].sort((a, b) => b.voteCount - a.voteCount),
+    () => [...poll.options].sort((a: PollOption, b: PollOption) => b.voteCount - a.voteCount),
     [poll.options],
   );
 
-  const hasImages = poll.options.some((o) => o.imageUrl);
+  const hasImages = poll.options.some((o: PollOption) => o.imageUrl);
   const isActive = poll.status === 'ACTIVE' || poll.status === 'APPROVED';
   const categoryColor = CATEGORY_COLORS[poll.category ?? ''] ?? 'bg-zinc-100 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300';
   const expiry = closesIn(poll.expiresAt);
-  const maxVotes = Math.max(...poll.options.map((o) => o.voteCount), 1);
+  const maxVotes = Math.max(...poll.options.map((o: PollOption) => o.voteCount), 1);
 
   async function handleVote(optionId: string) {
     if (votedOptionId || !isActive) return;
@@ -234,7 +291,12 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
       await apiPost(`/polls/${poll.id}/vote`, { optionId }, token);
       setVotedOptionId(optionId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Vote failed. Please try again.');
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.toLowerCase().includes('already voted') || msg.includes('401')) {
+        setAlreadyVoted(true);
+      } else {
+        setError(msg || 'Vote failed. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -359,7 +421,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
         {/* Options — image grid layout */}
         {hasImages ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            {sortedOptions.map((option, idx) => {
+            {sortedOptions.map((option: PollOption, idx: number) => {
               const percentage = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0;
               const isVoted = votedOptionId === option.id;
               const isLeading = option.voteCount === maxVotes && poll.totalVotes > 0;
@@ -432,7 +494,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
         ) : (
           /* Text-only layout — richer chart */
           <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
-            {sortedOptions.map((option, idx) => {
+            {sortedOptions.map((option: PollOption, idx: number) => {
               const percentage = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0;
               const isVoted = votedOptionId === option.id;
               const isLeading = option.voteCount === maxVotes && poll.totalVotes > 0;
@@ -521,9 +583,50 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
           </div>
         )}
 
+        {/* Already voted — friendly message */}
+        {alreadyVoted && (
+          <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 dark:border-blue-900/40 dark:bg-blue-950/40">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+              <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">You&apos;ve already voted on this poll</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">Your voice has been counted. Watch the live results below.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Generic error */}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950 dark:text-red-300">
             {error}
+          </div>
+        )}
+
+        {/* ── Vertical bar chart ── */}
+        {poll.totalVotes > 0 && (
+          <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+            <p className="mb-6 text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Results breakdown</p>
+            <div className="flex h-48 items-end gap-3">
+              {poll.options.map((option: PollOption, idx: number) => {
+                const pct = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0;
+                const gradient = BAR_GRADIENTS[idx % BAR_GRADIENTS.length];
+                const isWinner = option.voteCount === Math.max(...poll.options.map((o: PollOption) => o.voteCount));
+                return (
+                  <VerticalBar
+                    key={option.id}
+                    percentage={pct}
+                    gradient={gradient}
+                    label={option.text}
+                    votes={option.voteCount}
+                    isWinner={isWinner && poll.totalVotes > 0}
+                    delay={idx * 120}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
       </section>
