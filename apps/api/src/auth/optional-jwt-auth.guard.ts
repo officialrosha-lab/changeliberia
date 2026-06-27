@@ -8,9 +8,11 @@ export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
   handleRequest<TUser = { userId: string } | null>(
     err: unknown,
     user: TUser,
+    info: unknown,
   ): TUser | null {
-    if (err) {
-      this.logger.debug(`JWT parse error (optional guard, treating as anonymous): ${String(err)}`);
+    if (err || !user) {
+      const reason = err ? String(err) : (info ? String(info) : 'no token');
+      this.logger.debug(`JWT parse error (optional guard, treating as anonymous): ${reason}`);
       return null;
     }
     return user;

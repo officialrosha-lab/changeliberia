@@ -42,6 +42,28 @@
             "approve": true,
             "matchCommandLine": true
         },
-        "exit": true
+        "exit": true,
+        "/^cd /Users/visionalventure/Change\\\\ Liberia/apps/api && pwd && ls test && node -v && pnpm -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "./node_modules/.bin/jest": true,
+        "npm run test:e2e": true,
+        "/^cd '/Users/visionalventure/Change Liberia/apps/api' && cat > inspect-service\\.ts <<'EOF'\nimport \\{ FacebookService \\} from '\\./src/facebook/facebook\\.service';\n\nconst mockPetition = \\{ id: 'petition-1' \\} as any;\nconst mockUser = \\{ id: 'test-token', trustScore: 75 \\} as any;\nconst prismaMock: any = \\{\n  petition: \\{ findUnique: async \\(\\{ where \\}: any\\) => mockPetition \\},\n  user: \\{ findUnique: async \\(\\{ where \\}: any\\) => mockUser \\},\n  shareLink: \\{ create: async \\(\\{ data \\}: any\\) => \\(\\{ \\.\\.\\.data, id: 'share-1', shortCode: 'abc12345', targetUrl: 'https://changelib\\.org/petitions/petition-1', petitionId: 'petition-1', source: 'facebook', medium: 'social', campaign: 'user_share', shareDialogUsed: true, clickCount: 0, conversions: 0, networkReachEstimate: 250, lastClickedAt: null \\}\\), findUnique: async \\(\\) => null, findMany: async \\(\\) => \\[\\], update: async \\(\\) => undefined, count: async \\(\\) => 0, aggregate: async \\(\\) => \\(\\{ _sum: \\{ conversions: 0 \\} \\}\\) \\},\n\\};\nconst eventBusMock: any = \\{ publish: async \\(\\) => \\{\\}, listen: async \\(\\) => \\{\\} \\};\nconst svc = new FacebookService\\(prismaMock, eventBusMock\\);\n\nsvc\\.createFacebookShareLink\\('petition-1', 'test-token'\\)\\.then\\(\\(result\\) => \\{\n  console\\.log\\('result', result\\);\n\\}\\)\\.catch\\(\\(err\\) => \\{\n  console\\.error\\('error', err\\);\n\\}\\);\nEOF\nnode inspect-service\\.ts$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /Users/visionalventure/Change\\\\ Liberia/apps/api && python - <<'PY'\nfrom pathlib import Path\npath = Path\\('test/payment-integration\\.e2e-spec\\.ts'\\)\ntext = path\\.read_text\\(\\)\ntext = text\\.replace\\(\"\\.set\\('Authorization', mockAuthToken\\)\", \"\\.set\\('Authorization', userToken\\)\"\\)\npath\\.write_text\\(text\\)\nprint\\('replaced auth header refs'\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /Users/visionalventure/Change\\\\ Liberia/apps/api && python3 - <<'PY'\nfrom pathlib import Path\npath = Path\\('test/payment-integration\\.e2e-spec\\.ts'\\)\ntext = path\\.read_text\\(\\)\ntext = text\\.replace\\(\"\\.set\\('Authorization', mockAuthToken\\)\", \"\\.set\\('Authorization', userToken\\)\"\\)\npath\\.write_text\\(text\\)\nprint\\('replaced auth header refs'\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /Users/visionalventure/Change\\\\ Liberia/apps/api && perl -pi -e \"s\\{\\('/payments\\)\\}\\{'/api/payments\\}g; s\\{\\(\\\\\"/payments\\)\\}\\{\\\\\"/api/payments\\}g\" test/payment-integration\\.e2e-spec\\.ts$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSignatureDto } from './dto';
 import { FraudService } from '../fraud/fraud.service';
@@ -80,27 +81,36 @@ export class SignaturesService {
       }
     }
 
-    const { signature, updatedPetition } = await this.prisma.$transaction(async (tx) => {
-      const signature = await tx.signature.create({
-        data: {
-          petitionId: dto.petitionId,
-          userId,
-          name: dto.name,
-          anonymous: dto.anonymous ?? false,
-          ipAddress,
-          deviceId,
-          trustScoreSnapshot: Math.max(0, 100 - risk.riskPoints),
-        },
+    let txResult: { signature: any; updatedPetition: any };
+    try {
+      txResult = await this.prisma.$transaction(async (tx) => {
+        const signature = await tx.signature.create({
+          data: {
+            petitionId: dto.petitionId,
+            userId,
+            name: dto.name,
+            anonymous: dto.anonymous ?? false,
+            ipAddress,
+            deviceId,
+            trustScoreSnapshot: Math.max(0, 100 - risk.riskPoints),
+          },
+        });
+        const updatedPetition = await tx.petition.update({
+          where: { id: dto.petitionId },
+          data: {
+            signaturesCount: { increment: 1 },
+            todaySignatures: { increment: 1 },
+          },
+        });
+        return { signature, updatedPetition };
       });
-      const updatedPetition = await tx.petition.update({
-        where: { id: dto.petitionId },
-        data: {
-          signaturesCount: { increment: 1 },
-          todaySignatures: { increment: 1 },
-        },
-      });
-      return { signature, updatedPetition };
-    });
+    } catch (err) {
+      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new BadRequestException('You already signed this petition');
+      }
+      throw err;
+    }
+    const { signature, updatedPetition } = txResult;
     signaturesCreatedTotal.inc();
 
     await this.eventBus.publish(

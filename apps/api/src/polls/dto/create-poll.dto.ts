@@ -26,11 +26,15 @@ function isPrivateIPv4(ip: string): boolean {
 }
 
 function isPrivateHost(hostname: string): boolean {
+  // Strip IPv6 brackets (e.g. [::1] → ::1) so net.isIPv6 / checks work correctly
+  const host = hostname.startsWith('[') && hostname.endsWith(']')
+    ? hostname.slice(1, -1)
+    : hostname;
   // Reject localhost names
-  if (hostname === 'localhost' || hostname.endsWith('.local')) return true;
-  if (net.isIPv4(hostname)) return isPrivateIPv4(hostname);
-  if (net.isIPv6(hostname)) {
-    const lower = hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.local')) return true;
+  if (net.isIPv4(host)) return isPrivateIPv4(host);
+  if (net.isIPv6(host)) {
+    const lower = host.toLowerCase();
     if (lower === '::1') return true; // loopback
     if (/^fe[89ab]/i.test(lower)) return true; // fe80::/10 link-local
     if (/^f[cd]/i.test(lower)) return true; // fc00::/7 unique-local

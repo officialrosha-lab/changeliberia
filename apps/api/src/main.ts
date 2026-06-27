@@ -25,18 +25,19 @@ class RedisIoAdapter extends IoAdapter {
     this.pubClient = createClient({ url: redisUrl });
     this.subClient = this.pubClient.duplicate();
 
-    Promise.all([this.pubClient.connect(), this.subClient.connect()])
-      .then(() => {
-        if (this.pubClient && this.subClient) {
-          server.adapter(createAdapter(this.pubClient, this.subClient));
-          console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
+    Promise.allSettled([this.pubClient.connect(), this.subClient.connect()])
+      .then(async ([pubResult, subResult]) => {
+        if (pubResult.status === 'fulfilled' && subResult.status === 'fulfilled') {
+          if (this.pubClient && this.subClient) {
+            server.adapter(createAdapter(this.pubClient, this.subClient));
+            console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
+          }
+        } else {
+          const error = pubResult.status === 'rejected' ? pubResult.reason : (subResult as PromiseRejectedResult).reason;
+          console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
+          if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
+          if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
         }
-      })
-      .catch(async (error) => {
-        console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
-        // Disconnect whichever client connected successfully to avoid resource leaks
-        if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
-        if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
       });
 
     return server;
@@ -374,9 +375,13 @@ async function bootstrap() {
 
   if (redisAdapter) {
     const adapter = redisAdapter;
-    const cleanup = () => { void adapter.closeRedisConnections(); };
-    process.on('SIGTERM', cleanup);
-    process.on('SIGINT', cleanup);
+    const cleanup = async () => {
+      await adapter.closeRedisConnections().catch(() => {});
+      await app.close().catch(() => {});
+      process.exit(0);
+    };
+    process.on('SIGTERM', () => { void cleanup(); });
+    process.on('SIGINT', () => { void cleanup(); });
   }
 }
 

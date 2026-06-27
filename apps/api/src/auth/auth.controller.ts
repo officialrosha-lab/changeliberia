@@ -60,33 +60,38 @@ export class AuthController {
   }
 
   // Email verification flow
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('send-verification-email')
   async sendVerificationEmail(@Body() body: { email: string }) {
     return this.emailVerificationService.sendVerificationEmail(body.email);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('verify-email')
   async verifyEmail(@Body() body: { email: string; token: string }) {
-    // Verify token and mark email as confirmed, returns JWT
     return this.authService.verifyEmailToken(body.email, body.token);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('resend-verification-email')
   async resendVerificationEmail(@Body() body: { email: string }) {
     return this.authService.resendVerificationEmail(body.email);
   }
 
   // Password reset flow
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() body: { email: string }) {
     return this.passwordResetService.sendPasswordResetEmail(body.email);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('validate-reset-token')
   async validateResetToken(@Body() body: { email: string; token: string }) {
     return this.passwordResetService.validateResetToken(body.token, body.email);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
   async resetPassword(
     @Body() body: { email: string; token: string; newPassword: string },

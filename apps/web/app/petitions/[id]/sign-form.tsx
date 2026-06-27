@@ -54,17 +54,20 @@ export function SignForm({
     if (typeof window === 'undefined') return;
 
     if (token) {
+      let cancelled = false;
       apiGet<{ signed: boolean }>(`/signatures/${petitionId}/has-signed`, token)
         .then(({ signed }) => {
+          if (cancelled) return;
           setHasSigned(signed);
           if (signed) localStorage.setItem(localKey(petitionId), '1');
           else localStorage.removeItem(localKey(petitionId));
         })
         .catch(() => {
+          if (cancelled) return;
           // Fall back to localStorage on network error
           setHasSigned(localStorage.getItem(localKey(petitionId)) !== null);
         });
-      return;
+      return () => { cancelled = true; };
     }
 
     setHasSigned(localStorage.getItem(localKey(petitionId)) !== null);
