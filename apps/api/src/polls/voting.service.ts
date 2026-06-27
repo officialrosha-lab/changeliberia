@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
-import { v4 as uuidv4 } from 'uuid';
 import { CastVoteDto } from './dto/vote.dto';
 import { PollsGateway } from './polls.gateway';
 
@@ -22,6 +21,7 @@ export class VotingService {
     voteDto: CastVoteDto,
     ipAddress: string,
     userAgent: string,
+    userId?: string,
   ) {
     // Verify poll exists and is active
     const poll = await this.prisma.poll.findUnique({
@@ -47,32 +47,22 @@ export class VotingService {
       throw new BadRequestException('Option not found');
     }
 
-    // Generate session ID and fingerprint
-    const sessionId = uuidv4();
-    const fingerprint = this.fingerprintService.generateFingerprint(
-      ipAddress,
-      userAgent,
-    );
+    const fingerprint = this.fingerprintService.generateFingerprint(ipAddress, userAgent);
+    // Authenticated users dedup by userId; anonymous users dedup by fingerprint
+    const sessionId = userId ?? fingerprint;
     const ipHash = this.hashIP(ipAddress);
 
-    // Check rate limiting
-    const isRateLimited = await this.fingerprintService.isRateLimited(
-      fingerprint,
-    );
-    if (isRateLimited) {
-      throw new UnauthorizedException(
-        'Too many votes from this session. Please try again later.',
-      );
+    // Rate limiting only applies to anonymous (fingerprint-based) votes
+    if (!userId) {
+      const isRateLimited = await this.fingerprintService.isRateLimited(fingerprint);
+      if (isRateLimited) {
+        throw new UnauthorizedException('Too many votes from this session. Please try again later.');
+      }
     }
 
-    // Check if this session already voted on this poll
+    // Check if this session/user already voted on this poll
     const existingVote = await this.prisma.pollVote.findUnique({
-      where: {
-        pollId_sessionId: {
-          pollId,
-          sessionId: fingerprint, // Using fingerprint as session identifier
-        },
-      },
+      where: { pollId_sessionId: { pollId, sessionId } },
     });
 
     if (existingVote) {
@@ -84,10 +74,10 @@ export class VotingService {
       data: {
         pollId,
         optionId: voteDto.optionId,
-        userId: voteDto.userId || null,
-        sessionId: fingerprint, // Use fingerprint as session ID
+        userId: userId ?? null,
+        sessionId,   // userId for authenticated, fingerprint for anonymous
         ipHash,
-        fingerprint,
+        fingerprint, // always stored for audit
       },
     });
 
