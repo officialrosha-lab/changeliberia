@@ -124,25 +124,29 @@ export class SignaturesService {
       ),
     );
 
-    // Emit milestone email events at key signature thresholds
+    // Emit milestone email events at key signature thresholds — best-effort,
+    // must not cause create() to reject after the signature is already committed
     const MILESTONES = [10, 25, 50, 100, 500, 1000];
     const count = updatedPetition.signaturesCount;
     if (MILESTONES.includes(count)) {
-      const creator = await this.prisma.user.findUnique({
-        where: { id: updatedPetition.creatorId },
-        select: { id: true, email: true, fullName: true },
-      });
-      if (creator) {
-        this.eventEmitter.emit('petition.milestone', {
-          creatorId: creator.id,
-          creatorEmail: creator.email,
-          creatorName: creator.fullName,
-          petitionTitle: updatedPetition.title,
-          petitionUrl: `/petitions/${updatedPetition.id}`,
-          milestone: count,
-          currentSignatures: count,
-        });
-      }
+      this.prisma.user
+        .findUnique({
+          where: { id: updatedPetition.creatorId },
+          select: { id: true, email: true, fullName: true },
+        })
+        .then((creator) => {
+          if (!creator) return;
+          this.eventEmitter.emit('petition.milestone', {
+            creatorId: creator.id,
+            creatorEmail: creator.email,
+            creatorName: creator.fullName,
+            petitionTitle: updatedPetition.title,
+            petitionUrl: `/petitions/${updatedPetition.id}`,
+            milestone: count,
+            currentSignatures: count,
+          });
+        })
+        .catch(() => { /* milestone notification is non-critical */ });
     }
 
     // Broadcast signature count update to all connected WebSocket clients

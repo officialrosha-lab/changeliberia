@@ -70,8 +70,12 @@ export class NotificationsService {
           : null,
       };
 
-      // Push to WebSocket in real-time
-      this.gateway?.broadcastNotificationToUser(userId, result);
+      // Push to WebSocket in real-time — best-effort, must not fail the DB write
+      try {
+        this.gateway?.broadcastNotificationToUser(userId, result);
+      } catch (gatewayErr) {
+        this.logger.warn(`Gateway broadcast failed for user ${userId}: ${(gatewayErr as Error)?.message}`);
+      }
 
       return result;
     } catch (error) {

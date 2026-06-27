@@ -290,9 +290,12 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
     try {
       await apiPost(`/polls/${poll.id}/vote`, { optionId }, token);
       setVotedOptionId(optionId);
-      if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
-      }
+      // Analytics is best-effort — must not surface as "Vote failed"
+      try {
+        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+          (window as any).fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
+        }
+      } catch { /* ignore */ }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       if (msg.toLowerCase().includes('already voted') || msg.includes('401')) {
