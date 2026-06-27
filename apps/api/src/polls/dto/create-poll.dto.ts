@@ -82,9 +82,8 @@ export class PollOptionDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2048)
   @IsImageUrlOrBase64({ message: 'imageUrl must be a valid URL or base64 image string' })
-  imageUrl?: string; // Base64 or URL
+  imageUrl?: string; // Base64 or URL — no MaxLength; resized base64 images exceed 2048 chars
 }
 
 export class CreatePollDto {

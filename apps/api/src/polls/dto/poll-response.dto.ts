@@ -1,6 +1,7 @@
 export interface PollOptionResponse {
   id: string;
   text: string;
+  imageUrl?: string;
   voteCount: number;
   percentage: number;
 }

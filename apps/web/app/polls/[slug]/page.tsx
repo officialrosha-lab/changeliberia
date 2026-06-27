@@ -11,7 +11,7 @@ type PollDetails = {
   totalVotes: number;
   status: string;
   expiresAt: string;
-  options: Array<{ id: string; text: string; voteCount: number }>;
+  options: Array<{ id: string; text: string; imageUrl?: string; voteCount: number }>;
 };
 
 export default async function PollDetailPage({ params }: { params: { slug: string } }) {
