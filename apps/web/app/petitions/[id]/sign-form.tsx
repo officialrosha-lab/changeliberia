@@ -137,6 +137,12 @@ export function SignForm({
       setCaptchaToken(null);
       setStatus('');
       setName('');
+
+      // Track petition signature as a Lead conversion
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Lead', { content_name: title, content_category: 'Petition' });
+      }
+
       // Show follow prompt first; share modal opens after
       setShowFollowPrompt(true);
     } catch (err) {

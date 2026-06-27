@@ -8,6 +8,10 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Change Liberia',
   description: 'Change Liberia — the civic petition platform where Liberians raise issues, gather trusted support, and drive real change.',
+  metadataBase: new URL('https://changelib.org'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -44,6 +48,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-white text-zinc-900 dark:bg-neutral-900 dark:text-neutral-50 antialiased transition-colors duration-300">
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { page_path: window.location.pathname });
+                `,
+              }}
+            />
+          </>
+        )}
         <Script
           id="facebook-pixel"
           strategy="afterInteractive"
