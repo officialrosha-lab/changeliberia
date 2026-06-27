@@ -6,6 +6,7 @@ import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
 import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
+import { MobileMenuOverlay } from '../components/mobile-menu-overlay';
 import { LayoutProvider } from './layout-provider';
 
 function BottomNavContent() {
@@ -27,6 +28,8 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<div />}>
         <BottomNavContent />
       </Suspense>
+      {/* Mounted outside the sticky z-50 wrapper to avoid stacking-context clipping */}
+      <MobileMenuOverlay />
       <FloatingFeedbackWidget enabled={true} />
       <SpeedInsights />
     </LayoutProvider>
