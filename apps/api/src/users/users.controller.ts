@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PasswordProvider } from '../auth/password.provider';
@@ -48,6 +49,7 @@ export class UsersController {
     });
   }
 
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
   @UseGuards(JwtAuthGuard)
   @Patch('me/password')
   async changePassword(

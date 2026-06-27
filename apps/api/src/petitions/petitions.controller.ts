@@ -128,6 +128,7 @@ export class PetitionsController {
     };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(
@@ -159,8 +160,8 @@ export class PetitionsController {
     return this.service.createUpdate(id, req.user.userId, dto);
   }
 
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
-  @UseGuards(OptionalJwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(JwtAuthGuard)
   @Post(':id/comments')
   createComment(
     @Param('id') id: string,
@@ -227,6 +228,7 @@ export class PetitionsController {
     return { url };
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id/approve')
@@ -254,17 +256,19 @@ export class PetitionsController {
     return result;
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id/reject')
   async reject(
     @Param('id') id: string,
     @Req() req: { user: { userId: string } },
+    @Body() body: { reason?: string },
   ) {
     const petition = await this.service.getById(id);
     if (!petition) throw new NotFoundException('Petition not found');
-    
-    const result = await this.service.reject(id);
+
+    const result = await this.service.reject(id, body.reason);
     
     // Log the rejection action
     this.activityLogger.logAsync({

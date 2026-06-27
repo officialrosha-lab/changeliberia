@@ -152,7 +152,10 @@ export class PetitionsService {
   }
 
   async approve(id: string, category?: string) {
-    const petition = await this.prisma.petition.findUnique({ where: { id } });
+    const petition = await this.prisma.petition.findUnique({
+      where: { id },
+      include: { creator: { select: { id: true, email: true, fullName: true } } },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
     if (petition.status !== PetitionStatus.PENDING) {
       throw new BadRequestException('Only pending petitions can be approved');
@@ -171,6 +174,16 @@ export class PetitionsService {
     });
     await this.prisma.petitionStatusLog.create({
       data: { petitionId: id, status: 'gathering_signatures' },
+    });
+
+    // Notify creator via email
+    this.eventEmitter.emit('petition.approved', {
+      petitionId: id,
+      petitionTitle: petition.title,
+      creatorId: petition.creator.id,
+      creatorEmail: petition.creator.email,
+      creatorName: petition.creator.fullName,
+      petitionUrl: `/petitions/${id}`,
     });
 
     // Auto-create stakeholder groups for the petition
@@ -206,16 +219,31 @@ export class PetitionsService {
     return approved;
   }
 
-  async reject(id: string) {
-    const petition = await this.prisma.petition.findUnique({ where: { id } });
+  async reject(id: string, reason?: string) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id },
+      include: { creator: { select: { id: true, email: true, fullName: true } } },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
     if (petition.status !== PetitionStatus.PENDING) {
       throw new BadRequestException('Only pending petitions can be rejected');
     }
-    return this.prisma.petition.update({
+    const rejected = await this.prisma.petition.update({
       where: { id },
       data: { status: PetitionStatus.REJECTED },
     });
+
+    // Notify creator via email
+    this.eventEmitter.emit('petition.rejected', {
+      petitionId: id,
+      petitionTitle: petition.title,
+      creatorId: petition.creator.id,
+      creatorEmail: petition.creator.email,
+      creatorName: petition.creator.fullName,
+      reason: reason || 'Your petition did not meet our guidelines at this time.',
+    });
+
+    return rejected;
   }
 
   async listUpdates(petitionId: string) {
