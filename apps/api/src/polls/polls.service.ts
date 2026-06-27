@@ -132,6 +132,13 @@ export class PollsService {
         },
       });
 
+      // Notify admins of new pending poll
+      this.eventEmitter.emit('poll.submitted', {
+        pollId: poll.id,
+        pollTitle: poll.title,
+        submittedBy,
+      });
+
       return this.formatPollResponse(poll);
     } catch (err) {
       if (err instanceof BadRequestException || err instanceof NotFoundException) {
