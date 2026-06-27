@@ -484,6 +484,7 @@ export class GovernmentService {
     underReview: number;
     approved: number;
     rejected: number;
+    emailFailed: number;
   }> {
     const statusGroups = await this.prisma.petitionSubmission.groupBy({
       by: ['status'],
@@ -501,6 +502,7 @@ export class GovernmentService {
       UNDER_REVIEW: 0,
       APPROVED: 0,
       REJECTED: 0,
+      EMAIL_FAILED: 0,
     };
 
     let totalSubmissions = 0;
@@ -524,6 +526,7 @@ export class GovernmentService {
       underReview: byStatus.UNDER_REVIEW,
       approved: byStatus.APPROVED,
       rejected: byStatus.REJECTED,
+      emailFailed: byStatus.EMAIL_FAILED,
     };
   }
 

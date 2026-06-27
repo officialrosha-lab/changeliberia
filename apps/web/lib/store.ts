@@ -32,7 +32,10 @@ export const useMenuStore = create<MenuState>()((set) => ({
 
 function isTokenExpired(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    // JWT segments use base64url — pad and replace chars before decoding
+    const segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = segment + '='.repeat((4 - (segment.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded));
     return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
   } catch {
     return true;
@@ -61,11 +64,10 @@ export const useAuthStore = create<AuthState>()(
       name: 'vlv-auth-storage',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Clear expired token on page load before marking as hydrated
-          if (state.token && isTokenExpired(state.token)) {
-            state.token = null;
-          }
-          state.hydrated = true;
+          const expiredToken = state.token && isTokenExpired(state.token);
+          // Use the store's own setters so Zustand tracks the update properly
+          if (expiredToken) state.setToken(null);
+          state.setHydrated(true);
         }
       },
     },

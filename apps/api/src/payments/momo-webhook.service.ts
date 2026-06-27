@@ -22,9 +22,9 @@ export class MoMoWebhookService {
     try {
       this.logger.debug(`Received MoMo webhook: ${JSON.stringify(payload)}`);
 
-      // Verify webhook signature if provided
-      if (signature && !this.verifyWebhookSignature(payload, signature)) {
-        this.logger.error('Invalid webhook signature');
+      // Signature is required in production; always verified when MOMO_WEBHOOK_SECRET is set
+      if (!this.verifyWebhookSignature(payload, signature)) {
+        this.logger.error('Invalid or missing webhook signature');
         throw new Error('Invalid webhook signature');
       }
 
@@ -242,13 +242,21 @@ export class MoMoWebhookService {
   /**
    * Verify webhook signature
    */
-  private verifyWebhookSignature(payload: any, signature: string): boolean {
+  private verifyWebhookSignature(payload: any, signature?: string): boolean {
     const secret = process.env.MOMO_WEBHOOK_SECRET;
     if (!secret) {
       if (process.env.NODE_ENV === 'production') {
         throw new Error('MOMO_WEBHOOK_SECRET is required in production');
       }
       this.logger.warn('MoMo webhook secret not configured - skipping signature verification (development only)');
+      return true;
+    }
+
+    if (!signature) {
+      if (process.env.NODE_ENV === 'production') {
+        return false;
+      }
+      this.logger.warn('MoMo webhook signature missing (development only - skipping)');
       return true;
     }
 

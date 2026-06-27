@@ -36,9 +36,12 @@ export class GovernmentController {
     @Body() submitData: { petitionId: string; governmentEmail: string; notes?: string },
     @CurrentUser() user: any,
   ) {
-    const petitionId = submitData.petitionId?.trim();
-    const governmentEmail = submitData.governmentEmail?.trim();
-    const notes = submitData.notes?.trim();
+    if (!submitData || typeof submitData !== 'object') {
+      throw new BadRequestException('Request body is required');
+    }
+    const petitionId = typeof submitData.petitionId === 'string' ? submitData.petitionId.trim() : '';
+    const governmentEmail = typeof submitData.governmentEmail === 'string' ? submitData.governmentEmail.trim() : '';
+    const notes = typeof submitData.notes === 'string' ? submitData.notes.trim() : undefined;
 
     if (!petitionId || !governmentEmail) {
       throw new BadRequestException('petitionId and governmentEmail are required');
