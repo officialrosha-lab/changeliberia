@@ -6,6 +6,7 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 import { CastVoteDto } from './dto/vote.dto';
@@ -15,12 +16,13 @@ export class VotingController {
   constructor(
     private votingService: VotingService,
     private fingerprintService: SessionFingerprintService,
+    private jwtService: JwtService,
   ) {}
 
   /**
    * POST /polls/:id/vote
-   * Cast a vote on a poll option
-   * Anti-spam: Uses session fingerprinting to prevent duplicate votes
+   * Cast a vote on a poll option.
+   * Dedup: authenticated users are deduped by userId; anonymous by IP fingerprint.
    */
   @Post()
   async castVote(
@@ -32,16 +34,18 @@ export class VotingController {
       throw new BadRequestException('Invalid poll or option ID');
     }
 
-    // Extract IP address and user agent
     const ipAddress = this.fingerprintService.extractRealIP(req);
     const userAgent = this.fingerprintService.extractUserAgent(req);
 
-    // Cast the vote (with anti-spam checks)
-    return this.votingService.castVote(
-      pollId,
-      voteDto,
-      ipAddress,
-      userAgent,
-    );
+    let userId: string | undefined;
+    const rawToken = (req.headers.authorization as string | undefined)?.replace('Bearer ', '');
+    if (rawToken) {
+      try {
+        const payload = this.jwtService.verify<{ sub: string }>(rawToken);
+        userId = payload.sub;
+      } catch {}
+    }
+
+    return this.votingService.castVote(pollId, voteDto, ipAddress, userAgent, userId);
   }
 }
