@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePollDto } from './dto/create-poll.dto';
@@ -7,6 +8,8 @@ import { slugify } from '../common/utils/slugify';
 
 @Injectable()
 export class PollsService {
+  private readonly logger = new Logger(PollsService.name);
+
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
@@ -86,55 +89,69 @@ export class PollsService {
   async submitPoll(createPollDto: CreatePollDto, submittedBy: string) {
     // Validate options
     if (!createPollDto.options || createPollDto.options.length < 2) {
-      throw new BadRequestException(
-        'Poll must have at least 2 options',
-      );
+      throw new BadRequestException('Poll must have at least 2 options');
     }
 
-    // Generate slug
-    const baseSlug = slugify(createPollDto.title);
-    let slug = baseSlug;
-    let counter = 1;
+    try {
+      // Generate slug
+      const baseSlug = slugify(createPollDto.title);
+      let slug = baseSlug;
+      let counter = 1;
 
-    // Ensure unique slug
-    while (
-      await this.prisma.poll.findUnique({ where: { slug } })
-    ) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
+      // Ensure unique slug
+      while (await this.prisma.poll.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
 
-    // Create poll with PENDING status
-    const poll = await this.prisma.poll.create({
-      data: {
-        slug,
-        title: createPollDto.title,
-        description: createPollDto.description,
-        category: createPollDto.category,
-        county: createPollDto.county || null,
-        createdBy: submittedBy,
-        status: 'PENDING', // User submission requires admin approval
-        expiresAt: new Date(createPollDto.expiresAt),
-        relatedPetitionIds: JSON.stringify(
-          createPollDto.relatedPetitionIds || [],
-        ),
-        options: {
-          create: this.formatPollOptions(createPollDto.options),
-        },
-      },
-      include: {
-        options: true,
-        creator: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
+      // Create poll with PENDING status
+      const poll = await this.prisma.poll.create({
+        data: {
+          slug,
+          title: createPollDto.title,
+          description: createPollDto.description,
+          category: createPollDto.category,
+          county: createPollDto.county || null,
+          createdBy: submittedBy,
+          status: 'PENDING' as any,
+          expiresAt: new Date(createPollDto.expiresAt),
+          relatedPetitionIds: JSON.stringify(createPollDto.relatedPetitionIds || []),
+          options: {
+            create: this.formatPollOptions(createPollDto.options),
           },
         },
-      },
-    });
+        include: {
+          options: true,
+          creator: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+        },
+      });
 
-    return this.formatPollResponse(poll);
+      return this.formatPollResponse(poll);
+    } catch (err) {
+      if (err instanceof BadRequestException || err instanceof NotFoundException) {
+        throw err;
+      }
+      // Surface Prisma error codes to help diagnose production issues
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Poll submit Prisma error P${err.code}: ${err.message}`, err.meta);
+        if (err.code === 'P2002') {
+          throw new BadRequestException('A poll with that title already exists. Please use a different title.');
+        }
+        throw new InternalServerErrorException(`Database error: ${err.code} — ${err.message}`);
+      }
+      if (err instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`Poll submit validation error: ${err.message}`);
+        throw new InternalServerErrorException(`Validation error: ${err.message}`);
+      }
+      this.logger.error(`Poll submit unexpected error: ${err}`);
+      throw new InternalServerErrorException(`Unexpected error: ${String(err)}`);
+    }
   }
 
   /**
