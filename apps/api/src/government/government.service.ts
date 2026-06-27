@@ -27,7 +27,7 @@ export class GovernmentService {
       where: { id: petitionId },
       include: {
         creator: true,
-        signatures: { orderBy: { createdAt: 'asc' }, take: 200 },
+        signatures: { orderBy: { createdAt: 'asc' } },
         milestones: { orderBy: { targetValue: 'asc' } },
       },
     });
@@ -36,10 +36,7 @@ export class GovernmentService {
       throw new NotFoundException(`Petition with ID ${petitionId} not found`);
     }
 
-    const submissionTypes = ['government', 'ngo'];
-    const isSubmissionType =
-      petition.petitionType === 'government' || petition.petitionType === 'ngo';
-    if (isSubmissionType && enforceCreator) {
+    if (enforceCreator) {
       if (!requestorId) {
         throw new ForbiddenException('Authentication is required to download this petition report');
       }
@@ -140,7 +137,7 @@ export class GovernmentService {
     doc.moveDown(0.5);
     doc.fontSize(10).fillColor('#334155');
     doc.text(
-      `Showing ${petition.signatures.length.toLocaleString()} signer records${petition.signaturesCount > petition.signatures.length ? ` (first ${petition.signatures.length.toLocaleString()} of ${petition.signaturesCount.toLocaleString()})` : ''}.`, 
+      `Showing all ${petition.signatures.length.toLocaleString()} signer records.`,
       { width: 500 },
     );
     doc.moveDown(0.5);
@@ -186,6 +183,46 @@ export class GovernmentService {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  /**
+   * Generate a CSV export of all signatures for a petition (creator-only)
+   */
+  async generateSignaturesCsv(petitionId: string, requestorId: string): Promise<string> {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+      include: {
+        signatures: {
+          orderBy: { createdAt: 'asc' },
+          include: { user: { select: { county: true, verificationStatus: true } } },
+        },
+      },
+    });
+
+    if (!petition) {
+      throw new NotFoundException(`Petition with ID ${petitionId} not found`);
+    }
+    if (petition.creatorId !== requestorId) {
+      throw new ForbiddenException('Only the petition creator may export signatures');
+    }
+
+    const csvEscape = (val: string | null | undefined) =>
+      `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const header = ['#', 'Name', 'Anonymous', 'Date Signed', 'County', 'Verification', 'Trust Score'].join(',');
+    const rows = petition.signatures.map((sig, i) =>
+      [
+        i + 1,
+        csvEscape(sig.anonymous ? 'Anonymous' : sig.name),
+        sig.anonymous ? 'Yes' : 'No',
+        csvEscape(this.formatDate(sig.createdAt)),
+        csvEscape(sig.user?.county ?? ''),
+        csvEscape(sig.user?.verificationStatus ?? ''),
+        sig.trustScoreSnapshot,
+      ].join(','),
+    );
+
+    return [header, ...rows].join('\n');
   }
 
   /**

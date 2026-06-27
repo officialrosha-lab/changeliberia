@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
+import { apiGet, apiGetBlob, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 type User = {
@@ -73,6 +73,8 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<{ petitionId: string; message: string } | null>(null);
 
   useEffect(() => {
     if (!token) { router.replace('/'); return; }
@@ -249,6 +251,35 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
       return;
     }
     setMessage('ID submitted for admin review. Trust increases when approved.');
+  }
+
+  async function handlePetitionDownload(petitionId: string, format: 'pdf' | 'csv') {
+    if (!token) return;
+    const key = `${petitionId}-${format}`;
+    setDownloadingId(key);
+    setDownloadError(null);
+    try {
+      const path = format === 'pdf'
+        ? `/government/report/${petitionId}`
+        : `/government/report/${petitionId}/csv`;
+      const date = new Date().toISOString().slice(0, 10);
+      const blob = await apiGetBlob(path, token);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = format === 'pdf'
+        ? `petition-${petitionId}-${date}.pdf`
+        : `signatures-${petitionId}-${date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setDownloadError(null);
+    } catch (err) {
+      setDownloadError({ petitionId, message: err instanceof Error ? err.message : 'Download failed' });
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   function openEdit(p: MyPetition) {
@@ -653,7 +684,26 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                     >
                       View petition
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handlePetitionDownload(p.id, 'pdf')}
+                      disabled={downloadingId === `${p.id}-pdf`}
+                      className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {downloadingId === `${p.id}-pdf` ? 'Downloading…' : 'PDF report'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePetitionDownload(p.id, 'csv')}
+                      disabled={downloadingId === `${p.id}-csv`}
+                      className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {downloadingId === `${p.id}-csv` ? 'Exporting…' : 'CSV export'}
+                    </button>
                   </div>
+                  {downloadError?.petitionId === p.id && (
+                    <p className="mt-2 text-xs text-red-600">{downloadError.message}</p>
+                  )}
                   {isShareOpen && (
                     <div className="mt-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
                       <div className="flex flex-col gap-4 sm:flex-row">

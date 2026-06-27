@@ -211,15 +211,16 @@ describe('Government API Endpoints (e2e)', () => {
     });
   });
 
-  describe('GET /government/report/:petitionId - Public Endpoint', () => {
-    it('should return PDF for petition with signatures', async () => {
+  describe('GET /government/report/:petitionId - Creator-only PDF Download', () => {
+    it('should return PDF for petition creator with auth token', async () => {
       const response = await request(app.getHttpServer())
         .get(`/api/government/report/${testPetitionId}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(response.headers['content-type']).toBe('application/pdf');
       expect(response.headers['content-disposition']).toContain(
-        `petition-${testPetitionId}.pdf`,
+        `petition-${testPetitionId}`,
       );
       expect(response.body).toBeTruthy();
     });
@@ -227,15 +228,67 @@ describe('Government API Endpoints (e2e)', () => {
     it('should include petition data in PDF', async () => {
       const response = await request(app.getHttpServer())
         .get(`/api/government/report/${testPetitionId}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       const pdfContent = response.body?.toString('utf8');
       expect(pdfContent).toContain('Fix Freetown Road Infrastructure');
     });
 
+    it('should return 403 for unauthenticated request', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/government/report/${testPetitionId}`)
+        .expect(403);
+    });
+
+    it('should return 403 for non-creator authenticated user', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/government/report/${testPetitionId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(403);
+    });
+
     it('should return 404 for non-existent petition', async () => {
       await request(app.getHttpServer())
         .get('/api/government/report/non-existent-id')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+    });
+  });
+
+  describe('GET /government/report/:petitionId/csv - Creator-only CSV Export', () => {
+    it('should return CSV for petition creator', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/api/government/report/${testPetitionId}/csv`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('text/csv');
+      expect(response.headers['content-disposition']).toContain(
+        `signatures-${testPetitionId}`,
+      );
+      const csv = response.text;
+      expect(csv).toContain('#,Name,Anonymous,Date Signed,County,Verification,Trust Score');
+      expect(csv.split('\n').length).toBeGreaterThan(10);
+    });
+
+    it('should return 401 without authentication', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/government/report/${testPetitionId}/csv`)
+        .expect(401);
+    });
+
+    it('should return 403 for non-creator', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/government/report/${testPetitionId}/csv`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(403);
+    });
+
+    it('should return 404 for non-existent petition', async () => {
+      await request(app.getHttpServer())
+        .get('/api/government/report/non-existent-id/csv')
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(404);
     });
   });
