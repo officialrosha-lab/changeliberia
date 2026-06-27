@@ -44,6 +44,9 @@ export class EmailEventService {
     this.eventEmitter.on('petition.approved', (event) =>
       this.onPetitionApproved(event),
     );
+    this.eventEmitter.on('petition.rejected', (event) =>
+      this.onPetitionRejected(event),
+    );
     this.eventEmitter.on('petition.milestone', (event) =>
       this.onPetitionMilestone(event),
     );
@@ -200,6 +203,25 @@ export class EmailEventService {
       this.logger.log(`Petition approved email sent to ${creatorEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send petition approved email: ${error}`);
+    }
+  }
+
+  private async onPetitionRejected(event: any): Promise<void> {
+    try {
+      const { creatorId, creatorEmail, creatorName, petitionTitle, reason } = event;
+      await this.emailService.sendNotification(
+        creatorId,
+        creatorEmail,
+        EmailType.PETITION_REJECTED,
+        {
+          creatorName,
+          petitionTitle,
+          reason,
+        },
+      );
+      this.logger.log(`Petition rejected email sent to ${creatorEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send petition rejected email: ${error}`);
     }
   }
 

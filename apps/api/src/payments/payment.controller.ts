@@ -164,9 +164,10 @@ export class PaymentController {
   }
 
   /**
-   * Refund a payment
+   * Refund a payment (admin only)
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('refund/:paymentId')
   async refundPayment(
     @Param('paymentId') paymentId: string,
