@@ -79,6 +79,9 @@ process.on('unhandledRejection', (reason: unknown) => {
 
 async function ensureSchema(prisma: PrismaService) {
   const stmts = [
+    // PollOption columns from add_poll_option_images migration (Railway bypasses docker-entrypoint)
+    `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT`,
+    `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "imageStoragePath" TEXT`,
     // Petition columns from platform_v2_governance migration
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "categories" TEXT[]`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "county" TEXT`,
