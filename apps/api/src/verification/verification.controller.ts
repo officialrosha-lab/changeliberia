@@ -13,6 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole, VerificationType } from '@prisma/client';
 import { createReadStream, existsSync } from 'fs';
@@ -51,12 +52,14 @@ export class VerificationController {
     };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 300000 } })
   @UseGuards(JwtAuthGuard)
   @Post('phone/request-otp')
   requestPhoneOtp(@Body() body: { phone: string }) {
     return this.service.requestPhoneOtp(body.phone);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   @UseGuards(JwtAuthGuard)
   @Post('phone/verify-otp')
   verifyPhoneOtp(

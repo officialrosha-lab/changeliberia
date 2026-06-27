@@ -10,6 +10,7 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -45,6 +46,7 @@ export class PollsController {
    * POST /polls/submit
    * Submit a poll idea (any authenticated user = PENDING status, awaiting admin approval)
    */
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
   @Post('submit')
   @UseGuards(JwtAuthGuard)
   async submitPoll(@Body() createPollDto: CreatePollDto, @Request() req: any) {

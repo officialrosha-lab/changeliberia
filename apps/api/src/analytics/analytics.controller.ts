@@ -1,8 +1,10 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Query,
+  Req,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
@@ -65,10 +67,16 @@ export class AnalyticsController {
   }
 
   /**
-   * Get user engagement metrics
+   * Get user engagement metrics — own data only (admins can query any user)
    */
   @Get('user/:userId')
-  async getUserEngagementMetrics(@Param('userId') userId: string) {
+  async getUserEngagementMetrics(
+    @Param('userId') userId: string,
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
+    if (req.user.userId !== userId && req.user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Access denied');
+    }
     const metrics = await this.analytics.getUserEngagementMetrics(userId);
 
     return {
