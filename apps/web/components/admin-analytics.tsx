@@ -120,13 +120,13 @@ export function GlobalAnalytics() {
         setLoading(true);
         setError(null);
 
-        const [msgData, bcData] = await Promise.all([
-          apiGet<MessageAnalyticsResponse>(`/analytics/messages?period=${period}`, token),
-          apiGet<BroadcastAnalyticsResponse>(`/analytics/broadcasts?period=${period}`, token),
+        const [msgRes, bcRes] = await Promise.all([
+          apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
+          apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
         ]);
 
-        setMessageAnalytics(msgData);
-        setBroadcastAnalytics(bcData);
+        setMessageAnalytics(msgRes.data);
+        setBroadcastAnalytics(bcRes.data);
         setLastRefresh(new Date());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load analytics');
@@ -153,13 +153,13 @@ export function GlobalAnalytics() {
       // Debounce refresh to avoid too frequent reloads (max once per 2 seconds)
       const timer = setTimeout(async () => {
         try {
-          const [msgData, bcData] = await Promise.all([
-            apiGet<MessageAnalyticsResponse>(`/analytics/messages?period=${period}`, token),
-            apiGet<BroadcastAnalyticsResponse>(`/analytics/broadcasts?period=${period}`, token),
+          const [msgRes, bcRes] = await Promise.all([
+            apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
+            apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
           ]);
 
-          setMessageAnalytics(msgData);
-          setBroadcastAnalytics(bcData);
+          setMessageAnalytics(msgRes.data);
+          setBroadcastAnalytics(bcRes.data);
           setLastRefresh(new Date());
         } catch (err) {
           console.error('Failed to refresh analytics:', err);
