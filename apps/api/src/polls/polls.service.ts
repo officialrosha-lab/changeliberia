@@ -372,26 +372,40 @@ export class PollsService {
    * Get poll by slug
    */
   async getPollBySlug(slug: string): Promise<PollResponse> {
-    const poll = await this.prisma.poll.findUnique({
-      where: { slug },
-      include: {
-        options: {
-          orderBy: { order: 'asc' },
-        },
-        creator: {
-          select: {
-            id: true,
-            fullName: true,
+    try {
+      const poll = await this.prisma.poll.findUnique({
+        where: { slug },
+        include: {
+          options: {
+            orderBy: { order: 'asc' },
+          },
+          creator: {
+            select: {
+              id: true,
+              fullName: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!poll) {
-      throw new NotFoundException('Poll not found');
+      if (!poll) {
+        throw new NotFoundException('Poll not found');
+      }
+
+      return this.formatPollResponse(poll);
+    } catch (err) {
+      if (err instanceof NotFoundException) throw err;
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`getPollBySlug Prisma error P${err.code}: ${err.message}`, err.meta);
+        throw new InternalServerErrorException(`Database error: ${err.code} — ${err.message}`);
+      }
+      if (err instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`getPollBySlug validation error: ${err.message}`);
+        throw new InternalServerErrorException(`Validation error: ${err.message}`);
+      }
+      this.logger.error(`getPollBySlug unexpected error: ${err}`);
+      throw new InternalServerErrorException(`Unexpected error: ${String(err)}`);
     }
-
-    return this.formatPollResponse(poll);
   }
 
   /**
