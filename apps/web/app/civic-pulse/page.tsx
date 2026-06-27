@@ -14,7 +14,7 @@ export default function CivicPulsePage() {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   async function fetchPolls() {
-    const data = await apiGet<PollSummary[]>('/polls?status=APPROVED').catch(() => []);
+    const data = await apiGet<PollSummary[]>('/polls?status=ACTIVE').catch(() => []);
     setPolls(data);
   }
 
