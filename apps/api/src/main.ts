@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { Application } from 'express';
+import * as express from 'express';
 import { mkdirSync } from 'fs';
 import { join } from 'path';
 import helmet from 'helmet';
@@ -302,7 +303,9 @@ async function seedCmsPages(prisma: PrismaService) {
 
 async function bootstrap() {
   validateEnvOrThrow();
-  const app = await NestFactory.create(AppModule);
+  // Disable the built-in 100 KB body-parser so we can configure our own limit.
+  // Webhook routes get rawBodyMiddleware (registered first); everything else gets JSON up to 10 MB.
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const useRedisAdapter = process.env.USE_REDIS_ADAPTER !== 'false';
   let redisAdapter: RedisIoAdapter | undefined;
 
@@ -313,11 +316,14 @@ async function bootstrap() {
 
   const enableSwagger = isSwaggerEnabled();
   
-  // Register raw body middleware only for webhook routes (signature verification requires raw body)
-  // Applying it globally would consume the body stream before NestJS parses req.body
+  // Webhook routes need raw buffer for signature verification — register before JSON parser.
   app.use('/api/v1/payments/webhook', rawBodyMiddleware());
   app.use('/api/v1/webhooks/resend', rawBodyMiddleware());
-  
+
+  // JSON body parser with generous limit to accommodate base64 poll option images (up to 6 × ~150 KB).
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },

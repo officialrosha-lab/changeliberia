@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 
-function resizeToBase64(file: File, maxW = 480, maxH = 320): Promise<string> {
+function resizeToBase64(file: File, maxW = 320, maxH = 213): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -13,7 +13,7 @@ function resizeToBase64(file: File, maxW = 480, maxH = 320): Promise<string> {
       c.height = Math.round(img.height * scale);
       c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', 0.82));
+      resolve(c.toDataURL('image/jpeg', 0.72));
     };
     img.src = url;
   });
