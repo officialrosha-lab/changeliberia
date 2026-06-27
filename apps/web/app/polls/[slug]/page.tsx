@@ -14,11 +14,12 @@ type PollDetails = {
   options: Array<{ id: string; text: string; imageUrl?: string; voteCount: number }>;
 };
 
-export default async function PollDetailPage({ params }: { params: { slug: string } }) {
+export default async function PollDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   let poll: PollDetails | null = null;
   let apiError: string | null = null;
   try {
-    poll = await apiGet<PollDetails>(`/polls/slug/${params.slug}`);
+    poll = await apiGet<PollDetails>(`/polls/slug/${slug}`);
   } catch (err) {
     apiError = err instanceof Error ? err.message : String(err);
   }
