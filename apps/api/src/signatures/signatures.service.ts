@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSignatureDto } from './dto';
 import { FraudService } from '../fraud/fraud.service';
@@ -16,6 +17,7 @@ export class SignaturesService {
     private readonly fraud: FraudService,
     private readonly captchaService: CaptchaService,
     private readonly eventBus: EventBusService,
+    private readonly eventEmitter: EventEmitter2,
     @Inject(PetitionsRealtimeService)
     private readonly petitionsRealtime: PetitionsRealtimeService,
   ) {}
@@ -121,6 +123,27 @@ export class SignaturesService {
         Math.max(0, 100 - risk.riskPoints),
       ),
     );
+
+    // Emit milestone email events at key signature thresholds
+    const MILESTONES = [10, 25, 50, 100, 500, 1000];
+    const count = updatedPetition.signaturesCount;
+    if (MILESTONES.includes(count)) {
+      const creator = await this.prisma.user.findUnique({
+        where: { id: updatedPetition.creatorId },
+        select: { id: true, email: true, fullName: true },
+      });
+      if (creator) {
+        this.eventEmitter.emit('petition.milestone', {
+          creatorId: creator.id,
+          creatorEmail: creator.email,
+          creatorName: creator.fullName,
+          petitionTitle: updatedPetition.title,
+          petitionUrl: `/petitions/${updatedPetition.id}`,
+          milestone: count,
+          currentSignatures: count,
+        });
+      }
+    }
 
     // Broadcast signature count update to all connected WebSocket clients
     if (updatedPetition) {

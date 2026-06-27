@@ -102,6 +102,7 @@ export async function generateMetadata({
   return {
     title: `${title} — Change Liberia`,
     description,
+    alternates: { canonical: pageUrl },
     openGraph: {
       type: 'website',
       url: pageUrl,
@@ -134,8 +135,25 @@ export default async function PetitionPage({
   // SSR couldn't reach the API — fall back to client-side rendering
   if (!petition) return <PetitionClientPage id={id} />;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia-web.vercel.app';
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: petition.title,
+    description: petition.summary || petition.description.slice(0, 160).replace(/\n/g, ' '),
+    url: `${siteUrl}/petitions/${id}`,
+    ...(petition.imageUrl && { image: petition.imageUrl }),
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: 'https://schema.org/InformAction',
+      userInteractionCount: petition.signaturesCount,
+    },
+    publisher: { '@type': 'Organization', name: 'Change Liberia', url: siteUrl },
+  };
+
   return (
     <main className="min-h-screen pb-28 bg-zinc-50 dark:bg-neutral-950 md:pb-0">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero image strip */}
       {petition.imageUrl && (
         <div className="relative h-56 w-full overflow-hidden bg-zinc-200 dark:bg-neutral-800 sm:h-72 md:h-80">

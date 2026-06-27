@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsGateway } from '../events/notifications.gateway';
 import {
   ContentPublishedEvent,
   ContentRejectedEvent,
@@ -31,7 +32,10 @@ interface NotificationPayload {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly gateway?: NotificationsGateway,
+  ) {}
 
   /**
    * Create and send a notification to a user
@@ -57,7 +61,7 @@ export class NotificationsService {
         `Notification created for user ${userId}: ${payload.title}`,
       );
 
-      return {
+      const result = {
         ...notification,
         metadata: notification?.metadata
           ? typeof notification.metadata === 'string'
@@ -65,6 +69,11 @@ export class NotificationsService {
             : notification.metadata
           : null,
       };
+
+      // Push to WebSocket in real-time
+      this.gateway?.broadcastNotificationToUser(userId, result);
+
+      return result;
     } catch (error) {
       const err = error as Error;
       this.logger.error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
@@ -413,6 +422,26 @@ export class NotificationsService {
           actionUrl: `/petitions/${event.petitionId}`,
           actionLabel: 'Read update',
           metadata: { petitionId: event.petitionId },
+        }),
+      ),
+    );
+  }
+
+  @OnEvent('poll.submitted')
+  async handlePollSubmitted(event: { pollId: string; pollTitle: string; submittedBy: string }) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+    await Promise.all(
+      admins.map((admin) =>
+        this.createNotification(admin.id, {
+          type: 'POLL_PENDING_REVIEW',
+          title: 'New Poll Awaiting Review',
+          message: `A new poll idea "${event.pollTitle}" has been submitted and needs your approval.`,
+          actionUrl: '/admin',
+          actionLabel: 'Review Poll',
+          metadata: { pollId: event.pollId, submittedBy: event.submittedBy },
         }),
       ),
     );
