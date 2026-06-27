@@ -6,17 +6,15 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore, useMenuStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
 import { apiGet } from '../lib/api';
-import { JoinMovementButton } from './join-movement-button';
 
-const PUBLIC_NAV_ITEMS = [
-  { href: '/civic-pulse', icon: '📊', label: 'Civic Pulse' },
+const EXPLORE_ITEMS = [
   { href: '/petitions', icon: '🔍', label: 'Browse causes' },
-  { href: '/#donate',              icon: '💛', label: 'Donate' },
-  { href: '/#how-it-works',        icon: '💡', label: 'How it works' },
+  { href: '/#donate',       icon: '💛', label: 'Donate' },
+  { href: '/#how-it-works', icon: '💡', label: 'How it works' },
 ];
 
 export function MobileNav() {
-  const { isMenuOpen: isOpen, openMenu, closeMenu, toggleMenu } = useMenuStore();
+  const { isMenuOpen: isOpen, closeMenu, toggleMenu } = useMenuStore();
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const token = useAuthStore((s) => s.token);
@@ -26,12 +24,9 @@ export function MobileNav() {
   useEffect(() => {
     async function loadDonationSettings() {
       try {
-        const settings = await apiGet<{
-          donationsEnabled: boolean;
-        }>('/settings/system');
+        const settings = await apiGet<{ donationsEnabled: boolean }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
-      } catch (err) {
-        // If error, default to enabled
+      } catch {
         setDonationsEnabled(true);
       }
     }
@@ -43,6 +38,7 @@ export function MobileNav() {
     closeMenu();
     router.push('/');
   }
+
   const isDark =
     theme === 'dark' ||
     (theme === 'system' &&
@@ -51,7 +47,7 @@ export function MobileNav() {
 
   return (
     <>
-      {/* Hamburger */}
+      {/* Hamburger — shown in top header on mobile */}
       <button
         onClick={toggleMenu}
         className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
@@ -86,7 +82,7 @@ export function MobileNav() {
         aria-hidden={!isOpen}
         inert={!isOpen ? true : undefined}
       >
-        {/* Drawer header */}
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-neutral-800">
           <img src="/logo.png" alt="Change Liberia" className="h-8 w-auto max-w-[150px] object-contain dark:hidden" />
           <span className="hidden dark:block text-base font-extrabold text-emerald-400">Change Liberia</span>
@@ -101,16 +97,29 @@ export function MobileNav() {
           </button>
         </div>
 
-        {/* Join movement CTA */}
-        <div className="border-b border-zinc-100 px-5 py-4 dark:border-neutral-800">
-          <JoinMovementButton />
-        </div>
-
         {/* Nav links */}
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {/* Dashboard or Auth buttons */}
-          {token ? (
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+
+          {/* Top-level pages — always visible at the top, no scrolling needed */}
+          <Link
+            href="/civic-pulse"
+            onClick={() => closeMenu()}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-800 transition-colors hover:bg-emerald-50 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+          >
+            <span className="text-base">📊</span>
+            Civic Pulse
+          </Link>
+
+          {token && (
             <>
+              <Link
+                href="/messages"
+                onClick={() => closeMenu()}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-800 transition-colors hover:bg-emerald-50 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              >
+                <span className="text-base">✉️</span>
+                Messages
+              </Link>
               <Link
                 href="/dashboard"
                 onClick={() => closeMenu()}
@@ -119,42 +128,15 @@ export function MobileNav() {
                 <span className="text-base">📋</span>
                 Dashboard
               </Link>
-              <Link
-                href="/messages"
-                onClick={() => closeMenu()}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-              >
-                <span className="text-base">✉️</span>
-                Messages
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/auth/signup"
-                onClick={() => closeMenu()}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-              >
-                <span className="text-base">👤</span>
-                Sign up
-              </Link>
-              <Link
-                href="/auth/login"
-                onClick={() => closeMenu()}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-              >
-                <span className="text-base">🔑</span>
-                Log in
-              </Link>
             </>
           )}
 
-          {/* Public nav items */}
-          {PUBLIC_NAV_ITEMS.map((item) => {
-            // Hide donate link if donations are disabled
-            if (item.href === '/#donate' && !donationsEnabled) {
-              return null;
-            }
+          {/* Explore section */}
+          <p className="mt-3 px-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-neutral-500">
+            Explore
+          </p>
+          {EXPLORE_ITEMS.map((item) => {
+            if (item.href === '/#donate' && !donationsEnabled) return null;
             return (
               <Link
                 key={item.href}
@@ -168,8 +150,9 @@ export function MobileNav() {
             );
           })}
 
-          <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-neutral-800">
-            {token && (
+          {/* Auth actions */}
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-neutral-800">
+            {token ? (
               <button
                 onClick={signOut}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
@@ -177,6 +160,23 @@ export function MobileNav() {
                 <span className="text-base">🚪</span>
                 Log out
               </button>
+            ) : (
+              <div className="flex gap-2 px-1">
+                <Link
+                  href="/auth/signup"
+                  onClick={() => closeMenu()}
+                  className="flex-1 rounded-xl border border-emerald-400 px-3 py-2.5 text-center text-sm font-semibold text-emerald-600 transition hover:bg-emerald-50 dark:border-emerald-600 dark:text-emerald-400 dark:hover:bg-emerald-950/30 focus:outline-none"
+                >
+                  Sign up
+                </Link>
+                <Link
+                  href="/auth/login"
+                  onClick={() => closeMenu()}
+                  className="flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-center text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none"
+                >
+                  Log in
+                </Link>
+              </div>
             )}
           </div>
         </nav>

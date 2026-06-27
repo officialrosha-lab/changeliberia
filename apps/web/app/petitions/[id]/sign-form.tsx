@@ -5,7 +5,6 @@ import { FormEvent, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { ShareModal } from '../../../components/share-modal';
-import { PetitionCardGenerator } from '../../../components/petition-card-generator';
 
 const turnstileSiteKey =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
@@ -30,7 +29,6 @@ export function SignForm({
   const [count, setCount] = useState(signatureCount);
   const [hasSigned, setHasSigned] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [showCardGenerator, setShowCardGenerator] = useState(false);
   const [showFollowPrompt, setShowFollowPrompt] = useState(false);
   const [following, setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -214,13 +212,6 @@ export function SignForm({
               >
                 Share this petition
               </button>
-              <button
-                type="button"
-                onClick={() => setShowCardGenerator(true)}
-                className="flex-1 min-w-[140px] rounded-full border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:border-emerald-500 hover:bg-emerald-50"
-              >
-                Share card
-              </button>
               {token && (
                 <button
                   type="button"
@@ -363,21 +354,6 @@ export function SignForm({
                 <span className="text-[10px] font-medium text-zinc-600 dark:text-neutral-400">WhatsApp</span>
               </a>
 
-              {/* X / Twitter */}
-              <button
-                type="button"
-                onClick={() => setShowCardGenerator(true)}
-                className="flex flex-col items-center gap-1.5"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 transition hover:bg-zinc-200 dark:border-neutral-700 dark:bg-neutral-700">
-                  <svg className="h-5 w-5 text-zinc-600 dark:text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6-6 9 9" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 12.75l6 0" />
-                  </svg>
-                </span>
-                <span className="text-[10px] font-medium text-zinc-600 dark:text-neutral-400">Share card</span>
-              </button>
-
               <a
                 href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Sign this petition: ${petitionUrl}`)}`}
                 target="_blank"
@@ -419,18 +395,6 @@ export function SignForm({
             Add your name and sign
           </button>
         </div>
-      )}
-
-      {showCardGenerator && petitionUrl && (
-        <PetitionCardGenerator
-          petitionId={petitionId}
-          title={title}
-          goal={goal}
-          signatures={count}
-          imageUrl={imageUrl}
-          petitionUrl={petitionUrl}
-          onClose={() => setShowCardGenerator(false)}
-        />
       )}
 
       {showFollowPrompt && (
