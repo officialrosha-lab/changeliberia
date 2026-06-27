@@ -74,7 +74,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
   );
 
   const hasImages = poll.options.some((o) => o.imageUrl);
-  const isActive = poll.status === 'ACTIVE';
+  const isActive = poll.status === 'ACTIVE' || poll.status === 'APPROVED';
   const categoryColor = CATEGORY_COLORS[poll.category ?? ''] ?? 'bg-zinc-100 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300';
   const expiry = closesIn(poll.expiresAt);
 

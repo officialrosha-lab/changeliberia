@@ -79,6 +79,8 @@ process.on('unhandledRejection', (reason: unknown) => {
 
 async function ensureSchema(prisma: PrismaService) {
   const stmts = [
+    // Migrate any APPROVED polls to ACTIVE (approvePoll now sets ACTIVE directly)
+    `UPDATE "Poll" SET "status" = 'ACTIVE' WHERE "status" = 'APPROVED'`,
     // PollOption columns from add_poll_option_images migration (Railway bypasses docker-entrypoint)
     `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT`,
     `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "imageStoragePath" TEXT`,

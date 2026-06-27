@@ -179,11 +179,11 @@ export class PollsService {
       throw new BadRequestException('Only pending polls can be approved');
     }
 
-    // Update poll status to APPROVED
+    // Update poll status to ACTIVE (approved = immediately live and voteable)
     const approvedPoll = await this.prisma.poll.update({
       where: { id: pollId },
       data: {
-        status: 'APPROVED',
+        status: 'ACTIVE',
       },
       include: {
         options: {
