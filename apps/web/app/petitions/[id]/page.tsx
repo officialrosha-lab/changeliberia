@@ -150,10 +150,12 @@ export default async function PetitionPage({
     },
     publisher: { '@type': 'Organization', name: 'Change Liberia', url: siteUrl },
   };
+  // Escape </script> sequences so user-supplied text cannot break out of the block
+  const safeJsonLd = JSON.stringify(jsonLd).replace(/<\/script>/gi, '<\\/script>');
 
   return (
     <main className="min-h-screen pb-28 bg-zinc-50 dark:bg-neutral-950 md:pb-0">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd }} />
       {/* Hero image strip */}
       {petition.imageUrl && (
         <div className="relative h-56 w-full overflow-hidden bg-zinc-200 dark:bg-neutral-800 sm:h-72 md:h-80">

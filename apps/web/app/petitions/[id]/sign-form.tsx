@@ -138,10 +138,12 @@ export function SignForm({
       setStatus('');
       setName('');
 
-      // Track petition signature as a Lead conversion
-      if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'Lead', { content_name: title, content_category: 'Petition' });
-      }
+      // Track petition signature as a Lead conversion — best-effort
+      try {
+        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
+          (window as any).fbq('track', 'Lead', { content_name: title, content_category: 'Petition' });
+        }
+      } catch { /* analytics must not break the sign flow */ }
 
       // Show follow prompt first; share modal opens after
       setShowFollowPrompt(true);
