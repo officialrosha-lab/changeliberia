@@ -112,8 +112,7 @@ export class GovernmentController {
 
   /**
    * GET /government/report/:petitionId
-   * Download PDF report for a petition
-   * Government/NGO petitions are restricted to the petition creator.
+   * Download PDF report — restricted to the petition creator (all petition types).
    */
   @Get('report/:petitionId')
   @UseGuards(OptionalJwtAuthGuard)
@@ -125,18 +124,49 @@ export class GovernmentController {
     try {
       const reportBuffer = await this.governmentService.generatePetitionReport(
         petitionId,
-        user?.userId,
+        user?.id ?? user?.userId,
         true,
       );
 
+      const date = new Date().toISOString().slice(0, 10);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="petition-${petitionId}.pdf"`,
+        `attachment; filename="petition-${petitionId}-${date}.pdf"`,
       );
       res.send(reportBuffer);
     } catch (error) {
       this.logger.error(`Report generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * GET /government/report/:petitionId/csv
+   * Export full signature list as CSV — creator-only, requires authentication.
+   */
+  @Get('report/:petitionId/csv')
+  @UseGuards(JwtAuthGuard)
+  async getPetitionSignaturesCsv(
+    @Param('petitionId') petitionId: string,
+    @Res() res: Response,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      const csv = await this.governmentService.generateSignaturesCsv(
+        petitionId,
+        user.id ?? user.userId,
+      );
+
+      const date = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="signatures-${petitionId}-${date}.csv"`,
+      );
+      res.send(csv);
+    } catch (error) {
+      this.logger.error(`CSV export failed: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
