@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { apiGet, apiPost, getApiBase } from '../lib/api';
+import { apiGet, apiGetBlob, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
 interface GovernmentContact {
@@ -98,50 +98,50 @@ export function PetitionGovernmentPanel({
   const [customEmail, setCustomEmail] = useState('');
   const [notes, setNotes] = useState('Auto-submit generated when petition reached government readiness.');
   const [loading, setLoading] = useState(true);
-  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isCreator, setIsCreator] = useState<boolean | null>(isSubmissionType ? null : true);
 
-  const reportUrl = useMemo(
-    () => `${getApiBase()}/government/report/${petitionId}`,
-    [petitionId],
-  );
+  const date = new Date().toISOString().slice(0, 10);
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const handleDownloadReport = async () => {
-    setDownloadingReport(true);
+    setDownloadingPdf(true);
     setDownloadError(null);
-
     try {
-      const response = await fetch(reportUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) {
-        let message = 'Unable to download report.';
-        try {
-          const body = await response.json();
-          if (body?.message) message = body.message;
-        } catch {
-          // ignore parse errors
-        }
-        throw new Error(message);
-      }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `petition-${petitionId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(blobUrl);
+      const blob = await apiGetBlob(`/government/report/${petitionId}`, token ?? undefined);
+      triggerDownload(blob, `petition-${petitionId}-${date}.pdf`);
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Failed to download report');
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF report');
     } finally {
-      setDownloadingReport(false);
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadCsv = async () => {
+    setDownloadingCsv(true);
+    setDownloadError(null);
+    try {
+      const blob = await apiGetBlob(`/government/report/${petitionId}/csv`, token ?? undefined);
+      triggerDownload(blob, `signatures-${petitionId}-${date}.csv`);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Failed to export CSV');
+    } finally {
+      setDownloadingCsv(false);
     }
   };
 
@@ -299,18 +299,28 @@ export function PetitionGovernmentPanel({
               you&apos;re ready to act.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleDownloadReport}
-            disabled={downloadingReport}
-            className="inline-flex shrink-0 items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
-          >
-            {downloadingReport ? 'Downloading...' : 'Download report'}
-          </button>
-          {downloadError && (
-            <p className="mt-2 text-xs text-red-600">{downloadError}</p>
-          )}
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadReport}
+              disabled={downloadingPdf}
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+            >
+              {downloadingPdf ? 'Downloading…' : `PDF (${signaturesCount.toLocaleString()} sigs)`}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadCsv}
+              disabled={downloadingCsv}
+              className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {downloadingCsv ? 'Exporting…' : 'CSV export'}
+            </button>
+          </div>
         </div>
+        {downloadError && (
+          <p className="mt-3 text-xs text-red-600">{downloadError}</p>
+        )}
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <div className="rounded-3xl bg-emerald-50 p-4">
@@ -350,18 +360,28 @@ export function PetitionGovernmentPanel({
           <h2 className="text-xl font-extrabold text-zinc-900">{copy.panelTitle}</h2>
           <p className="mt-2 text-sm text-zinc-600">{copy.panelDesc}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleDownloadReport}
-          disabled={downloadingReport}
-          className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
-        >
-          {downloadingReport ? 'Downloading...' : 'Download report'}
-        </button>
-        {downloadError && (
-          <p className="mt-2 text-xs text-red-600">{downloadError}</p>
-        )}
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadReport}
+            disabled={downloadingPdf}
+            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+          >
+            {downloadingPdf ? 'Downloading…' : `PDF (${signaturesCount.toLocaleString()} sigs)`}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={downloadingCsv}
+            className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {downloadingCsv ? 'Exporting…' : 'CSV export'}
+          </button>
+        </div>
       </div>
+      {downloadError && (
+        <p className="mt-3 text-xs text-red-600">{downloadError}</p>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-3xl bg-emerald-50 p-4">

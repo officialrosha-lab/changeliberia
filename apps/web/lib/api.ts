@@ -184,6 +184,29 @@ export async function apiDelete<T = unknown>(
   return res.json() as Promise<T>;
 }
 
+export async function apiGetBlob(path: string, token?: string): Promise<Blob> {
+  const base = getApiBase();
+  const res = await fetch(`${base}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    let message = `Download failed (${res.status} ${res.statusText})`;
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const data = JSON.parse(text);
+          if (typeof data?.message === 'string') message = `${data.message} (${res.status})`;
+        } catch {
+          message = `${text} (${res.status})`;
+        }
+      }
+    } catch { /* ignore */ }
+    throw new Error(message);
+  }
+  return res.blob();
+}
+
 export async function apiPostFormData<T>(
   path: string,
   formData: FormData,
