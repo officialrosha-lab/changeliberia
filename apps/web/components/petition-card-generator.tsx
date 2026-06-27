@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { PetitionCard, CARD_SIZES, type CardSize } from './petition-card';
 import { exportCardAsPNG, exportCardAsPDF, exportCardAsSVG } from '../lib/card-exporter';
@@ -55,13 +55,21 @@ export function PetitionCardGenerator({
       .catch(() => setExportImageUrl(undefined));
   }, [imageUrl]);
 
-  // Measure preview container and calculate scale
-  useLayoutEffect(() => {
+  // Measure preview container via ResizeObserver so scale stays accurate
+  // after initial layout settles and whenever the panel resizes
+  useEffect(() => {
     const el = previewRef.current;
     if (!el) return;
-    const { width, height } = el.getBoundingClientRect();
-    const { width: cw, height: ch } = CARD_SIZES[selectedSize as CardSize];
-    setScale(Math.min((width - 48) / cw, (height - 48) / ch));
+    const recalc = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const { width: cw, height: ch } = CARD_SIZES[selectedSize as CardSize];
+      const pad = 32;
+      setScale(Math.min((width - pad) / cw, (height - pad) / ch));
+    };
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [selectedSize]);
 
   const sizes: { size: CardSize; label: string; desc: string }[] = [
@@ -114,15 +122,35 @@ export function PetitionCardGenerator({
         <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
 
           {/* Left: Preview */}
-          <div className="flex flex-1 flex-col border-r border-zinc-200 p-5 dark:border-neutral-800">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-neutral-500">Preview</p>
+          <div className="flex min-h-0 flex-1 flex-col border-r border-zinc-200 p-5 dark:border-neutral-800">
+            <p className="mb-3 flex-shrink-0 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-neutral-500">Preview</p>
+            {/* min-h-0 lets the flex child shrink below its content height */}
             <div
               ref={previewRef}
-              className="flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-neutral-800"
+              className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-neutral-800"
             >
-              <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
-                {/* Preview uses original imageUrl (no CORS needed for display) */}
-                <PetitionCard {...cardProps} imageUrl={imageUrl} size={selectedSize} />
+              {/* Wrapper sized to the card's visual footprint so flex centering works correctly.
+                  CSS transform doesn't affect layout, so without this the 1080px card pushes
+                  the container wider than the screen. */}
+              <div
+                style={{
+                  width: CARD_SIZES[selectedSize as CardSize].width * scale,
+                  height: CARD_SIZES[selectedSize as CardSize].height * scale,
+                  position: 'relative',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                >
+                  <PetitionCard {...cardProps} imageUrl={imageUrl} size={selectedSize} />
+                </div>
               </div>
             </div>
           </div>
