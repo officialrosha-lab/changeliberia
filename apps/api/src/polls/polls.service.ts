@@ -373,7 +373,8 @@ export class PollsService {
    */
   async getPollBySlug(slug: string): Promise<PollResponse> {
     try {
-      const poll = await this.prisma.poll.findUnique({
+      // Use findFirst as a more permissive lookup (findUnique can fail if DB unique index is missing)
+      const poll = await this.prisma.poll.findFirst({
         where: { slug },
         include: {
           options: {
@@ -389,7 +390,12 @@ export class PollsService {
       });
 
       if (!poll) {
-        throw new NotFoundException('Poll not found');
+        // Debug: surface what slugs actually exist so we can diagnose mismatches
+        const existing = await this.prisma.$queryRaw<{ slug: string; status: string }[]>`
+          SELECT slug, status FROM "Poll" ORDER BY "createdAt" DESC LIMIT 5
+        `;
+        const slugList = existing.map(r => `${r.slug} (${r.status})`).join(', ');
+        throw new NotFoundException(`Poll not found for slug "${slug}". DB has: [${slugList || 'none'}]`);
       }
 
       return this.formatPollResponse(poll);
