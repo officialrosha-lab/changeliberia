@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { BULL_EMAIL_QUEUE } from '../email.constants';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -54,6 +54,53 @@ export class EmailService {
   }
 
   /**
+   * Guard against per-address email flooding.
+   * - 5-minute cooldown per recipient+type (prevents rapid resend attacks)
+   * - 5 emails/day across all types per address (caps total daily spend)
+   */
+  private async checkEmailRateLimit(recipient: string, emailType: EmailType): Promise<void> {
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 min cooldown per recipient+type
+    const DAILY_LIMIT = 5;             // max emails per address per 24 h
+
+    const recent = await this.prisma.emailLog.findFirst({
+      where: {
+        recipient,
+        type: emailType,
+        status: { in: ['QUEUED', 'SENT', 'DELIVERED'] },
+        createdAt: { gte: new Date(Date.now() - COOLDOWN_MS) },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (recent) {
+      const waitSecs = Math.ceil(
+        (COOLDOWN_MS - (Date.now() - recent.createdAt.getTime())) / 1000,
+      );
+      this.logger.warn(
+        `Email cooldown enforced: ${emailType} to ${recipient} (retry in ${waitSecs}s)`,
+      );
+      throw new HttpException(
+        { message: `Please wait ${waitSecs} seconds before requesting another email.`, retryAfter: waitSecs },
+        429,
+      );
+    }
+
+    const dailyCount = await this.prisma.emailLog.count({
+      where: {
+        recipient,
+        status: { notIn: ['FAILED', 'BOUNCED'] },
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    });
+    if (dailyCount >= DAILY_LIMIT) {
+      this.logger.warn(`Daily email quota reached for ${recipient} (${dailyCount} sent today)`);
+      throw new HttpException(
+        { message: 'Daily email limit reached for this address. Please try again tomorrow.' },
+        429,
+      );
+    }
+  }
+
+  /**
    * Send transactional email (always sent, no preference check)
    * Used for: password reset, email verification, etc.
    */
@@ -63,6 +110,9 @@ export class EmailService {
     emailType: EmailType,
     templateProps: any,
   ): Promise<QueuedEmailResult> {
+    // Block flooding before any work is done
+    await this.checkEmailRateLimit(recipient, emailType);
+
     this.logger.debug(
       `Queueing transactional email: ${emailType} to ${recipient}`,
     );
