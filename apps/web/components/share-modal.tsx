@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { FacebookShareDialog } from './facebook-share-dialog';
-import { PetitionCardGenerator } from './petition-card-generator';
 
 type Props = { 
   petitionUrl: string; 
@@ -32,7 +31,6 @@ export function ShareModal({
   activeChallenge 
 }: Props) {
   const [showFacebookDialog, setShowFacebookDialog] = useState(false);
-  const [showCardGenerator, setShowCardGenerator] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const wa = `https://wa.me/?text=${encodeURIComponent(`I just signed this petition: ${petitionUrl}`)}`;
@@ -47,20 +45,6 @@ export function ShareModal({
   const challengeProgress = activeChallenge 
     ? Math.round((activeChallenge.progress / activeChallenge.goalValue) * 100)
     : 0;
-
-  if (showCardGenerator) {
-    return (
-      <PetitionCardGenerator
-        petitionId={petitionId}
-        title={title}
-        goal={goal}
-        signatures={signatures}
-        imageUrl={imageUrl}
-        petitionUrl={petitionUrl}
-        onClose={() => setShowCardGenerator(false)}
-      />
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -109,14 +93,7 @@ export function ShareModal({
             Facebook
           </button>
 
-          <button 
-            onClick={() => setShowCardGenerator(true)}
-            className="rounded-xl border-2 border-emerald-500 hover:bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-600 transition dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-          >
-            📥 Download Card
-          </button>
-          
-          <button 
+          <button
             onClick={handleCopyLink} 
             className="rounded-xl border border-zinc-300 px-4 py-3 font-semibold hover:bg-zinc-50 transition dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
