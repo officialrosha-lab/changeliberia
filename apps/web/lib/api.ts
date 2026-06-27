@@ -198,18 +198,22 @@ export async function apiPostFormData<T>(
   if (!res.ok) {
     let message = `Upload failed (${res.status} ${res.statusText})`;
     try {
-      const data = await res.json();
-      if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status})`;
-      } else if (Array.isArray(data?.message)) {
-        message = `${(data.message as string[]).join(', ')} (${res.status})`;
+      const text = await res.text();
+      if (text) {
+        try {
+          const data = JSON.parse(text);
+          if (typeof data?.message === 'string') {
+            message = `${data.message} (${res.status})`;
+          } else if (Array.isArray(data?.message)) {
+            message = `${(data.message as string[]).join(', ')} (${res.status})`;
+          } else {
+            message = `${text} (${res.status})`;
+          }
+        } catch {
+          message = `${text} (${res.status})`;
+        }
       }
-    } catch {
-      try {
-        const text = await res.text();
-        if (text) message = `${text} (${res.status})`;
-      } catch { /* ignore */ }
-    }
+    } catch { /* ignore body read errors */ }
     throw new Error(message);
   }
   return res.json() as Promise<T>;

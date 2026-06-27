@@ -26,7 +26,7 @@ describe('Facebook Viral Growth System (e2e)', () => {
   class MockJwtAuthGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
       const request = context.switchToHttp().getRequest();
-      request.user = { sub: 'user-1', role: 'user' };
+      request.user = { id: 'user-1', userId: 'user-1', sub: 'user-1', role: 'user' };
       return true;
     }
   }
@@ -34,7 +34,7 @@ describe('Facebook Viral Growth System (e2e)', () => {
   class MockOptionalJwtAuthGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
       const request = context.switchToHttp().getRequest();
-      request.user = { sub: 'user-1', role: 'user' };
+      request.user = { id: 'user-1', userId: 'user-1', sub: 'user-1', role: 'user' };
       return true;
     }
   }

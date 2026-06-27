@@ -103,6 +103,9 @@ export function CreatePetitionForm() {
     if (hydrated && !token) router.replace('/auth/login?next=/create');
   }, [hydrated, token, router]);
 
+  // Block render until hydrated; if not authenticated, show nothing (redirect effect handles navigation)
+  if (!hydrated || !token) return null;
+
   useEffect(() => {
     // Always fetch system settings (public endpoint)
     apiGet<{ phoneVerificationRequired: boolean }>('/settings/system')
