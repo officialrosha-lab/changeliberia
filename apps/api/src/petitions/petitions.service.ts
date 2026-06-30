@@ -381,4 +381,32 @@ export class PetitionsService {
       orderBy: { createdAt: 'asc' },
     });
   }
+
+  async getOrCreateShareLink(petitionId: string): Promise<{ shortCode: string; shortUrl: string }> {
+    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+    if (!petition) throw new NotFoundException('Petition not found');
+
+    const existing = await this.prisma.shareLink.findFirst({
+      where: { petitionId, source: 'direct' },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (existing) {
+      return { shortCode: existing.shortCode, shortUrl: `https://changelib.org/r/${existing.shortCode}` };
+    }
+
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let shortCode = '';
+    for (let i = 0; i < 8; i++) shortCode += chars[Math.floor(Math.random() * chars.length)];
+
+    const link = await this.prisma.shareLink.create({
+      data: {
+        shortCode,
+        targetUrl: `https://changelib.org/petitions/${petitionId}`,
+        petitionId,
+        source: 'direct',
+        medium: 'organic',
+      },
+    });
+    return { shortCode: link.shortCode, shortUrl: `https://changelib.org/r/${link.shortCode}` };
+  }
 }

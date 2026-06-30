@@ -37,13 +37,21 @@ export function SignForm({
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedShort, setCopiedShort] = useState(false);
   const [petitionUrl, setPetitionUrl] = useState('');
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPetitionUrl(window.location.href);
     }
   }, []);
+
+  useEffect(() => {
+    apiGet<{ shortCode: string; shortUrl: string }>(`/petitions/${petitionId}/share-link`)
+      .then((data) => setShortUrl(data.shortUrl))
+      .catch(() => {/* best-effort */});
+  }, [petitionId]);
 
   // Signed-state check:
   // - Authenticated users: always ask the server (localStorage may be stale across devices)
@@ -298,6 +306,28 @@ export function SignForm({
               </a>
             </div>
 
+            {/* Right column: short link + social buttons */}
+            <div className="flex flex-1 flex-col gap-3">
+              {/* Short link row */}
+              {shortUrl && (
+                <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-900">
+                  <span className="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-300">
+                    {shortUrl.replace('https://', '')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(shortUrl);
+                      setCopiedShort(true);
+                      setTimeout(() => setCopiedShort(false), 2000);
+                    }}
+                    className="flex-shrink-0 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                  >
+                    {copiedShort ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              )}
+
             {/* Social icon buttons */}
             <div className="grid grid-cols-3 gap-3">
               {/* Copy link */}
@@ -381,6 +411,7 @@ export function SignForm({
                 <span className="text-[10px] font-medium text-zinc-600 dark:text-neutral-400">Email</span>
               </a>
             </div>
+            </div>{/* end right column */}
           </div>
         </div>
       )}
