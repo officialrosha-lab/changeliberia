@@ -111,6 +111,11 @@ export class PetitionsController {
     return this.service.getById(id);
   }
 
+  @Get(':id/share-link')
+  getShareLink(@Param('id') id: string) {
+    return this.service.getOrCreateShareLink(id);
+  }
+
   @Get(':id/is-creator')
   @UseGuards(OptionalJwtAuthGuard)
   async isCreator(

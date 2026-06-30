@@ -90,8 +90,10 @@ export class PollsController {
     @Query('status') status: string = 'ACTIVE',
     @Query('limit') limit: number = 20,
     @Query('offset') offset: number = 0,
+    @Query('sort') sort?: string,
+    @Query('search') search?: string,
   ) {
-    return this.pollsService.listPolls(category, county, status, limit, offset);
+    return this.pollsService.listPolls(category, county, status, limit, offset, sort, search);
   }
 
   /**

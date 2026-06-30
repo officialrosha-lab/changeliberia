@@ -3,8 +3,8 @@ import { apiGet } from '../lib/api';
 import { PollCard, type PollSummary } from './poll-card';
 
 export default async function HomePollsSection() {
-  const polls = await apiGet<PollSummary[]>('/polls').catch(() => []);
-  const featured = polls.slice(0, 3);
+  const polls = await apiGet<PollSummary[]>('/polls?status=ACTIVE&sort=recent&limit=3').catch(() => []);
+  const featured = polls;
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">

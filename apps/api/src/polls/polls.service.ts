@@ -287,10 +287,17 @@ export class PollsService {
     status: string = 'APPROVED',
     limit: number = 20,
     offset: number = 0,
+    sort?: string,
+    search?: string,
   ): Promise<PollListResponse[]> {
     // Validate status is a valid PollStatus
     const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'ACTIVE', 'EXPIRED', 'CLOSED'];
     const finalStatus = validStatuses.includes(status) ? (status as any) : 'APPROVED';
+
+    const orderBy =
+      sort === 'popular' ? { totalVotes: 'desc' as const } :
+      sort === 'name'    ? { title: 'asc' as const } :
+                           { createdAt: 'desc' as const };
 
     const polls = await this.prisma.poll.findMany({
       where: {
@@ -298,8 +305,9 @@ export class PollsService {
         visibility: 'PUBLIC',
         category: category ? { equals: category, mode: 'insensitive' } : undefined,
         county: county ? { equals: county, mode: 'insensitive' } : undefined,
+        ...(search ? { title: { contains: search, mode: 'insensitive' as const } } : {}),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       take: limit,
       skip: offset,
       select: {
