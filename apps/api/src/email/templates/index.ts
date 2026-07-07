@@ -27,7 +27,9 @@ export type EmailTemplateProps =
   | PollApprovedProps
   | PollRejectedProps
   | MessageNotificationProps
-  | BroadcastNotificationProps;
+  | BroadcastNotificationProps
+  | OfficialVerifiedProps
+  | OfficialRejectedProps;
 
 // Type mapping for email types to their props
 export type EmailTemplatePropsMap = {
@@ -50,7 +52,18 @@ export type EmailTemplatePropsMap = {
   [EmailType.POLL_REJECTED]: PollRejectedProps;
   [EmailType.MESSAGE_NOTIFICATION]: MessageNotificationProps;
   [EmailType.BROADCAST_NOTIFICATION]: BroadcastNotificationProps;
+  [EmailType.OFFICIAL_VERIFIED]: OfficialVerifiedProps;
+  [EmailType.OFFICIAL_REJECTED]: OfficialRejectedProps;
 };
+
+export interface OfficialVerifiedProps {
+  institutionName: string;
+}
+
+export interface OfficialRejectedProps {
+  institutionName: string;
+  reason?: string;
+}
 
 export interface MessageNotificationProps {
   recipientName: string;

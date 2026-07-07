@@ -34,6 +34,7 @@ import { PollsModule } from './polls/polls.module';
 import { MessagesModule } from './messages/messages.module';
 import { StakeholderGroupModule } from './stakeholder-groups/stakeholder-group.module';
 import { BroadcastModule } from './broadcast/broadcast.module';
+import { OfficialsModule } from './officials/officials.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { BroadcastModule } from './broadcast/broadcast.module';
     SystemSettingsModule,
     FeedbackModule,
     ActivityModule,
+    OfficialsModule, // Public Officials Portal
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

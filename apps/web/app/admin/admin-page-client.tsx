@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { AdminFraudPanel } from '../../components/admin-fraud-panel';
 import { AdminIdDocsPanel } from '../../components/admin-id-docs-panel';
 import { AdminGovernmentPanel } from '../../components/admin-government-panel';
+import { AdminOfficialsVerificationPanel } from '../../components/admin-officials-verification-panel';
 import { AdminPendingPetitionsPanel } from '../../components/admin-pending-petitions-panel';
 import { AdminPendingPollsPanel } from '../../components/admin-pending-polls-panel';
 import { AdminDeletePetitionPanel } from '../../components/admin-delete-petition-panel';
@@ -64,7 +65,7 @@ type Me = { role: string };
 export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s.hydrated);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'officials' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creatorName: string; creatorEmail: string }[]>([]);
@@ -188,6 +189,7 @@ export function AdminPageClient() {
             ['users', 'Users'],
             ['analytics', 'Analytics'],
             ['government', 'Government'],
+            ['officials', 'Officials'],
             ['payments', 'Payments'],
             ['integrations', 'Integrations'],
             ['ambassadors', 'Ambassadors'],
@@ -305,6 +307,13 @@ export function AdminPageClient() {
       {activeTab === 'government' && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
           <AdminGovernmentPanel />
+        </div>
+      )}
+
+      {/* Officials Tab */}
+      {activeTab === 'officials' && (
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <AdminOfficialsVerificationPanel />
         </div>
       )}
 

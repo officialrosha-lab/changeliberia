@@ -9,6 +9,7 @@ import { PetitionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SmartRoutingService } from '../contact-directory/routing/smart-routing.service';
 import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group.service';
+import { ResponseWorkflowService } from '../officials/response-workflow.service';
 import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
@@ -24,6 +25,7 @@ export class PetitionsService {
     private readonly smartRouting: SmartRoutingService,
     private readonly eventEmitter: EventEmitter2,
     private readonly stakeholderGroupService: StakeholderGroupService,
+    private readonly responseWorkflow: ResponseWorkflowService,
   ) {}
 
   private async rankByRisk(
@@ -214,6 +216,26 @@ export class PetitionsService {
     } catch (error) {
       // Log routing error but don't fail petition approval
       console.error(`Error routing petition ${id}:`, error);
+    }
+
+    // Public Officials Portal: additionally route to the individual
+    // official(s) (Senator/Representative/Mayor/etc.) whose jurisdiction
+    // covers this petition's county, independent of the org-level match above
+    try {
+      const officialMatches = await this.smartRouting.routePetitionToOfficials(
+        petition.county,
+      );
+      for (const match of officialMatches) {
+        await this.smartRouting.logOfficialRoutingDecision(
+          id,
+          match,
+          petition.county,
+          null,
+        );
+        await this.responseWorkflow.assignToInstitution(id, match.institutionId);
+      }
+    } catch (error) {
+      console.error(`Error routing petition ${id} to officials:`, error);
     }
 
     return approved;

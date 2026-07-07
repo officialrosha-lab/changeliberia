@@ -62,6 +62,8 @@ export class EmailTemplateService {
       [EmailType.POLL_REJECTED]: 'Your poll submission',
       [EmailType.MESSAGE_NOTIFICATION]: 'New message from Change Liberia',
       [EmailType.BROADCAST_NOTIFICATION]: 'Broadcast message delivered',
+      [EmailType.OFFICIAL_VERIFIED]: 'Your official account has been verified',
+      [EmailType.OFFICIAL_REJECTED]: 'Your official account application',
     };
     return subjects[templateType] || 'Notification from Change Liberia';
   }
@@ -194,6 +196,22 @@ export class EmailTemplateService {
           <p>Delivered to <strong>${props?.recipientCount || 0}</strong> members with <strong>${props?.successCount || 0}</strong> successful sends.</p>
           ${props?.failedCount ? `<p>${props.failedCount} messages failed to deliver.</p>` : ''}
           <p><a href="${props?.broadcastUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Broadcast</a></p>
+        `;
+        break;
+
+      case EmailType.OFFICIAL_VERIFIED:
+        content = `
+          <p>Congratulations! Your official account for <strong>${props?.institutionName || 'your office'}</strong> has been verified.</p>
+          <p>You now have access to your official dashboard to view petitions and civic pulse activity in your jurisdiction and respond to constituents.</p>
+          <p><a href="${appUrl}/official/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a></p>
+        `;
+        break;
+
+      case EmailType.OFFICIAL_REJECTED:
+        content = `
+          <p>Your official account application for <strong>${props?.institutionName || 'your office'}</strong> could not be approved at this time.</p>
+          ${props?.reason ? `<p><strong>Reason:</strong> ${props.reason}</p>` : ''}
+          <p>You may submit a revised application or contact our support team for more information.</p>
         `;
         break;
 

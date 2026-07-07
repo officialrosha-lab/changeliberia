@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
+import { OfficialResponseTimeline } from '../../../components/official-response-timeline';
 import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
 import { CommentForm } from './comment-form';
@@ -182,6 +183,8 @@ export function PetitionClientPage({ id }: { id: string }) {
               signaturesCount={petition.signaturesCount}
               petitionType={petition.petitionType}
             />
+
+            <OfficialResponseTimeline petitionId={petition.id} />
 
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
               <PetitionMilestones
