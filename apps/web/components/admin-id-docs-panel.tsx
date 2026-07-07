@@ -11,6 +11,17 @@ type PendingDoc = {
   user: { fullName: string; phone: string };
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  passport: 'Passport',
+  voter_id: 'Voter ID',
+  utility_bill: 'Utility Bill',
+  other: 'Other government ID',
+};
+
+function formatDocType(type: string): string {
+  return TYPE_LABELS[type] ?? type.replaceAll('_', ' ');
+}
+
 export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] }) {
   const token = useAuthStore((s) => s.token);
   const [docs, setDocs] = useState(initialDocs);
@@ -64,7 +75,7 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
         {docs.map((d) => (
           <li key={d.id} className="rounded-lg border border-zinc-200 p-3 dark:border-neutral-700">
             <p className="font-medium text-zinc-900 dark:text-neutral-50">
-              {d.user.fullName} · {d.type}
+              {d.user.fullName} · {formatDocType(d.type)}
             </p>
             <button
               type="button"

@@ -10,6 +10,7 @@ import { PetitionsService } from './petitions.service';
 import { PetitionEmailService } from '../contact-directory/email/petition-email.service';
 import { PetitionMediaStorageService } from './petition-media-storage.service';
 import { PetitionsScheduler } from './petitions.scheduler';
+import { ImpactAreaReportService } from './impact-area-report.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { PetitionsScheduler } from './petitions.scheduler';
     OfficialsModule,
   ],
   controllers: [PetitionsController],
-  providers: [PetitionsService, PetitionEmailService, PetitionMediaStorageService, PetitionsScheduler],
+  providers: [PetitionsService, PetitionEmailService, PetitionMediaStorageService, PetitionsScheduler, ImpactAreaReportService],
   exports: [PetitionsService, PetitionEmailService],
 })
 export class PetitionsModule {}

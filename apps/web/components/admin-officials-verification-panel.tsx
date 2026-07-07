@@ -19,15 +19,20 @@ export function AdminOfficialsVerificationPanel() {
   const token = useAuthStore((s) => s.token);
   const [rows, setRows] = useState<PendingOfficial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await apiGet<PendingOfficial[]>('/admin/officials/pending', token);
       setRows(data);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load pending applications');
     } finally {
       setLoading(false);
     }
@@ -41,9 +46,12 @@ export function AdminOfficialsVerificationPanel() {
   async function approve(id: string) {
     if (!token) return;
     setBusyId(id);
+    setActionError(null);
     try {
       await apiPatch(`/admin/officials/${id}/approve`, {}, token);
       setRows((r) => r.filter((row) => row.id !== id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to approve application');
     } finally {
       setBusyId(null);
     }
@@ -52,9 +60,12 @@ export function AdminOfficialsVerificationPanel() {
   async function reject(id: string) {
     if (!token) return;
     setBusyId(id);
+    setActionError(null);
     try {
       await apiPatch(`/admin/officials/${id}/reject`, { notes: notes[id] }, token);
       setRows((r) => r.filter((row) => row.id !== id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to reject application');
     } finally {
       setBusyId(null);
     }
@@ -62,11 +73,25 @@ export function AdminOfficialsVerificationPanel() {
 
   if (loading) return <p className="text-sm text-zinc-500">Loading pending official applications…</p>;
 
+  if (loadError) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {loadError}
+        <button type="button" onClick={() => void load()} className="ml-3 font-semibold underline">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">
         Pending official verifications
       </h2>
+      {actionError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{actionError}</div>
+      )}
       {rows.length === 0 && (
         <p className="text-sm text-zinc-500 dark:text-neutral-400">No pending applications.</p>
       )}

@@ -15,6 +15,13 @@ const STAGES = [
   'CLOSED',
 ] as const;
 
+interface CollaboratingInstitution {
+  id: string;
+  name: string;
+  slug: string | null;
+  stage: string;
+}
+
 interface FeedItem {
   id: string;
   currentStage: string;
@@ -29,6 +36,7 @@ interface FeedItem {
     status: string;
     createdAt: string;
   };
+  collaboratingInstitutions: CollaboratingInstitution[];
 }
 
 export function OfficialPetitionFeed() {
@@ -88,6 +96,11 @@ export function OfficialPetitionFeed() {
                   {item.petition.county ?? 'National'} · {item.petition.category ?? 'Uncategorized'} ·{' '}
                   {item.petition.signaturesCount.toLocaleString()} / {item.petition.goal.toLocaleString()} signatures
                 </p>
+                {item.collaboratingInstitutions.length > 0 && (
+                  <p className="mt-2 text-xs font-medium text-blue-600">
+                    Also handled by {item.collaboratingInstitutions.map((c) => c.name).join(', ')}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800">

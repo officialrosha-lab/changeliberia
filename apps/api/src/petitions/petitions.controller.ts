@@ -40,6 +40,7 @@ import {
 import { PetitionsService } from './petitions.service';
 import { SignatureAddedEvent } from '../events/domain-events';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
+import { ImpactAreaReportService } from './impact-area-report.service';
 
 @Controller('petitions')
 export class PetitionsController {
@@ -48,6 +49,7 @@ export class PetitionsController {
     private readonly eventEmitter: EventEmitter2,
     private readonly mediaStorage: PetitionMediaStorageService,
     private readonly activityLogger: ActivityLoggerService,
+    private readonly impactAreaReport: ImpactAreaReportService,
   ) {}
 
   @Get()
@@ -109,6 +111,46 @@ export class PetitionsController {
   @Get(':id')
   one(@Param('id') id: string) {
     return this.service.getById(id);
+  }
+
+  // Petition Location Verification & Impact Area System (Phase 1) —
+  // public, aggregate-only counts (no per-signature classification/score).
+  @Get(':id/signature-breakdown')
+  signatureBreakdown(@Param('id') id: string) {
+    return this.service.getSignatureBreakdown(id);
+  }
+
+  // Petition Location Verification & Impact Area System (Phase 2) —
+  // "Community Insights" panel: top counties/districts/communities + diaspora total.
+  @Get(':id/community-insights')
+  communityInsights(@Param('id') id: string) {
+    return this.service.getCommunityInsights(id);
+  }
+
+  // Petition Location Verification & Impact Area System (Phase 3) —
+  // Government report exports. Aggregate-only, no individual signer data.
+  @Get(':id/report/csv')
+  async reportCsv(@Param('id') id: string, @Res() res: Response) {
+    const csv = await this.impactAreaReport.generateCsv(id);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.csv"`);
+    res.send(csv);
+  }
+
+  @Get(':id/report/excel')
+  async reportExcel(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.impactAreaReport.generateExcel(id);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.xlsx"`);
+    res.send(buffer);
+  }
+
+  @Get(':id/report/pdf')
+  async reportPdf(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.impactAreaReport.generatePdf(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.pdf"`);
+    res.send(buffer);
   }
 
   @Get(':id/share-link')

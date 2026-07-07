@@ -708,6 +708,66 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     }));
   }
 
+  /**
+   * Petition Location Verification & Impact Area System (Phase 2) —
+   * platform-wide geographic insights for the admin dashboard. Aggregate
+   * only: no per-signature classification/score/user data is returned.
+   */
+  async getGeographicInsights(days: number) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const whereRecent = { createdAt: { gte: since } };
+
+    const [topCounties, topDistricts, topCommunities, byClassification, totalClassified] = await Promise.all([
+      this.prisma.signatureLocation.groupBy({
+        by: ['county'],
+        where: { ...whereRecent, county: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { county: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['district'],
+        where: { ...whereRecent, district: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { district: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['community'],
+        where: { ...whereRecent, community: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { community: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['classification'],
+        where: whereRecent,
+        _count: { _all: true },
+      }),
+      this.prisma.signatureLocation.count({ where: whereRecent }),
+    ]);
+
+    const classificationCounts: Record<string, number> = {
+      DIRECTLY_AFFECTED: 0,
+      NEARBY_COMMUNITY: 0,
+      SUPPORTER: 0,
+      DIASPORA_SUPPORTER: 0,
+      UNKNOWN: 0,
+    };
+    for (const row of byClassification) classificationCounts[row.classification] = row._count._all;
+
+    return {
+      topCounties: topCounties.map((r) => ({ label: r.county as string, count: r._count._all })),
+      topDistricts: topDistricts.map((r) => ({ label: r.district as string, count: r._count._all })),
+      mostActiveCommunities: topCommunities.map((r) => ({ label: r.community as string, count: r._count._all })),
+      diasporaParticipation: classificationCounts.DIASPORA_SUPPORTER,
+      directlyAffectedTotal: classificationCounts.DIRECTLY_AFFECTED,
+      nearbyCommunityTotal: classificationCounts.NEARBY_COMMUNITY,
+      supporterTotal: classificationCounts.SUPPORTER,
+      totalClassified,
+    };
+  }
+
   async getFraudStats(days: number) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const events = await this.prisma.fraudEvent.findMany({
