@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { apiGet } from '../../../lib/api';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
+import { CommunityInsightsPanel } from '../../../components/community-insights-panel';
+import { PetitionEndorsements } from '../../../components/petition-endorsements';
 import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
 import { PetitionTimeline } from '../../../components/petition-timeline';
@@ -27,6 +29,9 @@ type Petition = {
   isAnonymous?: boolean;
   displayName?: string | null;
   county?: string | null;
+  impactScope?: string | null;
+  district?: string | null;
+  community?: string | null;
 };
 
 type StatusLog = {
@@ -319,6 +324,10 @@ export default async function PetitionPage({
               />
             </div>
 
+            <CommunityInsightsPanel petitionId={petition.id} />
+
+            <PetitionEndorsements petitionId={petition.id} />
+
             {/* Updates */}
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">
@@ -381,6 +390,10 @@ export default async function PetitionPage({
               goal={petition.goal}
               title={petition.title}
               imageUrl={petition.imageUrl}
+              impactScope={petition.impactScope}
+              county={petition.county}
+              district={petition.district}
+              community={petition.community}
             />
             <PetitionDonationSection
               petitionId={petition.id}

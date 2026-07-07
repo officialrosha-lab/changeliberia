@@ -35,6 +35,9 @@ import { MessagesModule } from './messages/messages.module';
 import { StakeholderGroupModule } from './stakeholder-groups/stakeholder-group.module';
 import { BroadcastModule } from './broadcast/broadcast.module';
 import { OfficialsModule } from './officials/officials.module';
+import { EndorsementsModule } from './endorsements/endorsements.module';
+import { PushModule } from './push/push.module';
+import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
 
 @Module({
   imports: [
@@ -73,6 +76,9 @@ import { OfficialsModule } from './officials/officials.module';
     FeedbackModule,
     ActivityModule,
     OfficialsModule, // Public Officials Portal
+    EndorsementsModule, // Public Officials Portal: community leader endorsements
+    PushModule, // Web push notifications
+    ChangeLiberiaGraphQLModule, // Read-only GraphQL API for research/civil-society consumers
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

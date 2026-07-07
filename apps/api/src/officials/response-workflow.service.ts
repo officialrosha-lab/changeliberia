@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GovernmentResponseStage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -27,7 +28,10 @@ const STAGE_ORDER: GovernmentResponseStage[] = [
  */
 @Injectable()
 export class ResponseWorkflowService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async assignToInstitution(petitionId: string, institutionId: string, note?: string) {
     const existing = await this.prisma.petitionGovernmentResponse.findUnique({
@@ -61,7 +65,7 @@ export class ResponseWorkflowService {
     });
     if (!response) throw new NotFoundException('Response record not found');
 
-    if (!isAdmin && requesterInstitutionId && response.institutionId !== requesterInstitutionId) {
+    if (!isAdmin && (!requesterInstitutionId || response.institutionId !== requesterInstitutionId)) {
       throw new ForbiddenException('This response belongs to a different institution');
     }
 
@@ -81,6 +85,20 @@ export class ResponseWorkflowService {
       },
       include: { timeline: { orderBy: { createdAt: 'asc' } } },
     });
+
+    // Web push notification trigger — best-effort, never blocks the
+    // stage transition itself.
+    this.prisma.petition
+      .findUnique({ where: { id: response.petitionId }, select: { title: true } })
+      .then((petition) => {
+        if (!petition) return;
+        this.eventEmitter.emit('petition.government-response-advanced', {
+          petitionId: response.petitionId,
+          petitionTitle: petition.title,
+          stage: newStage,
+        });
+      })
+      .catch(() => {/* non-critical */});
 
     return updated;
   }

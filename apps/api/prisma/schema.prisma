@@ -81,6 +81,8 @@ model User {
   age                Int?
   address            String?
   county             String?
+  district           String? // Impact Area profile match: district
+  community          String? // Impact Area profile match: community/town
   stripeCustomerId   String?            @unique // Stripe customer ID for this user
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -141,7 +143,11 @@ model User {
   broadcastsCreated Broadcast[]       @relation("BroadcastsCreated")
 
   // Public Officials Portal
-  heldInstitution Institution? @relation("InstitutionHolder")
+  heldInstitution  Institution?          @relation("InstitutionHolder")
+  staffMemberships OfficialStaffMember[] @relation("OfficialStaffUser")
+  endorsementsMade PetitionEndorsement[] @relation("EndorsementUser")
+
+  pushSubscriptions PushSubscription[] @relation("PushSubscriptionUser")
 }
 
 model Petition {
@@ -158,6 +164,11 @@ model Petition {
   isAnonymous         Boolean                      @default(false)
   displayName         String? // shown publicly when anonymous
   county              String? // Liberian county where issue occurs
+  district            String? // Impact Area: district (DISTRICT/COMMUNITY scope)
+  community           String? // Impact Area: community/town (COMMUNITY scope)
+  landmark            String? // Impact Area: optional landmark/street (COMMUNITY scope)
+  impactScope         ImpactScope? // nullable for backward-compat with existing rows
+  counties            String[]                     @default([]) // MULTI_COUNTY scope only
   goal                Int                          @default(1000)
   status              PetitionStatus               @default(PENDING)
   signaturesCount     Int                          @default(0)
@@ -181,6 +192,7 @@ model Petition {
   routingLogs         RoutingLog[]                 @relation("PetitionRouting")
   statusLogs          PetitionStatusLog[]
   governmentResponses PetitionGovernmentResponse[] @relation("GovernmentResponses")
+  endorsements        PetitionEndorsement[]
 
   // Facebook viral growth relations
   badges      SocialEngagementBadge[] @relation("PetitionBadges")
@@ -194,6 +206,7 @@ model Petition {
   stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
 
   @@index([status, createdAt])
+  @@index([impactScope, county, district])
 }
 
 model PetitionUpdate {
@@ -234,21 +247,79 @@ model PetitionComment {
 }
 
 model Signature {
-  id                 String   @id @default(cuid())
+  id                 String             @id @default(cuid())
   petitionId         String
   userId             String?
   name               String
-  anonymous          Boolean  @default(false)
-  trustScoreSnapshot Int      @default(0)
+  anonymous          Boolean            @default(false)
+  trustScoreSnapshot Int                @default(0)
   ipAddress          String?
   deviceId           String?
-  createdAt          DateTime @default(now())
-  petition           Petition @relation(fields: [petitionId], references: [id])
-  user               User?    @relation(fields: [userId], references: [id])
-  device             Device?  @relation(fields: [deviceId], references: [id])
+  createdAt          DateTime           @default(now())
+  petition           Petition           @relation(fields: [petitionId], references: [id])
+  user               User?              @relation(fields: [userId], references: [id])
+  device             Device?            @relation(fields: [deviceId], references: [id])
+  location           SignatureLocation?
 
   @@unique([petitionId, userId])
   @@index([petitionId, createdAt])
+}
+
+enum ImpactScope {
+  COMMUNITY
+  DISTRICT
+  COUNTY
+  MULTI_COUNTY
+  NATIONAL
+}
+
+enum RelationshipType {
+  LIVES_HERE
+  WORKS_HERE
+  ATTENDS_SCHOOL_HERE
+  OWNS_PROPERTY_HERE
+  BUSINESS_OPERATES_HERE
+  FREQUENTLY_USES_AREA
+  OTHER
+}
+
+enum SignatureClassification {
+  DIRECTLY_AFFECTED
+  NEARBY_COMMUNITY
+  SUPPORTER
+  DIASPORA_SUPPORTER
+  UNKNOWN
+}
+
+// Petition Location Verification & Impact Area System: per-signature declared
+// connection + system-computed classification. Split from Signature (rather
+// than inline) because this data is write-once-at-signing, read only by the
+// stats-breakdown endpoint, and must never leak confidenceScore/classification
+// into the hot, publicly-read Signature table — mirrors the
+// InstitutionOfficialProfile split from Institution for the same reason.
+model SignatureLocation {
+  id          String    @id @default(cuid())
+  signatureId String    @unique
+  signature   Signature @relation(fields: [signatureId], references: [id], onDelete: Cascade)
+
+  personallyAffected Boolean? // Step 1 answer; null = not asked
+  relationshipType   RelationshipType? // Step 2 answer, only if personallyAffected = true
+
+  county         String?
+  district       String?
+  community      String?
+  locationSource String  @default("unconfirmed") // "profile_match" | "user_confirmed" | "unconfirmed"
+
+  // Classification engine output — internal only, never exposed publicly,
+  // never used to block participation.
+  classification  SignatureClassification @default(UNKNOWN)
+  confidenceScore Int                     @default(0) // 0-100, internal only
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([signatureId])
+  @@index([classification])
 }
 
 model VerificationLog {
@@ -1305,12 +1376,116 @@ model Institution {
   officialProfile     InstitutionOfficialProfile?
   statusLogs          InstitutionStatusLog[]
   governmentResponses PetitionGovernmentResponse[]
+  staffMembers        OfficialStaffMember[]
 
   @@index([type, category, verified])
   @@index([verified, createdAt])
   @@index([name])
   @@index([category, county, district])
   @@index([officialStatus])
+}
+
+enum OfficialStaffRole {
+  CHIEF_OF_STAFF
+  LEGISLATIVE_ASSISTANT
+  COMMUNICATIONS_OFFICER
+  POLICY_ADVISOR
+  RESEARCH_OFFICER
+  CASE_MANAGER
+}
+
+enum OfficialStaffStatus {
+  INVITED
+  ACTIVE
+  REVOKED
+}
+
+// Public Officials Portal: delegated office staff. Officeholders may invite
+// existing platform users to act on their institution's behalf with a
+// scoped subset of permissions — never full ownership. Publishing an
+// official government response still requires canRespond=true (or being
+// the officeholder), enforced in ResponseWorkflowService/officials.controller,
+// not just at the guard level.
+model OfficialStaffMember {
+  id            String              @id @default(cuid())
+  institutionId String
+  institution   Institution         @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                @relation("OfficialStaffUser", fields: [userId], references: [id], onDelete: Cascade)
+  role          OfficialStaffRole
+  status        OfficialStaffStatus @default(INVITED)
+
+  canView            Boolean @default(true)
+  canDraft           Boolean @default(false)
+  canRespond         Boolean @default(false)
+  canManageInbox     Boolean @default(false)
+  canGenerateReports Boolean @default(false)
+
+  invitedBy String? // userId of the officeholder who sent the invite
+  invitedAt DateTime  @default(now())
+  joinedAt  DateTime?
+  revokedAt DateTime?
+
+  @@unique([institutionId, userId])
+  @@index([institutionId, status])
+  @@index([userId])
+}
+
+enum EndorserType {
+  TRADITIONAL_LEADER
+  RELIGIOUS_LEADER
+  CIVIC_LEADER
+  BUSINESS_LEADER
+  OTHER
+}
+
+enum EndorsementStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Community leader endorsements — distinct from signing. A verified
+// community/traditional/religious/civic leader can publicly back a
+// petition; admin-reviewed before appearing publicly, mirroring the
+// Officials Portal application/approval pattern at a lighter weight
+// (no Institution/RBAC involvement — endorsers aren't institutions).
+model PetitionEndorsement {
+  id            String            @id @default(cuid())
+  petitionId    String
+  petition      Petition          @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?             @relation("EndorsementUser", fields: [userId], references: [id], onDelete: SetNull)
+  endorserName  String
+  endorserTitle String? // e.g. "Paramount Chief of Bomi District"
+  endorserType  EndorserType
+  organization  String?
+  statement     String?           @db.Text()
+  status        EndorsementStatus @default(PENDING)
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNotes   String?           @db.Text()
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([petitionId, status])
+  @@index([status, createdAt])
+}
+
+// Web push notifications (browser Push API). userId is nullable so an
+// anonymous/logged-out browser can still subscribe to updates for a
+// specific petition it's following via localStorage-tracked interest;
+// endpoint is the natural unique key (one row per browser subscription).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation("PushSubscriptionUser", fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique @db.Text()
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model InstitutionOfficialProfile {
@@ -1822,6 +1997,8 @@ model Poll {
   description        String?
   category           String // e.g., "Infrastructure", "Health", "Education"
   county             String? // null = national, otherwise county-specific
+  district           String? // Impact Area: district (mirrors Petition.district)
+  community          String? // Impact Area: community/town (mirrors Petition.community)
   createdBy          String // User ID (admin/verified)
   creator            User       @relation("PollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   visibility         String     @default("PUBLIC") // PUBLIC, DRAFT, ARCHIVED
@@ -1872,6 +2049,13 @@ model PollVote {
   sessionId   String // Browser session ID
   ipHash      String // Hash of IP address
   fingerprint String // Session fingerprint (user-agent + IP)
+  // Petition Location Verification & Impact Area System (Phase 2):
+  // auto-filled from the voter's profile when logged in; null for anonymous
+  // votes. No separate confirmation flow (unlike petition signing) — this is
+  // a lighter-weight geographic participation signal, not a classification.
+  county      String?
+  district    String?
+  community   String?
   createdAt   DateTime   @default(now())
 
   @@unique([pollId, sessionId]) // One vote per session per poll

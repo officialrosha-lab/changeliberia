@@ -106,6 +106,15 @@ export class CreatePollDto {
   @IsString()
   county?: string; // null = national, otherwise county-specific
 
+  // Petition Location Verification & Impact Area System (Phase 2)
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  community?: string;
+
   @IsDateString()
   expiresAt!: string; // ISO 8601 format
 

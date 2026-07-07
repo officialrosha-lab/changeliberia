@@ -1,12 +1,14 @@
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
   MaxLength,
   Min,
 } from 'class-validator';
+import { ImpactScope } from '@prisma/client';
 
 export class UpdatePetitionDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;
@@ -22,6 +24,12 @@ export class UpdatePetitionDto {
   @IsOptional() @IsBoolean() isAnonymous?: boolean;
   @IsOptional() @IsString() @MaxLength(120) displayName?: string;
   @IsOptional() @IsString() county?: string;
+  // Petition Location Verification & Impact Area System (Phase 1)
+  @IsOptional() @IsEnum(ImpactScope) impactScope?: ImpactScope;
+  @IsOptional() @IsString() district?: string;
+  @IsOptional() @IsString() community?: string;
+  @IsOptional() @IsString() landmark?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) counties?: string[];
 }
 
 export class CreatePetitionDto {
@@ -38,6 +46,12 @@ export class CreatePetitionDto {
   @IsOptional() @IsString() @MaxLength(120) displayName?: string;
   @IsOptional() @IsString() county?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
+  // Petition Location Verification & Impact Area System (Phase 1)
+  @IsOptional() @IsEnum(ImpactScope) impactScope?: ImpactScope;
+  @IsOptional() @IsString() district?: string;
+  @IsOptional() @IsString() community?: string;
+  @IsOptional() @IsString() landmark?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) counties?: string[];
 }
 
 export class CreatePetitionUpdateDto {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { apiPost } from '../../../lib/api';
 import { usePollSocket } from '../../../lib/use-poll-socket';
 import { useAuthStore } from '../../../lib/store';
+import { PollGeographicBreakdown } from '../../../components/poll-geographic-breakdown';
 
 type PollOption = {
   id: string;
@@ -752,6 +753,9 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
             </div>
           </div>
         )}
+
+        {/* ── Geographic participation ── */}
+        <PollGeographicBreakdown pollId={poll.id} />
 
         {/* ── Sharing panel ── */}
         <PollSharePanel slug={poll.slug} title={poll.title} />
