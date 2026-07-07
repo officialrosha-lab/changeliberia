@@ -6,12 +6,14 @@ import { OfficialDashboardOverview } from '../../../components/official-dashboar
 import { OfficialConstituencyPanel } from '../../../components/official-constituency-panel';
 import { OfficialPetitionFeed } from '../../../components/official-petition-feed';
 import { OfficialInboxPanel } from '../../../components/official-inbox-panel';
+import { OfficialStaffPanel } from '../../../components/official-staff-panel';
 
 const TABS = [
   ['overview', 'Overview'],
   ['constituency', 'My Constituency'],
   ['feed', 'Assigned Issues'],
   ['inbox', 'Government Inbox'],
+  ['staff', 'Office Staff'],
 ] as const;
 
 type Tab = (typeof TABS)[number][0];
@@ -49,6 +51,7 @@ export function OfficialDashboardClient() {
           {tab === 'constituency' && <OfficialConstituencyPanel />}
           {tab === 'feed' && <OfficialPetitionFeed />}
           {tab === 'inbox' && <OfficialInboxPanel />}
+          {tab === 'staff' && <OfficialStaffPanel />}
         </div>
       </main>
     </OfficialGuard>

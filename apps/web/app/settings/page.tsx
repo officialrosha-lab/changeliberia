@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { ProfileSettings } from '../../components/dashboard/profile-settings';
+import { PushNotificationToggle } from '../../components/push-notification-toggle';
 
 export const metadata = { title: 'Account Settings — Change Liberia' };
 
@@ -21,6 +22,10 @@ export default function SettingsPage() {
       <Suspense fallback={<div className="py-8 text-center text-sm text-zinc-500">Loading…</div>}>
         <ProfileSettings />
       </Suspense>
+
+      <div className="mt-6">
+        <PushNotificationToggle />
+      </div>
     </main>
   );
 }

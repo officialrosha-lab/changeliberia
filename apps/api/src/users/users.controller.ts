@@ -22,6 +22,9 @@ class UpdateProfileDto {
   @IsOptional() @IsInt() @Min(1) @Max(120) age?: number;
   @IsOptional() @IsString() @MaxLength(200) address?: string;
   @IsOptional() @IsString() @MaxLength(60) county?: string;
+  // Petition Location Verification & Impact Area System (Phase 1)
+  @IsOptional() @IsString() @MaxLength(60) district?: string;
+  @IsOptional() @IsString() @MaxLength(120) community?: string;
 }
 
 @Controller('users')

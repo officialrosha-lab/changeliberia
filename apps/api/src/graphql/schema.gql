@@ -1,0 +1,55 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type CommunityInsights {
+  byCommunity: [InsightRow!]!
+  byCounty: [InsightRow!]!
+  byDistrict: [InsightRow!]!
+  diasporaTotal: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type InsightRow {
+  count: Int!
+  label: String!
+}
+
+type Petition {
+  categories: [String!]!
+  category: String
+  community: String
+  counties: [String!]!
+  county: String
+  createdAt: DateTime!
+  district: String
+  goal: Int!
+  id: String!
+  impactScope: String
+  petitionType: String
+  signaturesCount: Int!
+  status: String!
+  summary: String!
+  title: String!
+  todaySignatures: Int!
+}
+
+type Query {
+  petition(id: String!): Petition
+  petitionCommunityInsights(id: String!): CommunityInsights
+  petitionSignatureBreakdown(id: String!): SignatureBreakdown
+  petitions(category: String, county: String, impactScope: String, limit: Int): [Petition!]!
+}
+
+type SignatureBreakdown {
+  diasporaSupport: Int!
+  directlyAffected: Int!
+  nearbyCommunity: Int!
+  supporters: Int!
+  total: Int!
+  unknown: Int!
+}

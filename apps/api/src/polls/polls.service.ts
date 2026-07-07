@@ -58,6 +58,8 @@ export class PollsService {
         description: createPollDto.description,
         category: createPollDto.category,
         county: createPollDto.county || null,
+        district: createPollDto.district || null,
+        community: createPollDto.community || null,
         createdBy,
         status: 'ACTIVE', // Admin direct creation is immediately active
         expiresAt: new Date(createPollDto.expiresAt),
@@ -112,6 +114,8 @@ export class PollsService {
           description: createPollDto.description,
           category: createPollDto.category,
           county: createPollDto.county || null,
+          district: createPollDto.district || null,
+          community: createPollDto.community || null,
           createdBy: submittedBy,
           status: 'PENDING' as any,
           expiresAt: new Date(createPollDto.expiresAt),
@@ -460,6 +464,45 @@ export class PollsService {
           ? Math.round((option.voteCount / poll.totalVotes) * 100)
           : 0,
       })),
+    };
+  }
+
+  /**
+   * Petition Location Verification & Impact Area System (Phase 2) —
+   * geographic participation breakdown for a poll. Aggregate-only counts
+   * from PollVote.county/district/community; no per-voter data returned.
+   */
+  async getGeographicBreakdown(pollId: string) {
+    const [byCounty, byDistrict, byCommunity, total] = await Promise.all([
+      this.prisma.pollVote.groupBy({
+        by: ['county'],
+        where: { pollId, county: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { county: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.pollVote.groupBy({
+        by: ['district'],
+        where: { pollId, district: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { district: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.pollVote.groupBy({
+        by: ['community'],
+        where: { pollId, community: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { community: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.pollVote.count({ where: { pollId } }),
+    ]);
+
+    return {
+      total,
+      byCounty: byCounty.map((r) => ({ label: r.county as string, count: r._count._all })),
+      byDistrict: byDistrict.map((r) => ({ label: r.district as string, count: r._count._all })),
+      byCommunity: byCommunity.map((r) => ({ label: r.community as string, count: r._count._all })),
     };
   }
 

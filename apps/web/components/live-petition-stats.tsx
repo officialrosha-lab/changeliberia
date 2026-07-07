@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { apiGet } from '../lib/api';
+
+interface SignatureBreakdown {
+  total: number;
+  directlyAffected: number;
+  nearbyCommunity: number;
+  supporters: number; // DB enum: SUPPORTER — displayed in the UI as "National Support"
+  diasporaSupport: number;
+}
 
 interface LiveSigner {
   id: string;
@@ -41,8 +50,20 @@ export function LivePetitionStats({
   const [todayCount, setTodayCount] = useState(initialTodayCount);
   const [liveSigners, setLiveSigners] = useState<LiveSigner[]>([]);
   const [pulse, setPulse] = useState(false);
+  const [breakdown, setBreakdown] = useState<SignatureBreakdown | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const idCounter = useRef(0);
+  const breakdownRefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchBreakdown = useCallback(() => {
+    apiGet<SignatureBreakdown>(`/petitions/${petitionId}/signature-breakdown`)
+      .then(setBreakdown)
+      .catch(() => {/* best-effort */});
+  }, [petitionId]);
+
+  useEffect(() => {
+    fetchBreakdown();
+  }, [fetchBreakdown]);
 
   const triggerPulse = useCallback(() => {
     setPulse(true);
@@ -71,6 +92,11 @@ export function LivePetitionStats({
       setCount(data.signaturesCount);
       setTodayCount(data.todaySignatures);
       triggerPulse();
+
+      // Debounced re-fetch of the classification breakdown — simplest
+      // correct approach rather than trying to classify client-side.
+      if (breakdownRefetchTimer.current) clearTimeout(breakdownRefetchTimer.current);
+      breakdownRefetchTimer.current = setTimeout(fetchBreakdown, 1500);
     });
 
     socket.on('new_signature', (data: { petitionId: string; signerName?: string; anonymous?: boolean; timestamp: string }) => {
@@ -85,9 +111,10 @@ export function LivePetitionStats({
     });
 
     return () => {
+      if (breakdownRefetchTimer.current) clearTimeout(breakdownRefetchTimer.current);
       socket.disconnect();
     };
-  }, [petitionId, triggerPulse]);
+  }, [petitionId, triggerPulse, fetchBreakdown]);
 
   const progress = Math.min(100, Math.round((count / Math.max(1, goal)) * 100));
   const nextMilestone = getNextMilestone(count, goal);
@@ -155,6 +182,38 @@ export function LivePetitionStats({
           {toNextMilestone > 0 ? `${toNextMilestone.toLocaleString()} more needed` : '🎉 Milestone reached!'}
         </p>
       </div>
+
+      {/* Support breakdown — Petition Location Verification & Impact Area System */}
+      {breakdown && breakdown.total > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-neutral-500">
+            Who&apos;s supporting this
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-950/30">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Total Supporters</p>
+              <p className="mt-0.5 text-lg font-extrabold text-emerald-900 dark:text-emerald-300">{breakdown.total.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl bg-blue-50 px-3 py-2.5 dark:bg-blue-950/30">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">Directly Affected</p>
+              <p className="mt-0.5 text-lg font-extrabold text-blue-900 dark:text-blue-300">{breakdown.directlyAffected.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl bg-purple-50 px-3 py-2.5 dark:bg-purple-950/30">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-400">Nearby Community</p>
+              <p className="mt-0.5 text-lg font-extrabold text-purple-900 dark:text-purple-300">{breakdown.nearbyCommunity.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl bg-zinc-100 px-3 py-2.5 dark:bg-neutral-800">
+              {/* "supporters" is the DB's SUPPORTER classification bucket, labeled "National Support" in the UI */}
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-neutral-400">National Support</p>
+              <p className="mt-0.5 text-lg font-extrabold text-zinc-900 dark:text-neutral-100">{breakdown.supporters.toLocaleString()}</p>
+            </div>
+            <div className="col-span-2 rounded-2xl bg-amber-50 px-3 py-2.5 dark:bg-amber-950/20">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Diaspora Support</p>
+              <p className="mt-0.5 text-lg font-extrabold text-amber-900 dark:text-amber-300">{breakdown.diasporaSupport.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Live signer feed */}
       {liveSigners.length > 0 && (

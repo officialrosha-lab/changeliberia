@@ -225,6 +225,14 @@ export class AnalyticsController {
     return this.analytics.getFraudStats(Math.max(1, Number(days) || 30));
   }
 
+  // Petition Location Verification & Impact Area System (Phase 2)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('geographic-insights')
+  getGeographicInsights(@Query('days') days = '30') {
+    return this.analytics.getGeographicInsights(Math.max(1, Number(days) || 30));
+  }
+
   // ── Message Analytics (admin only) ───────────────────────────────────────
 
   @UseGuards(RolesGuard)

@@ -20,6 +20,11 @@ type PetitionPayload = {
   county?: string;
   imageUrl?: string;
   goal: number;
+  impactScope?: 'COMMUNITY' | 'DISTRICT' | 'COUNTY' | 'MULTI_COUNTY' | 'NATIONAL';
+  district?: string;
+  community?: string;
+  landmark?: string;
+  counties?: string[];
 };
 
 const PETITION_TYPES = [
@@ -28,6 +33,14 @@ const PETITION_TYPES = [
   { value: 'social', label: 'Social movement', icon: '✊', hint: "Raising awareness — you'll handle distribution" },
   { value: 'community', label: 'Community campaign', icon: '🏘️', hint: 'Local action at council or neighbourhood level' },
 ];
+
+const IMPACT_SCOPES = [
+  { value: 'COMMUNITY', label: 'Community', icon: '🏘', hint: 'A specific town/neighborhood is directly affected' },
+  { value: 'DISTRICT', label: 'District', icon: '🏛', hint: 'An entire district is directly affected' },
+  { value: 'COUNTY', label: 'County', icon: '🌍', hint: 'An entire county is directly affected' },
+  { value: 'MULTI_COUNTY', label: 'Multi-County', icon: '🗺', hint: 'Several counties are directly affected' },
+  { value: 'NATIONAL', label: 'National', icon: '🇱🇷', hint: 'Every Liberian is considered directly affected' },
+] as const;
 
 const CATEGORIES = [
   { id: 'infrastructure', label: '🏗️ Infrastructure' },
@@ -90,6 +103,13 @@ export function CreatePetitionForm() {
   const [selectedCounty, setSelectedCounty] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
 
+  // Petition Location Verification & Impact Area System (Phase 1)
+  const [impactScope, setImpactScope] = useState<PetitionPayload['impactScope']>('COUNTY');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedCommunity, setSelectedCommunity] = useState('');
+  const [selectedLandmark, setSelectedLandmark] = useState('');
+  const [selectedCounties, setSelectedCounties] = useState<string[]>([]);
+
   // Image
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -121,6 +141,12 @@ export function CreatePetitionForm() {
   const toggleCategory = (id: string) => {
     setSelectedCategories((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  };
+
+  const toggleCounty = (county: string) => {
+    setSelectedCounties((prev) =>
+      prev.includes(county) ? prev.filter((c) => c !== county) : [...prev, county],
     );
   };
 
@@ -200,9 +226,14 @@ export function CreatePetitionForm() {
       priorActions: priorActions || undefined,
       isAnonymous,
       displayName: isAnonymous && displayName ? displayName : undefined,
-      county: selectedCounty || undefined,
+      county: impactScope === 'MULTI_COUNTY' ? undefined : selectedCounty || undefined,
       imageUrl: finalImageUrl || undefined,
       goal: Number(form.get('goal') ?? 1000),
+      impactScope,
+      district: (impactScope === 'DISTRICT' || impactScope === 'COMMUNITY') ? selectedDistrict || undefined : undefined,
+      community: impactScope === 'COMMUNITY' ? selectedCommunity || undefined : undefined,
+      landmark: impactScope === 'COMMUNITY' ? selectedLandmark || undefined : undefined,
+      counties: impactScope === 'MULTI_COUNTY' ? selectedCounties : undefined,
     };
 
     if (!token) {
@@ -378,17 +409,59 @@ export function CreatePetitionForm() {
                 )}
               </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="county" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
-                    County <span className="font-normal text-zinc-500">(optional)</span>
-                  </label>
-                  <select id="county" value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)}
-                    className={inputCls}>
-                    <option value="">Select a county…</option>
-                    {COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
+              <div className="mt-5">
+                <p className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">Who does this issue affect?</p>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-neutral-500">
+                  This defines the geographic area directly affected and helps us classify supporters accurately.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {IMPACT_SCOPES.map(({ value, label, icon, hint }) => (
+                    <button key={value} type="button"
+                      onClick={() => setImpactScope(value)}
+                      className={`flex flex-col items-start rounded-2xl border p-3 text-left transition-all active:scale-95 ${
+                        impactScope === value
+                          ? 'border-emerald-500 bg-emerald-50 shadow-sm dark:border-emerald-400 dark:bg-emerald-950/40'
+                          : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-neutral-700 dark:bg-neutral-800'
+                      }`}
+                    >
+                      <span className="text-xl">{icon}</span>
+                      <span className={`mt-1.5 text-xs font-semibold leading-tight ${impactScope === value ? 'text-emerald-800 dark:text-emerald-300' : 'text-zinc-800 dark:text-neutral-200'}`}>{label}</span>
+                      <span className="mt-1 text-[10px] leading-snug text-zinc-500 dark:text-neutral-500">{hint}</span>
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {impactScope === 'MULTI_COUNTY' ? (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">Counties affected</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {COUNTIES.map((c) => (
+                        <button key={c} type="button" onClick={() => toggleCounty(c)}
+                          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95 ${
+                            selectedCounties.includes(c)
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm dark:border-emerald-500 dark:bg-emerald-950 dark:text-emerald-300'
+                              : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : impactScope !== 'NATIONAL' ? (
+                  <div>
+                    <label htmlFor="county" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
+                      County
+                    </label>
+                    <select id="county" value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)}
+                      className={inputCls}>
+                      <option value="">Select a county…</option>
+                      {COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                ) : null}
                 <div>
                   <label htmlFor="tags" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
                     Tags <span className="font-normal text-zinc-500">(optional, comma separated)</span>
@@ -396,6 +469,29 @@ export function CreatePetitionForm() {
                   <input id="tags" name="tags" placeholder="e.g. roads, flooding, Sinkor"
                     className={inputCls} />
                 </div>
+                {(impactScope === 'DISTRICT' || impactScope === 'COMMUNITY') && (
+                  <div>
+                    <label htmlFor="district" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">District</label>
+                    <input id="district" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)}
+                      placeholder="e.g. District 10" className={inputCls} />
+                  </div>
+                )}
+                {impactScope === 'COMMUNITY' && (
+                  <>
+                    <div>
+                      <label htmlFor="community" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">Community / Town</label>
+                      <input id="community" value={selectedCommunity} onChange={(e) => setSelectedCommunity(e.target.value)}
+                        placeholder="e.g. Sinkor" className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="landmark" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
+                        Landmark / Street <span className="font-normal text-zinc-500">(optional)</span>
+                      </label>
+                      <input id="landmark" value={selectedLandmark} onChange={(e) => setSelectedLandmark(e.target.value)}
+                        placeholder="e.g. 12th Street" className={inputCls} />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-5">

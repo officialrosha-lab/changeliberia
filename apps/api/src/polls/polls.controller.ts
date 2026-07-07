@@ -133,6 +133,16 @@ export class PollsController {
   }
 
   /**
+   * GET /polls/:id/geographic-breakdown
+   * Petition Location Verification & Impact Area System (Phase 2) —
+   * geographic participation breakdown (aggregate-only).
+   */
+  @Get(':id/geographic-breakdown')
+  async getGeographicBreakdown(@Param('id') pollId: string) {
+    return this.pollsService.getGeographicBreakdown(pollId);
+  }
+
+  /**
    * DELETE /polls/:id
    * Archive a poll (admin only)
    */

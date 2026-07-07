@@ -17,7 +17,11 @@ export class OfficialInboxService {
     page = 1,
     limit = 20,
   ) {
-    const [responses, messages] = await Promise.all([
+    // Bound each source to the rows needed to cover up to the requested page
+    // rather than loading the full table before merging/sorting/slicing.
+    const window = page * limit;
+
+    const [responses, messages, unreadMessageCount] = await Promise.all([
       this.prisma.petitionGovernmentResponse.findMany({
         where: {
           institutionId,
@@ -27,6 +31,7 @@ export class OfficialInboxService {
           petition: { select: { id: true, title: true, summary: true, county: true, signaturesCount: true } },
         },
         orderBy: { updatedAt: 'desc' },
+        take: window,
       }),
       this.prisma.message.findMany({
         where: {
@@ -35,7 +40,9 @@ export class OfficialInboxService {
         },
         include: { sender: { select: { id: true, fullName: true } } },
         orderBy: { createdAt: 'desc' },
+        take: window,
       }),
+      this.getUnreadCount(holderUserId),
     ]);
 
     const items = [
@@ -63,7 +70,12 @@ export class OfficialInboxService {
     return {
       data: paged,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-      unreadMessageCount: messages.filter((m) => !m.isRead).length,
+      unreadMessageCount,
     };
+  }
+
+  /** Shared unread-count so the dashboard and inbox tab never disagree. */
+  async getUnreadCount(holderUserId: string): Promise<number> {
+    return this.prisma.message.count({ where: { recipientId: holderUserId, isRead: false } });
   }
 }

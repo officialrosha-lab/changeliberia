@@ -69,6 +69,23 @@ export class VotingService {
       throw new UnauthorizedException('You have already voted on this poll');
     }
 
+    // Petition Location Verification & Impact Area System (Phase 2): capture
+    // the voter's profile county/district/community as a lightweight
+    // geographic participation signal — no separate confirmation flow,
+    // unlike petition signing (this is not a classification).
+    let voterLocation: { county: string | null; district: string | null; community: string | null } = {
+      county: null,
+      district: null,
+      community: null,
+    };
+    if (userId) {
+      const voter = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { county: true, district: true, community: true },
+      });
+      if (voter) voterLocation = voter;
+    }
+
     // Record the vote
     const vote = await this.prisma.pollVote.create({
       data: {
@@ -78,6 +95,9 @@ export class VotingService {
         sessionId,   // userId for authenticated, fingerprint for anonymous
         ipHash,
         fingerprint, // always stored for audit
+        county: voterLocation.county,
+        district: voterLocation.district,
+        community: voterLocation.community,
       },
     });
 

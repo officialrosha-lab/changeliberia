@@ -17,7 +17,24 @@ interface OfficialProfile {
   stats: { activePetitions: number; resolvedCount: number };
 }
 
+interface OfficeHoursEntry {
+  day: string;
+  openTime: string;
+  closeTime: string;
+}
+
+function parseOfficeHours(raw: string | null): OfficeHoursEntry[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
+  const officeHours = parseOfficeHours(profile.officeHours);
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
@@ -44,6 +61,13 @@ export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
             {profile.district ? ` · District ${profile.district}` : ''}
           </p>
           {profile.politicalParty && <p className="mt-1 text-sm text-zinc-500">{profile.politicalParty}</p>}
+          {(profile.termStartDate || profile.termEndDate) && (
+            <p className="mt-1 text-sm text-zinc-500">
+              Term: {profile.termStartDate ? new Date(profile.termStartDate).getFullYear() : 'Unknown'}
+              {' – '}
+              {profile.termEndDate ? new Date(profile.termEndDate).getFullYear() : 'Present'}
+            </p>
+          )}
         </div>
       </div>
 
@@ -64,6 +88,18 @@ export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
         <p>Office email: {profile.officialEmail}</p>
         {profile.phone && <p>Phone: {profile.phone}</p>}
         {profile.officeAddress && <p>Office address: {profile.officeAddress}</p>}
+        {officeHours.length > 0 && (
+          <div className="mt-2">
+            <p className="font-semibold text-zinc-700">Office hours</p>
+            <ul>
+              {officeHours.map((entry, idx) => (
+                <li key={`${entry.day}-${idx}`}>
+                  {entry.day}: {entry.openTime} – {entry.closeTime}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

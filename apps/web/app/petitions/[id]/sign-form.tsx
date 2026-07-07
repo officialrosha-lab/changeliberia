@@ -10,6 +10,57 @@ const turnstileSiteKey =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
 
 const localKey = (petitionId: string) => `signed_petition_${petitionId}`;
+const savedLocationKey = 'change_liberia_saved_location';
+
+const RELATIONSHIP_OPTIONS = [
+  { value: 'LIVES_HERE', label: 'I live here' },
+  { value: 'WORKS_HERE', label: 'I work here' },
+  { value: 'ATTENDS_SCHOOL_HERE', label: 'I attend school here' },
+  { value: 'OWNS_PROPERTY_HERE', label: 'I own property here' },
+  { value: 'BUSINESS_OPERATES_HERE', label: 'My business operates here' },
+  { value: 'FREQUENTLY_USES_AREA', label: 'I frequently use this area' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
+
+type SavedLocation = { county?: string; district?: string; community?: string };
+
+function loadSavedLocation(): SavedLocation | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(savedLocationKey);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLocation(location: SavedLocation) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(savedLocationKey, JSON.stringify(location));
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Compares a saved/profile location against the fields the petition's impact scope actually requires. */
+function locationMatchesScope(
+  scope: string | null | undefined,
+  petitionCounty: string | null | undefined,
+  petitionDistrict: string | null | undefined,
+  petitionCommunity: string | null | undefined,
+  candidate: SavedLocation | null,
+): boolean {
+  if (!candidate || !candidate.county || !petitionCounty) return false;
+  if (candidate.county !== petitionCounty) return false;
+  if (scope === 'COUNTY') return true;
+  if (scope === 'DISTRICT') return !petitionDistrict || candidate.district === petitionDistrict;
+  if (scope === 'COMMUNITY') {
+    if (petitionDistrict && candidate.district !== petitionDistrict) return false;
+    return !petitionCommunity || candidate.community === petitionCommunity;
+  }
+  return false;
+}
 
 export function SignForm({
   petitionId,
@@ -17,12 +68,20 @@ export function SignForm({
   goal,
   title = 'This Petition',
   imageUrl,
+  impactScope,
+  county,
+  district,
+  community,
 }: {
   petitionId: string;
   signatureCount: number;
   goal: number;
   title?: string;
   imageUrl?: string;
+  impactScope?: string | null;
+  county?: string | null;
+  district?: string | null;
+  community?: string | null;
 }) {
   const token = useAuthStore((s) => s.token);
   const [name, setName] = useState('');
@@ -40,6 +99,27 @@ export function SignForm({
   const [copiedShort, setCopiedShort] = useState(false);
   const [petitionUrl, setPetitionUrl] = useState('');
   const [shortUrl, setShortUrl] = useState<string | null>(null);
+
+  // Petition Location Verification & Impact Area System (Phase 1)
+  const needsLocationFlow = !!impactScope && impactScope !== 'NATIONAL';
+  const [locationStep, setLocationStep] = useState<'none' | 'affected' | 'relationship' | 'location'>('none');
+  const [personallyAffected, setPersonallyAffected] = useState<boolean | null>(null);
+  const [relationshipType, setRelationshipType] = useState<string | null>(null);
+  const [confirmedCounty, setConfirmedCounty] = useState('');
+  const [confirmedDistrict, setConfirmedDistrict] = useState('');
+  const [confirmedCommunity, setConfirmedCommunity] = useState('');
+  const [knownLocation, setKnownLocation] = useState<SavedLocation | null>(null);
+
+  useEffect(() => {
+    if (!needsLocationFlow) return;
+    if (token) {
+      apiGet<{ county?: string; district?: string; community?: string }>('/users/me', token)
+        .then((profile) => setKnownLocation({ county: profile.county, district: profile.district, community: profile.community }))
+        .catch(() => setKnownLocation(loadSavedLocation()));
+    } else {
+      setKnownLocation(loadSavedLocation());
+    }
+  }, [needsLocationFlow, token]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -96,10 +176,48 @@ export function SignForm({
 
   const progress = Math.min(100, Math.round((count / goal) * 100));
 
-  async function onSubmit(e: FormEvent) {
+  function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim() || submitting) return;
 
+    // Petition Location Verification & Impact Area System (Phase 1): route
+    // through the lightweight 1-2 tap flow before actually signing, unless
+    // the petition has no impact scope or is NATIONAL (everyone is
+    // considered directly affected nationally — no need to ask).
+    if (needsLocationFlow && locationStep === 'none') {
+      setLocationStep('affected');
+      return;
+    }
+
+    void submitSignature();
+  }
+
+  function answerAffected(affected: boolean) {
+    setPersonallyAffected(affected);
+    if (!affected) {
+      void submitSignature();
+      return;
+    }
+    setLocationStep('relationship');
+  }
+
+  function answerRelationship(value: string) {
+    setRelationshipType(value);
+    const matches = locationMatchesScope(impactScope, county, district, community, knownLocation);
+    if (matches) {
+      // Profile/saved location already matches — skip Step 3 entirely.
+      void submitSignature();
+      return;
+    }
+    if (knownLocation?.county) {
+      setConfirmedCounty(knownLocation.county);
+      setConfirmedDistrict(knownLocation.district ?? '');
+      setConfirmedCommunity(knownLocation.community ?? '');
+    }
+    setLocationStep('location');
+  }
+
+  async function submitSignature() {
     const tokenForRequest =
       captchaRequired && !turnstileSiteKey ? 'human-verified' : captchaToken;
 
@@ -110,6 +228,11 @@ export function SignForm({
 
     setSubmitting(true);
     setStatus('');
+
+    const usingConfirmedLocation = locationStep === 'location';
+    if (usingConfirmedLocation && confirmedCounty) {
+      saveLocation({ county: confirmedCounty, district: confirmedDistrict, community: confirmedCommunity });
+    }
 
     try {
       const response = await apiPost<{
@@ -122,6 +245,12 @@ export function SignForm({
         deviceFingerprint: `web-${navigator.userAgent.slice(0, 40)}`,
         captchaToken:
           captchaRequired && tokenForRequest ? tokenForRequest : undefined,
+        personallyAffected: needsLocationFlow ? personallyAffected : undefined,
+        relationshipType: personallyAffected ? (relationshipType ?? undefined) : undefined,
+        confirmedCounty: usingConfirmedLocation ? confirmedCounty || undefined : undefined,
+        confirmedDistrict: usingConfirmedLocation ? confirmedDistrict || undefined : undefined,
+        confirmedCommunity: usingConfirmedLocation ? confirmedCommunity || undefined : undefined,
+        locationSource: usingConfirmedLocation ? 'user_confirmed' : undefined,
       });
 
       if (response.captchaRequired && !response.signature) {
@@ -143,6 +272,7 @@ export function SignForm({
       setCaptchaToken(null);
       setStatus('');
       setName('');
+      setLocationStep('none');
 
       // Track petition signature as a Lead conversion — best-effort
       try {
@@ -245,30 +375,104 @@ export function SignForm({
                 Add your name to help this campaign gain momentum and show visible support.
               </p>
             </div>
-            <form onSubmit={onSubmit} className="mt-4 space-y-3">
-              <input
-                id="signer-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-400"
-              />
-              {captchaRequired && turnstileSiteKey ? (
-                <div className="flex justify-center py-2">
-                  <Turnstile
-                    siteKey={turnstileSiteKey}
-                    onSuccess={(t) => setCaptchaToken(t)}
-                  />
+            {locationStep === 'none' && (
+              <form onSubmit={onSubmit} className="mt-4 space-y-3">
+                <input
+                  id="signer-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-400"
+                />
+                {captchaRequired && turnstileSiteKey ? (
+                  <div className="flex justify-center py-2">
+                    <Turnstile
+                      siteKey={turnstileSiteKey}
+                      onSuccess={(t) => setCaptchaToken(t)}
+                    />
+                  </div>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600 dark:hover:from-amber-400 dark:hover:to-amber-500"
+                >
+                  {submitting ? 'Signing…' : captchaRequired ? 'Verify & Sign Petition' : 'Sign Petition'}
+                </button>
+              </form>
+            )}
+
+            {locationStep === 'affected' && (
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-neutral-600 dark:bg-neutral-700">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-50">
+                  Are you personally affected by this issue?
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={() => answerAffected(true)}
+                    className="flex-1 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                    ✅ Yes
+                  </button>
+                  <button type="button" onClick={() => answerAffected(false)}
+                    className="flex-1 rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-neutral-500 dark:text-neutral-200">
+                    🤝 No, supporting
+                  </button>
                 </div>
-              ) : null}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600 dark:hover:from-amber-400 dark:hover:to-amber-500"
-              >
-                {submitting ? 'Signing…' : captchaRequired ? 'Verify & Sign Petition' : 'Sign Petition'}
-              </button>
-            </form>
+                <button type="button" onClick={() => setLocationStep('none')}
+                  className="mt-2 text-xs font-medium text-zinc-400 hover:underline">
+                  Back
+                </button>
+              </div>
+            )}
+
+            {locationStep === 'relationship' && (
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-neutral-600 dark:bg-neutral-700">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-50">
+                  How are you connected to this issue?
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {RELATIONSHIP_OPTIONS.map(({ value, label }) => (
+                    <button key={value} type="button" onClick={() => answerRelationship(value)}
+                      className="rounded-xl border border-zinc-300 px-3 py-2 text-left text-xs font-medium text-zinc-700 transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-neutral-500 dark:text-neutral-200 dark:hover:bg-neutral-600">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {locationStep === 'location' && (
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-neutral-600 dark:bg-neutral-700">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-50">Confirm your location</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-neutral-400">
+                  This helps us show accurate, aggregated support statistics. Never shared publicly.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <input value={confirmedCounty} onChange={(e) => setConfirmedCounty(e.target.value)}
+                    placeholder="County" list="sign-form-counties"
+                    className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-100" />
+                  {(impactScope === 'DISTRICT' || impactScope === 'COMMUNITY') && (
+                    <input value={confirmedDistrict} onChange={(e) => setConfirmedDistrict(e.target.value)}
+                      placeholder="District"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-100" />
+                  )}
+                  {impactScope === 'COMMUNITY' && (
+                    <input value={confirmedCommunity} onChange={(e) => setConfirmedCommunity(e.target.value)}
+                      placeholder="Community / Town"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-100" />
+                  )}
+                </div>
+                {captchaRequired && turnstileSiteKey ? (
+                  <div className="flex justify-center py-2">
+                    <Turnstile siteKey={turnstileSiteKey} onSuccess={(t) => setCaptchaToken(t)} />
+                  </div>
+                ) : null}
+                <button type="button" disabled={submitting} onClick={() => void submitSignature()}
+                  className="mt-3 w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 font-semibold text-zinc-900 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60">
+                  {submitting ? 'Signing…' : 'Confirm & Sign'}
+                </button>
+              </div>
+            )}
+
             {status ? (
               <p className="mt-2 text-xs text-amber-700">{status}</p>
             ) : null}

@@ -153,6 +153,85 @@ export class PetitionsService {
     return this.prisma.petition.findUnique({ where: { id } });
   }
 
+  /**
+   * Petition Location Verification & Impact Area System (Phase 1) —
+   * aggregate signature-classification counts only. Never returns
+   * per-signature classification or confidenceScore.
+   */
+  async getSignatureBreakdown(petitionId: string) {
+    const [grouped, total] = await Promise.all([
+      this.prisma.signatureLocation.groupBy({
+        by: ['classification'],
+        where: { signature: { petitionId } },
+        _count: { _all: true },
+      }),
+      this.prisma.signature.count({ where: { petitionId } }),
+    ]);
+
+    const counts: Record<string, number> = {
+      DIRECTLY_AFFECTED: 0,
+      NEARBY_COMMUNITY: 0,
+      SUPPORTER: 0,
+      DIASPORA_SUPPORTER: 0,
+      UNKNOWN: 0,
+    };
+    for (const row of grouped) counts[row.classification] = row._count._all;
+
+    return {
+      total,
+      directlyAffected: counts.DIRECTLY_AFFECTED,
+      nearbyCommunity: counts.NEARBY_COMMUNITY,
+      supporters: counts.SUPPORTER,
+      diasporaSupport: counts.DIASPORA_SUPPORTER,
+      unknown: counts.UNKNOWN,
+    };
+  }
+
+  /**
+   * Petition Location Verification & Impact Area System (Phase 2) —
+   * "Community Insights" panel data. Aggregate-only geographic breakdowns
+   * (top counties/districts/communities by signature count) plus the
+   * diaspora total. Never returns per-signature data or individual
+   * user locations — county/district/community values are the signer's
+   * own declared/confirmed strings, grouped and counted, not attributable
+   * back to a specific person from this response alone.
+   */
+  async getCommunityInsights(petitionId: string, limit = 8) {
+    const [byCounty, byDistrict, byCommunity, diasporaTotal] = await Promise.all([
+      this.prisma.signatureLocation.groupBy({
+        by: ['county'],
+        where: { signature: { petitionId }, county: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { county: 'desc' } },
+        take: limit,
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['district'],
+        where: { signature: { petitionId }, district: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { district: 'desc' } },
+        take: limit,
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['community'],
+        where: { signature: { petitionId }, community: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { community: 'desc' } },
+        take: limit,
+      }),
+      this.prisma.signatureLocation.count({
+        where: { signature: { petitionId }, classification: 'DIASPORA_SUPPORTER' },
+      }),
+    ]);
+
+    return {
+      byCounty: byCounty.map((r) => ({ label: r.county as string, count: r._count._all })),
+      byDistrict: byDistrict.map((r) => ({ label: r.district as string, count: r._count._all })),
+      byCommunity: byCommunity.map((r) => ({ label: r.community as string, count: r._count._all })),
+      diasporaTotal,
+    };
+  }
+
   async approve(id: string, category?: string) {
     const petition = await this.prisma.petition.findUnique({
       where: { id },

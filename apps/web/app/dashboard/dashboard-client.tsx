@@ -549,6 +549,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 >
                   <option value="passport">Passport</option>
                   <option value="voter_id">Voter ID</option>
+                  <option value="utility_bill">Utility Bill (proof of residency)</option>
                   <option value="other">Other government ID</option>
                 </select>
 

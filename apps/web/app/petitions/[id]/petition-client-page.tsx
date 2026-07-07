@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
 import { OfficialResponseTimeline } from '../../../components/official-response-timeline';
+import { CommunityInsightsPanel } from '../../../components/community-insights-panel';
+import { PetitionEndorsements } from '../../../components/petition-endorsements';
 import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
 import { CommentForm } from './comment-form';
@@ -19,6 +21,10 @@ type Petition = {
   goal: number;
   category?: string | null;
   petitionType?: string | null;
+  impactScope?: string | null;
+  county?: string | null;
+  district?: string | null;
+  community?: string | null;
 };
 
 type PetitionUpdate = { id: string; title: string; body: string; createdAt: string };
@@ -186,6 +192,10 @@ export function PetitionClientPage({ id }: { id: string }) {
 
             <OfficialResponseTimeline petitionId={petition.id} />
 
+            <CommunityInsightsPanel petitionId={petition.id} />
+
+            <PetitionEndorsements petitionId={petition.id} />
+
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
               <PetitionMilestones
                 petitionId={petition.id}
@@ -225,6 +235,10 @@ export function PetitionClientPage({ id }: { id: string }) {
               goal={petition.goal}
               title={petition.title}
               imageUrl={petition.imageUrl}
+              impactScope={petition.impactScope}
+              county={petition.county}
+              district={petition.district}
+              community={petition.community}
             />
           </aside>
         </div>

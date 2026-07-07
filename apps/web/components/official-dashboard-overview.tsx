@@ -9,6 +9,7 @@ interface DashboardData {
   petitionsByStage: Array<{ stage: string; count: number }>;
   totalPetitions: number;
   unreadInboxCount: number;
+  directlyAffectedCount: number;
 }
 
 export function OfficialDashboardOverview() {
@@ -49,10 +50,14 @@ export function OfficialDashboardOverview() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-3xl bg-emerald-50 p-4">
           <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Assigned petitions</p>
           <p className="mt-2 text-3xl font-semibold text-emerald-900">{data.totalPetitions}</p>
+        </div>
+        <div className="rounded-3xl bg-purple-50 p-4">
+          <p className="text-xs uppercase tracking-[0.24em] text-purple-700">Directly affected</p>
+          <p className="mt-2 text-3xl font-semibold text-purple-900">{data.directlyAffectedCount.toLocaleString()}</p>
         </div>
         <div className="rounded-3xl bg-blue-50 p-4">
           <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Unread inbox</p>

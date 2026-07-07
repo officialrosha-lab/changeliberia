@@ -89,6 +89,73 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     }
 
+    // Petition Location Verification & Impact Area System (Phase 1)
+    const safeImpactAreaAlters = [
+      `DO $$ BEGIN
+        CREATE TYPE "ImpactScope" AS ENUM ('COMMUNITY', 'DISTRICT', 'COUNTY', 'MULTI_COUNTY', 'NATIONAL');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "RelationshipType" AS ENUM ('LIVES_HERE', 'WORKS_HERE', 'ATTENDS_SCHOOL_HERE', 'OWNS_PROPERTY_HERE', 'BUSINESS_OPERATES_HERE', 'FREQUENTLY_USES_AREA', 'OTHER');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "SignatureClassification" AS ENUM ('DIRECTLY_AFFECTED', 'NEARBY_COMMUNITY', 'SUPPORTER', 'DIASPORA_SUPPORTER', 'UNKNOWN');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "district" TEXT`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "community" TEXT`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "landmark" TEXT`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "impactScope" "ImpactScope"`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "counties" TEXT[] DEFAULT ARRAY[]::TEXT[]`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "district" TEXT`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "community" TEXT`,
+      `CREATE INDEX IF NOT EXISTS "Petition_impactScope_county_district_idx" ON "Petition"("impactScope", "county", "district")`,
+    ];
+    for (const sql of safeImpactAreaAlters) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Impact-area column guard skipped: ${sql.slice(0, 60)}`, err);
+      }
+    }
+
+    // Petition Location Verification & Impact Area System (Phase 2) — polls
+    const safePollImpactAreaAlters = [
+      `ALTER TABLE "Poll" ADD COLUMN IF NOT EXISTS "district" TEXT`,
+      `ALTER TABLE "Poll" ADD COLUMN IF NOT EXISTS "community" TEXT`,
+      `ALTER TABLE "PollVote" ADD COLUMN IF NOT EXISTS "county" TEXT`,
+      `ALTER TABLE "PollVote" ADD COLUMN IF NOT EXISTS "district" TEXT`,
+      `ALTER TABLE "PollVote" ADD COLUMN IF NOT EXISTS "community" TEXT`,
+    ];
+    for (const sql of safePollImpactAreaAlters) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Poll impact-area column guard skipped: ${sql.slice(0, 60)}`, err);
+      }
+    }
+
+    // Public Officials Portal (leftover work): delegated staff + endorsements
+    const safeStaffAndEndorsementEnums = [
+      `DO $$ BEGIN
+        CREATE TYPE "OfficialStaffRole" AS ENUM ('CHIEF_OF_STAFF', 'LEGISLATIVE_ASSISTANT', 'COMMUNICATIONS_OFFICER', 'POLICY_ADVISOR', 'RESEARCH_OFFICER', 'CASE_MANAGER');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "OfficialStaffStatus" AS ENUM ('INVITED', 'ACTIVE', 'REVOKED');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "EndorserType" AS ENUM ('TRADITIONAL_LEADER', 'RELIGIOUS_LEADER', 'CIVIC_LEADER', 'BUSINESS_LEADER', 'OTHER');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "EndorsementStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+    ];
+    for (const sql of safeStaffAndEndorsementEnums) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Staff/endorsement enum guard skipped: ${sql.slice(0, 60)}`, err);
+      }
+    }
+
     const safeTables: { sql: string; label: string }[] = [
       {
         label: 'Sponsor',
@@ -205,12 +272,103 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           CONSTRAINT "GovernmentResponseTimelineEntry_pkey" PRIMARY KEY ("id")
         )`,
       },
+      {
+        label: 'SignatureLocation',
+        sql: `CREATE TABLE IF NOT EXISTS "SignatureLocation" (
+          "id" TEXT NOT NULL,
+          "signatureId" TEXT NOT NULL,
+          "personallyAffected" BOOLEAN,
+          "relationshipType" "RelationshipType",
+          "county" TEXT,
+          "district" TEXT,
+          "community" TEXT,
+          "locationSource" TEXT NOT NULL DEFAULT 'unconfirmed',
+          "classification" "SignatureClassification" NOT NULL DEFAULT 'UNKNOWN',
+          "confidenceScore" INTEGER NOT NULL DEFAULT 0,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "SignatureLocation_pkey" PRIMARY KEY ("id"),
+          CONSTRAINT "SignatureLocation_signatureId_key" UNIQUE ("signatureId")
+        )`,
+      },
+      {
+        label: 'OfficialStaffMember',
+        sql: `CREATE TABLE IF NOT EXISTS "OfficialStaffMember" (
+          "id" TEXT NOT NULL,
+          "institutionId" TEXT NOT NULL,
+          "userId" TEXT NOT NULL,
+          "role" "OfficialStaffRole" NOT NULL,
+          "status" "OfficialStaffStatus" NOT NULL DEFAULT 'INVITED',
+          "canView" BOOLEAN NOT NULL DEFAULT true,
+          "canDraft" BOOLEAN NOT NULL DEFAULT false,
+          "canRespond" BOOLEAN NOT NULL DEFAULT false,
+          "canManageInbox" BOOLEAN NOT NULL DEFAULT false,
+          "canGenerateReports" BOOLEAN NOT NULL DEFAULT false,
+          "invitedBy" TEXT,
+          "invitedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "joinedAt" TIMESTAMP(3),
+          "revokedAt" TIMESTAMP(3),
+          CONSTRAINT "OfficialStaffMember_pkey" PRIMARY KEY ("id"),
+          CONSTRAINT "OfficialStaffMember_institutionId_userId_key" UNIQUE ("institutionId", "userId")
+        )`,
+      },
+      {
+        label: 'PetitionEndorsement',
+        sql: `CREATE TABLE IF NOT EXISTS "PetitionEndorsement" (
+          "id" TEXT NOT NULL,
+          "petitionId" TEXT NOT NULL,
+          "userId" TEXT,
+          "endorserName" TEXT NOT NULL,
+          "endorserTitle" TEXT,
+          "endorserType" "EndorserType" NOT NULL,
+          "organization" TEXT,
+          "statement" TEXT,
+          "status" "EndorsementStatus" NOT NULL DEFAULT 'PENDING',
+          "reviewedBy" TEXT,
+          "reviewedAt" TIMESTAMP(3),
+          "reviewNotes" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "PetitionEndorsement_pkey" PRIMARY KEY ("id")
+        )`,
+      },
+      {
+        label: 'PushSubscription',
+        sql: `CREATE TABLE IF NOT EXISTS "PushSubscription" (
+          "id" TEXT NOT NULL,
+          "userId" TEXT,
+          "endpoint" TEXT NOT NULL,
+          "p256dh" TEXT NOT NULL,
+          "auth" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id"),
+          CONSTRAINT "PushSubscription_endpoint_key" UNIQUE ("endpoint")
+        )`,
+      },
     ];
     for (const { sql, label } of safeTables) {
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
         this.logger.warn(`Could not ensure ${label} table:`, err);
+      }
+    }
+
+    // Indexes that depend on tables created above
+    const safePostTableIndexes = [
+      `CREATE INDEX IF NOT EXISTS "SignatureLocation_signatureId_idx" ON "SignatureLocation"("signatureId")`,
+      `CREATE INDEX IF NOT EXISTS "SignatureLocation_classification_idx" ON "SignatureLocation"("classification")`,
+      `CREATE INDEX IF NOT EXISTS "OfficialStaffMember_institutionId_status_idx" ON "OfficialStaffMember"("institutionId", "status")`,
+      `CREATE INDEX IF NOT EXISTS "OfficialStaffMember_userId_idx" ON "OfficialStaffMember"("userId")`,
+      `CREATE INDEX IF NOT EXISTS "PetitionEndorsement_petitionId_status_idx" ON "PetitionEndorsement"("petitionId", "status")`,
+      `CREATE INDEX IF NOT EXISTS "PetitionEndorsement_status_createdAt_idx" ON "PetitionEndorsement"("status", "createdAt")`,
+      `CREATE INDEX IF NOT EXISTS "PushSubscription_userId_idx" ON "PushSubscription"("userId")`,
+    ];
+    for (const sql of safePostTableIndexes) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Index guard skipped: ${sql.slice(0, 60)}`, err);
       }
     }
   }

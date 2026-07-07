@@ -90,13 +90,32 @@ export class OfficialsService {
     return institution;
   }
 
+  /**
+   * Resolves the institution a "me"-style endpoint should operate on:
+   * either one the caller holds directly, or — if delegated staff — one
+   * they've been granted ACTIVE staff access to. Callers that need to
+   * distinguish officeholder vs. staff (e.g. to gate a write action by a
+   * specific canX permission) should also call staffService.resolveAccess().
+   */
   async getMyInstitution(userId: string) {
-    const institution = await this.prisma.institution.findUnique({
+    const held = await this.prisma.institution.findUnique({
       where: { holderUserId: userId },
       include: { officialProfile: true },
     });
-    if (!institution) throw new NotFoundException('No official account found for this user');
-    return institution;
+    if (held) return held;
+
+    const staffMembership = await this.prisma.officialStaffMember.findFirst({
+      where: { userId, status: 'ACTIVE' },
+    });
+    if (staffMembership) {
+      const institution = await this.prisma.institution.findUnique({
+        where: { id: staffMembership.institutionId },
+        include: { officialProfile: true },
+      });
+      if (institution) return institution;
+    }
+
+    throw new NotFoundException('No official account found for this user');
   }
 
   async updateMyProfile(institutionId: string, dto: UpdateOfficialProfileDto) {
