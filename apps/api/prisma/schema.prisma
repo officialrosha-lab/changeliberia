@@ -53,12 +53,12 @@ enum AuthProvider {
 }
 
 enum PollStatus {
-  PENDING    // Submitted by user, awaiting admin approval
-  APPROVED   // Admin approved, now active
-  REJECTED   // Admin rejected
-  ACTIVE     // Admin direct creation (immediate publication)
-  EXPIRED    // Poll date has passed
-  CLOSED     // Manually closed
+  PENDING // Submitted by user, awaiting admin approval
+  APPROVED // Admin approved, now active
+  REJECTED // Admin rejected
+  ACTIVE // Admin direct creation (immediate publication)
+  EXPIRED // Poll date has passed
+  CLOSED // Manually closed
 }
 
 model User {
@@ -68,7 +68,7 @@ model User {
   phone              String             @unique
   passwordHash       String?
   googleId           String?            @unique // Google OAuth ID
-  googleEmail        String?            // Email from Google OAuth profile
+  googleEmail        String? // Email from Google OAuth profile
   authProvider       AuthProvider       @default(PHONE) // Primary auth method
   isEmailConfirmed   Boolean            @default(false) // Email confirmation status
   role               UserRole           @default(USER)
@@ -114,69 +114,73 @@ model User {
   pixelEvents             FacebookPixelEvent[]    @relation("FacebookPixelEvents")
 
   // RBAC relations
-  userRoles UserRoleAssignment[] // New role-based access control
-  cmsPages  CMSPage[]            @relation("CMSPageAuthor")
-  cmsPageVersions CMSPageVersion[] @relation("CMSPageVersionAuthor") // Phase 3: Version history
-  cmsFiles  CMSFile[] // Phase 2: File uploads
-  cmsExperiments CMSExperiment[] // Phase 4: A/B testing
-  cmsSchedules CMSSchedule[] @relation("CMSScheduleCreator") // Phase 3: Content scheduling
-  
+  userRoles       UserRoleAssignment[] // New role-based access control
+  cmsPages        CMSPage[]            @relation("CMSPageAuthor")
+  cmsPageVersions CMSPageVersion[]     @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  cmsFiles        CMSFile[] // Phase 2: File uploads
+  cmsExperiments  CMSExperiment[] // Phase 4: A/B testing
+  cmsSchedules    CMSSchedule[]        @relation("CMSScheduleCreator") // Phase 3: Content scheduling
+
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
   memberships         Membership[]
-  emailLogs           EmailLog[]          // Email system relation
-  
+  emailLogs           EmailLog[] // Email system relation
+
   // Activity log relations
-  activityLogs        ActivityLog[]       @relation("ActivityLogUser")
-  adminActivityLogs   ActivityLog[]       @relation("ActivityLogAdmin")
+  activityLogs      ActivityLog[] @relation("ActivityLogUser")
+  adminActivityLogs ActivityLog[] @relation("ActivityLogAdmin")
 
   // Civic Pulse relations
-  pollsCreated        Poll[]              @relation("PollCreator")
-  pollVotes           PollVote[]          @relation("PollVoter")
+  pollsCreated Poll[]     @relation("PollCreator")
+  pollVotes    PollVote[] @relation("PollVoter")
 
   // Phase 1: Internal Messaging
-  messagesSent        Message[]           @relation("MessagesSent")
-  messagesReceived    Message[]           @relation("MessagesReceived")
-  groupMemberships    GroupMembership[]   @relation("GroupMemberships")
-  broadcastsCreated   Broadcast[]         @relation("BroadcastsCreated")
+  messagesSent      Message[]         @relation("MessagesSent")
+  messagesReceived  Message[]         @relation("MessagesReceived")
+  groupMemberships  GroupMembership[] @relation("GroupMemberships")
+  broadcastsCreated Broadcast[]       @relation("BroadcastsCreated")
+
+  // Public Officials Portal
+  heldInstitution Institution? @relation("InstitutionHolder")
 }
 
 model Petition {
-  id               String               @id @default(cuid())
-  title            String
-  imageUrl         String?
-  summary          String
-  description      String
-  category         String?
-  categories       String[]             // multi-tag: ["infrastructure","health",...]
-  tags             String[]             // freeform tags
-  petitionType     String?              // "government" | "ngo" | "social" | "community"
-  priorActions     String?              // what steps have already been taken
-  isAnonymous      Boolean              @default(false)
-  displayName      String?              // shown publicly when anonymous
-  county           String?              // Liberian county where issue occurs
-  goal             Int                  @default(1000)
-  status           PetitionStatus       @default(PENDING)
-  signaturesCount  Int                  @default(0)
-  todaySignatures  Int                  @default(0)
-  donationsEnabled Boolean              @default(false) // Admin-controlled per petition
-  donationGoal     Float?
-  totalDonations   Float                @default(0)
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  creatorId        String
-  creator          User                 @relation(fields: [creatorId], references: [id])
-  signatures       Signature[]
-  updates          PetitionUpdate[]
-  comments         PetitionComment[]
-  referrals        Referral[]
-  milestones       PetitionMilestone[]
-  shareLinks       ShareLink[]
-  submissions      PetitionSubmission[]
-  payments         Payment[]            @relation("PetitionPayments")
-  subscriptions    Subscription[]       @relation("PetitionSubscriptions")
-  routingLogs      RoutingLog[]         @relation("PetitionRouting")
-  statusLogs       PetitionStatusLog[]
+  id                  String                       @id @default(cuid())
+  title               String
+  imageUrl            String?
+  summary             String
+  description         String
+  category            String?
+  categories          String[] // multi-tag: ["infrastructure","health",...]
+  tags                String[] // freeform tags
+  petitionType        String? // "government" | "ngo" | "social" | "community"
+  priorActions        String? // what steps have already been taken
+  isAnonymous         Boolean                      @default(false)
+  displayName         String? // shown publicly when anonymous
+  county              String? // Liberian county where issue occurs
+  goal                Int                          @default(1000)
+  status              PetitionStatus               @default(PENDING)
+  signaturesCount     Int                          @default(0)
+  todaySignatures     Int                          @default(0)
+  donationsEnabled    Boolean                      @default(false) // Admin-controlled per petition
+  donationGoal        Float?
+  totalDonations      Float                        @default(0)
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  creatorId           String
+  creator             User                         @relation(fields: [creatorId], references: [id])
+  signatures          Signature[]
+  updates             PetitionUpdate[]
+  comments            PetitionComment[]
+  referrals           Referral[]
+  milestones          PetitionMilestone[]
+  shareLinks          ShareLink[]
+  submissions         PetitionSubmission[]
+  payments            Payment[]                    @relation("PetitionPayments")
+  subscriptions       Subscription[]               @relation("PetitionSubscriptions")
+  routingLogs         RoutingLog[]                 @relation("PetitionRouting")
+  statusLogs          PetitionStatusLog[]
+  governmentResponses PetitionGovernmentResponse[] @relation("GovernmentResponses")
 
   // Facebook viral growth relations
   badges      SocialEngagementBadge[] @relation("PetitionBadges")
@@ -184,7 +188,7 @@ model Petition {
   pixelEvents FacebookPixelEvent[]    @relation("FacebookPixelEvents")
   audiences   CustomAudience[]        @relation("CustomAudiences")
 
-  followers   PetitionFollower[]
+  followers PetitionFollower[]
 
   // Phase 1: Stakeholder Groups
   stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
@@ -646,12 +650,12 @@ model Payment {
   // MoMo Mobile Money fields
   momoExternalId        String?           @unique // Idempotency key for MoMo
   momoTransactionId     String?           @unique // MoMo transaction reference
-  momoPhoneNumber       String?           // User's phone number for MoMo
-  momoStatus            String?           // MoMo status: PENDING, SUCCESSFUL, FAILED
-  momoAuthCode          String?           // MoMo authorization code
-  momoErrorMessage      String?           // MoMo error details
+  momoPhoneNumber       String? // User's phone number for MoMo
+  momoStatus            String? // MoMo status: PENDING, SUCCESSFUL, FAILED
+  momoAuthCode          String? // MoMo authorization code
+  momoErrorMessage      String? // MoMo error details
   momoMetadata          String?           @db.Text() // JSON: MoMo-specific data
-  subscriptionId        String?           // Link to subscription for recurring payments
+  subscriptionId        String? // Link to subscription for recurring payments
   subscription          Subscription?     @relation("SubscriptionPayments", fields: [subscriptionId], references: [id], onDelete: SetNull)
   description           String?
   metadata              String?           @db.Text() // JSON: additional info
@@ -695,37 +699,37 @@ model PaymentMethodRecord {
 }
 
 model Subscription {
-  id                   String               @id @default(cuid())
+  id                   String                         @id @default(cuid())
   userId               String
-  user                 User                 @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  user                 User                           @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
   petitionId           String?
-  petition             Petition?            @relation("PetitionSubscriptions", fields: [petitionId], references: [id], onDelete: SetNull)
+  petition             Petition?                      @relation("PetitionSubscriptions", fields: [petitionId], references: [id], onDelete: SetNull)
   contentId            String?
-  content              Content?             @relation("ContentSubscriptions", fields: [contentId], references: [id], onDelete: SetNull)
+  content              Content?                       @relation("ContentSubscriptions", fields: [contentId], references: [id], onDelete: SetNull)
   amount               Float
-  currency             String               @default("USD")
-  interval             String               @default("monthly") // monthly, quarterly, yearly
-  status               SubscriptionStatus   @default(ACTIVE)
-  paymentMethod        PaymentMethod        @default(CARD) // Payment method type
-  stripeSubscriptionId String?              @unique(map: "stripe_subscription_unique")
+  currency             String                         @default("USD")
+  interval             String                         @default("monthly") // monthly, quarterly, yearly
+  status               SubscriptionStatus             @default(ACTIVE)
+  paymentMethod        PaymentMethod                  @default(CARD) // Payment method type
+  stripeSubscriptionId String?                        @unique(map: "stripe_subscription_unique")
   stripeCustomerId     String?
   lastWebhookEventId   String?
   // MoMo Mobile Money fields
-  momoPreapprovalId    String?              @unique // MoMo pre-approval reference
-  momoPhoneNumber      String?              // User's phone number for MoMo
+  momoPreapprovalId    String?                        @unique // MoMo pre-approval reference
+  momoPhoneNumber      String? // User's phone number for MoMo
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   nextBillingDate      DateTime?
   cancelledAt          DateTime?
   cancellationReason   String?
   paymentMethodId      String?
-  paymentMethodRecord  PaymentMethodRecord? @relation("SubscriptionPaymentMethod", fields: [paymentMethodId], references: [id], onDelete: SetNull)
-  metadata             String?              @db.Text() // JSON: frequency, notifications
+  paymentMethodRecord  PaymentMethodRecord?           @relation("SubscriptionPaymentMethod", fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  metadata             String?                        @db.Text() // JSON: frequency, notifications
   webhookEvents        WebhookEventLog[]
   momoAuthorization    MoMoSubscriptionAuthorization? @relation("MoMoSubscriptionAuth")
-  payments             Payment[]           @relation("SubscriptionPayments")
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  payments             Payment[]                      @relation("SubscriptionPayments")
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
 
   @@index([userId, status])
   @@index([petitionId, status])
@@ -737,17 +741,17 @@ model Subscription {
 }
 
 model MoMoSubscriptionAuthorization {
-  id                   String    @id @default(cuid())
-  subscriptionId       String    @unique
-  subscription         Subscription @relation("MoMoSubscriptionAuth", fields: [subscriptionId], references: [id], onDelete: Cascade)
-  preapprovalId        String    @unique // MoMo pre-approval reference
-  phoneNumber          String    // User's phone number
-  maxAmount            Float     // Maximum amount that can be charged
-  validityTimeInSeconds Int      // How long pre-approval is valid
-  status               String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  expiresAt            DateTime  // When pre-approval expires
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                    String       @id @default(cuid())
+  subscriptionId        String       @unique
+  subscription          Subscription @relation("MoMoSubscriptionAuth", fields: [subscriptionId], references: [id], onDelete: Cascade)
+  preapprovalId         String       @unique // MoMo pre-approval reference
+  phoneNumber           String // User's phone number
+  maxAmount             Float // Maximum amount that can be charged
+  validityTimeInSeconds Int // How long pre-approval is valid
+  status                String       @default("PENDING") // PENDING, APPROVED, REJECTED
+  expiresAt             DateTime // When pre-approval expires
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   @@index([preapprovalId])
   @@index([status, expiresAt])
@@ -1158,6 +1162,9 @@ enum PermissionResource {
   ROLE
   ANALYTICS
   EMAIL
+  OFFICIAL
+  INBOX
+  RESPONSE
 }
 
 model Permission {
@@ -1234,12 +1241,28 @@ enum InstitutionCategory {
   EDUCATION
   SECURITY
   NGO
+  // Public Officials Portal: individual elected/appointed office categories
+  SENATOR
+  REPRESENTATIVE
+  MAYOR
+  SUPERINTENDENT
+  COMMISSIONER
+  DISTRICT_COMMISSIONER
+  EXECUTIVE_OFFICE
 }
 
 enum ContactPriorityLevel {
   LOW
   MEDIUM
   HIGH
+}
+
+enum OfficialVerificationStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
 }
 
 model Institution {
@@ -1267,9 +1290,108 @@ model Institution {
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
 
+  // Public Officials Portal: individual-office fields (nullable; only used
+  // when category is one of the individual-office categories above)
+  county         String?
+  district       String?
+  termStartDate  DateTime?
+  termEndDate    DateTime?
+  politicalParty String?
+  holderUserId   String?                    @unique
+  holderUser     User?                      @relation("InstitutionHolder", fields: [holderUserId], references: [id], onDelete: SetNull)
+  officialStatus OfficialVerificationStatus @default(UNVERIFIED)
+  slug           String?                    @unique
+
+  officialProfile     InstitutionOfficialProfile?
+  statusLogs          InstitutionStatusLog[]
+  governmentResponses PetitionGovernmentResponse[]
+
   @@index([type, category, verified])
   @@index([verified, createdAt])
   @@index([name])
+  @@index([category, county, district])
+  @@index([officialStatus])
+}
+
+model InstitutionOfficialProfile {
+  id                  String      @id @default(cuid())
+  institutionId       String      @unique
+  institution         Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  bio                 String?     @db.Text()
+  photoUrl            String?
+  officeHours         String?     @db.Text() // JSON: [{day, openTime, closeTime}]
+  officeAddress       String?
+  socialLinks         String      @default("[]") // JSON array: [{platform, url}]
+  verificationDocUrl  String?
+  verificationDocType String? // "ELECTION_CERTIFICATE" | "APPOINTMENT_LETTER" | "OTHER"
+  submittedAt         DateTime?
+  reviewedBy          String? // admin User id
+  reviewedAt          DateTime?
+  reviewNotes         String?     @db.Text()
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([institutionId])
+}
+
+// Audit trail for Institution.officialStatus transitions (mirrors PetitionStatusLog)
+model InstitutionStatusLog {
+  id            String                     @id @default(cuid())
+  institutionId String
+  institution   Institution                @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  status        OfficialVerificationStatus
+  note          String?
+  actorUserId   String?
+  createdAt     DateTime                   @default(now())
+
+  @@index([institutionId, createdAt])
+}
+
+enum GovernmentResponseStage {
+  RECEIVED
+  ASSIGNED
+  UNDER_REVIEW
+  INVESTIGATION
+  ACTION_PLANNED
+  IMPLEMENTATION
+  RESOLVED
+  CLOSED
+}
+
+// Government response workflow for a petition, per responsible institution.
+// Distinct from Petition.status (moderation PENDING/APPROVED/REJECTED).
+model PetitionGovernmentResponse {
+  id                   String                  @id @default(cuid())
+  petitionId           String
+  petition             Petition                @relation("GovernmentResponses", fields: [petitionId], references: [id], onDelete: Cascade)
+  institutionId        String
+  institution          Institution             @relation(fields: [institutionId], references: [id])
+  currentStage         GovernmentResponseStage @default(RECEIVED)
+  assignedToUserId     String?
+  publicSummary        String?                 @db.Text()
+  internalNotes        String?                 @db.Text()
+  targetResolutionDate DateTime?
+  resolvedAt           DateTime?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  timeline GovernmentResponseTimelineEntry[]
+
+  @@unique([petitionId, institutionId])
+  @@index([institutionId, currentStage])
+  @@index([petitionId])
+}
+
+model GovernmentResponseTimelineEntry {
+  id          String                     @id @default(cuid())
+  responseId  String
+  response    PetitionGovernmentResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  stage       GovernmentResponseStage
+  note        String?                    @db.Text()
+  actorUserId String?
+  createdAt   DateTime                   @default(now())
+
+  @@index([responseId, createdAt])
 }
 
 model InstitutionDepartment {
@@ -1348,40 +1470,40 @@ model RoutingLog {
 // ============================================================================
 
 model CMSPage {
-  id              String      @id @default(cuid())
+  id              String           @id @default(cuid())
   title           String
-  slug            String      @unique
-  content         String      @db.Text() // Rich HTML content (legacy)
-  blocks          CMSBlock[]  // Block-based content
+  slug            String           @unique
+  content         String           @db.Text() // Rich HTML content (legacy)
+  blocks          CMSBlock[] // Block-based content
   versions        CMSPageVersion[] // Version history
-  schedules       CMSSchedule[] @relation("CMSPageSchedule") // Scheduled actions
-  isDraft         Boolean     @default(true) // Phase 3: Draft mode
+  schedules       CMSSchedule[]    @relation("CMSPageSchedule") // Scheduled actions
+  isDraft         Boolean          @default(true) // Phase 3: Draft mode
   metaDescription String?
   metaKeywords    String?
   ogImage         String? // Open Graph image URL
   ogTitle         String?
   ogDescription   String?
-  published       Boolean     @default(false)
+  published       Boolean          @default(false)
   publishedAt     DateTime?
   authorId        String?
-  author          User?       @relation("CMSPageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-  viewCount       Int         @default(0)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  author          User?            @relation("CMSPageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  viewCount       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([slug])
   @@index([published, publishedAt])
 }
 
 model CMSBlock {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   pageId    String
-  page      CMSPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  type      String    // hero, text, image, grid, cta, testimonial, divider, faq, features
-  order     Int       // Display order within page
-  props     String    @db.Text() // JSON with block-specific props
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  page      CMSPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type      String // hero, text, image, grid, cta, testimonial, divider, faq, features
+  order     Int // Display order within page
+  props     String   @db.Text() // JSON with block-specific props
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([pageId, order])
   @@index([pageId, order])
@@ -1449,7 +1571,7 @@ model Supporter {
   userId    String?
   email     String?
   phone     String?
-  ipAddress String?  // used for deduplication — one join per IP
+  ipAddress String? // used for deduplication — one join per IP
   source    String   @default("navbar") // "navbar" | "campaign" | "petition"
   joinedAt  DateTime @default(now())
 
@@ -1459,11 +1581,11 @@ model Supporter {
 }
 
 model Membership {
-  id        String   @id @default(cuid())
-  userId    String
-  role      String   @default("supporter") // "supporter" | "advocate"
-  joinedAt  DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  role     String   @default("supporter") // "supporter" | "advocate"
+  joinedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId])
   @@index([role, joinedAt])
@@ -1472,7 +1594,7 @@ model Membership {
 model PetitionStatusLog {
   id         String   @id @default(cuid())
   petitionId String
-  status     String   // "submitted" | "under_review" | "approved" | "gathering_signatures" | "sent_to_authority" | "awaiting_response" | "responded"
+  status     String // "submitted" | "under_review" | "approved" | "gathering_signatures" | "sent_to_authority" | "awaiting_response" | "responded"
   note       String?
   createdAt  DateTime @default(now())
   petition   Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
@@ -1481,19 +1603,19 @@ model PetitionStatusLog {
 }
 
 model AmbassadorApplication {
-  id         String            @id @default(cuid())
-  fullName   String
-  email      String            @unique
-  phone      String
-  location   String            // Liberian county
-  occupation String?
-  motivation String            // Text area - user's motivation
-  growthPlan String            // Text area - user's growth plan
-  socialLinks String?          // Optional free-form text (e.g., social media links)
-  status     ApplicationStatus @default(PENDING)
-  notes      String?           // Admin notes for approval/rejection
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
+  id          String            @id @default(cuid())
+  fullName    String
+  email       String            @unique
+  phone       String
+  location    String // Liberian county
+  occupation  String?
+  motivation  String // Text area - user's motivation
+  growthPlan  String // Text area - user's growth plan
+  socialLinks String? // Optional free-form text (e.g., social media links)
+  status      ApplicationStatus @default(PENDING)
+  notes       String? // Admin notes for approval/rejection
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([status])
   @@index([createdAt])
@@ -1511,7 +1633,7 @@ model CMSPageVersion {
   blocks      String   @db.Text() // JSON array of CMSBlock snapshots
   authorId    String?
   author      User?    @relation("CMSPageVersionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-  description String?  // What changed (e.g., "Updated hero block")
+  description String? // What changed (e.g., "Updated hero block")
   createdAt   DateTime @default(now())
 
   @@index([pageId, createdAt])
@@ -1522,15 +1644,15 @@ model CMSPageVersion {
 model CMSFile {
   id           String   @id @default(cuid())
   filename     String
-  originalName String   // User's original filename
+  originalName String // User's original filename
   mimeType     String
-  size         Int      // File size in bytes
-  url          String   // Full URL path for serving
+  size         Int // File size in bytes
+  url          String // Full URL path for serving
   uploadedBy   String
   user         User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
   usageCount   Int      @default(0) // How many blocks use this
   tags         String   @default("[]") // JSON array of tags
-  alt          String?  // Alt text for accessibility
+  alt          String? // Alt text for accessibility
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -1539,16 +1661,16 @@ model CMSFile {
 
 // Block analytics tracking for A/B testing and performance
 model CMSBlockAnalytics {
-  id          String   @id @default(cuid())
-  pageId      String
-  blockId     String
-  blockType   String
-  views       Int      @default(0)
-  clicks      Int      @default(0)
-  engagement  Float    @default(0) // Engagement rate 0-1
-  variantId   String?  // For A/B testing - variant identifier
-  recordDate  DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  pageId     String
+  blockId    String
+  blockType  String
+  views      Int      @default(0)
+  clicks     Int      @default(0)
+  engagement Float    @default(0) // Engagement rate 0-1
+  variantId  String? // For A/B testing - variant identifier
+  recordDate DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([pageId, blockId, variantId, recordDate])
   @@index([pageId, recordDate])
@@ -1557,21 +1679,21 @@ model CMSBlockAnalytics {
 
 // A/B testing experiments for blocks
 model CMSExperiment {
-  id          String   @id @default(cuid())
-  pageId      String
-  blockId     String
-  name        String
-  description String?
-  status      String   @default("draft") // draft, active, completed
-  controlVariant String // JSON props for control group
-  variants    String   @db.Text() // JSON array of variant objects {id, props, label}
-  startDate   DateTime?
-  endDate     DateTime?
+  id               String    @id @default(cuid())
+  pageId           String
+  blockId          String
+  name             String
+  description      String?
+  status           String    @default("draft") // draft, active, completed
+  controlVariant   String // JSON props for control group
+  variants         String    @db.Text() // JSON array of variant objects {id, props, label}
+  startDate        DateTime?
+  endDate          DateTime?
   winningVariantId String? // Which variant won
-  createdBy   String
-  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy        String
+  creator          User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([pageId, status])
   @@index([blockId])
@@ -1580,16 +1702,16 @@ model CMSExperiment {
 
 // Content scheduling for automated publishing
 model CMSSchedule {
-  id          String   @id @default(cuid())
-  pageId      String
-  page        CMSPage  @relation("CMSPageSchedule", fields: [pageId], references: [id], onDelete: Cascade)
-  action      String   // "publish", "unpublish", "update"
+  id           String    @id @default(cuid())
+  pageId       String
+  page         CMSPage   @relation("CMSPageSchedule", fields: [pageId], references: [id], onDelete: Cascade)
+  action       String // "publish", "unpublish", "update"
   scheduledFor DateTime
-  executed    Boolean  @default(false)
-  executedAt  DateTime?
-  createdBy   String
-  creator     User     @relation("CMSScheduleCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
+  executed     Boolean   @default(false)
+  executedAt   DateTime?
+  createdBy    String
+  creator      User      @relation("CMSScheduleCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
 
   @@index([pageId, scheduledFor])
   @@index([executed, scheduledFor])
@@ -1619,6 +1741,8 @@ enum EmailType {
   SIGNATURE_RECEIVED
   MESSAGE_NOTIFICATION
   BROADCAST_NOTIFICATION
+  OFFICIAL_VERIFIED
+  OFFICIAL_REJECTED
 }
 
 enum EmailStatus {
@@ -1631,27 +1755,27 @@ enum EmailStatus {
 }
 
 model EmailLog {
-  id                String    @id @default(cuid())
-  userId            String?
-  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  recipient         String
-  type              EmailType
-  subject           String
-  status            EmailStatus @default(QUEUED)
-  resendMessageId   String?
-  trackingPixelId   String?
-  sentAt            DateTime?
-  deliveredAt       DateTime?
-  openedAt          DateTime?
-  clickedAt         DateTime?
-  bouncedAt         DateTime?
-  failureReason     String?
-  retryCount        Int       @default(0)
-  maxRetries        Int       @default(3)
-  lastAttemptedAt   DateTime?
-  metadata          String?   @db.Text()
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id              String      @id @default(cuid())
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  recipient       String
+  type            EmailType
+  subject         String
+  status          EmailStatus @default(QUEUED)
+  resendMessageId String?
+  trackingPixelId String?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  failureReason   String?
+  retryCount      Int         @default(0)
+  maxRetries      Int         @default(3)
+  lastAttemptedAt DateTime?
+  metadata        String?     @db.Text()
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([userId, createdAt])
   @@index([recipient, status])
@@ -1662,26 +1786,26 @@ model EmailLog {
 }
 
 model ActivityLog {
-  id              String   @id @default(cuid())
-  userId          String?
-  adminId         String?
-  
-  action          String   // CREATE_PETITION, LOGIN, SIGN_PETITION, APPROVE_PETITION, PAYMENT_PROCESSED, ID_APPROVED, FRAUD_EVENT, etc.
-  entityType      String   // PETITION, USER, SIGNATURE, PAYMENT, ID_DOCUMENT, REFERRAL, etc.
-  entityId        String?
-  description     String?
-  
-  ipAddress       String?
-  userAgent       String?
-  changes         Json?    // JSON diff of what changed (for UPDATE actions)
-  status          String   // SUCCESS, FAILED
-  errorMessage    String?
-  
-  createdAt       DateTime @default(now())
-  
-  user            User?    @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
-  admin           User?    @relation("ActivityLogAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-  
+  id      String  @id @default(cuid())
+  userId  String?
+  adminId String?
+
+  action      String // CREATE_PETITION, LOGIN, SIGN_PETITION, APPROVE_PETITION, PAYMENT_PROCESSED, ID_APPROVED, FRAUD_EVENT, etc.
+  entityType  String // PETITION, USER, SIGNATURE, PAYMENT, ID_DOCUMENT, REFERRAL, etc.
+  entityId    String?
+  description String?
+
+  ipAddress    String?
+  userAgent    String?
+  changes      Json? // JSON diff of what changed (for UPDATE actions)
+  status       String // SUCCESS, FAILED
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  user  User? @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  admin User? @relation("ActivityLogAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
   @@index([userId, createdAt])
   @@index([adminId, createdAt])
   @@index([action])
@@ -1692,26 +1816,26 @@ model ActivityLog {
 // ==================== CIVIC PULSE: Polling & Public Sentiment ====================
 
 model Poll {
-  id                 String         @id @default(cuid())
-  slug               String         @unique
+  id                 String     @id @default(cuid())
+  slug               String     @unique
   title              String
   description        String?
-  category           String         // e.g., "Infrastructure", "Health", "Education"
-  county             String?        // null = national, otherwise county-specific
-  createdBy          String         // User ID (admin/verified)
-  creator            User           @relation("PollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
-  visibility         String         @default("PUBLIC") // PUBLIC, DRAFT, ARCHIVED
-  status             PollStatus     @default(ACTIVE)   // Approval workflow: PENDING -> APPROVED/REJECTED -> ACTIVE/EXPIRED/CLOSED
+  category           String // e.g., "Infrastructure", "Health", "Education"
+  county             String? // null = national, otherwise county-specific
+  createdBy          String // User ID (admin/verified)
+  creator            User       @relation("PollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  visibility         String     @default("PUBLIC") // PUBLIC, DRAFT, ARCHIVED
+  status             PollStatus @default(ACTIVE) // Approval workflow: PENDING -> APPROVED/REJECTED -> ACTIVE/EXPIRED/CLOSED
   expiresAt          DateTime
-  totalVotes         Int            @default(0)
-  relatedPetitionIds String         @default("[]") // JSON array of petition IDs
-  featuredAt         DateTime?      // For homepage highlighting
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  
-  options   PollOption[]
-  votes     PollVote[]
-  
+  totalVotes         Int        @default(0)
+  relatedPetitionIds String     @default("[]") // JSON array of petition IDs
+  featuredAt         DateTime? // For homepage highlighting
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  options PollOption[]
+  votes   PollVote[]
+
   @@index([slug])
   @@index([county])
   @@index([expiresAt])
@@ -1721,35 +1845,35 @@ model Poll {
 }
 
 model PollOption {
-  id                String   @id @default(cuid())
-  pollId            String
-  poll              Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  text              String
-  imageUrl          String?  // Public URL or Base64 of the image
-  imageStoragePath  String?  // Storage path for management
-  voteCount         Int      @default(0)
-  order             Int      // Display order (1, 2, 3...)
-  createdAt         DateTime @default(now())
-  
+  id               String   @id @default(cuid())
+  pollId           String
+  poll             Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text             String
+  imageUrl         String? // Public URL or Base64 of the image
+  imageStoragePath String? // Storage path for management
+  voteCount        Int      @default(0)
+  order            Int // Display order (1, 2, 3...)
+  createdAt        DateTime @default(now())
+
   votes PollVote[]
-  
+
   @@unique([pollId, order])
   @@index([pollId])
 }
 
 model PollVote {
-  id            String   @id @default(cuid())
-  pollId        String
-  poll          Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  optionId      String
-  option        PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  userId        String?  // null for anonymous votes
-  user          User?    @relation("PollVoter", fields: [userId], references: [id], onDelete: SetNull)
-  sessionId     String   // Browser session ID
-  ipHash        String   // Hash of IP address
-  fingerprint   String   // Session fingerprint (user-agent + IP)
-  createdAt     DateTime @default(now())
-  
+  id          String     @id @default(cuid())
+  pollId      String
+  poll        Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId    String
+  option      PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId      String? // null for anonymous votes
+  user        User?      @relation("PollVoter", fields: [userId], references: [id], onDelete: SetNull)
+  sessionId   String // Browser session ID
+  ipHash      String // Hash of IP address
+  fingerprint String // Session fingerprint (user-agent + IP)
+  createdAt   DateTime   @default(now())
+
   @@unique([pollId, sessionId]) // One vote per session per poll
   @@index([pollId])
   @@index([userId])
@@ -1758,15 +1882,15 @@ model PollVote {
 }
 
 model SessionFingerprint {
-  id           String   @id @default(cuid())
-  fingerprint  String   @unique
-  ipHash       String
-  userAgent    String
-  lastSeenAt   DateTime @updatedAt
-  voteCount    Int      @default(0) // Across all polls
-  flagged      Boolean  @default(false) // Suspected spam
-  createdAt    DateTime @default(now())
-  
+  id          String   @id @default(cuid())
+  fingerprint String   @unique
+  ipHash      String
+  userAgent   String
+  lastSeenAt  DateTime @updatedAt
+  voteCount   Int      @default(0) // Across all polls
+  flagged     Boolean  @default(false) // Suspected spam
+  createdAt   DateTime @default(now())
+
   @@index([voteCount])
   @@index([flagged])
   @@index([lastSeenAt])
@@ -1794,21 +1918,21 @@ enum BroadcastStatus {
 }
 
 model Message {
-  id           String   @id @default(cuid())
-  senderId     String
-  sender       User     @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId  String
-  recipient    User     @relation("MessagesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
-  replyToId    String? 
-  replyTo      Message? @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies      Message[] @relation("MessageReplies")
-  subject      String
-  content      String   @db.Text()
-  category     String?  // e.g., "petition_update", "admin_message", "system_alert"
-  isRead       Boolean  @default(false)
-  archivedAt   DateTime? // Soft delete - set when archived
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("MessagesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  replyToId   String?
+  replyTo     Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies     Message[] @relation("MessageReplies")
+  subject     String
+  content     String    @db.Text()
+  category    String? // e.g., "petition_update", "admin_message", "system_alert"
+  isRead      Boolean   @default(false)
+  archivedAt  DateTime? // Soft delete - set when archived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([recipientId, isRead])
   @@index([recipientId, createdAt])
@@ -1819,17 +1943,17 @@ model Message {
 }
 
 model Broadcast {
-  id              String          @id @default(cuid())
-  creatorId       String
-  creator         User            @relation("BroadcastsCreated", fields: [creatorId], references: [id], onDelete: Cascade)
-  title           String
-  content         String          @db.Text()
-  category        String?         // e.g., "announcement", "update", "alert"
-  status          BroadcastStatus @default(DRAFT)
-  recipientCount  Int             @default(0)  // Number of recipients targeted
-  sentAt          DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  creatorId      String
+  creator        User            @relation("BroadcastsCreated", fields: [creatorId], references: [id], onDelete: Cascade)
+  title          String
+  content        String          @db.Text()
+  category       String? // e.g., "announcement", "update", "alert"
+  status         BroadcastStatus @default(DRAFT)
+  recipientCount Int             @default(0) // Number of recipients targeted
+  sentAt         DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([creatorId])
   @@index([category])
@@ -1838,11 +1962,11 @@ model Broadcast {
 }
 
 model PetitionStakeholderGroup {
-  id         String   @id @default(cuid())
+  id         String               @id @default(cuid())
   petitionId String
-  petition   Petition @relation("StakeholderGroups", fields: [petitionId], references: [id], onDelete: Cascade)
+  petition   Petition             @relation("StakeholderGroups", fields: [petitionId], references: [id], onDelete: Cascade)
   groupType  StakeholderGroupType
-  createdAt  DateTime @default(now())
+  createdAt  DateTime             @default(now())
 
   memberships GroupMembership[]
 
@@ -1852,12 +1976,12 @@ model PetitionStakeholderGroup {
 }
 
 model GroupMembership {
-  id      String   @id @default(cuid())
-  groupId String
-  group   PetitionStakeholderGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId  String
-  user    User     @relation("GroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id        String                   @id @default(cuid())
+  groupId   String
+  group     PetitionStakeholderGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                     @relation("GroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime                 @default(now())
 
   @@unique([groupId, userId]) // No duplicate memberships
   @@index([groupId])

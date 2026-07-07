@@ -57,6 +57,14 @@ export class EmailEventService {
       this.onPetitionGovernmentResponse(event),
     );
 
+    // Public Officials Portal events
+    this.eventEmitter.on('official.verified', (event) =>
+      this.onOfficialVerified(event),
+    );
+    this.eventEmitter.on('official.rejected', (event) =>
+      this.onOfficialRejected(event),
+    );
+
     // Poll events
     this.eventEmitter.on('poll.approved', (event) =>
       this.onPollApproved(event),
@@ -222,6 +230,38 @@ export class EmailEventService {
       this.logger.log(`Petition rejected email sent to ${creatorEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send petition rejected email: ${error}`);
+    }
+  }
+
+  private async onOfficialVerified(event: any): Promise<void> {
+    try {
+      const { userId, userEmail, institutionName } = event;
+      if (!userEmail) return;
+      await this.emailService.sendNotification(
+        userId,
+        userEmail,
+        EmailType.OFFICIAL_VERIFIED,
+        { institutionName },
+      );
+      this.logger.log(`Official verified email sent to ${userEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send official verified email: ${error}`);
+    }
+  }
+
+  private async onOfficialRejected(event: any): Promise<void> {
+    try {
+      const { userId, userEmail, institutionName, reason } = event;
+      if (!userEmail) return;
+      await this.emailService.sendNotification(
+        userId,
+        userEmail,
+        EmailType.OFFICIAL_REJECTED,
+        { institutionName, reason },
+      );
+      this.logger.log(`Official rejected email sent to ${userEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send official rejected email: ${error}`);
     }
   }
 

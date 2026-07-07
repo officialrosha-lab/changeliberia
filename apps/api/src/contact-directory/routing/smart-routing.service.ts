@@ -19,6 +19,23 @@ interface RoutingMatch {
   department?: InstitutionDepartment;
 }
 
+const INDIVIDUAL_OFFICE_CATEGORIES: InstitutionCategory[] = [
+  'SENATOR',
+  'REPRESENTATIVE',
+  'MAYOR',
+  'SUPERINTENDENT',
+  'COMMISSIONER',
+  'DISTRICT_COMMISSIONER',
+  'EXECUTIVE_OFFICE',
+] as InstitutionCategory[];
+
+// District-scoped offices only match when the petition's district also matches;
+// county-scoped offices (Senator, Superintendent, Mayor) match on county alone.
+const DISTRICT_SCOPED_CATEGORIES: InstitutionCategory[] = [
+  'REPRESENTATIVE',
+  'DISTRICT_COMMISSIONER',
+] as InstitutionCategory[];
+
 export interface RoutingResult {
   institutionId: string;
   departmentId?: string;
@@ -113,6 +130,72 @@ export class SmartRoutingService {
       fallbackReason: 'No institutions available for routing',
       notes: 'CRITICAL: No institutions found. Admin must manually assign.',
     };
+  }
+
+  /**
+   * Public Officials Portal: route a petition to the verified individual
+   * officials (Senator/Representative/Mayor/etc.) whose jurisdiction covers
+   * the petition's county/district, in addition to (not instead of) the
+   * org-level institution match from routePetition(). One petition can
+   * legitimately reach both a Ministry and a County Senator.
+   */
+  async routePetitionToOfficials(
+    county: string | null,
+    district: string | null = null,
+  ): Promise<RoutingResult[]> {
+    if (!county) return [];
+
+    const candidates = await this.prisma.institution.findMany({
+      where: {
+        category: { in: INDIVIDUAL_OFFICE_CATEGORIES },
+        officialStatus: 'VERIFIED',
+        county,
+      },
+      include: { departments: true, contacts: true },
+    });
+
+    // District-scoped offices (Representative, District Commissioner) also
+    // require a district match; county-scoped offices match on county alone.
+    const matches = candidates.filter((institution) => {
+      const isDistrictScoped = DISTRICT_SCOPED_CATEGORIES.includes(institution.category);
+      return isDistrictScoped ? !!district && institution.district === district : true;
+    });
+
+    return matches.map((institution) => {
+      const emails = this.getInstitutionEmails(institution);
+      return {
+        institutionId: institution.id,
+        recipientEmails: emails.to,
+        ccEmails: emails.cc,
+        decision: RoutingDecision.MATCHED,
+        matchedTags: [],
+        notes: `Jurisdiction match: ${institution.name} (${institution.category}) for ${county}${district ? `/${district}` : ''}`,
+      };
+    });
+  }
+
+  /**
+   * Log a jurisdiction-based routing decision, reusing the existing
+   * RoutingLog table (tagged via adminNotes/metadata so it's distinguishable
+   * from tag/category-based matches in analytics).
+   */
+  async logOfficialRoutingDecision(
+    petitionId: string,
+    result: RoutingResult,
+    county: string | null,
+    district: string | null,
+  ): Promise<RoutingLog> {
+    return this.prisma.routingLog.create({
+      data: {
+        petitionId,
+        institutionId: result.institutionId || null,
+        decision: result.decision,
+        matchedTags: JSON.stringify({ jurisdictionMatch: { county, district } }),
+        recipientEmails: JSON.stringify(result.recipientEmails),
+        ccEmails: JSON.stringify(result.ccEmails),
+        adminNotes: result.notes,
+      },
+    });
   }
 
   /**
