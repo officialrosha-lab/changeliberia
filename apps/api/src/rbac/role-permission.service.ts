@@ -560,6 +560,15 @@ export class RolePermissionService implements OnModuleInit {
       { resource: PermissionResource.ROLE, action: PermissionAction.READ },
       { resource: PermissionResource.ROLE, action: PermissionAction.UPDATE },
       { resource: PermissionResource.ROLE, action: PermissionAction.DELETE },
+
+      // Public Officials Portal
+      { resource: PermissionResource.OFFICIAL, action: PermissionAction.READ },
+      { resource: PermissionResource.OFFICIAL, action: PermissionAction.UPDATE },
+      { resource: PermissionResource.OFFICIAL, action: PermissionAction.APPROVE },
+      { resource: PermissionResource.INBOX, action: PermissionAction.READ },
+      { resource: PermissionResource.RESPONSE, action: PermissionAction.CREATE },
+      { resource: PermissionResource.RESPONSE, action: PermissionAction.UPDATE },
+      { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
     ];
 
     // Create permissions
@@ -613,6 +622,19 @@ export class RolePermissionService implements OnModuleInit {
           { resource: PermissionResource.PETITION, action: PermissionAction.CREATE },
           { resource: PermissionResource.PETITION, action: PermissionAction.READ },
           { resource: PermissionResource.CONTENT, action: PermissionAction.READ },
+        ],
+      },
+      {
+        name: 'OFFICIAL',
+        description: 'Verified public official access (own institution only)',
+        permissions: [
+          { resource: PermissionResource.OFFICIAL, action: PermissionAction.READ },
+          { resource: PermissionResource.OFFICIAL, action: PermissionAction.UPDATE },
+          { resource: PermissionResource.INBOX, action: PermissionAction.READ },
+          { resource: PermissionResource.RESPONSE, action: PermissionAction.CREATE },
+          { resource: PermissionResource.RESPONSE, action: PermissionAction.UPDATE },
+          { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
+          { resource: PermissionResource.PETITION, action: PermissionAction.READ },
         ],
       },
     ];

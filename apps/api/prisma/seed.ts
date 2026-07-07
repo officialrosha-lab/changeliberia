@@ -26,6 +26,8 @@ async function main() {
       creatorId: user.id,
       signaturesCount: 1240,
       todaySignatures: 95,
+      county: 'MONTSERRADO',
+      category: 'infrastructure',
       imageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390',
     },
   });
@@ -683,6 +685,166 @@ async function main() {
   });
 
   console.log('✅ CMS pages created');
+
+  // Public Officials Portal seed data
+  console.log('🏛️  Creating Public Officials Portal seed data...');
+
+  const officialRole = await prisma.role.findUnique({ where: { name: 'OFFICIAL' } });
+
+  const senatorUser = await prisma.user.upsert({
+    where: { phone: '+231770000010' },
+    update: {},
+    create: {
+      fullName: 'Hon. Marcus T. Weah',
+      phone: '+231770000010',
+      email: 'senator.weah@example.gov.lr',
+      role: 'USER',
+      trustScore: 90,
+      verificationStatus: 'VERIFIED_LIBERIAN',
+      county: 'MONTSERRADO',
+    },
+  });
+
+  const senatorInstitution = await prisma.institution.upsert({
+    where: { slug: 'senator-montserrado-county' },
+    update: {},
+    create: {
+      name: 'Senator, Montserrado County',
+      type: 'GOVERNMENT',
+      category: 'SENATOR',
+      officialEmail: 'office@senator-montserrado.gov.lr',
+      county: 'MONTSERRADO',
+      politicalParty: 'Independent',
+      holderUserId: senatorUser.id,
+      officialStatus: 'VERIFIED',
+      verified: true,
+      lastVerifiedAt: new Date(),
+      slug: 'senator-montserrado-county',
+      officialProfile: {
+        create: {
+          bio: 'Serving the people of Montserrado County in the Liberian Senate, focused on infrastructure and youth employment.',
+          submittedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          reviewedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
+
+  if (officialRole) {
+    await prisma.userRoleAssignment.upsert({
+      where: { userId_roleId: { userId: senatorUser.id, roleId: officialRole.id } },
+      update: {},
+      create: { userId: senatorUser.id, roleId: officialRole.id },
+    });
+  }
+
+  const repUser = await prisma.user.upsert({
+    where: { phone: '+231770000011' },
+    update: {},
+    create: {
+      fullName: 'Hon. Grace N. Kollie',
+      phone: '+231770000011',
+      email: 'rep.kollie@example.gov.lr',
+      role: 'USER',
+      trustScore: 85,
+      verificationStatus: 'VERIFIED_LIBERIAN',
+      county: 'MONTSERRADO',
+    },
+  });
+
+  const repInstitution = await prisma.institution.upsert({
+    where: { slug: 'representative-montserrado-district-10' },
+    update: {},
+    create: {
+      name: 'Representative, Montserrado District #10',
+      type: 'GOVERNMENT',
+      category: 'REPRESENTATIVE',
+      officialEmail: 'office@rep-district10.gov.lr',
+      county: 'MONTSERRADO',
+      district: '10',
+      holderUserId: repUser.id,
+      officialStatus: 'VERIFIED',
+      verified: true,
+      lastVerifiedAt: new Date(),
+      slug: 'representative-montserrado-district-10',
+      officialProfile: {
+        create: {
+          bio: 'Representing District #10, Montserrado County, in the House of Representatives.',
+          submittedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+          reviewedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
+
+  if (officialRole) {
+    await prisma.userRoleAssignment.upsert({
+      where: { userId_roleId: { userId: repUser.id, roleId: officialRole.id } },
+      update: {},
+      create: { userId: repUser.id, roleId: officialRole.id },
+    });
+  }
+
+  // A pending application, to exercise the admin verification panel
+  const pendingUser = await prisma.user.upsert({
+    where: { phone: '+231770000012' },
+    update: {},
+    create: {
+      fullName: 'Hon. Samuel B. Toe',
+      phone: '+231770000012',
+      email: 'mayor.toe@example.gov.lr',
+      role: 'USER',
+      trustScore: 60,
+      verificationStatus: 'VERIFIED_LIBERIAN',
+      county: 'BONG',
+    },
+  });
+
+  await prisma.institution.upsert({
+    where: { slug: 'city-mayor-gbarnga' },
+    update: {},
+    create: {
+      name: 'City Mayor, Gbarnga',
+      type: 'GOVERNMENT',
+      category: 'MAYOR',
+      officialEmail: 'office@gbarnga-mayor.gov.lr',
+      county: 'BONG',
+      holderUserId: pendingUser.id,
+      officialStatus: 'PENDING_REVIEW',
+      slug: 'city-mayor-gbarnga',
+      officialProfile: {
+        create: {
+          bio: 'Serving as City Mayor of Gbarnga, Bong County.',
+          verificationDocUrl: 'https://example.com/docs/gbarnga-mayor-certificate.pdf',
+          verificationDocType: 'ELECTION_CERTIFICATE',
+          submittedAt: new Date(),
+        },
+      },
+    },
+  });
+
+  // Route the seeded Sinkor petition to the Montserrado officials so the
+  // dashboard/inbox/feed have data immediately after seeding
+  for (const institutionId of [senatorInstitution.id, repInstitution.id]) {
+    await prisma.petitionGovernmentResponse.upsert({
+      where: { petitionId_institutionId: { petitionId: petition.id, institutionId } },
+      update: {},
+      create: {
+        petitionId: petition.id,
+        institutionId,
+        currentStage: 'UNDER_REVIEW',
+        timeline: {
+          create: [
+            { stage: 'RECEIVED', note: 'Routed via jurisdiction match (Montserrado County)' },
+            { stage: 'ASSIGNED', note: 'Assigned to office for review' },
+            { stage: 'UNDER_REVIEW', note: 'Office is reviewing the petition details' },
+          ],
+        },
+      },
+    });
+  }
+
+  console.log('✅ Public Officials Portal seed data created');
 }
 
 main().finally(async () => prisma.$disconnect());
