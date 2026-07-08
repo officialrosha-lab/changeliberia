@@ -30,6 +30,24 @@ export class ModeratorController {
   ) {}
 
   /**
+   * Category scope assigned by admins (admin/settings/moderator-scopes),
+   * stored as a JSON string[] in FeatureToggle `moderator_scope_<userId>`.
+   * Empty/missing scope means unrestricted.
+   */
+  private async getAllowedCategories(userId: string): Promise<string[]> {
+    const toggle = await this.prisma.featureToggle.findUnique({
+      where: { name: `moderator_scope_${userId}` },
+    });
+    if (!toggle?.config) return [];
+    try {
+      const parsed = JSON.parse(toggle.config);
+      return Array.isArray(parsed) ? parsed.filter((c) => typeof c === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Get pending petitions for moderator review (filtered by moderator scope)
    */
   @Get('petitions')
@@ -45,12 +63,19 @@ export class ModeratorController {
 
     const statusFilter = status as PetitionStatus | undefined;
 
-    // TODO: In production, implement category scoping via role metadata or separate ModeratorScope table
-    // For now, return all pending petitions for the moderator
+    const allowedCategories = await this.getAllowedCategories(user.id);
 
     return this.prisma.petition.findMany({
       where: {
         status: statusFilter || 'PENDING',
+        ...(allowedCategories.length > 0
+          ? {
+              OR: [
+                { category: { in: allowedCategories } },
+                { categories: { hasSome: allowedCategories } },
+              ],
+            }
+          : {}),
       },
       include: {
         creator: { select: { fullName: true, email: true } },
@@ -65,10 +90,8 @@ export class ModeratorController {
    */
   @Get('scope')
   async getScope(@CurrentUser() user: { id: string; email: string }) {
-    // TODO: In production, implement via ModeratorScope table or role metadata
-    // For now, return empty (all categories allowed)
     return {
-      allowedCategories: [],
+      allowedCategories: await this.getAllowedCategories(user.id),
     };
   }
 
