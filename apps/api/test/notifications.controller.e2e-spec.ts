@@ -2,23 +2,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, CanActivate, ExecutionContext, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
-import { NotificationsController } from '../src/notifications/notifications.controller';
-import { NotificationsService } from '../src/notifications/notifications.service';
+import { NotificationController } from '../src/notifications/notification.controller';
+import { NotificationService } from '../src/notifications/notification.service';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 
 /**
- * Notifications Controller Integration Tests
- * Tests REST API endpoints for notification management
- * 
- * Note: We only import NotificationsController (the active one with hardcoded api/v1/notifications path).
- * The duplicate NotificationController in notification.controller.ts is not used in production.
+ * Notification Controller Integration Tests
+ * Tests the REST endpoints the web frontend actually calls
+ * (notification-dropdown.tsx / app/notifications/page.tsx):
+ *   GET    /notifications
+ *   GET    /notifications/unread-count
+ *   PATCH  /notifications/:id/read
+ *   POST   /notifications/mark-all-read
+ *   PATCH  /notifications/:id/archive
+ *   DELETE /notifications/:id
+ *   GET    /notifications/preferences
+ *   POST   /notifications/preferences
  */
-describe('NotificationsController (e2e)', () => {
+describe('NotificationController (e2e)', () => {
   let app: INestApplication;
-  let notificationsService: jest.Mocked<NotificationsService>;
+  let notificationService: jest.Mocked<NotificationService>;
 
   const mockUser = {
-    sub: 'user-1',
+    id: 'user-1',
     email: 'test@example.com',
   };
 
@@ -30,7 +36,7 @@ describe('NotificationsController (e2e)', () => {
       title: '🏆 Badge Unlocked: Share Wizard',
       message: 'You unlocked the Share Wizard badge',
       status: 'UNREAD',
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     },
     {
       id: 'notif-2',
@@ -39,7 +45,7 @@ describe('NotificationsController (e2e)', () => {
       title: '🎯 Challenge Complete: Share Challenge',
       message: 'You completed the Share Challenge',
       status: 'UNREAD',
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     },
   ];
 
@@ -54,23 +60,19 @@ describe('NotificationsController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [NotificationsController],
+      controllers: [NotificationController],
       providers: [
         {
-          provide: NotificationsService,
+          provide: NotificationService,
           useValue: {
-            createNotification: jest.fn(),
-            createBulkNotifications: jest.fn(),
-            getUnreadNotifications: jest.fn(),
+            getUserNotifications: jest.fn(),
+            getUnreadCount: jest.fn(),
             markAsRead: jest.fn(),
             markAllAsRead: jest.fn(),
-            deleteNotification: jest.fn(),
+            archive: jest.fn(),
+            delete: jest.fn(),
             getPreferences: jest.fn(),
             updatePreferences: jest.fn(),
-            handleBadgeUnlocked: jest.fn(),
-            handleChallengeCompleted: jest.fn(),
-            notifyShareMilestone: jest.fn(),
-            notifyLeaderboardAchievement: jest.fn(),
           },
         },
       ],
@@ -80,113 +82,118 @@ describe('NotificationsController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    // Don't set global prefix - NotificationsController has hardcoded 'api/v1/notifications' path
-    app.setGlobalPrefix('');
+    // Mirror production: global prefix comes from main.ts; the controller
+    // path is 'notifications', so routes live at /api/v1/notifications/*.
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
-    notificationsService = moduleFixture.get(
-      NotificationsService,
-    ) as jest.Mocked<NotificationsService>;
+    notificationService = moduleFixture.get(
+      NotificationService,
+    ) as jest.Mocked<NotificationService>;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  describe('GET /api/v1/notifications - Get unread notifications', () => {
-    it('should return unread notifications', () => {
-      notificationsService.getUnreadNotifications.mockResolvedValue(
-        mockNotifications as any,
-      );
+  describe('GET /api/v1/notifications - List notifications', () => {
+    it('should return notifications with total (shape the frontend destructures)', () => {
+      notificationService.getUserNotifications.mockResolvedValue({
+        notifications: mockNotifications as any,
+        total: 2,
+      });
 
       return request(app.getHttpServer())
-        .get('/api/v1/notifications')
+        .get('/api/v1/notifications?limit=10&unreadOnly=false')
         .expect(200)
         .expect((res) => {
-          expect(res.body).toBeDefined();
+          expect(Array.isArray(res.body.notifications)).toBe(true);
+          expect(res.body.total).toBe(2);
         });
     });
 
-    it('should support pagination with limit and offset', () => {
-      notificationsService.getUnreadNotifications.mockResolvedValue([]);
-
-      return request(app.getHttpServer())
-        .get('/api/v1/notifications?limit=10&offset=0')
-        .expect(200);
-    });
-
-    it('should cap limit at 100', () => {
-      notificationsService.getUnreadNotifications.mockResolvedValue([]);
-
-      return request(app.getHttpServer())
-        .get('/api/v1/notifications?limit=500')
-        .expect(200);
-    });
-
-    it('should clamp negative limit to 0', async () => {
-      notificationsService.getUnreadNotifications.mockResolvedValue([]);
+    it('should pass pagination filters through to the service', async () => {
+      notificationService.getUserNotifications.mockResolvedValue({
+        notifications: [],
+        total: 0,
+      });
 
       await request(app.getHttpServer())
-        .get('/api/v1/notifications?limit=-1')
+        .get('/api/v1/notifications?limit=20&offset=40&status=UNREAD')
         .expect(200);
 
-      expect(notificationsService.getUnreadNotifications).toHaveBeenCalledWith(
-        mockUser.sub, 0, 0,
-      );
-    });
-
-    it('should clamp negative offset to 0', async () => {
-      notificationsService.getUnreadNotifications.mockResolvedValue([]);
-
-      await request(app.getHttpServer())
-        .get('/api/v1/notifications?offset=-5')
-        .expect(200);
-
-      expect(notificationsService.getUnreadNotifications).toHaveBeenCalledWith(
-        mockUser.sub, 10, 0,
+      expect(notificationService.getUserNotifications).toHaveBeenCalledWith(
+        mockUser.id,
+        expect.objectContaining({ limit: 20, offset: 40, status: 'UNREAD' }),
       );
     });
   });
 
-  describe('POST /api/v1/notifications/:notificationId/read - Mark as read', () => {
-    it('should mark notification as read', () => {
-      notificationsService.markAsRead.mockResolvedValue(undefined);
+  describe('GET /api/v1/notifications/unread-count', () => {
+    it('should return { unreadCount }', () => {
+      notificationService.getUnreadCount.mockResolvedValue(5);
 
       return request(app.getHttpServer())
-        .post('/api/v1/notifications/notif-1/read')
-        .expect(201)
+        .get('/api/v1/notifications/unread-count')
+        .expect(200)
         .expect((res) => {
-          expect(res.body.success).toBe(true);
+          expect(res.body.unreadCount).toBe(5);
         });
+    });
+  });
+
+  describe('PATCH /api/v1/notifications/:id/read - Mark as read', () => {
+    it('should mark notification as read', () => {
+      notificationService.markAsRead.mockResolvedValue({
+        ...mockNotifications[0],
+        status: 'READ',
+      } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/v1/notifications/notif-1/read')
+        .expect(200);
     });
 
     it('should handle notification not found', () => {
-      notificationsService.markAsRead.mockRejectedValue(
+      notificationService.markAsRead.mockRejectedValue(
         new NotFoundException('Notification not found'),
       );
 
       return request(app.getHttpServer())
-        .post('/api/v1/notifications/invalid-id/read')
+        .patch('/api/v1/notifications/invalid-id/read')
         .expect(404);
     });
   });
 
-  describe('POST /api/v1/notifications/read-all - Mark all as read', () => {
+  describe('POST /api/v1/notifications/mark-all-read', () => {
     it('should mark all notifications as read', () => {
-      notificationsService.markAllAsRead.mockResolvedValue(undefined);
+      notificationService.markAllAsRead.mockResolvedValue({ count: 3 } as any);
 
       return request(app.getHttpServer())
-        .post('/api/v1/notifications/read-all')
+        .post('/api/v1/notifications/mark-all-read')
         .expect(201)
         .expect((res) => {
-          expect(res.body.success).toBe(true);
+          expect(res.body.count).toBe(3);
         });
     });
   });
 
-  describe('DELETE /api/v1/notifications/:notificationId - Delete notification', () => {
+  describe('PATCH /api/v1/notifications/:id/archive', () => {
+    it('should archive notification', () => {
+      notificationService.archive.mockResolvedValue({
+        ...mockNotifications[0],
+        status: 'ARCHIVED',
+      } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/v1/notifications/notif-1/archive')
+        .expect(200);
+    });
+  });
+
+  describe('DELETE /api/v1/notifications/:id', () => {
     it('should delete notification', () => {
-      notificationsService.deleteNotification.mockResolvedValue(undefined);
+      notificationService.delete.mockResolvedValue(undefined as any);
 
       return request(app.getHttpServer())
         .delete('/api/v1/notifications/notif-1')
@@ -197,7 +204,7 @@ describe('NotificationsController (e2e)', () => {
     });
 
     it('should handle notification not found', () => {
-      notificationsService.deleteNotification.mockRejectedValue(
+      notificationService.delete.mockRejectedValue(
         new NotFoundException('Notification not found'),
       );
 
@@ -207,17 +214,16 @@ describe('NotificationsController (e2e)', () => {
     });
   });
 
-  describe('GET /api/v1/notifications/preferences - Get preferences', () => {
+  describe('GET /api/v1/notifications/preferences', () => {
     it('should return notification preferences', () => {
       const mockPrefs = {
         userId: 'user-1',
-        badges: true,
-        challenges: true,
-        email: true,
-        sms: false,
+        inAppEnabled: true,
+        emailEnabled: true,
+        pushEnabled: false,
       };
 
-      notificationsService.getPreferences.mockResolvedValue(mockPrefs as any);
+      notificationService.getPreferences.mockResolvedValue(mockPrefs as any);
 
       return request(app.getHttpServer())
         .get('/api/v1/notifications/preferences')
@@ -226,46 +232,28 @@ describe('NotificationsController (e2e)', () => {
           expect(res.body).toBeDefined();
         });
     });
-
-    it('should return default preferences if not set', () => {
-      notificationsService.getPreferences.mockResolvedValue(null);
-
-      return request(app.getHttpServer())
-        .get('/api/v1/notifications/preferences')
-        .expect(200);
-    });
   });
 
-  describe('PATCH /api/v1/notifications/preferences - Update preferences', () => {
+  describe('POST /api/v1/notifications/preferences - Update preferences', () => {
     it('should update notification preferences', () => {
       const updatedPrefs = {
         userId: 'user-1',
-        badges: false,
-        challenges: true,
-        email: false,
-        sms: true,
+        inAppEnabled: false,
+        emailEnabled: false,
+        pushEnabled: true,
       };
 
-      notificationsService.updatePreferences.mockResolvedValue(
+      notificationService.updatePreferences.mockResolvedValue(
         updatedPrefs as any,
       );
 
       return request(app.getHttpServer())
-        .patch('/api/v1/notifications/preferences')
-        .send({ badges: false, email: false, sms: true })
-        .expect(200)
+        .post('/api/v1/notifications/preferences')
+        .send({ inAppEnabled: false, emailEnabled: false, pushEnabled: true })
+        .expect(201)
         .expect((res) => {
           expect(res.body).toMatchObject(updatedPrefs);
         });
-    });
-
-    it('should allow partial preference updates', () => {
-      notificationsService.updatePreferences.mockResolvedValue({} as any);
-
-      return request(app.getHttpServer())
-        .patch('/api/v1/notifications/preferences')
-        .send({ badges: false })
-        .expect(200);
     });
   });
 });

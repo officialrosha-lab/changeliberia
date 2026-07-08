@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { apiPost } from '../../lib/api';
+import { getApiBase } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface ImportStats {
@@ -25,7 +25,7 @@ export function CSVImporter() {
 
   async function handleDownloadTemplate() {
     try {
-      const response = await fetch('/api/admin/directory/import/template', {
+      const response = await fetch(`${getApiBase()}/admin/directory/import/template`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const csv = await response.text();
@@ -51,7 +51,7 @@ export function CSVImporter() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/admin/directory/import/upload', {
+      const response = await fetch(`${getApiBase()}/admin/directory/import/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

@@ -13,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
 import { CaptchaModule } from './captcha/captcha.module';
 import { EventsModule } from './events/events.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationModule } from './notifications/notification.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { GovernmentModule } from './government/government.module';
 import { FacebookModule } from './facebook/facebook.module';
@@ -46,6 +47,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     PrismaModule,
     EventsModule,
     NotificationsModule,
+    NotificationModule, // user-facing /notifications HTTP routes
     RbacModule,
     ContactDirectoryModule,
     ModeratorModule,

@@ -13,7 +13,8 @@ export type EmailTemplateType =
   | 'petition_routing_confirmation'
   | 'email_verification'
   | 'password_reset'
-  | 'password_reset_confirmation';
+  | 'password_reset_confirmation'
+  | 'feedback_notification';
 
 export interface EmailTemplate {
   templateType: EmailTemplateType;

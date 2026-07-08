@@ -23,6 +23,12 @@ export class SmsInboundController {
   private isValidTwilioRequest(req: Request): boolean {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     if (!authToken) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error(
+          'TWILIO_AUTH_TOKEN not set in production — rejecting inbound SMS (cannot verify sender)',
+        );
+        return false;
+      }
       this.logger.warn('TWILIO_AUTH_TOKEN not set — skipping inbound signature validation (dev mode only)');
       return true;
     }

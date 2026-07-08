@@ -6,7 +6,8 @@ import { NotificationItem } from '../../components/notification-item';
 import { Breadcrumb } from '../../components/breadcrumb';
 import { SkeletonLoader } from '../../components/skeleton-loader';
 import { useToast } from '../../lib/toast-context';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiPatch } from '../../lib/api';
+import { useAuthStore } from '../../lib/store';
 
 interface Notification {
   id: string;
@@ -32,11 +33,18 @@ export function NotificationsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const { show: showToast } = useToast();
+  const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
 
   const PAGE_SIZE = 20;
 
   // Fetch notifications
   useEffect(() => {
+    if (!hydrated) return;
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     const fetchNotifications = async () => {
       try {
         setIsLoading(true);
@@ -52,7 +60,7 @@ export function NotificationsPage() {
         const data = await apiGet<{
           notifications: Notification[];
           total: number;
-        }>(`/notifications?${params.toString()}`);
+        }>(`/notifications?${params.toString()}`, token);
 
         if (data) {
           setNotifications(data.notifications);
@@ -66,18 +74,32 @@ export function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, [filter, page]);
+  }, [filter, page, token, hydrated]);
 
-  const handleMarkAsRead = (notificationId: string) => {
+  const handleMarkAsRead = async (notificationId: string) => {
     setNotifications((prev) =>
       prev.map((n) =>
         n.id === notificationId ? { ...n, status: 'READ' as const } : n,
       ),
     );
+    if (token) {
+      try {
+        await apiPatch(`/notifications/${notificationId}/read`, {}, token);
+      } catch {
+        showToast('Failed to update notification', 'error');
+      }
+    }
   };
 
-  const handleArchive = (notificationId: string) => {
+  const handleArchive = async (notificationId: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    if (token) {
+      try {
+        await apiPatch(`/notifications/${notificationId}/archive`, {}, token);
+      } catch {
+        showToast('Failed to archive notification', 'error');
+      }
+    }
   };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
