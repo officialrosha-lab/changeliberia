@@ -33,7 +33,7 @@ export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
       }
     })();
     return () => { cancelled = true; };
-  }, [token, roles]);
+  }, [token, roles, hydrated]);
 
   if (phase === 'loading') {
     return (

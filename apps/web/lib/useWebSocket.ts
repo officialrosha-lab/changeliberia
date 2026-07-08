@@ -2,6 +2,23 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getApiBase } from './api';
+
+/**
+ * The Socket.IO server runs on the API host (namespace /petitions), so the
+ * socket origin is derived from the same base URL as REST calls — the API
+ * base minus its /api/v1 path.
+ */
+function getSocketOrigin(): string {
+  try {
+    return new URL(
+      getApiBase(),
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000',
+    ).origin;
+  } catch {
+    return 'http://localhost:4000';
+  }
+}
 
 interface UseWebSocketOptions {
   autoConnect?: boolean;
@@ -29,7 +46,7 @@ interface PulseMapData {
  */
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
-  const url = options.url || 'http://localhost:3001';
+  const url = options.url || getSocketOrigin();
   const autoConnect = options.autoConnect !== false;
 
   useEffect(() => {

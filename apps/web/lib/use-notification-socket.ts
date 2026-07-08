@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './store';
+import { apiGet, getApiBase } from './api';
 
 interface NotificationEvent {
   id: string;
@@ -21,9 +23,24 @@ interface UseNotificationSocketProps {
 }
 
 /**
- * Hook for real-time notification updates via WebSocket
- * Automatically connects/disconnects based on authentication status
- * Gracefully handles connection failures and reconnects with exponential backoff
+ * The notifications gateway is a Socket.IO namespace on the API server
+ * (apps/api/src/events/notifications.gateway.ts). Rooms are keyed by the
+ * DB user id, so we resolve it once via /users/me before subscribing.
+ */
+function getSocketOrigin(): string {
+  try {
+    return new URL(
+      getApiBase(),
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000',
+    ).origin;
+  } catch {
+    return 'http://localhost:4000';
+  }
+}
+
+/**
+ * Hook for real-time notification updates via Socket.IO.
+ * Automatically connects/disconnects based on authentication status.
  */
 export function useNotificationSocket({
   onNewNotification,
@@ -31,130 +48,109 @@ export function useNotificationSocket({
   onAllNotificationsRead,
   onNotificationArchived,
 }: UseNotificationSocketProps) {
-  const { token, userEmail } = useAuthStore();
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttemptsRef = useRef(5);
-  const baseReconnectDelayRef = useRef(1000); // 1 second
+  const token = useAuthStore((s) => s.token);
+  const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const connect = useCallback(() => {
-    if (!token || !userEmail) {
-      console.log('[WebSocket] No authentication token or email, skipping connection');
-      return;
-    }
-
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/notifications`;
-
-      console.log('[WebSocket] Connecting to:', wsUrl);
-      const ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('[WebSocket] Connected');
-        reconnectAttemptsRef.current = 0;
-
-        // Subscribe to notifications after connection
-        // For now, we use email as user identifier (will be replaced with actual userId from response)
-        ws.send(
-          JSON.stringify({
-            event: 'subscribe_notifications',
-            data: { userId: userEmail || token },
-          }),
-        );
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          console.log('[WebSocket] Message received:', message.event);
-
-          switch (message.event) {
-            case 'new_notification':
-              onNewNotification?.(message.data);
-              break;
-            case 'notification_read':
-              onNotificationRead?.(message.data.notificationId);
-              break;
-            case 'all_notifications_read':
-              onAllNotificationsRead?.();
-              break;
-            case 'notification_archived':
-              onNotificationArchived?.(message.data.notificationId);
-              break;
-            case 'subscribed':
-              console.log('[WebSocket] Successfully subscribed for user:', message.data.userId);
-              break;
-            case 'error':
-              console.error('[WebSocket] Server error:', message.data.message);
-              break;
-          }
-        } catch (error) {
-          console.error('[WebSocket] Failed to parse message:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('[WebSocket] Error:', error);
-      };
-
-      ws.onclose = () => {
-        console.log('[WebSocket] Closed');
-        socketRef.current = null;
-
-        // Attempt reconnection with exponential backoff
-        if (reconnectAttemptsRef.current < maxReconnectAttemptsRef.current) {
-          const delay = baseReconnectDelayRef.current * Math.pow(2, reconnectAttemptsRef.current);
-          console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`);
-          reconnectAttemptsRef.current++;
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        } else {
-          console.log('[WebSocket] Max reconnection attempts reached, falling back to polling');
-        }
-      };
-
-      socketRef.current = ws;
-    } catch (error) {
-      console.error('[WebSocket] Connection error:', error);
-    }
-  }, [token, userEmail, onNewNotification, onNotificationRead, onAllNotificationsRead, onNotificationArchived]);
+  // Keep latest callbacks in a ref so socket listeners never go stale
+  // without needing to reconnect on every render.
+  const callbacksRef = useRef({
+    onNewNotification,
+    onNotificationRead,
+    onAllNotificationsRead,
+    onNotificationArchived,
+  });
+  callbacksRef.current = {
+    onNewNotification,
+    onNotificationRead,
+    onAllNotificationsRead,
+    onNotificationArchived,
+  };
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      socketRef.current.close();
+      socketRef.current.disconnect();
       socketRef.current = null;
     }
-
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
+    setIsConnected(false);
   }, []);
 
-  // Connect on mount/user change
   useEffect(() => {
-    if (token && userEmail) {
-      connect();
-    } else {
+    if (!token) {
       disconnect();
+      return;
     }
 
+    let cancelled = false;
+
+    const connect = async () => {
+      let userId: string | undefined;
+      try {
+        const me = await apiGet<{ id: string }>('/users/me', token);
+        userId = me?.id;
+      } catch {
+        console.log('[NotificationSocket] Could not resolve user id, skipping connection');
+        return;
+      }
+      if (cancelled || !userId) return;
+
+      const socket = io(`${getSocketOrigin()}/notifications`, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 10000,
+        reconnectionAttempts: 5,
+      });
+
+      socket.on('connect', () => {
+        setIsConnected(true);
+        socket.emit('subscribe_notifications', { userId });
+      });
+
+      socket.on('disconnect', () => {
+        setIsConnected(false);
+      });
+
+      socket.on('subscribed', (data: { userId: string }) => {
+        console.log('[NotificationSocket] Subscribed for user:', data.userId);
+      });
+
+      socket.on('new_notification', (data: NotificationEvent) => {
+        callbacksRef.current.onNewNotification?.(data);
+      });
+
+      socket.on('notification_read', (data: { notificationId: string }) => {
+        callbacksRef.current.onNotificationRead?.(data.notificationId);
+      });
+
+      socket.on('all_notifications_read', () => {
+        callbacksRef.current.onAllNotificationsRead?.();
+      });
+
+      socket.on('notification_archived', (data: { notificationId: string }) => {
+        callbacksRef.current.onNotificationArchived?.(data.notificationId);
+      });
+
+      socket.on('error', (data: { message?: string }) => {
+        console.error('[NotificationSocket] Server error:', data?.message);
+      });
+
+      socketRef.current = socket;
+    };
+
+    void connect();
+
     return () => {
+      cancelled = true;
       disconnect();
     };
-  }, [token, userEmail, connect, disconnect]);
+  }, [token, disconnect]);
 
   return {
-    isConnected: socketRef.current?.readyState === WebSocket.OPEN,
+    isConnected,
     disconnect,
     reconnect: () => {
-      disconnect();
-      reconnectAttemptsRef.current = 0;
-      connect();
+      socketRef.current?.connect();
     },
   };
 }

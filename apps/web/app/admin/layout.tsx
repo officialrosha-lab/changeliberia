@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../lib/store';
+import { AdminGuard } from '../../components/admin-guard';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,5 +19,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Don't flash admin content before hydration check completes
   if (!hydrated || !token) return null;
 
-  return <>{children}</>;
+  // Role check (UI defense-in-depth; backend guards remain authoritative)
+  return <AdminGuard>{children}</AdminGuard>;
 }

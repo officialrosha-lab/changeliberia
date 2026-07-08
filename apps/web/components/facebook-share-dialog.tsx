@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { apiPost } from '../lib/api';
+import { useAuthStore } from '../lib/store';
 
 type Props = {
   petitionId: string;
@@ -9,65 +11,50 @@ type Props = {
   onClose: () => void;
 };
 
-export function FacebookShareDialog({ 
-  petitionId, 
-  petitionUrl, 
+export function FacebookShareDialog({
+  petitionId,
+  petitionUrl,
   networkSize,
-  onClose 
+  onClose
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [shared, setShared] = useState(false);
-  const [estimatedReach, setEstimatedReach] = useState(networkSize);
+  const [estimatedReach] = useState(networkSize);
+  const token = useAuthStore((s) => s.token);
+
+  // Fire-and-forget: recording a share must never block the share itself,
+  // and the endpoint requires auth — anonymous shares simply go unrecorded.
+  const recordShare = () => {
+    if (!token) return;
+    apiPost('/facebook/record-share', { petitionId, method: 'dialog' }, token).catch(() => null);
+  };
 
   const handleFacebookShare = async () => {
     try {
       setLoading(true);
 
-      // Create share link via API
-      const response = await fetch('/api/facebook/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ petitionId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create share link');
-      }
-
-      const { data } = await response.json();
-      const { shareUrl, prefilledMessage, reachEstimate } = data;
+      const quote = 'Join our petition! Together we can make change. 🇱🇷 #ChangeLiberia';
 
       // If Facebook SDK is loaded, use Share Dialog
       if (typeof window !== 'undefined' && (window as any).FB) {
         (window as any).FB.ui({
           method: 'share',
-          href: shareUrl,
+          href: petitionUrl,
           hashtag: '#ChangeLiberia',
-          quote: prefilledMessage,
+          quote,
           display: 'popup',
         }, function(response: any) {
           if (response) {
             setShared(true);
-            setEstimatedReach(reachEstimate || networkSize);
+            recordShare();
           }
         });
       } else {
         // Fallback to standard share
-        const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(prefilledMessage)}`;
+        const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(petitionUrl)}&quote=${encodeURIComponent(quote)}`;
         window.open(fb, '_blank', 'width=600,height=400');
         setShared(true);
-      }
-
-      // Record share event
-      if (data.shortCode) {
-        await fetch('/api/facebook/record-share', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            petitionId,
-            shortCode: data.shortCode,
-          }),
-        }).catch(() => null); // Don't block on recording error
+        recordShare();
       }
     } catch (error) {
       console.error('Share error:', error);
