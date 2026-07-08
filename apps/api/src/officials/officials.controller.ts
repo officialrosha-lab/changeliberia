@@ -23,6 +23,7 @@ import { ResponseWorkflowService } from './response-workflow.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AdvanceResponseStageDto,
+  ClaimInstitutionDto,
   CreateOfficialApplicationDto,
   UpdateOfficialProfileDto,
 } from './dto';
@@ -61,6 +62,20 @@ export class OfficialsController {
   @UseGuards(JwtAuthGuard)
   apply(@CurrentUser() user: AuthUser, @Body() dto: CreateOfficialApplicationDto) {
     return this.officialsService.apply(user.userId, dto);
+  }
+
+  // JwtAuthGuard only (like apply/me): applicants hold no OFFICIAL RBAC role
+  // yet. Returns only unheld directory entries with masked emails.
+  @Get('claimable')
+  @UseGuards(JwtAuthGuard)
+  listClaimable(@Query('search') search = '') {
+    return this.officialsService.listClaimable(search);
+  }
+
+  @Post('claim')
+  @UseGuards(JwtAuthGuard)
+  claim(@CurrentUser() user: AuthUser, @Body() dto: ClaimInstitutionDto) {
+    return this.officialsService.claim(user.userId, dto);
   }
 
   // Intentionally not gated by OfficialOwnershipGuard/PermissionGuard: this is

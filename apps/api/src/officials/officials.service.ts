@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { RolePermissionService } from '../rbac/role-permission.service';
 import {
+  ClaimInstitutionDto,
   CreateOfficialApplicationDto,
   UpdateOfficialProfileDto,
   RejectOfficialDto,
@@ -21,6 +22,22 @@ function slugify(name: string, county?: string | null) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+}
+
+// Directory emails stay private until the claimant is verified; the domain
+// alone is enough to disambiguate (e.g. i***@mopw.gov.lr).
+function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at <= 0) return '***';
+  return `${email[0]}***${email.slice(at)}`;
+}
+
+function isClaimApplication(metadata: string | null): boolean {
+  try {
+    return JSON.parse(metadata ?? '{}')?.claimApplication === true;
+  } catch {
+    return false;
+  }
 }
 
 @Injectable()
@@ -91,6 +108,170 @@ export class OfficialsService {
   }
 
   /**
+   * Directory institutions (admin-created, no holder) that an official can
+   * claim instead of creating a duplicate. REJECTED is included as a safety
+   * net only — the real gate is holderUserId: null (apply-created rejections
+   * keep their holder; rejected claims are released back to UNVERIFIED).
+   */
+  async listClaimable(search: string) {
+    const term = search.trim();
+    if (term.length < 2) return [];
+
+    const rows = await this.prisma.institution.findMany({
+      where: {
+        holderUserId: null,
+        officialStatus: { in: ['UNVERIFIED', 'REJECTED'] },
+        type: InstitutionType.GOVERNMENT,
+        name: { contains: term, mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        type: true,
+        county: true,
+        district: true,
+        city: true,
+        officialEmail: true,
+        verified: true,
+      },
+      orderBy: { name: 'asc' },
+      take: 20,
+    });
+
+    return rows.map((row) => ({ ...row, officialEmail: maskEmail(row.officialEmail) }));
+  }
+
+  /**
+   * Claim an existing directory institution instead of creating a duplicate.
+   * Attaches the caller as holder and moves it to PENDING_REVIEW — from there
+   * the admin approve/reject path is identical to a created application.
+   */
+  async claim(userId: string, dto: ClaimInstitutionDto) {
+    const existing = await this.prisma.institution.findUnique({
+      where: { holderUserId: userId },
+    });
+    if (existing) {
+      throw new ConflictException('You already have an official account application');
+    }
+
+    const institution = await this.prisma.institution.findUnique({
+      where: { id: dto.institutionId },
+    });
+    if (!institution) throw new NotFoundException('Institution not found');
+    if (
+      institution.holderUserId !== null ||
+      !['UNVERIFIED', 'REJECTED'].includes(institution.officialStatus)
+    ) {
+      throw new ConflictException('This institution is not available to claim');
+    }
+
+    // Directory entries have no slug; generate one so the public profile
+    // works after approval. An existing slug is left untouched.
+    let slug: string | undefined;
+    if (!institution.slug) {
+      slug = slugify(institution.name, institution.county);
+      const slugTaken = await this.prisma.institution.findUnique({ where: { slug } });
+      if (slugTaken) slug = `${slug}-${Date.now().toString(36)}`;
+    }
+
+    let parsedMetadata: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(institution.metadata ?? '{}');
+      if (parsed && typeof parsed === 'object') parsedMetadata = parsed;
+    } catch {
+      /* malformed metadata — start fresh, don't block the claim */
+    }
+    const metadata = JSON.stringify({
+      ...parsedMetadata,
+      claimApplication: true,
+      claimedAt: new Date().toISOString(),
+    });
+
+    let claimed;
+    try {
+      claimed = await this.prisma.$transaction(async (tx) => {
+        // Guarded updateMany makes the claim race-safe: a concurrent claim on
+        // the same institution matches zero rows here and gets a 409.
+        const result = await tx.institution.updateMany({
+          where: {
+            id: dto.institutionId,
+            holderUserId: null,
+            officialStatus: { in: ['UNVERIFIED', 'REJECTED'] },
+          },
+          data: {
+            holderUserId: userId,
+            officialStatus: 'PENDING_REVIEW',
+            slug,
+            phone: dto.phone,
+            politicalParty: dto.politicalParty,
+            metadata,
+          },
+        });
+        if (result.count === 0) {
+          throw new ConflictException('This institution has already been claimed');
+        }
+
+        // Upsert, not create: a re-claim after rejection finds an existing
+        // profile row. This also guarantees approve()/reject()'s unconditional
+        // profile update never hits a missing row.
+        await tx.institutionOfficialProfile.upsert({
+          where: { institutionId: dto.institutionId },
+          create: {
+            institutionId: dto.institutionId,
+            bio: dto.bio,
+            photoUrl: dto.photoUrl,
+            verificationDocUrl: dto.verificationDocUrl,
+            verificationDocType: dto.verificationDocType,
+            submittedAt: new Date(),
+          },
+          update: {
+            bio: dto.bio,
+            photoUrl: dto.photoUrl,
+            verificationDocUrl: dto.verificationDocUrl,
+            verificationDocType: dto.verificationDocType,
+            submittedAt: new Date(),
+            reviewedBy: null,
+            reviewedAt: null,
+            reviewNotes: null,
+          },
+        });
+
+        await tx.institutionStatusLog.create({
+          data: {
+            institutionId: dto.institutionId,
+            status: 'PENDING_REVIEW',
+            note: 'Official claimed existing directory institution',
+            actorUserId: userId,
+          },
+        });
+
+        return tx.institution.findUnique({
+          where: { id: dto.institutionId },
+          include: { officialProfile: true },
+        });
+      });
+    } catch (error: any) {
+      // Same user double-submitting across institutions violates the
+      // holderUserId unique constraint.
+      if (error?.code === 'P2002') {
+        throw new ConflictException('You already have an official account application');
+      }
+      throw error;
+    }
+
+    this.activityLogger.logAsync({
+      userId,
+      action: 'OFFICIAL_CLAIM_SUBMITTED',
+      entityType: 'INSTITUTION',
+      entityId: dto.institutionId,
+      description: `Official claim submitted for ${claimed?.name ?? dto.institutionId}`,
+    });
+
+    return claimed;
+  }
+
+  /**
    * Resolves the institution a "me"-style endpoint should operate on:
    * either one the caller holds directly, or — if delegated staff — one
    * they've been granted ACTIVE staff access to. Callers that need to
@@ -126,11 +307,12 @@ export class OfficialsService {
   }
 
   async listPending() {
-    return this.prisma.institution.findMany({
+    const rows = await this.prisma.institution.findMany({
       where: { officialStatus: 'PENDING_REVIEW' },
       include: { officialProfile: true, holderUser: { select: { id: true, fullName: true, email: true, phone: true } } },
       orderBy: { createdAt: 'asc' },
     });
+    return rows.map((row) => ({ ...row, isClaim: isClaimApplication(row.metadata) }));
   }
 
   async approve(institutionId: string, adminUserId: string) {
@@ -221,6 +403,24 @@ export class OfficialsService {
         institutionId: updated.id,
         institutionName: updated.name,
         reason: dto.notes,
+      });
+    }
+
+    // A rejected *claim* releases the directory entry so it stays claimable;
+    // apply-created institutions keep the holder and stay REJECTED. This must
+    // run after the official.rejected emit above, which reads holderUserId.
+    if (isClaimApplication(institution.metadata)) {
+      await this.prisma.institution.update({
+        where: { id: institutionId },
+        data: { holderUserId: null, officialStatus: 'UNVERIFIED' },
+      });
+      await this.prisma.institutionStatusLog.create({
+        data: {
+          institutionId,
+          status: 'UNVERIFIED',
+          note: 'Claim rejected; institution released back to directory',
+          actorUserId: adminUserId,
+        },
       });
     }
 

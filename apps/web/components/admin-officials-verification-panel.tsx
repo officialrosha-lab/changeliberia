@@ -13,6 +13,7 @@ interface PendingOfficial {
   officialEmail: string;
   holderUser: { id: string; fullName: string; email: string | null; phone: string } | null;
   officialProfile: { bio: string | null; verificationDocUrl: string | null } | null;
+  isClaim?: boolean;
 }
 
 export function AdminOfficialsVerificationPanel() {
@@ -99,7 +100,14 @@ export function AdminOfficialsVerificationPanel() {
         <div key={row.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-neutral-800">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-semibold text-zinc-900 dark:text-neutral-50 break-words">{row.name}</p>
+              <p className="font-semibold text-zinc-900 dark:text-neutral-50 break-words">
+                {row.name}
+                {row.isClaim && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                    Claims existing directory entry
+                  </span>
+                )}
+              </p>
               <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
                 {row.category.replaceAll('_', ' ')}
                 {row.county ? ` · ${row.county}` : ''}

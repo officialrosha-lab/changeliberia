@@ -35,6 +35,19 @@ export class CreateOfficialApplicationDto {
   @IsOptional() @IsString() verificationDocType?: string;
 }
 
+// Claiming an existing directory institution: identity fields
+// (name/category/county/district/email) intentionally absent — they come
+// from the admin-curated directory entry and must not be overwritten.
+export class ClaimInstitutionDto {
+  @IsString() institutionId!: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() politicalParty?: string;
+  @IsOptional() @IsString() @MaxLength(4000) bio?: string;
+  @IsOptional() @IsString() photoUrl?: string;
+  @IsOptional() @IsString() verificationDocUrl?: string;
+  @IsOptional() @IsString() verificationDocType?: string;
+}
+
 export class UpdateOfficialProfileDto {
   @IsOptional() @IsString() @MaxLength(4000) bio?: string;
   @IsOptional() @IsString() photoUrl?: string;
