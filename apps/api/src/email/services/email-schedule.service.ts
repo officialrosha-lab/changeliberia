@@ -1,14 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from './email.service';
 import { EmailType } from '@prisma/client';
 
 /**
- * Scheduled tasks for email system
- * - Weekly digest emails
- * - Failed email retries
- * - Old email log cleanup
+ * Scheduled tasks for email system — weekly digests, failed-email retries,
+ * old log cleanup. Invoked by Vercel Cron via CronController — see apps/api/src/cron.
  */
 
 @Injectable()
@@ -23,7 +20,6 @@ export class EmailScheduleService {
   /**
    * Send weekly digest emails every Sunday at 9 AM
    */
-  @Cron('0 9 * * 0') // Every Sunday at 9 AM
   async sendWeeklyDigests(): Promise<void> {
     this.logger.log('Starting weekly digest email batch...');
 
@@ -118,7 +114,6 @@ export class EmailScheduleService {
   /**
    * Retry failed emails every 15 minutes
    */
-  @Cron('*/15 * * * *') // Every 15 minutes
   async retryFailedEmails(): Promise<void> {
     try {
       // Retry failed emails directly
@@ -134,7 +129,6 @@ export class EmailScheduleService {
    * Clean up old email logs daily at 2 AM
    * Keep: Last 90 days, or all if starred
    */
-  @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupOldEmailLogs(): Promise<void> {
     this.logger.log('Starting email log cleanup...');
 
@@ -159,7 +153,6 @@ export class EmailScheduleService {
   /**
    * Archive completed email jobs daily at 3 AM
    */
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async archiveCompletedJobs(): Promise<void> {
     this.logger.log('Starting email job archive...');
 
@@ -186,7 +179,6 @@ export class EmailScheduleService {
   /**
    * Generate daily email analytics
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async generateDailyAnalytics(): Promise<void> {
     this.logger.log('Generating daily email analytics...');
 

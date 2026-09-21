@@ -20,7 +20,7 @@ export class PetitionsRealtimeService {
     signaturesCount: number,
     todaySignatures: number,
   ) {
-    this.petitionsGateway.broadcastSignatureUpdate(
+    void this.petitionsGateway.broadcastSignatureUpdate(
       petitionId,
       signaturesCount,
       todaySignatures,
@@ -36,7 +36,7 @@ export class PetitionsRealtimeService {
     signerName?: string;
     anonymous?: boolean;
   }) {
-    this.petitionsGateway.broadcastNewSignature({
+    void this.petitionsGateway.broadcastNewSignature({
       petitionId: data.petitionId,
       timestamp: data.timestamp || new Date().toISOString(),
       signerName: data.signerName,

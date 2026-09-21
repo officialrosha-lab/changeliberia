@@ -1,21 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as path from 'path';
-import * as fs from 'fs';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
+
+const BUCKET = 'cms-files';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadDir = path.join(process.cwd(), 'uploads');
-
-  constructor(private readonly prisma: PrismaService) {
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: SupabaseStorageService,
+  ) {}
 
   /**
-   * Upload a file and save metadata to database
+   * Upload a file to Supabase Storage and save metadata to database
    */
   async uploadFile(file: Express.Multer.File, userId: string, alt?: string) {
     if (!file) {
@@ -24,13 +21,16 @@ export class FileUploadService {
 
     // Generate unique filename
     const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    const filename = `${name}-${timestamp}${ext}`;
-    const filepath = path.join(this.uploadDir, filename);
+    const ext = file.originalname.includes('.')
+      ? file.originalname.slice(file.originalname.lastIndexOf('.'))
+      : '';
+    const base = file.originalname.includes('.')
+      ? file.originalname.slice(0, file.originalname.lastIndexOf('.'))
+      : file.originalname;
+    const filename = `${base}-${timestamp}${ext}`;
 
-    // Write file to disk
-    fs.writeFileSync(filepath, file.buffer);
+    await this.storage.upload(BUCKET, filename, file.buffer, file.mimetype);
+    const url = this.storage.getPublicUrl(BUCKET, filename);
 
     // Save metadata to database
     const cmsFile = await this.prisma.cMSFile.create({
@@ -39,7 +39,7 @@ export class FileUploadService {
         originalName: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        url: `/uploads/${filename}`,
+        url,
         uploadedBy: userId,
         alt: alt || null,
         tags: '[]',
@@ -61,7 +61,7 @@ export class FileUploadService {
   }
 
   /**
-   * Delete a file from disk and database
+   * Delete a file from Supabase Storage and the database
    */
   async deleteFile(fileId: string) {
     const file = await this.prisma.cMSFile.findUnique({ where: { id: fileId } });
@@ -75,11 +75,7 @@ export class FileUploadService {
       throw new Error(`File is in use by ${file.usageCount} blocks`);
     }
 
-    // Delete from disk
-    const filepath = path.join(this.uploadDir, file.filename);
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
-    }
+    await this.storage.remove(BUCKET, file.filename);
 
     // Delete from database
     return this.prisma.cMSFile.delete({ where: { id: fileId } });

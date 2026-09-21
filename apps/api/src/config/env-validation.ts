@@ -16,6 +16,21 @@ export function validateEnvOrThrow(): void {
     throw new Error('Production requires DATABASE_URL.');
   }
 
+  const supabaseUrl = process.env.SUPABASE_URL ?? '';
+  if (!supabaseUrl.trim()) {
+    throw new Error('Production requires SUPABASE_URL to be set.');
+  }
+
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  if (!supabaseServiceRoleKey.trim()) {
+    throw new Error('Production requires SUPABASE_SERVICE_ROLE_KEY to be set.');
+  }
+
+  const cronSecret = process.env.CRON_SECRET ?? '';
+  if (!cronSecret.trim()) {
+    throw new Error('Production requires CRON_SECRET to be set.');
+  }
+
   // Stripe validation is skipped when SKIP_STRIPE_VALIDATION=true (e.g. staging without live keys)
   if (process.env.SKIP_STRIPE_VALIDATION !== 'true') {
     const stripeApiKey = process.env.STRIPE_API_KEY ?? '';
@@ -55,11 +70,6 @@ export function validateEmailEnvOrThrow(): void {
 
   if (!resendApiKey.startsWith('re_')) {
     throw new Error('Production requires RESEND_API_KEY in format re_*');
-  }
-
-  const redisUrl = process.env.REDIS_URL ?? '';
-  if (!redisUrl.trim()) {
-    throw new Error('Production requires REDIS_URL to be set.');
   }
 
   const mailFrom = process.env.MAIL_FROM ?? '';

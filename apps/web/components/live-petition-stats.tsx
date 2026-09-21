@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useWebSocket } from '../lib/useWebSocket';
 import { apiGet } from '../lib/api';
 
 interface SignatureBreakdown {
@@ -51,7 +51,7 @@ export function LivePetitionStats({
   const [liveSigners, setLiveSigners] = useState<LiveSigner[]>([]);
   const [pulse, setPulse] = useState(false);
   const [breakdown, setBreakdown] = useState<SignatureBreakdown | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const { onSignatureUpdate, onNewSignature } = useWebSocket({ petitionId });
   const idCounter = useRef(0);
   const breakdownRefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -71,23 +71,7 @@ export function LivePetitionStats({
   }, []);
 
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-    const wsBase = apiBase.replace(/\/api\/v1\/?$/, '');
-    const socket = io(`${wsBase}/petitions`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      socket.emit('subscribe_petition', { petitionId });
-    });
-
-    socket.on('signature_update', (data: { petitionId: string; signaturesCount: number; todaySignatures: number }) => {
+    const unsubscribe = onSignatureUpdate((data) => {
       if (data.petitionId !== petitionId) return;
       setCount(data.signaturesCount);
       setTodayCount(data.todaySignatures);
@@ -98,8 +82,11 @@ export function LivePetitionStats({
       if (breakdownRefetchTimer.current) clearTimeout(breakdownRefetchTimer.current);
       breakdownRefetchTimer.current = setTimeout(fetchBreakdown, 1500);
     });
+    return unsubscribe;
+  }, [petitionId, onSignatureUpdate, triggerPulse, fetchBreakdown]);
 
-    socket.on('new_signature', (data: { petitionId: string; signerName?: string; anonymous?: boolean; timestamp: string }) => {
+  useEffect(() => {
+    const unsubscribe = onNewSignature((data) => {
       if (data.petitionId !== petitionId) return;
       const displayName = data.anonymous || !data.signerName ? 'Someone' : data.signerName;
       const entry: LiveSigner = {
@@ -109,12 +96,14 @@ export function LivePetitionStats({
       };
       setLiveSigners((prev) => [entry, ...prev].slice(0, 5));
     });
+    return unsubscribe;
+  }, [petitionId, onNewSignature]);
 
+  useEffect(() => {
     return () => {
       if (breakdownRefetchTimer.current) clearTimeout(breakdownRefetchTimer.current);
-      socket.disconnect();
     };
-  }, [petitionId, triggerPulse, fetchBreakdown]);
+  }, []);
 
   const progress = Math.min(100, Math.round((count / Math.max(1, goal)) * 100));
   const nextMilestone = getNextMilestone(count, goal);

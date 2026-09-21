@@ -11,20 +11,15 @@ import { useWebSocket } from '../lib/useWebSocket';
 
 export function HomeHero() {
   const [liveCount, setLiveCount] = useState(10247); // Initial count
-  const { getTrending, onSignatureUpdate } = useWebSocket();
+  const { onNewSignature } = useWebSocket();
 
-  // Get trending petitions on mount to get live counts
+  // Listen for new signatures platform-wide
   useEffect(() => {
-    getTrending();
-  }, [getTrending]);
-
-  // Listen for signature updates
-  useEffect(() => {
-    const unsubscribe = onSignatureUpdate((data) => {
+    const unsubscribe = onNewSignature(() => {
       setLiveCount((prev) => prev + 1);
     });
     return unsubscribe;
-  }, [onSignatureUpdate]);
+  }, [onNewSignature]);
 
 
   return (

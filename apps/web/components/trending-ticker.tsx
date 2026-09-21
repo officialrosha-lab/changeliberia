@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useState } from 'react';
 
 interface TrendingItem {
   id: string;
@@ -14,15 +13,12 @@ const FALLBACK_TEXT = 'Change Liberia · Civic petitions for all 15 counties of 
 
 export function TrendingTicker() {
   const [items, setItems] = useState<TrendingItem[]>([]);
-  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
-    // Fetch real petitions immediately via REST — no waiting for WebSocket
-    // Use /petitions/browse/all which returns trending data
     fetch(`${apiBase}/petitions/browse/all`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { trending?: TrendingItem[] } | null) => {
@@ -32,32 +28,8 @@ export function TrendingTicker() {
       })
       .catch(() => {});
 
-    // WebSocket — overwrites with live data when connected
-    const wsBase = apiBase.replace(/\/api\/v1\/?$/, '');
-    const socket = io(`${wsBase}/petitions`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 3,
-      timeout: 5000,
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      if (!mounted) return;
-      socket.emit('get_trending');
-    });
-
-    socket.on('trending_petitions', (data: { petitions: TrendingItem[] }) => {
-      if (!mounted) return;
-      if (data.petitions?.length) {
-        setItems(data.petitions);
-      }
-    });
-
     return () => {
       mounted = false;
-      socket.disconnect();
     };
   }, []);
 

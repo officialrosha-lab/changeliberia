@@ -16,8 +16,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole, VerificationType } from '@prisma/client';
-import { createReadStream, existsSync } from 'fs';
-import { extname } from 'path';
 import type { Response } from 'express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -129,8 +127,8 @@ export class VerificationController {
   }
 
   /**
-   * Serves locally stored ID files to the document owner or an admin.
-   * External `fileUrl` values redirect to http(s) targets only.
+   * Redirects the document owner or an admin to a short-lived signed URL for
+   * the file. External `fileUrl` values redirect to http(s) targets only.
    */
   @UseGuards(JwtAuthGuard)
   @Get('id-documents/:id/file')
@@ -145,8 +143,8 @@ export class VerificationController {
     const isAdmin = req.user.role === UserRole.ADMIN;
     if (!isOwner && !isAdmin) throw new ForbiddenException();
 
-    const diskName = this.idStorage.extractDiskFilename(doc.fileUrl);
-    if (!diskName) {
+    const storagePath = this.idStorage.extractStoragePath(doc.fileUrl);
+    if (!storagePath) {
       let target: URL;
       try {
         target = new URL(doc.fileUrl);
@@ -160,21 +158,8 @@ export class VerificationController {
       return;
     }
 
-    const abs = this.idStorage.resolveSafeAbsolutePath(diskName);
-    if (!abs || !existsSync(abs)) throw new NotFoundException('File not found');
-
-    const ext = extname(diskName).toLowerCase();
-    const ct =
-      ext === '.pdf'
-        ? 'application/pdf'
-        : ext === '.png'
-          ? 'image/png'
-          : ext === '.jpg' || ext === '.jpeg'
-            ? 'image/jpeg'
-            : 'application/octet-stream';
-    res.setHeader('Content-Type', ct);
-    res.setHeader('Content-Disposition', `inline; filename="${diskName}"`);
-    createReadStream(abs).pipe(res);
+    const signedUrl = await this.idStorage.getSignedUrl(storagePath);
+    res.redirect(302, signedUrl);
   }
 
   @UseGuards(JwtAuthGuard)

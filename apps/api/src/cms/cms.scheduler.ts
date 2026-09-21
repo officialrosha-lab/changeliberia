@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { ContentSchedulingService } from './content-scheduling.service';
 
 /**
- * CMS Scheduler - Handles scheduled content publishing/unpublishing
- * Executes every minute to check for and process due scheduled actions
+ * CMS Scheduler - handles scheduled content publishing/unpublishing.
+ * Invoked every minute by Vercel Cron via CronController — see apps/api/src/cron.
  */
 @Injectable()
 export class CMSScheduler {
@@ -12,11 +11,6 @@ export class CMSScheduler {
 
   constructor(private readonly contentSchedulingService: ContentSchedulingService) {}
 
-  /**
-   * Execute scheduled content actions every minute
-   * Checks for actions that are past their scheduled time
-   */
-  @Cron(CronExpression.EVERY_MINUTE)
   async executeScheduledActions() {
     try {
       this.logger.debug('Starting scheduled content action execution');

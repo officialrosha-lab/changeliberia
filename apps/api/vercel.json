@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    { "path": "/api/v1/internal/cron/fraud-enqueue-anomaly-scan", "schedule": "*/10 * * * *" },
+    { "path": "/api/v1/internal/cron/fraud-process-queue", "schedule": "* * * * *" },
+    { "path": "/api/v1/internal/cron/cms-execute-scheduled-actions", "schedule": "* * * * *" },
+    { "path": "/api/v1/internal/cron/messages-archive", "schedule": "0 0 * * *" },
+    { "path": "/api/v1/internal/cron/petitions-reset-daily-signatures", "schedule": "0 0 * * *" },
+    { "path": "/api/v1/internal/cron/email-weekly-digests", "schedule": "0 9 * * 0" },
+    { "path": "/api/v1/internal/cron/email-retry-failed", "schedule": "*/15 * * * *" },
+    { "path": "/api/v1/internal/cron/email-cleanup-old-logs", "schedule": "0 2 * * *" },
+    { "path": "/api/v1/internal/cron/email-archive-completed-jobs", "schedule": "0 3 * * *" },
+    { "path": "/api/v1/internal/cron/email-generate-daily-analytics", "schedule": "0 0 * * *" }
+  ]
+}

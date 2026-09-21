@@ -1,179 +1,75 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { getApiBase } from './api';
-
-/**
- * The Socket.IO server runs on the API host (namespace /petitions), so the
- * socket origin is derived from the same base URL as REST calls — the API
- * base minus its /api/v1 path.
- */
-function getSocketOrigin(): string {
-  try {
-    return new URL(
-      getApiBase(),
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000',
-    ).origin;
-  } catch {
-    return 'http://localhost:4000';
-  }
-}
+import { subscribeToChannel } from './supabase-realtime';
 
 interface UseWebSocketOptions {
-  autoConnect?: boolean;
-  url?: string;
+  /** When provided, also subscribes to that petition's `signature_update` channel. */
+  petitionId?: string;
 }
 
-interface PetitionUpdate {
-  id: string;
+interface SignatureUpdate {
+  petitionId: string;
   signaturesCount: number;
   todaySignatures: number;
 }
 
-interface PulseMapData {
-  hotspots: Array<{
-    name: string;
-    latitude: number;
-    longitude: number;
-    intensity: number;
-    petitions: number;
-  }>;
+interface NewSignature {
+  petitionId: string;
+  county?: string;
+  latitude?: number;
+  longitude?: number;
+  timestamp: string;
+  signerName?: string;
+  anonymous?: boolean;
 }
 
 /**
- * Hook to connect to WebSocket server and listen for real-time updates
+ * Real-time petition updates via Supabase Realtime broadcast — replaces the
+ * old Socket.IO connection to the API's `/petitions` namespace (removed
+ * along with the persistent server that hosted it; see
+ * apps/api/src/events/petitions.gateway.ts).
  */
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const socketRef = useRef<Socket | null>(null);
-  const url = options.url || getSocketOrigin();
-  const autoConnect = options.autoConnect !== false;
+  const { petitionId } = options;
+  const signatureUpdateListeners = useRef(new Set<(data: SignatureUpdate) => void>());
+  const newSignatureListeners = useRef(new Set<(data: NewSignature) => void>());
 
   useEffect(() => {
-    if (!autoConnect) return;
-
-    // Connect to WebSocket server
-    const socket = io(`${url}/petitions`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
+    const unsubscribe = subscribeToChannel('petitions:global', {
+      new_signature: (payload: NewSignature) => {
+        newSignatureListeners.current.forEach((cb) => cb(payload));
+      },
     });
+    return unsubscribe;
+  }, []);
 
-    socket.on('connect', () => {
-      console.log('WebSocket connected:', socket.id);
+  useEffect(() => {
+    if (!petitionId) return undefined;
+    const unsubscribe = subscribeToChannel(`petition:${petitionId}`, {
+      signature_update: (payload: SignatureUpdate) => {
+        signatureUpdateListeners.current.forEach((cb) => cb(payload));
+      },
     });
+    return unsubscribe;
+  }, [petitionId]);
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
-
-    socket.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
-
-    socketRef.current = socket;
-
+  const onSignatureUpdate = useCallback((callback: (data: SignatureUpdate) => void) => {
+    signatureUpdateListeners.current.add(callback);
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      signatureUpdateListeners.current.delete(callback);
     };
-  }, [url, autoConnect]);
-
-  const subscribeToPetition = useCallback((petitionId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('subscribe_petition', { petitionId });
-    }
   }, []);
 
-  const getTrending = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.emit('get_trending');
-    }
+  const onNewSignature = useCallback((callback: (data: NewSignature) => void) => {
+    newSignatureListeners.current.add(callback);
+    return () => {
+      newSignatureListeners.current.delete(callback);
+    };
   }, []);
-
-  const getPulseMap = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.emit('get_pulse_map');
-    }
-  }, []);
-
-  const onSignatureUpdate = useCallback(
-    (callback: (data: PetitionUpdate) => void) => {
-      if (socketRef.current) {
-        socketRef.current.on('signature_update', callback);
-        return () => {
-          socketRef.current?.off('signature_update', callback);
-        };
-      }
-      return () => {};
-    },
-    [],
-  );
-
-  const onNewSignature = useCallback(
-    (callback: (data: any) => void) => {
-      if (socketRef.current) {
-        socketRef.current.on('new_signature', callback);
-        return () => {
-          socketRef.current?.off('new_signature', callback);
-        };
-      }
-      return () => {};
-    },
-    [],
-  );
-
-  const onPulseMapData = useCallback(
-    (callback: (data: PulseMapData) => void) => {
-      if (socketRef.current) {
-        socketRef.current.on('pulse_map_data', callback);
-        return () => {
-          socketRef.current?.off('pulse_map_data', callback);
-        };
-      }
-      return () => {};
-    },
-    [],
-  );
-
-  const onTrendingPetitions = useCallback(
-    (callback: (data: any) => void) => {
-      if (socketRef.current) {
-        socketRef.current.on('trending_petitions', callback);
-        return () => {
-          socketRef.current?.off('trending_petitions', callback);
-        };
-      }
-      return () => {};
-    },
-    [],
-  );
-
-  const onPetitionUpdate = useCallback(
-    (callback: (data: any) => void) => {
-      if (socketRef.current) {
-        socketRef.current.on('petition_update', callback);
-        return () => {
-          socketRef.current?.off('petition_update', callback);
-        };
-      }
-      return () => {};
-    },
-    [],
-  );
 
   return {
-    subscribeToPetition,
-    getTrending,
-    getPulseMap,
     onSignatureUpdate,
     onNewSignature,
-    onPulseMapData,
-    onTrendingPetitions,
-    onPetitionUpdate,
-    isConnected: socketRef.current?.connected ?? false,
   };
 }

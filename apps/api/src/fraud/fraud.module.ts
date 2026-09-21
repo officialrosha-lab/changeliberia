@@ -9,6 +9,6 @@ import { FraudService } from './fraud.service';
   imports: [AuthModule, ActivityModule],
   controllers: [FraudController],
   providers: [FraudService, FraudScheduler],
-  exports: [FraudService],
+  exports: [FraudService, FraudScheduler],
 })
 export class FraudModule {}

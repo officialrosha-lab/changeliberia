@@ -49,7 +49,7 @@ export class NotificationService {
 
     // Broadcast notification via WebSocket in real-time
     try {
-      this.notificationsGateway.broadcastNotificationToUser(data.userId, {
+      void this.notificationsGateway.broadcastNotificationToUser(data.userId, {
         id: notification.id,
         type: notification.type,
         title: notification.title,
@@ -129,7 +129,7 @@ export class NotificationService {
 
     // Broadcast read status via WebSocket
     try {
-      this.notificationsGateway.broadcastNotificationRead(
+      void this.notificationsGateway.broadcastNotificationRead(
         notification.userId,
         notificationId,
       );
@@ -157,7 +157,7 @@ export class NotificationService {
 
     // Broadcast all read via WebSocket
     try {
-      this.notificationsGateway.broadcastAllNotificationsRead(userId);
+      void this.notificationsGateway.broadcastAllNotificationsRead(userId);
     } catch (error) {
       console.error('Error broadcasting all notifications read:', error);
     }
@@ -176,7 +176,7 @@ export class NotificationService {
 
     // Broadcast archived status via WebSocket
     try {
-      this.notificationsGateway.broadcastNotificationArchived(
+      void this.notificationsGateway.broadcastNotificationArchived(
         notification.userId,
         notificationId,
       );

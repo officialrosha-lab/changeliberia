@@ -1,41 +1,24 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Injectable, Logger } from '@nestjs/common';
+import { RealtimeService } from '../realtime/realtime.service';
 
-@WebSocketGateway({ namespace: '/polls', cors: true })
-export class PollsGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer()
-  server!: Server;
+/**
+ * Broadcasts poll vote updates via Supabase Realtime (`poll:{id}` channel,
+ * plus a global `polls:global` channel). Clients subscribe directly to
+ * Supabase — see apps/web/lib/use-poll-socket.ts.
+ * Previously a Socket.IO gateway; moved off in-process rooms since a
+ * persistent server isn't available on Vercel serverless functions.
+ */
+@Injectable()
+export class PollsGateway {
+  private readonly logger = new Logger(PollsGateway.name);
 
-  handleConnection(client: Socket) {
-    client.emit('polls:connected', { socketId: client.id });
-  }
+  constructor(private readonly realtime: RealtimeService) {}
 
-  handleDisconnect(_client: Socket) {
-    // Socket.IO handles cleanup on disconnect automatically.
-  }
-
-  @SubscribeMessage('subscribe_poll')
-  handleSubscribePoll(client: Socket, payload: { pollId: string }) {
-    if (payload?.pollId) {
-      client.join(`poll:${payload.pollId}`);
-      client.emit('polls:subscribed', { pollId: payload.pollId });
-    }
-    return { success: true, pollId: payload?.pollId };
-  }
-
-  @SubscribeMessage('unsubscribe_poll')
-  handleUnsubscribePoll(client: Socket, payload: { pollId: string }) {
-    if (payload?.pollId) {
-      client.leave(`poll:${payload.pollId}`);
-      client.emit('polls:unsubscribed', { pollId: payload.pollId });
-    }
-    return { success: true, pollId: payload?.pollId };
-  }
-
-  broadcastPollUpdate(pollId: string, payload: any) {
-    // emit to a room for the poll
-    this.server.to(`poll:${pollId}`).emit('pollUpdated', payload);
-    // also broadcast summary to all connected clients
-    this.server.emit('polls:update', { pollId, ...payload });
+  async broadcastPollUpdate(pollId: string, payload: any) {
+    await Promise.all([
+      this.realtime.broadcast(`poll:${pollId}`, 'pollUpdated', payload),
+      this.realtime.broadcast('polls:global', 'polls:update', { pollId, ...payload }),
+    ]);
+    this.logger.debug(`Broadcasted poll update for ${pollId}`);
   }
 }

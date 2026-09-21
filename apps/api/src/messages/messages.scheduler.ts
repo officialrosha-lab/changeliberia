@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { MessagesService } from './messages.service';
 
 @Injectable()
@@ -9,11 +8,9 @@ export class MessagesScheduler {
   constructor(private messagesService: MessagesService) {}
 
   /**
-   * Archive old messages daily at midnight (00:00 UTC)
-   * Read messages: Archive after 180 days
-   * Unread messages: Archive after 260 days
+   * Archive old messages. Read messages: after 180 days. Unread: after 260 days.
+   * Invoked daily at midnight UTC by Vercel Cron via CronController — see apps/api/src/cron.
    */
-  @Cron('0 0 * * *') // Every day at midnight
   async handleMessageArchival() {
     this.logger.debug(
       'Starting daily message archival job at',

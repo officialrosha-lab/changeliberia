@@ -108,27 +108,29 @@ Implemented with:
 - **Petition moderation:** Admins can **approve** or **reject** pending petitions from the web admin panel (`PATCH /petitions/:id/approve` / `reject`).
 - **Admin RBAC:** `User.role` is `USER` or `ADMIN` (JWT is validated against the database on each request). All `/api/v1/admin/*` routes, all `/api/v1/fraud/*` routes, and `PATCH /api/v1/petitions/:id/approve` / `reject` require `ADMIN`.
 - **Seeded admin:** After `pnpm seed`, user `+231770000001` has `ADMIN` (sign in via your auth flow, then open `/admin` in the web app). **In production,** assign `ADMIN` in the database (or a one-off script); do not rely on seed data for real moderators.
-- **ID uploads (technical):** `POST /api/v1/verification/id-document` accepts **`multipart/form-data`** (`type` + `file`, JPEG/PNG/PDF up to 5 MB) **or** JSON `{ type, fileUrl }` for an already-hosted URL. Uploaded files are written under `uploads/id-documents/`. **`GET /api/v1/verification/id-documents/:id/file`** (JWT) streams the file to the **document owner** or an **admin**; external `fileUrl` values redirect only to `http:`/`https:` targets. There is **no** anonymous public `/uploads` static route. Set **`ID_DOCUMENT_PUBLIC_BASE_URL`** so stored metadata URLs stay consistent with your API origin. For stronger privacy and scale, plan **private object storage** (S3-compatible) and short-lived URLs—this repo defaults to local disk + optional remote `fileUrl`.
+- **ID uploads (technical):** `POST /api/v1/verification/id-document` accepts **`multipart/form-data`** (`type` + `file`, JPEG/PNG/PDF up to 5 MB) **or** JSON `{ type, fileUrl }` for an already-hosted URL. Uploaded files go to the **private** `id-documents` Supabase Storage bucket. **`GET /api/v1/verification/id-documents/:id/file`** (JWT) redirects the **document owner** or an **admin** to a short-lived signed URL; external `fileUrl` values redirect only to `http:`/`https:` targets. There is no public route to the bucket.
 - **Swagger & CSP:** In production (`NODE_ENV=production`), OpenAPI UI is **off** unless `ENABLE_SWAGGER=true`. When Swagger is off, Helmet’s default **Content-Security-Policy** is enabled; when Swagger is on, CSP is relaxed for the docs UI.
-- **Docker:** Compose mounts `api_uploads` at `/app/apps/api/uploads` so ID files survive container restarts.
 
 ## Production checklist
 - **Secrets:** Rotate **`JWT_SECRET`**, database credentials, and CAPTCHA/Twilio keys; never commit real `.env` files.
-- **HTTP / browser config:** Set **`CORS_ORIGIN`** to your real web origins (comma-separated). Set web **`NEXT_PUBLIC_API_URL`** and server **`API_URL_INTERNAL`** (Docker/K8s service URL) to the deployed API. Terminate TLS at your reverse proxy or load balancer.
+- **HTTP / browser config:** Set **`CORS_ORIGIN`** to your real web origins (comma-separated). Set web **`NEXT_PUBLIC_API_URL`** and server **`API_URL_INTERNAL`** (internal service URL) to the deployed API.
 - **API hardening:** Keep **`ENABLE_SWAGGER=false`** in production unless operators need in-browser docs; prefer network restriction if you enable it. Use real **`CAPTCHA_PROVIDER`** (Turnstile or hCaptcha) with valid keys.
-- **Identity documents:** Set **`ID_DOCUMENT_PUBLIC_BASE_URL`** to the public API URL; use a persistent volume for **`uploads/`**. Files are served only via **`GET /api/v1/verification/id-documents/:id/file`** (owner or admin). Plan object storage + access policies for serious deployments.
+- **Identity documents:** Create the `id-documents` (private), `petition-media` (public), and `cms-files` (public) buckets in Supabase Storage. Files are served only via **`GET /api/v1/verification/id-documents/:id/file`** (owner or admin, redirects to a signed URL).
 - **Admins:** Ensure only trusted users have **`User.role = ADMIN`**; audit via database.
-- **Data:** Configure **Postgres backups**, monitoring on **`/health`**, **`/health/ready`**, and **`/metrics`** as appropriate for your environment.
+- **Data:** Configure **Supabase Postgres backups** (Point-in-Time Recovery on paid tiers), monitoring on **`/health`**, **`/health/ready`**, and **`/metrics`** as appropriate for your environment.
+- **Cron:** `vercel.json`'s `crons` array needs a Vercel **Pro** plan or higher — several jobs run sub-daily (every minute), which the Hobby plan (daily only) can't schedule.
 
 ## Development workflow
 - **Install & run:** `pnpm install`, `pnpm dev` (API + web via Turbo). Ensure Postgres is up and migrations are applied (`pnpm --filter api prisma migrate deploy`).
 - **Quality gates:** `pnpm lint`, `pnpm typecheck`, `pnpm test` (API smoke e2e, no DB), `pnpm build`.
 - **Seed:** `pnpm seed` for sample data and a seeded **admin** phone (`+231770000001`).
 
-## Phase 5 Deployment & CI
-- **Docker Compose:** `pnpm docker:up` — Postgres, API (migrations on start when `RUN_MIGRATIONS_ON_START=true`), and web (Next standalone).
-- **Images:** `apps/api/Dockerfile`, `apps/web/Dockerfile`; build context is the repo root.
-- **Server-side API URL in Docker:** set `API_URL_INTERNAL` on the web service (e.g. `http://api:4000/api/v1`) so RSC/SSR can reach the API; browsers still use `NEXT_PUBLIC_API_URL` (e.g. `http://localhost:4000/api/v1`).
+## Deployment: Vercel + Supabase
+- **Database & Storage:** Supabase Postgres (`DATABASE_URL` via the Transaction pooler, `DIRECT_URL` for migrations) and Supabase Storage (`id-documents`, `petition-media`, `cms-files` buckets). See `.env.example`.
+- **API:** deployed as a Vercel project rooted at `apps/api` (Framework Preset: Other). `apps/api/api/index.ts` wraps the NestJS app as a serverless function; `apps/api/vercel.json` rewrites every path to it and declares the cron schedule that replaces the old in-process `@nestjs/schedule` jobs (now HTTP endpoints under `/api/v1/internal/cron/*`, guarded by `CRON_SECRET`).
+- **Web:** deployed as a separate Vercel project rooted at `apps/web`, same as before.
+- **Realtime:** signature counts, poll votes, and notifications push via Supabase Realtime broadcast channels (`petition:{id}`, `poll:{id}`, `user:{id}`, plus global `petitions:global`) instead of a persistent Socket.IO server — see `apps/api/src/realtime/` and `apps/web/lib/supabase-realtime.ts`.
+- **Local dev / Docker Compose:** `pnpm docker:up` still works for local development against a local Postgres container (point `DATABASE_URL`/`DIRECT_URL` at it) — but `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` must point at a real (dev) Supabase project, since uploads and realtime no longer have a local fallback. `apps/api/Dockerfile` remains available as an alternative to Vercel for the API.
 - **CI:** GitHub Actions `.github/workflows/ci.yml` runs install, typecheck, lint, and build on push/PR to `main`/`master`.
 - **API security:** Helmet + `CORS_ORIGIN` (comma-separated origins, or omit for permissive dev).
 

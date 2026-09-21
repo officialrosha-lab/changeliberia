@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useWebSocket } from '../lib/useWebSocket';
+import { apiGet } from '../lib/api';
 
 interface Hotspot {
   name: string;
@@ -18,31 +19,29 @@ export function PulseMap() {
     { name: 'Lofa', latitude: 7.5833, longitude: -10.0833, intensity: 0.40, petitions: 20 },
   ]);
 
-  const { getPulseMap, onPulseMapData, onNewSignature } = useWebSocket();
+  const { onNewSignature } = useWebSocket();
 
-  // Request pulse map data on mount
+  // Fetch pulse map snapshot on mount
   useEffect(() => {
-    getPulseMap();
-  }, [getPulseMap]);
-
-  // Listen for pulse map updates
-  useEffect(() => {
-    const unsubscribe = onPulseMapData((data) => {
-      if (data.hotspots) {
-        setHotspots(data.hotspots);
-      }
-    });
-
-    return unsubscribe;
-  }, [onPulseMapData]);
+    let cancelled = false;
+    apiGet<{ hotspots: Hotspot[] }>('/petitions/pulse-map')
+      .then((data) => {
+        if (!cancelled && data.hotspots) setHotspots(data.hotspots);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Listen for new signatures to update intensities
   useEffect(() => {
     const unsubscribe = onNewSignature((data) => {
-      if (data.county) {
+      const county = data.county;
+      if (county) {
         setHotspots(prev =>
           prev.map(h =>
-            h.name.toLowerCase() === data.county.toLowerCase()
+            h.name.toLowerCase() === county.toLowerCase()
               ? { ...h, intensity: Math.min(1, h.intensity + 0.02), petitions: h.petitions + 1 }
               : h
           )

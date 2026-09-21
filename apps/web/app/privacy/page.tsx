@@ -112,8 +112,8 @@ export default function PrivacyPolicyPage() {
           <p className="text-sm">We share personal information only in the following limited circumstances:</p>
           <ul className="list-disc pl-5 space-y-2 text-sm mt-3">
             <li>
-              <strong>Service providers:</strong> we use trusted third-party vendors (Stripe for payments, Railway for cloud
-              hosting, Vercel for web delivery) who process data solely on our behalf under data processing agreements.
+              <strong>Service providers:</strong> we use trusted third-party vendors (Stripe for payments, Supabase for our
+              database, Vercel for hosting and web delivery) who process data solely on our behalf under data processing agreements.
             </li>
             <li>
               <strong>Public petition data:</strong> petition titles, descriptions, signature counts, and signer names (unless
@@ -199,7 +199,7 @@ export default function PrivacyPolicyPage() {
           <p className="text-sm">
             We implement industry-standard security measures including TLS encryption in transit, bcrypt password
             hashing, JWT-based authentication, and Stripe&rsquo;s PCI-DSS-compliant payment infrastructure. Our
-            servers are hosted on Railway with automated backups. Despite these measures, no internet service is
+            application is hosted on Vercel, with our database on Supabase with automated backups. Despite these measures, no internet service is
             completely secure — please use a strong, unique password and report any security concerns to{' '}
             <a href={`mailto:${CONTACT_EMAIL}`} className="text-emerald-600 dark:text-emerald-400 underline">
               {CONTACT_EMAIL}
@@ -249,7 +249,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-neutral-50 mb-4">10. International Transfers</h2>
           <p className="text-sm">
-            Change Liberia is operated from Liberia, but our infrastructure providers (Railway, Vercel) may store data
+            Change Liberia is operated from Liberia, but our infrastructure providers (Supabase, Vercel) may store data
             on servers in the United States or Europe. By using the platform you consent to this transfer. We ensure
             all providers maintain appropriate data protection standards.
           </p>

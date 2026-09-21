@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { apiGet } from '../lib/api';
 import { useAuthStore } from '../lib/store';
-import { useAnalyticsMultiple } from '../lib/hooks/useAnalyticsRealtime';
-import { AnalyticsNotificationBadge, AnalyticsLiveUpdateFeed } from './analytics-realtime';
 
 type Period = 'day' | 'week' | 'month';
 
@@ -104,14 +102,6 @@ export function GlobalAnalytics() {
   const [activeTab, setActiveTab] = useState<'messages' | 'broadcasts'>('messages');
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  // Real-time analytics updates
-  const { updates, connected } = useAnalyticsMultiple([
-    'message_created',
-    'broadcast_sent',
-    'message_count',
-    'broadcast_count',
-  ]);
-
   useEffect(() => {
     if (!token) return;
 
@@ -138,37 +128,27 @@ export function GlobalAnalytics() {
     void loadAnalytics();
   }, [token, period]);
 
-  // Auto-refresh analytics when real-time updates arrive
+  // Periodic auto-refresh (every 60s) instead of a realtime push
   useEffect(() => {
-    if (!token || !connected) return;
+    if (!token) return;
 
-    // Trigger refresh if message or broadcast updates arrive
-    const hasUpdate =
-      updates.message_created ||
-      updates.broadcast_sent ||
-      updates.message_count ||
-      updates.broadcast_count;
+    const interval = setInterval(async () => {
+      try {
+        const [msgRes, bcRes] = await Promise.all([
+          apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
+          apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
+        ]);
 
-    if (hasUpdate) {
-      // Debounce refresh to avoid too frequent reloads (max once per 2 seconds)
-      const timer = setTimeout(async () => {
-        try {
-          const [msgRes, bcRes] = await Promise.all([
-            apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
-            apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
-          ]);
+        setMessageAnalytics(msgRes.data);
+        setBroadcastAnalytics(bcRes.data);
+        setLastRefresh(new Date());
+      } catch (err) {
+        console.error('Failed to refresh analytics:', err);
+      }
+    }, 60000);
 
-          setMessageAnalytics(msgRes.data);
-          setBroadcastAnalytics(bcRes.data);
-          setLastRefresh(new Date());
-        } catch (err) {
-          console.error('Failed to refresh analytics:', err);
-        }
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [updates, token, period, connected]);
+    return () => clearInterval(interval);
+  }, [token, period]);
 
   if (loading) {
     return (
@@ -192,17 +172,9 @@ export function GlobalAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* Real-time status and notifications */}
+      {/* Refresh status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              connected ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'
-            }`}
-          />
-          <span className="text-sm text-zinc-600 dark:text-neutral-400">
-            {connected ? 'Live updates enabled' : 'Updating...'}
-          </span>
           {lastRefresh && (
             <span className="text-xs text-zinc-500 dark:text-neutral-500">
               Last updated: {lastRefresh.toLocaleTimeString()}
@@ -210,12 +182,6 @@ export function GlobalAnalytics() {
           )}
         </div>
       </div>
-
-      {/* Live update feed */}
-      <AnalyticsLiveUpdateFeed />
-
-      {/* Real-time notification badge */}
-      <AnalyticsNotificationBadge />
 
       {/* Period Selector */}
       <div className="flex gap-2">

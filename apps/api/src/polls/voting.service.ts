@@ -126,7 +126,7 @@ export class VotingService {
         include: { options: true },
       });
       if (this.pollsGateway && updated) {
-        this.pollsGateway.broadcastPollUpdate(pollId, {
+        void this.pollsGateway.broadcastPollUpdate(pollId, {
           totalVotes: updated.totalVotes,
           options: updated.options.map(o => ({ id: o.id, voteCount: o.voteCount })),
         });

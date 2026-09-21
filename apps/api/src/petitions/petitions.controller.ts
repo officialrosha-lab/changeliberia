@@ -4,29 +4,23 @@ import {
   Controller,
   Delete,
   Get,
-  MessageEvent,
   NotFoundException,
   Param,
   Patch,
   Post,
   Req,
   Res,
-  Sse,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { createReadStream, existsSync } from 'fs';
-import { extname } from 'path';
 import type { Response } from 'express';
 import type { MemoryUploadedFile } from '../verification/uploaded-file.types';
 import { PetitionMediaStorageService } from './petition-media-storage.service';
 import { UserRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
-import { Observable, fromEvent, filter, map } from 'rxjs';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -38,7 +32,6 @@ import {
   UpdatePetitionDto,
 } from './dto';
 import { PetitionsService } from './petitions.service';
-import { SignatureAddedEvent } from '../events/domain-events';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { ImpactAreaReportService } from './impact-area-report.service';
 
@@ -46,7 +39,6 @@ import { ImpactAreaReportService } from './impact-area-report.service';
 export class PetitionsController {
   constructor(
     private readonly service: PetitionsService,
-    private readonly eventEmitter: EventEmitter2,
     private readonly mediaStorage: PetitionMediaStorageService,
     private readonly activityLogger: ActivityLoggerService,
     private readonly impactAreaReport: ImpactAreaReportService,
@@ -82,30 +74,30 @@ export class PetitionsController {
     return this.service.listComments(id);
   }
 
-  @Sse(':id/live')
-  liveSignatureCount(@Param('id') id: string): Observable<MessageEvent> {
-    return fromEvent<SignatureAddedEvent>(this.eventEmitter, 'SIGNATURE_ADDED').pipe(
-      filter((event) => event.petitionId === id),
-      map(() => ({ data: JSON.stringify({ petitionId: id }) })),
-    );
-  }
-
-  @Get('media/:filename')
-  async serveMedia(
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ) {
-    const abs = this.mediaStorage.resolveSafe(filename);
-    if (!abs || !existsSync(abs)) throw new NotFoundException('Media not found');
-    const ext = extname(filename).toLowerCase();
-    const ct: Record<string, string> = {
-      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-      '.webp': 'image/webp', '.gif': 'image/gif',
-      '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+  /**
+   * Static hotspot snapshot for the pulse map; live nudges come from the
+   * `petitions:global` Supabase Realtime channel (`new_signature` event) —
+   * see apps/web/components/pulse-map.tsx.
+   */
+  @Get('pulse-map')
+  pulseMap() {
+    const counties = [
+      { name: 'Montserrado', lat: 6.3183, lng: -10.8085, intensity: 0.8 },
+      { name: 'Grand Cape Mount', lat: 6.6667, lng: -11.5, intensity: 0.6 },
+      { name: 'Lofa', lat: 7.5833, lng: -10.0833, intensity: 0.5 },
+      { name: 'Bong', lat: 6.6484, lng: -9.7367, intensity: 0.4 },
+      { name: 'Grand Gedeh', lat: 4.7333, lng: -8.4667, intensity: 0.3 },
+    ];
+    return {
+      hotspots: counties.map((county) => ({
+        name: county.name,
+        latitude: county.lat,
+        longitude: county.lng,
+        intensity: county.intensity,
+        petitions: Math.floor(county.intensity * 50),
+      })),
+      timestamp: new Date().toISOString(),
     };
-    res.setHeader('Content-Type', ct[ext] ?? 'application/octet-stream');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    createReadStream(abs).pipe(res);
   }
 
   @Get(':id')

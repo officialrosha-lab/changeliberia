@@ -18,7 +18,7 @@ COPY packages ./packages
 COPY tsconfig.base.json ./
 ENV NEXT_TELEMETRY_DISABLED=1
 # Build-time environment variables for Next.js
-ARG NEXT_PUBLIC_API_URL=https://api-production-8873.up.railway.app/api/v1
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=dummy-client-id
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -31,7 +31,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 # Runtime environment variables (optional, for server-side logic)
-ARG NEXT_PUBLIC_API_URL=https://api-production-8873.up.railway.app/api/v1
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 COPY --from=build /app/apps/web/.next/standalone ./

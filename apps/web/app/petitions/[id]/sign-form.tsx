@@ -2,9 +2,10 @@
 
 import { Turnstile } from '@marsidev/react-turnstile';
 import { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
+import { apiGet, apiPost, apiDelete } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { ShareModal } from '../../../components/share-modal';
+import { subscribeToChannel } from '../../../lib/supabase-realtime';
 
 const turnstileSiteKey =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
@@ -166,12 +167,11 @@ export function SignForm({
       .catch(() => {});
   }, [petitionId, token]);
 
-  // Live signature counter via SSE
+  // Live signature counter via Supabase Realtime (petition:{id} channel)
   useEffect(() => {
-    const es = new EventSource(`${getApiBase()}/petitions/${petitionId}/live`);
-    es.onmessage = () => { setCount((prev) => prev + 1); };
-    es.onerror = () => { es.close(); };
-    return () => { es.close(); };
+    return subscribeToChannel(`petition:${petitionId}`, {
+      signature_update: () => setCount((prev) => prev + 1),
+    });
   }, [petitionId]);
 
   const progress = Math.min(100, Math.round((count / goal) * 100));

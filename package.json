@@ -11,8 +11,8 @@
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "test": "turbo run test",
-    "migrate:status": "railway run 'cd apps/api && npx prisma migrate status'",
-    "migrate:deploy": "railway run bash scripts/run-migrations.sh",
+    "migrate:status": "pnpm --filter api exec prisma migrate status",
+    "migrate:deploy": "bash scripts/run-migrations.sh",
     "migrate:docker": "bash scripts/run-migrations-docker.sh"
   },
   "devDependencies": {
@@ -20,17 +20,13 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@nestjs/bull": "^11.0.4",
     "@nestjs/config": "^4.0.4",
     "@nestjs/event-emitter": "^3.0.1",
-    "@nestjs/websockets": "^11.1.19",
     "@types/pdfkit": "^0.17.6",
     "axios": "^1.15.1",
-    "bull": "^4.16.5",
     "framer-motion": "^12.38.0",
     "pdfkit": "^0.18.0",
     "recharts": "^3.8.1",
-    "socket.io": "^4.8.3",
     "sonner": "^2.0.7",
     "stripe": "^22.0.1"
   }

@@ -97,35 +97,6 @@ test.describe('Performance Tests', () => {
     console.log(`Analytics API response time: ${responseTime}ms`);
   });
 
-  test('TC-PERF-006: WebSocket connection time < 500ms', async ({ adminPage }) => {
-    const startTime = Date.now();
-
-    // Create a promise that resolves when WebSocket connects
-    const wsConnect = adminPage.evaluate(() => {
-      return new Promise<number>((resolve) => {
-        const socket = (window as any).io('http://localhost:4000/analytics');
-
-        socket.on('connect', () => {
-          resolve(Date.now());
-          socket.disconnect();
-        });
-
-        // Timeout after 2 seconds
-        setTimeout(() => {
-          socket.disconnect();
-          resolve(Date.now());
-        }, 2000);
-      });
-    });
-
-    const connectTime = await wsConnect;
-    const totalTime = connectTime - startTime;
-
-    // Should connect in less than 500ms
-    expect(totalTime).toBeLessThan(500);
-
-    console.log(`WebSocket connection time: ${totalTime}ms`);
-  });
 
   test('TC-PERF-007: Dashboard first paint < 1 second', async ({ adminPage }) => {
     // Navigate to dashboard

@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './store';
-import { apiGet, getApiBase } from './api';
+import { apiGet } from './api';
+import { subscribeToChannel } from './supabase-realtime';
 
 interface NotificationEvent {
   id: string;
@@ -12,7 +12,7 @@ interface NotificationEvent {
   message: string;
   status: 'UNREAD' | 'READ' | 'ARCHIVED';
   createdAt: string;
-  metadata?: any;
+  metadata?: unknown;
 }
 
 interface UseNotificationSocketProps {
@@ -23,24 +23,11 @@ interface UseNotificationSocketProps {
 }
 
 /**
- * The notifications gateway is a Socket.IO namespace on the API server
- * (apps/api/src/events/notifications.gateway.ts). Rooms are keyed by the
- * DB user id, so we resolve it once via /users/me before subscribing.
- */
-function getSocketOrigin(): string {
-  try {
-    return new URL(
-      getApiBase(),
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000',
-    ).origin;
-  } catch {
-    return 'http://localhost:4000';
-  }
-}
-
-/**
- * Hook for real-time notification updates via Socket.IO.
- * Automatically connects/disconnects based on authentication status.
+ * Hook for real-time notification updates via Supabase Realtime broadcast on
+ * the per-user `user:{id}` channel — replaces the Socket.IO connection to
+ * the API's `/notifications` namespace (removed along with the persistent
+ * server that hosted it; see apps/api/src/events/notifications.gateway.ts).
+ * Automatically (un)subscribes based on authentication status.
  */
 export function useNotificationSocket({
   onNewNotification,
@@ -49,37 +36,34 @@ export function useNotificationSocket({
   onNotificationArchived,
 }: UseNotificationSocketProps) {
   const token = useAuthStore((s) => s.token);
-  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Keep latest callbacks in a ref so socket listeners never go stale
-  // without needing to reconnect on every render.
+  // Keep latest callbacks in a ref so listeners never go stale without
+  // needing to reconnect on every render.
   const callbacksRef = useRef({
     onNewNotification,
     onNotificationRead,
     onAllNotificationsRead,
     onNotificationArchived,
   });
-  callbacksRef.current = {
-    onNewNotification,
-    onNotificationRead,
-    onAllNotificationsRead,
-    onNotificationArchived,
-  };
+  useEffect(() => {
+    callbacksRef.current = {
+      onNewNotification,
+      onNotificationRead,
+      onAllNotificationsRead,
+      onNotificationArchived,
+    };
+  });
 
   const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
     setIsConnected(false);
   }, []);
 
   useEffect(() => {
-    if (!token) {
-      disconnect();
-      return;
-    }
+    if (!token) return;
 
     let cancelled = false;
 
@@ -94,63 +78,35 @@ export function useNotificationSocket({
       }
       if (cancelled || !userId) return;
 
-      const socket = io(`${getSocketOrigin()}/notifications`, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 10000,
-        reconnectionAttempts: 5,
+      unsubscribeRef.current = subscribeToChannel(`user:${userId}`, {
+        new_notification: (data: NotificationEvent) => callbacksRef.current.onNewNotification?.(data),
+        notification_read: (data: { notificationId: string }) =>
+          callbacksRef.current.onNotificationRead?.(data.notificationId),
+        all_notifications_read: () => callbacksRef.current.onAllNotificationsRead?.(),
+        notification_archived: (data: { notificationId: string }) =>
+          callbacksRef.current.onNotificationArchived?.(data.notificationId),
       });
-
-      socket.on('connect', () => {
-        setIsConnected(true);
-        socket.emit('subscribe_notifications', { userId });
-      });
-
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
-
-      socket.on('subscribed', (data: { userId: string }) => {
-        console.log('[NotificationSocket] Subscribed for user:', data.userId);
-      });
-
-      socket.on('new_notification', (data: NotificationEvent) => {
-        callbacksRef.current.onNewNotification?.(data);
-      });
-
-      socket.on('notification_read', (data: { notificationId: string }) => {
-        callbacksRef.current.onNotificationRead?.(data.notificationId);
-      });
-
-      socket.on('all_notifications_read', () => {
-        callbacksRef.current.onAllNotificationsRead?.();
-      });
-
-      socket.on('notification_archived', (data: { notificationId: string }) => {
-        callbacksRef.current.onNotificationArchived?.(data.notificationId);
-      });
-
-      socket.on('error', (data: { message?: string }) => {
-        console.error('[NotificationSocket] Server error:', data?.message);
-      });
-
-      socketRef.current = socket;
+      setIsConnected(true);
     };
 
     void connect();
 
+    // Cleanup — runs on unmount and whenever `token` changes (including to
+    // falsy), so this also covers the "logged out" disconnect case.
     return () => {
       cancelled = true;
-      disconnect();
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
+      setIsConnected(false);
     };
-  }, [token, disconnect]);
+  }, [token]);
 
   return {
     isConnected,
     disconnect,
     reconnect: () => {
-      socketRef.current?.connect();
+      // Re-run the effect: the caller can re-toggle auth state, or a fresh
+      // mount re-subscribes automatically. Kept for API compatibility.
     },
   };
 }

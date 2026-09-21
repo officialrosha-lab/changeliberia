@@ -1,6 +1,4 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import { BULL_EMAIL_QUEUE } from '../email.constants';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ResendProvider } from '../providers/resend.provider';
 import { EmailTemplateService } from './email-template.service';
@@ -18,7 +16,6 @@ export interface QueuedEmailResult {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private emailQueue: Queue | undefined;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -26,32 +23,7 @@ export class EmailService {
     private readonly templateService: EmailTemplateService,
     private readonly trackingService: EmailTrackingService,
     private readonly preferenceService: EmailPreferenceService,
-  ) {
-    // Initialize queue synchronously
-    this.initializeQueue();
-  }
-
-  private initializeQueue(): void {
-    try {
-      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-      // Parse Redis URL to extract connection details
-      const url = new URL(redisUrl);
-      
-      this.emailQueue = new Queue(BULL_EMAIL_QUEUE, {
-        connection: {
-          host: url.hostname || 'localhost',
-          port: parseInt(url.port || '6379', 10),
-          password: url.password || undefined,
-          db: url.pathname ? parseInt(url.pathname.split('/')[1] || '0', 10) : 0,
-        },
-      });
-      this.logger.log('Email queue initialized successfully');
-    } catch (error) {
-      this.logger.warn(
-        `Failed to initialize email queue: ${error instanceof Error ? error.message : String(error)}. Emails will be sent directly via Resend.`,
-      );
-    }
-  }
+  ) {}
 
   /**
    * Guard against per-address email flooding.
@@ -158,39 +130,11 @@ export class EmailService {
       },
     });
 
-    // Queue the job if queue is available
-    let jobId: string | number | undefined = 'direct-send';
-    if (this.emailQueue) {
-      const job = await this.emailQueue.add('send-email', {
-        emailLogId: emailLog.id,
-        recipient,
-        subject,
-        html,
-        text,
-        emailType,
-        isTransactional: true,
-      });
-
-      jobId = job.id!;
-      this.logger.log(
-        `Transactional email queued: ${emailLog.id} (Job: ${jobId})`,
-      );
-    } else {
-      // Send directly if queue is not available
-      this.logger.log(`Transactional email sent directly: ${emailLog.id}`);
-      await this.resendProvider.send({
-        to: recipient,
-        from: process.env.MAIL_FROM || 'noreply@changeliberia.org',
-        replyTo: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
-        subject,
-        html,
-        text,
-      });
-    }
+    await this.sendViaResend(emailLog.id, recipient, subject, html, text);
 
     return {
       emailLogId: emailLog.id,
-      jobId,
+      jobId: 'direct-send',
       queuedAt: new Date(),
     };
   }
@@ -262,27 +206,25 @@ export class EmailService {
       },
     });
 
-    // Queue the job if queue is available
-    let jobId: string | number | undefined = 'direct-send';
-    if (this.emailQueue) {
-      const job = await this.emailQueue.add('send-email', {
-        emailLogId: emailLog.id,
-        recipient,
-        subject,
-        html,
-        text,
-        emailType,
-        userId,
-      });
+    await this.sendViaResend(emailLog.id, recipient, subject, html, text);
 
-      jobId = job.id!;
-      this.logger.log(
-        `Notification email queued: ${emailLog.id} (Job: ${jobId})`,
-      );
-    } else {
-      // Send directly if queue is not available
-      this.logger.log(`Notification email sent directly: ${emailLog.id}`);
-      await this.resendProvider.send({
+    return {
+      emailLogId: emailLog.id,
+      jobId: 'direct-send',
+      queuedAt: new Date(),
+    };
+  }
+
+  /** Sends via Resend and records the outcome on the EmailLog row. */
+  private async sendViaResend(
+    emailLogId: string,
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ): Promise<void> {
+    try {
+      const result = await this.resendProvider.send({
         to: recipient,
         from: process.env.MAIL_FROM || 'noreply@changeliberia.org',
         replyTo: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
@@ -290,13 +232,19 @@ export class EmailService {
         html,
         text,
       });
+      await this.prisma.emailLog.update({
+        where: { id: emailLogId },
+        data: { status: 'SENT', sentAt: new Date(), resendMessageId: result.id },
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to send email ${emailLogId}: ${errorMessage}`);
+      await this.prisma.emailLog.update({
+        where: { id: emailLogId },
+        data: { status: 'FAILED', failureReason: errorMessage },
+      });
+      throw error;
     }
-
-    return {
-      emailLogId: emailLog.id,
-      jobId: jobId ?? 'direct-send',
-      queuedAt: new Date(),
-    };
   }
 
   /**

@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
- * Petitions Scheduler
- * Handles daily maintenance tasks for petitions
+ * Petitions Scheduler — daily maintenance tasks for petitions.
+ * Invoked daily at midnight UTC by Vercel Cron via CronController — see apps/api/src/cron.
  */
 @Injectable()
 export class PetitionsScheduler {
@@ -13,11 +12,9 @@ export class PetitionsScheduler {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Reset daily signatures counter at midnight UTC
-   * This allows the trending algorithm to properly identify
-   * petitions gaining momentum today vs. all-time signatures
+   * Reset daily signatures counter — lets the trending algorithm identify
+   * petitions gaining momentum today vs. all-time signatures.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async resetDailySignatures() {
     try {
       const result = await this.prisma.petition.updateMany({

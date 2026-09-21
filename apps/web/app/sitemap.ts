@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia-web.vercel.app';
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api-production-8873.up.railway.app/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 type PetitionEntry = { id: string; updatedAt: string };
 type PollEntry = { slug: string };

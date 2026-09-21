@@ -8,6 +8,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [PrismaModule],
   providers: [MessagesService, MessagesScheduler],
   controllers: [MessagesController],
-  exports: [MessagesService],
+  exports: [MessagesService, MessagesScheduler],
 })
 export class MessagesModule {}
