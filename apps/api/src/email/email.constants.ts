@@ -2,27 +2,6 @@
  * Email module constants and configuration
  */
 
-// BullMQ Queue name
-export const BULL_EMAIL_QUEUE = 'email-queue';
-
-// Email queue job types
-export enum EmailJobType {
-  SEND_EMAIL = 'send-email',
-  TRACK_OPEN = 'track-open',
-  TRACK_CLICK = 'track-click',
-  RETRY_FAILED = 'retry-failed',
-  PROCESS_DIGEST = 'process-digest',
-}
-
-// Retry configuration
-export const RETRY_CONFIG = {
-  maxAttempts: 3,
-  backoff: {
-    type: 'exponential',
-    delay: 1000, // 1s initial delay
-  },
-};
-
 // Default email configuration
 export const DEFAULT_EMAIL_CONFIG = {
   FROM_EMAIL: process.env.MAIL_FROM || 'noreply@changeliberia.org',
@@ -59,10 +38,10 @@ export const DEFAULT_EMAIL_PREFERENCES = {
   preferredSendTime: '09:00', // 9 AM
 };
 
-// Resend API configuration
-export const RESEND_CONFIG = {
-  apiKey: process.env.RESEND_API_KEY,
-  baseUrl: 'https://api.resend.com',
+// MailerSend API configuration
+export const MAILERSEND_CONFIG = {
+  apiKey: process.env.MAILERSEND_API_KEY,
+  baseUrl: 'https://api.mailersend.com/v1',
 };
 
 // Tracking configuration
