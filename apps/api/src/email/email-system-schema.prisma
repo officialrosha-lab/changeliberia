@@ -1,5 +1,5 @@
 // ============================================================================
-// Email System (Resend + React Email + BullMQ) - Schema Additions
+// Email System (MailerSend + React Email) - Schema Additions
 // ============================================================================
 
 enum EmailType {
