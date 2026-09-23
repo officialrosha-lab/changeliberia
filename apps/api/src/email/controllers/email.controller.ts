@@ -15,7 +15,7 @@ import { Response } from 'express';
 import { EmailService } from '../services/email.service';
 import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
-import { ResendProvider } from '../providers/resend.provider';
+import { MailerSendProvider } from '../providers/mailersend.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
@@ -29,7 +29,7 @@ export class EmailController {
     private readonly emailService: EmailService,
     private readonly preferenceService: EmailPreferenceService,
     private readonly trackingService: EmailTrackingService,
-    private readonly resendProvider: ResendProvider,
+    private readonly mailerSendProvider: MailerSendProvider,
   ) {}
 
   /**
@@ -224,7 +224,7 @@ export class AdminEmailController {
 
   constructor(
     private readonly trackingService: EmailTrackingService,
-    private readonly resendProvider: ResendProvider,
+    private readonly mailerSendProvider: MailerSendProvider,
   ) {}
 
   /**
@@ -265,7 +265,7 @@ export class AdminEmailController {
   }
 
   /**
-   * Admin: Verify Resend domain
+   * Admin: Verify MailerSend domain
    * POST /api/v1/admin/email/verify-domain
    */
   @Post('verify-domain')
@@ -273,7 +273,7 @@ export class AdminEmailController {
   @Permission(PermissionResource.EMAIL, PermissionAction.UPDATE)
   async verifyDomain(@Body('domain') domain: string): Promise<any> {
     try {
-      const status = await this.resendProvider.verifyDomain(domain);
+      const status = await this.mailerSendProvider.verifyDomain(domain);
       return status;
     } catch (error) {
       return {
@@ -284,7 +284,7 @@ export class AdminEmailController {
   }
 
   /**
-   * Admin: Get Resend health status
+   * Admin: Get MailerSend health status
    * GET /api/v1/admin/email/health
    */
   @Get('health')
@@ -292,7 +292,7 @@ export class AdminEmailController {
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async healthCheck(): Promise<any> {
     try {
-      const health = await this.resendProvider.healthCheck();
+      const health = await this.mailerSendProvider.healthCheck();
       return {
         healthy: true,
         ...(typeof health === 'object' && health !== null ? health : {}),

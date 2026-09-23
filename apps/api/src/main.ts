@@ -323,7 +323,7 @@ async function bootstrap() {
   
   // Webhook routes need raw buffer for signature verification — register before JSON parser.
   app.use('/api/v1/payments/webhook', rawBodyMiddleware());
-  app.use('/api/v1/webhooks/resend', rawBodyMiddleware());
+  app.use('/api/v1/webhooks/mailersend', rawBodyMiddleware());
 
   // JSON body parser with generous limit to accommodate base64 poll option images (up to 6 × ~150 KB).
   app.use(express.json({ limit: '10mb' }));

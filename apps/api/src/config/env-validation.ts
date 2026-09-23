@@ -48,18 +48,9 @@ export function validateEnvOrThrow(): void {
 export function validateEmailEnvOrThrow(): void {
   if (process.env.NODE_ENV !== 'production') return;
 
-  const resendApiKey = process.env.RESEND_API_KEY ?? '';
-  if (!resendApiKey.trim()) {
-    throw new Error('Production requires RESEND_API_KEY to be set.');
-  }
-
-  if (!resendApiKey.startsWith('re_')) {
-    throw new Error('Production requires RESEND_API_KEY in format re_*');
-  }
-
-  const redisUrl = process.env.REDIS_URL ?? '';
-  if (!redisUrl.trim()) {
-    throw new Error('Production requires REDIS_URL to be set.');
+  const mailerSendApiKey = process.env.MAILERSEND_API_KEY ?? '';
+  if (!mailerSendApiKey.trim()) {
+    throw new Error('Production requires MAILERSEND_API_KEY to be set.');
   }
 
   const mailFrom = process.env.MAIL_FROM ?? '';

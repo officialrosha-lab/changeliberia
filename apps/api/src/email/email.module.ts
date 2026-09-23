@@ -6,10 +6,9 @@ import { EmailTrackingService } from './services/email-tracking.service';
 import { EmailPreferenceService } from './services/email-preference.service';
 import { EmailEventService } from './services/email-event.service';
 import { EmailScheduleService } from './services/email-schedule.service';
-import { ResendProvider } from './providers/resend.provider';
-import { EmailProcessor } from './processors/email.processor';
+import { MailerSendProvider } from './providers/mailersend.provider';
 import { EmailController, AdminEmailController } from './controllers/email.controller';
-import { ResendWebhookController } from './webhooks/resend-webhook.controller';
+import { MailerSendWebhookController } from './webhooks/mailersend-webhook.controller';
 
 @Module({
   imports: [
@@ -22,10 +21,9 @@ import { ResendWebhookController } from './webhooks/resend-webhook.controller';
     EmailPreferenceService,
     EmailEventService,
     EmailScheduleService,
-    ResendProvider,
-    EmailProcessor,
+    MailerSendProvider,
   ],
-  controllers: [EmailController, AdminEmailController, ResendWebhookController],
+  controllers: [EmailController, AdminEmailController, MailerSendWebhookController],
   exports: [
     EmailService,
     EmailTemplateService,
@@ -33,7 +31,7 @@ import { ResendWebhookController } from './webhooks/resend-webhook.controller';
     EmailPreferenceService,
     EmailEventService,
     EmailScheduleService,
-    ResendProvider,
+    MailerSendProvider,
   ],
 })
 export class EmailModule {}
