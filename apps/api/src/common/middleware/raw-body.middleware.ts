@@ -43,6 +43,16 @@ export function rawBodyMiddleware() {
 
       req.on('end', () => {
         req.rawBody = rawBody;
+        try {
+          req.body = rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {};
+        } catch {
+          req.body = {};
+        }
+        // Tells express.json() (body-parser) to skip re-reading this
+        // request's stream, which has already been fully drained above —
+        // without this, body-parser throws "stream is not readable" since
+        // a request stream can only be consumed once.
+        (req as any)._body = true;
         next();
       });
     } else {
