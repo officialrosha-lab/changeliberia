@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 type MemberStatus = { id: string; role: string; joinedAt: string } | null;
 
 export function JoinMovement() {
   const token = useAuthStore((s) => s.token);
+  const toast = useToast();
   const [count, setCount] = useState<number | null>(null);
   const [status, setStatus] = useState<MemberStatus>(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +40,9 @@ export function JoinMovement() {
       );
       setStatus(m);
       setCount((c) => (c ?? 0) + 1);
+      toast.show('Welcome — you\'ve joined the movement.', 'success');
+    } catch {
+      toast.show('Could not join right now. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -50,6 +55,9 @@ export function JoinMovement() {
       await apiDelete('/membership/leave', token);
       setStatus(null);
       setCount((c) => Math.max((c ?? 1) - 1, 0));
+      toast.show('You\'ve left the movement.', 'info');
+    } catch {
+      toast.show('Could not leave right now. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
