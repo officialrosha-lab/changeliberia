@@ -132,8 +132,12 @@ export class EmailController {
         message: 'You have been unsubscribed from all emails',
       });
     } catch (error) {
-      this.logger.error(`Error unsubscribing: ${error}`);
-      res.status(500).json({ error: 'Unsubscribe failed' });
+      // A bad/stale/tampered userId or token reaches here as a Prisma
+      // lookup failure (e.g. a foreign-key violation on preference
+      // auto-creation for a nonexistent user) — that's an invalid link,
+      // not a server error, so it's a 404 rather than a 500.
+      this.logger.warn(`Invalid unsubscribe link for user ${userId}: ${error}`);
+      res.status(404).json({ error: 'Invalid or expired unsubscribe link' });
     }
   }
 
