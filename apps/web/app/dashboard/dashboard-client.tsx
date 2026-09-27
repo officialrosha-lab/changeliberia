@@ -431,7 +431,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
       </div>
 
       {allVerified ? (
-        <div className="mt-6 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3">
           <span className="flex items-center gap-2 text-sm font-medium text-emerald-800">
             <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -491,8 +491,8 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                     key={key}
                     className={`rounded-2xl border p-4 transition-colors ${isDone ? 'border-emerald-200 bg-emerald-50' : 'border-zinc-200'}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-start gap-2 min-w-0">
                         {isDone && (
                           <span className="mt-0.5 flex-shrink-0 text-emerald-600">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -500,13 +500,13 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                             </svg>
                           </span>
                         )}
-                        <div>
+                        <div className="min-w-0">
                           <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-zinc-900'}`}>{label}</p>
                           <p className="mt-1 text-sm text-zinc-600">{desc}</p>
                         </div>
                       </div>
                       {isDone ? (
-                        <span className="flex-shrink-0 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                        <span className="self-start flex-shrink-0 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
                           {doneLabel}
                         </span>
                       ) : (
@@ -514,7 +514,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                           type="button"
                           disabled={isLoading || !!verifying}
                           onClick={handleClick}
-                          className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`self-start flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                             filled
                               ? 'bg-zinc-900 text-white hover:bg-zinc-700'
                               : 'border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:bg-zinc-50'
@@ -597,8 +597,8 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
         ) : null}
 
         <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <h2 className="text-lg font-bold text-zinc-900">My petitions</h2>
               <p className="mt-1 text-sm text-zinc-500">
                 Create, manage, and share your campaigns. Track every signature and milestone.
@@ -606,7 +606,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
             </div>
             <Link
               href="/create"
-              className="flex-shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+              className="self-start flex-shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
             >
               + Start a petition
             </Link>
