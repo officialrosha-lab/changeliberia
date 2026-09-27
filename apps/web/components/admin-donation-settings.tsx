@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '../lib/toast-context';
 
 interface DonationCampaign {
   id: string;
@@ -44,6 +45,7 @@ export function AdminDonationSettings({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
+  const toast = useToast();
 
   const [formData, setFormData] = useState<Partial<DonationCampaign>>({
     title: '',
@@ -64,7 +66,7 @@ export function AdminDonationSettings({
 
   const handleCreateCampaign = async () => {
     if (!formData.title?.trim()) {
-      alert('Please fill in all required fields');
+      toast.show('Please fill in all required fields', 'error');
       return;
     }
 

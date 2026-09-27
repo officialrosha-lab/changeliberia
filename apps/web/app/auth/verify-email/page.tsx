@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiPost } from '../../../lib/api';
+import { useToast } from '../../../lib/toast-context';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('Verifying your email...');
@@ -114,7 +116,7 @@ export default function VerifyEmailPage() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(email);
-                        alert('Email copied to clipboard');
+                        toast.show('Email copied to clipboard', 'success');
                       }}
                       className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
                     >

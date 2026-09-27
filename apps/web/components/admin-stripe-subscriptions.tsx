@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, X } from 'lucide-react';
 import { apiGet, apiPatch } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -51,6 +52,7 @@ interface Subscription {
 
 export function AdminStripeSubscriptions() {
   const token = useAuthStore((s) => s.token);
+  const toast = useToast();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export function AdminStripeSubscriptions() {
       );
       await fetchSubscriptions();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error cancelling subscription');
+      toast.show(err instanceof Error ? err.message : 'Error cancelling subscription', 'error');
     } finally {
       setCancelling(null);
     }

@@ -115,9 +115,9 @@ export function AdminFacebookPixel() {
     try {
       await apiPost('/admin/facebook/pixel/test-event', {}, token);
       await fetchEvents();
-      alert('Test event sent successfully');
+      showToast('Test event sent successfully', 'success');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error sending test event');
+      showToast(err instanceof Error ? err.message : 'Error sending test event', 'error');
     } finally {
       setSendingTest(false);
     }
