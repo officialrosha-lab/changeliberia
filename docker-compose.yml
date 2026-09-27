@@ -53,8 +53,9 @@ services:
       STRIPE_API_KEY: ${STRIPE_API_KEY:-sk_test_}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_test_}
       
-      # Email (MailerSend + React Email)
-      MAILERSEND_API_KEY: ${MAILERSEND_API_KEY:-mlsn_test_}
+      # Email (Plunk + React Email)
+      PLUNK_API_KEY: ${PLUNK_API_KEY:-sk_test_}
+      PLUNK_WEBHOOK_SECRET: ${PLUNK_WEBHOOK_SECRET:-}
       MAIL_FROM: ${MAIL_FROM:-no-reply@changeliberia.org}
       MAIL_REPLY_TO: ${MAIL_REPLY_TO:-support@changeliberia.org}
       TRACKING_DOMAIN: ${TRACKING_DOMAIN:-track.changeliberia.org}

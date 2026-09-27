@@ -495,6 +495,6 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'POST', path: '/admin/email/verify-domain', controller: 'AdminEmailController', category: 'admin-read' },
   { method: 'GET', path: '/admin/email/health', controller: 'AdminEmailController', category: 'admin-read' },
 
-  // email/webhooks/mailersend-webhook.controller.ts
-  { method: 'POST', path: '/webhooks/mailersend', controller: 'MailerSendWebhookController', category: 'webhook' },
+  // email/webhooks/plunk-webhook.controller.ts
+  { method: 'POST', path: '/webhooks/plunk', controller: 'PlunkWebhookController', category: 'webhook' },
 ];

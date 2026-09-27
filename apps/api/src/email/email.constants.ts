@@ -38,10 +38,10 @@ export const DEFAULT_EMAIL_PREFERENCES = {
   preferredSendTime: '09:00', // 9 AM
 };
 
-// MailerSend API configuration
-export const MAILERSEND_CONFIG = {
-  apiKey: process.env.MAILERSEND_API_KEY,
-  baseUrl: 'https://api.mailersend.com/v1',
+// Plunk API configuration
+export const PLUNK_CONFIG = {
+  apiKey: process.env.PLUNK_API_KEY,
+  baseUrl: 'https://api.useplunk.com/v1',
 };
 
 // Tracking configuration
