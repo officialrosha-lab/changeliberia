@@ -10,7 +10,9 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
+import { IsString, IsOptional } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -22,6 +24,12 @@ import { FileUploadService } from './file-upload.service';
 import { VersionHistoryService } from './version-history.service';
 import { ContentSchedulingService } from './content-scheduling.service';
 import { CMSAnalyticsService } from './cms-analytics.service';
+
+class TrackBlockDto {
+  @IsString() pageId!: string;
+  @IsString() blockType!: string;
+  @IsOptional() @IsString() variantId?: string;
+}
 
 @Controller('cms')
 export class CMSController {
@@ -198,7 +206,7 @@ export class CMSController {
   async getPublicPage(@Param('slug') slug: string) {
     const page = await this.cmsService.getPageBySlug(slug);
     if (!page || !page.published) {
-      throw new Error('Page not found');
+      throw new NotFoundException('Page not found');
     }
 
     await this.cmsService.incrementViewCount(page.id);
@@ -457,7 +465,7 @@ export class CMSController {
   @Post('blocks/:blockId/track-view')
   async trackBlockView(
     @Param('blockId') blockId: string,
-    @Body() data: { pageId: string; blockType: string; variantId?: string },
+    @Body() data: TrackBlockDto,
   ) {
     return this.analyticsService.trackBlockView(
       data.pageId,
@@ -473,7 +481,7 @@ export class CMSController {
   @Post('blocks/:blockId/track-click')
   async trackBlockClick(
     @Param('blockId') blockId: string,
-    @Body() data: { pageId: string; blockType: string; variantId?: string },
+    @Body() data: TrackBlockDto,
   ) {
     return this.analyticsService.trackBlockClick(
       data.pageId,
