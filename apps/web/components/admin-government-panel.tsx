@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { Card } from './ui/card';
 
 type SubmissionStatus = 'SUBMITTED' | 'ACKNOWLEDGED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'EMAIL_FAILED' | 'NOT_SUBMITTED';
 
@@ -123,7 +124,7 @@ export function AdminGovernmentPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      <Card rounded="3xl" className="p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Government submission monitoring</h2>
@@ -149,9 +150,9 @@ export function AdminGovernmentPanel() {
             </div>
           </div>
         ) : null}
-      </section>
+      </Card>
 
-      <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      <Card rounded="3xl" className="p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Lookup petition status</h2>
@@ -218,7 +219,7 @@ export function AdminGovernmentPanel() {
             </div>
 
             {statusResponse.submissions?.length ? (
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+              <Card rounded="3xl" className="bg-zinc-50 dark:border-neutral-700! dark:bg-neutral-800! p-4">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50">Submission history</h3>
                 <div className="mt-4 space-y-3">
                   {statusResponse.submissions.map((submission) => (
@@ -241,7 +242,7 @@ export function AdminGovernmentPanel() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             ) : null}
           </div>
         ) : null}
@@ -252,7 +253,7 @@ export function AdminGovernmentPanel() {
         {error ? (
           <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{error}</div>
         ) : null}
-      </section>
+      </Card>
     </div>
   );
 }

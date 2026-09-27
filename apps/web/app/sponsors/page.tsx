@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getApiBase } from '../../lib/api';
 import { SiteFooter } from '../../components/site-footer';
+import { Card } from '../../components/ui/card';
 
 type Sponsor = {
   id: string;
@@ -122,7 +123,7 @@ export default async function SponsorsPage() {
 
 function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
   const inner = (
-    <div className="flex h-32 flex-col items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900">
+    <Card rounded="2xl" className="flex h-32 flex-col items-center justify-center gap-3 dark:border-neutral-700! p-4 transition-shadow hover:shadow-md">
       <Image
         src={sponsor.logoUrl}
         alt={sponsor.name}
@@ -134,7 +135,7 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
       <p className="text-center text-xs font-medium text-zinc-600 dark:text-neutral-400">
         {sponsor.name}
       </p>
-    </div>
+    </Card>
   );
 
   if (sponsor.websiteUrl) {

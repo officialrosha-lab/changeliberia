@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { Card } from './ui/card';
 
 type Sponsor = {
   id: string;
@@ -119,7 +120,7 @@ export function AdminSponsors() {
   return (
     <div className="space-y-6">
       {/* Add form */}
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+      <Card rounded="xl" className="bg-zinc-50 dark:bg-neutral-800! p-4">
         <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-neutral-50">Add sponsor / partner</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
@@ -173,7 +174,7 @@ export function AdminSponsors() {
         >
           {saving ? 'Adding…' : 'Add'}
         </button>
-      </div>
+      </Card>
 
       {error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">{error}</p>

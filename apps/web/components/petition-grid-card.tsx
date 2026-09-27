@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { TrendingUp } from 'lucide-react';
+import { Card } from './ui/card';
 
 type Petition = {
   id: string;
@@ -30,7 +31,10 @@ export function PetitionGridCard({ petition }: PetitionGridCardProps) {
 
   return (
     <Link href={`/petitions/${petition.id}`}>
-      <div className="group flex flex-col rounded-xl overflow-hidden border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-zinc-300 dark:hover:border-neutral-600 hover:shadow-md transition-all duration-200 h-full">
+      <Card
+        rounded="xl"
+        className="group flex flex-col overflow-hidden hover:border-zinc-300 dark:hover:border-neutral-600 hover:shadow-md transition-all duration-200 h-full"
+      >
         {/* Image */}
         <div className="relative h-40 bg-gradient-to-br from-emerald-400 to-emerald-600 overflow-hidden">
           {petition.imageUrl ? (
@@ -114,7 +118,7 @@ export function PetitionGridCard({ petition }: PetitionGridCardProps) {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </Link>
   );
 }

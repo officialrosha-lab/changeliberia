@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { Card } from '../ui/card';
 
 interface User {
   id: string;
@@ -126,7 +127,7 @@ export function AdminUserManager() {
       )}
 
       {/* Users Table */}
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+      <Card rounded="2xl" className="overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-neutral-800/50 border-b border-zinc-200 dark:border-neutral-700">
             <tr>
@@ -190,7 +191,7 @@ export function AdminUserManager() {
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {/* Role Management Panel */}
       {selectedUserId && (

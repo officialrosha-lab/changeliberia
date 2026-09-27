@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { Card } from '../ui/card';
 
 interface CMSPage {
   id: string;
@@ -104,7 +105,7 @@ export function CMSPageManager() {
     <div className="space-y-6">
       {/* Create Form */}
       {showCreateForm && (
-        <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-zinc-50 dark:bg-neutral-800/60 p-4 space-y-3">
+        <Card rounded="2xl" className="bg-zinc-50 dark:bg-neutral-800/60! p-4 space-y-3">
           <p className="font-semibold text-sm text-zinc-900 dark:text-neutral-50">Create New Page</p>
           <input
             type="text"
@@ -142,7 +143,7 @@ export function CMSPageManager() {
               Cancel
             </button>
           </div>
-        </div>
+        </Card>
       )}
 
       {!showCreateForm && (
@@ -182,7 +183,7 @@ export function CMSPageManager() {
       </div>
 
       {/* Pages Table */}
-      <div className="overflow-x-auto rounded-2xl bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-700 shadow-sm">
+      <Card rounded="2xl" className="overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 dark:bg-neutral-800/50 border-b border-zinc-200 dark:border-neutral-700">
             <tr>
@@ -238,7 +239,7 @@ export function CMSPageManager() {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {filtered.length === 0 && (
         <div className="text-center py-8 text-zinc-600">No pages found</div>

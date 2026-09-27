@@ -6,6 +6,7 @@ import { apiPost } from '../../../lib/api';
 import { usePollSocket } from '../../../lib/use-poll-socket';
 import { useAuthStore } from '../../../lib/store';
 import { PollGeographicBreakdown } from '../../../components/poll-geographic-breakdown';
+import { Card } from '../../../components/ui/card';
 
 type PollOption = {
   id: string;
@@ -81,7 +82,7 @@ function VoteAuthModal({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
+      <Card rounded="3xl" className="relative w-full max-w-sm dark:border-neutral-700! p-8 shadow-2xl">
         {/* Close */}
         <button
           type="button"
@@ -123,7 +124,7 @@ function VoteAuthModal({ onClose }: { onClose: () => void }) {
         <p className="mt-4 text-center text-xs text-zinc-400 dark:text-zinc-600">
           You&apos;ll be returned to this poll after signing in.
         </p>
-      </div>
+      </Card>
     </div>
   );
 }
