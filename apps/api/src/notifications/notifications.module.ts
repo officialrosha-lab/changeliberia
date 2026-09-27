@@ -3,9 +3,12 @@ import { NotificationsService } from './notifications.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { EventsModule } from '../events/events.module';
 
-// HTTP routes live in NotificationModule (notification.controller.ts); the
-// legacy NotificationsController double-prefixed its path ('api/v1/...' on
-// top of the global prefix) and is intentionally not registered.
+// HTTP routes live in NotificationModule (notification.controller.ts) —
+// this module only provides NotificationsService, used by other modules
+// as an event listener (e.g. @OnEvent('SIGNATURE_ADDED')) to create
+// notification records. It previously also held a NotificationsController
+// with a double-prefixed, unreachable, and functionally redundant set of
+// routes; that dead file has been removed.
 @Module({
   imports: [PrismaModule, EventsModule],
   providers: [NotificationsService],
