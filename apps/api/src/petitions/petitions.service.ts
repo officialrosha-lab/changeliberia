@@ -150,7 +150,10 @@ export class PetitionsService {
   }
 
   getById(id: string) {
-    return this.prisma.petition.findUnique({ where: { id } });
+    return this.prisma.petition.findUnique({
+      where: { id },
+      include: { creator: { select: { id: true, fullName: true } } },
+    });
   }
 
   /**
