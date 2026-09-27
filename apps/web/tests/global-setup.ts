@@ -24,13 +24,15 @@ async function globalSetup(config: FullConfig) {
   // Verify services are running
   console.log('🔍 Verifying services...');
   try {
-    const browser = await chromium.launch();
-    const context = await browser.createContext();
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
+    const browser = await chromium.launch(executablePath ? { executablePath } : undefined);
+    const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Try to connect to frontend
+    // Try to connect to the frontend under test.
+    const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
     try {
-      await page.goto('http://localhost:3000', { timeout: 10000 });
+      await page.goto(baseURL, { timeout: 10000 });
       console.log('✅ Frontend service running');
     } catch {
       console.warn('⚠️  Frontend service may not be ready - will wait for it');
