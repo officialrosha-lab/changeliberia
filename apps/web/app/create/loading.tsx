@@ -1,4 +1,5 @@
 import { SkeletonLoader } from '../../components/skeleton-loader';
+import { Card } from '../../components/ui/card';
 
 export default function CreatePetitionLoading() {
   return (
@@ -6,9 +7,9 @@ export default function CreatePetitionLoading() {
       <div className="mb-6 h-8 w-56 animate-pulse rounded-lg bg-zinc-200 dark:bg-neutral-800" />
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card key={i} rounded="2xl" className="bg-zinc-50 p-5">
             <SkeletonLoader variant="form-field" count={2} />
-          </div>
+          </Card>
         ))}
       </div>
     </main>

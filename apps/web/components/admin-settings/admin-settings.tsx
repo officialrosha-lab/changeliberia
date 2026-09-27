@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { Card } from '../ui/card';
 
 interface ModeratorScope {
   moderatorId: string;
@@ -187,9 +188,10 @@ export function AdminSettings() {
           </p>
 
           {scopes.map((scope) => (
-            <div
+            <Card
               key={scope.moderatorId}
-              className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-3"
+              rounded="2xl"
+              className="p-4 space-y-3"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -243,7 +245,7 @@ export function AdminSettings() {
                   </p>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -251,7 +253,7 @@ export function AdminSettings() {
       {/* Permission Templates Tab */}
       {activeTab === 'templates' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-zinc-50 dark:bg-neutral-800/60 p-4 space-y-3">
+          <Card rounded="2xl" className="bg-zinc-50 dark:bg-neutral-800/60! p-4 space-y-3">
             <p className="font-semibold text-zinc-900 dark:text-neutral-50 text-sm">Create New Template</p>
             <input
               type="text"
@@ -286,11 +288,11 @@ export function AdminSettings() {
             >
               Create Template
             </button>
-          </div>
+          </Card>
 
           <div className="space-y-2">
             {templates.map((template) => (
-              <div key={template.id} className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4">
+              <Card key={template.id} rounded="2xl" className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="font-semibold text-zinc-900 dark:text-neutral-50 text-sm">{template.name}</p>
@@ -316,7 +318,7 @@ export function AdminSettings() {
                     </span>
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -325,7 +327,7 @@ export function AdminSettings() {
       {/* System Settings Tab */}
       {activeTab === 'settings' && settings && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-zinc-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-4">
+          <Card rounded="2xl" className="p-4 space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-neutral-300">
                 Petition Approval Threshold (signatures required)
@@ -499,7 +501,7 @@ export function AdminSettings() {
             >
               Save Settings
             </button>
-          </div>
+          </Card>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiPatch, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { Card } from './ui/card';
 
 type FraudRule = {
   id: string;
@@ -64,7 +65,7 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+    <Card rounded="2xl" className="p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Fraud analytics and tuning</h2>
         <button
@@ -129,6 +130,6 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

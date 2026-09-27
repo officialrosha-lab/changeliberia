@@ -4,6 +4,7 @@ import { CMSBlock } from '../lib/cms';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { apiPost } from '../lib/api';
+import { Card } from './ui/card';
 
 interface CMSBlockRendererProps {
   block: CMSBlock;
@@ -220,7 +221,7 @@ function GridBlock({ title, items, columns = 2, blockId, pageId }: GridBlockProp
         )}
         <div className={`mt-12 grid gap-8 ${gridClass}`}>
           {items.map((item, idx) => (
-            <div key={idx} className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+            <Card key={idx} className="p-6">
               {item.icon && <p className="text-4xl">{item.icon}</p>}
               <h3 className={`${item.icon ? 'mt-4' : ''} text-xl font-semibold text-zinc-900 dark:text-white`}>
                 {item.title}
@@ -236,7 +237,7 @@ function GridBlock({ title, items, columns = 2, blockId, pageId }: GridBlockProp
                   ))}
                 </ul>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       </div>

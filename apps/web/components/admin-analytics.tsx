@@ -6,6 +6,7 @@ import { apiGet } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { useAnalyticsMultiple } from '../lib/hooks/useAnalyticsRealtime';
 import { AnalyticsNotificationBadge, AnalyticsLiveUpdateFeed } from './analytics-realtime';
+import { Card } from './ui/card';
 
 type Period = 'day' | 'week' | 'month';
 
@@ -256,42 +257,42 @@ export function GlobalAnalytics() {
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Total Messages</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {messageAnalytics.metrics.totalMessages.toLocaleString()}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Avg Per Day</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {messageAnalytics.metrics.avgMessagesPerDay}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Last {period === 'day' ? '24h' : period === 'week' ? '7d' : '30d'}</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {(period === 'day' ? messageAnalytics.metrics.messagesLastDay : period === 'week' ? messageAnalytics.metrics.messagesLastWeek : messageAnalytics.metrics.messagesLastMonth).toLocaleString()}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Total Threads</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {messageAnalytics.threadMetrics.totalThreads}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Avg Thread Depth</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {messageAnalytics.threadMetrics.avgThreadDepth}
               </p>
-            </div>
+            </Card>
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Volume by Date */}
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Message Volume</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={messageAnalytics.volumeByDate}>
@@ -303,10 +304,10 @@ export function GlobalAnalytics() {
                   <Line type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
 
             {/* By Category */}
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Messages by Category</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -325,12 +326,12 @@ export function GlobalAnalytics() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
           </div>
 
           {/* Top Senders and Receivers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Top Senders</h3>
               <div className="space-y-3">
                 {messageAnalytics.topSenders.map((sender) => (
@@ -342,9 +343,9 @@ export function GlobalAnalytics() {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Top Receivers</h3>
               <div className="space-y-3">
                 {messageAnalytics.topReceivers.map((receiver) => (
@@ -356,11 +357,11 @@ export function GlobalAnalytics() {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Thread Metrics */}
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Thread Metrics</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -388,7 +389,7 @@ export function GlobalAnalytics() {
                 </p>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -397,42 +398,42 @@ export function GlobalAnalytics() {
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Total Broadcasts</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {broadcastAnalytics.metrics.totalBroadcasts}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Total Recipients</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {broadcastAnalytics.metrics.totalRecipients.toLocaleString()}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Avg Recipients</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {broadcastAnalytics.metrics.avgRecipientsPerBroadcast.toLocaleString()}
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Delivery Rate</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {broadcastAnalytics.deliveryMetrics.deliveryRate}%
               </p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card className="p-4">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Successful Sends</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">
                 {broadcastAnalytics.deliveryMetrics.successfulDeliveries}
               </p>
-            </div>
+            </Card>
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Volume by Date */}
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Broadcast Volume</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={broadcastAnalytics.volumeByDate}>
@@ -444,10 +445,10 @@ export function GlobalAnalytics() {
                   <Bar dataKey="count" fill="#10b981" name="Broadcasts" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
 
             {/* By Category */}
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Broadcasts by Category</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -466,11 +467,11 @@ export function GlobalAnalytics() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
           </div>
 
           {/* Delivery Metrics */}
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Delivery Performance</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -498,10 +499,10 @@ export function GlobalAnalytics() {
                 </p>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Recent Broadcasts */}
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-neutral-50 mb-4">Recent Broadcasts</h3>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {broadcastAnalytics.recentBroadcasts.map((broadcast) => (
@@ -523,7 +524,7 @@ export function GlobalAnalytics() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

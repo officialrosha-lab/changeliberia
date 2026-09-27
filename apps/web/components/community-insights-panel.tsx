@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiGetBlob } from '../lib/api';
 import { HeatZoneMap } from './heat-zone-map';
+import { Card } from './ui/card';
 
 interface InsightRow {
   label: string;
@@ -97,7 +98,7 @@ export function CommunityInsightsPanel({ petitionId }: { petitionId: string }) {
   if (!hasAnyData) return null;
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+    <Card rounded="3xl" className="p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">Community Insights</h2>
@@ -146,6 +147,6 @@ export function CommunityInsightsPanel({ petitionId }: { petitionId: string }) {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

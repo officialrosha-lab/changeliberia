@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiPatch, getApiBase } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { Card } from './ui/card';
 
 type PendingDoc = {
   id: string;
@@ -61,15 +62,15 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
 
   if (docs.length === 0) {
     return (
-      <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <Card rounded="2xl" className="p-5">
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">ID document reviews</h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-400">No pending uploads.</p>
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+    <Card rounded="2xl" className="p-5">
       <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">ID document reviews</h2>
       <ul className="mt-3 space-y-3 text-sm">
         {docs.map((d) => (
@@ -105,6 +106,6 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

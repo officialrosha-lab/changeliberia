@@ -6,6 +6,7 @@ import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
+import { Card } from '../../components/ui/card';
 
 const DRAFT_KEY = 'change_liberia_petition_draft';
 
@@ -530,9 +531,10 @@ export function CreatePetitionForm() {
 
           <form ref={formRef} onSubmit={submit} noValidate className="space-y-6">
             {/* STEP 1 — Issue details */}
-            <section
+            <Card
+              rounded="2xl"
               ref={(el) => { sectionRefs.current[0] = el; }}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+              className="bg-zinc-50 p-5"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 1</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Issue details</h2>
@@ -579,12 +581,13 @@ export function CreatePetitionForm() {
                   ))}
                 </div>
               </div>
-            </section>
+            </Card>
 
             {/* STEP 2 — Categories & location */}
-            <section
+            <Card
+              rounded="2xl"
               ref={(el) => { sectionRefs.current[1] = el; }}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+              className="bg-zinc-50 p-5"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 2</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Categories &amp; location</h2>
@@ -710,12 +713,13 @@ export function CreatePetitionForm() {
                   placeholder="e.g. We wrote to the County Superintendent in January 2025 and received no response. We raised it at the community meeting on 12 March."
                   className={`${inputCls} resize-none`} />
               </div>
-            </section>
+            </Card>
 
             {/* STEP 3 — Story */}
-            <section
+            <Card
+              rounded="2xl"
               ref={(el) => { sectionRefs.current[2] = el; }}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+              className="bg-zinc-50 p-5"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 3</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Why does it matter?</h2>
@@ -731,12 +735,13 @@ export function CreatePetitionForm() {
                   className={`${inputCls} resize-none`} />
                 {fieldErrors.description && <p id="description-error" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{fieldErrors.description}</p>}
               </div>
-            </section>
+            </Card>
 
             {/* STEP 4 — Campaign media */}
-            <section
+            <Card
+              rounded="2xl"
               ref={(el) => { sectionRefs.current[3] = el; }}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+              className="bg-zinc-50 p-5"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 4</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Campaign media</h2>
@@ -784,12 +789,13 @@ export function CreatePetitionForm() {
                     placeholder="1000" className={inputCls} />
                 </div>
               </div>
-            </section>
+            </Card>
 
             {/* STEP 5 — Identity & privacy */}
-            <section
+            <Card
+              rounded="2xl"
               ref={(el) => { sectionRefs.current[4] = el; }}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+              className="bg-zinc-50 p-5"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 5</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Identity &amp; privacy</h2>
@@ -823,7 +829,7 @@ export function CreatePetitionForm() {
               <p className="mt-3 text-xs text-zinc-400 dark:text-neutral-500">
                 🔒 All user data is stored securely. We comply with applicable data protection laws and never share identity data with third parties without a lawful order.
               </p>
-            </section>
+            </Card>
 
             {/* Submit */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-2 dark:border-neutral-800">
