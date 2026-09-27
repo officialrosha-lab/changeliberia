@@ -4,14 +4,12 @@ import {
   Controller,
   Delete,
   Get,
-  MessageEvent,
   NotFoundException,
   Param,
   Patch,
   Post,
   Req,
   Res,
-  Sse,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -25,8 +23,6 @@ import type { MemoryUploadedFile } from '../verification/uploaded-file.types';
 import { PetitionMediaStorageService } from './petition-media-storage.service';
 import { UserRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
-import { Observable, fromEvent, filter, map } from 'rxjs';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -38,7 +34,6 @@ import {
   UpdatePetitionDto,
 } from './dto';
 import { PetitionsService } from './petitions.service';
-import { SignatureAddedEvent } from '../events/domain-events';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { ImpactAreaReportService } from './impact-area-report.service';
 
@@ -46,7 +41,6 @@ import { ImpactAreaReportService } from './impact-area-report.service';
 export class PetitionsController {
   constructor(
     private readonly service: PetitionsService,
-    private readonly eventEmitter: EventEmitter2,
     private readonly mediaStorage: PetitionMediaStorageService,
     private readonly activityLogger: ActivityLoggerService,
     private readonly impactAreaReport: ImpactAreaReportService,
@@ -80,14 +74,6 @@ export class PetitionsController {
   @Get(':id/comments')
   listComments(@Param('id') id: string) {
     return this.service.listComments(id);
-  }
-
-  @Sse(':id/live')
-  liveSignatureCount(@Param('id') id: string): Observable<MessageEvent> {
-    return fromEvent<SignatureAddedEvent>(this.eventEmitter, 'SIGNATURE_ADDED').pipe(
-      filter((event) => event.petitionId === id),
-      map(() => ({ data: JSON.stringify({ petitionId: id }) })),
-    );
   }
 
   @Get('media/:filename')

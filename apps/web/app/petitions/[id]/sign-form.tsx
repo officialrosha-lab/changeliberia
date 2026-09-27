@@ -3,7 +3,8 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import { FormEvent, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
+import { io } from 'socket.io-client';
+import { apiGet, apiPost, apiDelete } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { useToast } from '../../../lib/toast-context';
 import { ShareModal } from '../../../components/share-modal';
@@ -170,12 +171,31 @@ export function SignForm({
       .catch(() => {});
   }, [petitionId, token]);
 
-  // Live signature counter via SSE
+  // Live signature counter — the same Socket.IO channel live-petition-stats.tsx
+  // uses, rather than a separate SSE connection that only sent a bare "something
+  // changed" ping and left the client blindly incrementing (drifting out of
+  // sync on reconnects or concurrent signers) instead of using the real count.
   useEffect(() => {
-    const es = new EventSource(`${getApiBase()}/petitions/${petitionId}/live`);
-    es.onmessage = () => { setCount((prev) => prev + 1); };
-    es.onerror = () => { es.close(); };
-    return () => { es.close(); };
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+    const wsBase = apiBase.replace(/\/api\/v1\/?$/, '');
+    const socket = io(`${wsBase}/petitions`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+
+    socket.on('connect', () => {
+      socket.emit('subscribe_petition', { petitionId });
+    });
+
+    socket.on('signature_update', (data: { petitionId: string; signaturesCount: number }) => {
+      if (data.petitionId !== petitionId) return;
+      setCount(data.signaturesCount);
+    });
+
+    return () => { socket.disconnect(); };
   }, [petitionId]);
 
   const progress = Math.min(100, Math.round((count / goal) * 100));
