@@ -297,9 +297,10 @@ describe('Full route inventory smoke test (e2e)', () => {
       const route = ROUTE_INVENTORY.find((r) => r.path === '/feedback')!;
       const res = await safeFetch('POST', '/feedback', {
         body: {
+          name: 'Smoke Test',
           message: 'Automated smoke test — please ignore. Verifying the feedback pipeline is wired end-to-end.',
           email: TEST_EMAIL,
-          category: 'other',
+          source: 'route-inventory-smoke-test',
         },
       });
       const ok = res.status !== 'ERROR' && (res.status as number) < 300;
