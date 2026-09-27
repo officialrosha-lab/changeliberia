@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { apiDelete, apiPatch } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 type Petition = {
   id: string;
@@ -30,6 +31,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Record<string, string | null>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const toast = useToast();
 
   const handleCategoryChange = (id: string, category: string | null) => {
     setSelectedCategory((prev) => ({ ...prev, [id]: category }));
@@ -62,7 +64,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to delete petition');
+      toast.show(error instanceof Error ? error.message : 'Failed to delete petition', 'error');
     } finally {
       setDeletingId(null);
     }
