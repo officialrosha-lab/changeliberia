@@ -1,9 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { apiGet, apiGetBlob } from '../lib/api';
-import { HeatZoneMap } from './heat-zone-map';
 import { Card } from './ui/card';
+
+// Leaflet touches `window` at module-evaluation time (not just when
+// rendered), which crashes Next's SSR pass for this page intermittently —
+// ssr: false keeps the module out of the server bundle entirely.
+const HeatZoneMap = dynamic(() => import('./heat-zone-map').then((m) => m.HeatZoneMap), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-2xl bg-zinc-100 dark:bg-neutral-800" />,
+});
 
 interface InsightRow {
   label: string;
