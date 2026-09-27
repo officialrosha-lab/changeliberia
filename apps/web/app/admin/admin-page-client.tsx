@@ -31,6 +31,7 @@ import { AdminSocialMediaDashboard } from '../../components/admin-social-media-d
 import { AdminActivityLog } from '../../components/admin-activity-log';
 import { AdminPollCreationPanel } from '../../components/admin-poll-creation-panel';
 import { ErrorBoundary } from '../../components/error-boundary';
+import { Card } from '../../components/ui/card';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -227,7 +228,7 @@ export function AdminPageClient() {
             <AdminPendingPetitionsPanel initial={pending} />
             <AdminDeletePetitionPanel />
             <AdminIdDocsPanel initialDocs={pendingIds} />
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card rounded="2xl" className="p-5">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Fraud events</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {flags.map((f) => (
@@ -236,10 +237,10 @@ export function AdminPageClient() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </Card>
           </div>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <Card rounded="3xl" className="p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Government submission summary</h2>
@@ -254,7 +255,7 @@ export function AdminPageClient() {
               </button>
             </div>
             <AdminGovernmentPanel />
-          </section>
+          </Card>
 
           <AdminPollCreationPanel />
 
@@ -263,7 +264,7 @@ export function AdminPageClient() {
               initialRules={rules}
               latestSnapshots={analytics.latestSnapshots}
             />
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card rounded="2xl" className="p-5">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Top triggered rules</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {analytics.topRules.map((rule) => (
@@ -272,7 +273,7 @@ export function AdminPageClient() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </Card>
           </div>
         </div>
       )}
@@ -297,107 +298,107 @@ export function AdminPageClient() {
 
       {/* Users Tab */}
       {activeTab === 'users' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminUserManager />
-        </div>
+        </Card>
       )}
 
       {/* Analytics Tab */}
       {activeTab === 'analytics' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <GlobalAnalytics />
-        </div>
+        </Card>
       )}
 
       {/* Government Tab */}
       {activeTab === 'government' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminGovernmentPanel />
-        </div>
+        </Card>
       )}
 
       {/* Officials Tab */}
       {activeTab === 'officials' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminOfficialsVerificationPanel />
-        </div>
+        </Card>
       )}
 
       {/* Geography Tab */}
       {activeTab === 'geography' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminGeographicInsights />
-        </div>
+        </Card>
       )}
 
       {/* Endorsements Tab */}
       {activeTab === 'endorsements' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminEndorsementsPanel />
-        </div>
+        </Card>
       )}
 
       {/* Ambassadors Tab */}
       {activeTab === 'ambassadors' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           {token && (
             <Link href="/admin/ambassadors" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400">
               Go to Ambassadors Management →
             </Link>
           )}
-        </div>
+        </Card>
       )}
 
       {/* CMS Tab */}
       {activeTab === 'cms' && (
         <div className="space-y-6">
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Block-Based Page Editor</h2>
             <CMSPageBlockEditor />
-          </section>
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          </Card>
+          <Card className="p-6">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Page Management (Legacy)</h2>
             <CMSPageManager />
-          </section>
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          </Card>
+          <Card className="p-6">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Template Management</h2>
             <CMSTemplateManager />
-          </section>
+          </Card>
         </div>
       )}
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminSettings />
-        </div>
+        </Card>
       )}
 
       {/* Payments Tab - Stripe */}
       {activeTab === 'payments' && (
         <ErrorBoundary name="Payments">
           <div className="space-y-6">
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Payment Dashboard</h2>
               <AdminStripeDashboard />
-            </section>
+            </Card>
 
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <AdminStripePayments />
-            </section>
+            </Card>
 
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <AdminStripeSubscriptions />
-            </section>
+            </Card>
 
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <AdminStripeRefunds />
-            </section>
+            </Card>
 
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card className="p-6">
               <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Revenue Analytics</h2>
               <AdminStripeAnalytics />
-            </section>
+            </Card>
           </div>
         </ErrorBoundary>
       )}
@@ -405,49 +406,49 @@ export function AdminPageClient() {
       {/* Email Tab */}
       {activeTab === 'email' && (
         <ErrorBoundary name="Email">
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <AdminEmailSettings />
-          </div>
+          </Card>
         </ErrorBoundary>
       )}
 
       {/* Social Media Tab - Facebook & WhatsApp */}
       {activeTab === 'social-media' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminSocialMediaDashboard />
-        </div>
+        </Card>
       )}
 
       {/* Activity Log Tab */}
       {activeTab === 'activity-log' && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <Card className="p-6">
           <AdminActivityLog />
-        </div>
+        </Card>
       )}
 
       {/* Integrations Tab - Facebook */}
       {activeTab === 'integrations' && (
         <div className="space-y-6">
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-neutral-50">Facebook Integration Dashboard</h2>
             <AdminFacebookDashboard />
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <AdminFacebookPixel />
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <AdminFacebookReach />
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <AdminFacebookSocialFeatures />
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <AdminFacebookEngagement />
-          </section>
+          </Card>
         </div>
       )}
     </main>
