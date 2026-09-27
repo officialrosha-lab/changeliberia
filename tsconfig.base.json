@@ -9,8 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@verified/types": ["packages/types/src"],
-      "@verified/ui": ["packages/ui/src"]
+      "@verified/types": ["packages/types/src"]
     }
   }
 }
