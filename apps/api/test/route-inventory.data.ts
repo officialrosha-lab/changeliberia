@@ -481,7 +481,6 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'PATCH', path: '/petitions/:id/approve', controller: 'PetitionsController', category: 'admin-read', paramFallback: 'fake' },
   { method: 'PATCH', path: '/petitions/:id/reject', controller: 'PetitionsController', category: 'admin-read', paramFallback: 'fake' },
   { method: 'GET', path: '/petitions/:id/status-log', controller: 'PetitionsController', category: 'public-read', note: 'id from petitions list' },
-  { method: 'GET', path: '/petitions/:id/live', controller: 'PetitionsController', category: 'public-read', note: 'SSE endpoint — assert connection opens (2xx + text/event-stream), then close; do not wait for stream to end', paramFallback: 'skip' },
 
   // email/controllers/email.controller.ts
   { method: 'GET', path: '/email/track/open/:emailLogId/:pixelId', controller: 'EmailController', category: 'public-write-safe', paramFallback: 'fake' },
