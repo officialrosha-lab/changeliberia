@@ -312,8 +312,9 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'DELETE', path: '/messages/:id', controller: 'MessagesController', category: 'guard-only-write', paramFallback: 'fake' },
   { method: 'GET', path: '/messages/search/query', controller: 'MessagesController', category: 'auth-read' },
 
-  // notifications/notifications.controller.ts — KNOWN BUG: double-prefixed
-  { method: 'GET', path: '/api/v1/notifications', controller: 'NotificationsController', category: 'auth-read', note: 'BUG: @Controller declares its own api/v1 prefix on top of the global one — actual path is /api/v1/api/v1/notifications. Verify the bug (this path 404s) and that NotificationController below covers the intended path.' },
+  // notifications/notifications.controller.ts — the double-prefixed,
+  // unregistered, and functionally redundant NotificationsController has
+  // been deleted; NotificationController below covers the real routes.
 
   // notifications/notification.controller.ts
   { method: 'GET', path: '/notifications', controller: 'NotificationController', category: 'auth-read' },
