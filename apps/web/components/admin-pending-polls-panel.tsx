@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiPost, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 type PollSummary = {
   id: string;
@@ -23,6 +24,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const toast = useToast();
 
   async function approvePoll(id: string) {
     if (!token) return;
@@ -32,7 +34,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to approve poll');
+      toast.show(error instanceof Error ? error.message : 'Failed to approve poll', 'error');
     } finally {
       setApprovingId(null);
     }
@@ -46,7 +48,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to reject poll');
+      toast.show(error instanceof Error ? error.message : 'Failed to reject poll', 'error');
     } finally {
       setRejectingId(null);
     }
@@ -64,7 +66,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to delete poll');
+      toast.show(error instanceof Error ? error.message : 'Failed to delete poll', 'error');
     } finally {
       setDeletingId(null);
     }
