@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Plus } from 'lucide-react';
 import { apiGet, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -52,6 +53,7 @@ interface Refund {
 
 export function AdminStripeRefunds() {
   const token = useAuthStore((s) => s.token);
+  const toast = useToast();
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,11 +84,11 @@ export function AdminStripeRefunds() {
 
   const handleCreateRefund = async () => {
     if (!formData.paymentId || !formData.amount || !formData.reason) {
-      alert('Please fill all fields');
+      toast.show('Please fill all fields', 'error');
       return;
     }
     if (!token) {
-      alert('Not authenticated');
+      toast.show('Not authenticated', 'error');
       return;
     }
 
@@ -105,7 +107,7 @@ export function AdminStripeRefunds() {
       setFormData({ paymentId: '', amount: '', reason: '' });
       setShowForm(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error creating refund');
+      toast.show(err instanceof Error ? err.message : 'Error creating refund', 'error');
     } finally {
       setCreating(false);
     }

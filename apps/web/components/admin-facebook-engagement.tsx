@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Flame } from 'lucide-react';
 import { apiGet } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 // UI Components (inline)
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`rounded-lg border border-zinc-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
@@ -55,6 +56,7 @@ export function AdminFacebookEngagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeDetails | null>(null);
+  const toast = useToast();
 
   const fetchChallenges = useCallback(async () => {
     if (!token) return;
@@ -75,7 +77,7 @@ export function AdminFacebookEngagement() {
         const result = await apiGet<ChallengeDetails>(`/admin/facebook/challenges/${challengeId}`, token);
         setSelectedChallenge(result);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Error loading challenge details');
+        toast.show(err instanceof Error ? err.message : 'Error loading challenge details', 'error');
       }
     },
     [token],
