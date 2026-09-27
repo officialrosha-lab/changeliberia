@@ -9,6 +9,7 @@ import { LivePetitionStats } from '../../../components/live-petition-stats';
 import { PetitionTimeline } from '../../../components/petition-timeline';
 import { JoinMovement } from '../../../components/join-movement';
 import { PetitionDonationSection } from '../../../components/petition-donation-section';
+import { Card } from '../../../components/ui/card';
 import { CommentForm } from './comment-form';
 import { SignForm } from './sign-form';
 import { PetitionClientPage } from './petition-client-page';
@@ -192,7 +193,7 @@ export default async function PetitionPage({
           <div className="space-y-5">
 
             {/* Title card */}
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   🟢 Active campaign
@@ -263,7 +264,7 @@ export default async function PetitionPage({
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* Image (if no hero strip) */}
             {!petition.imageUrl && (
@@ -279,7 +280,7 @@ export default async function PetitionPage({
             )}
 
             {/* Story */}
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">
                 The issue
               </h2>
@@ -311,7 +312,7 @@ export default async function PetitionPage({
                     : (petition.creator?.fullName || 'A verified Liberian citizen')}
                 </span>
               </p>
-            </div>
+            </Card>
 
             <PetitionGovernmentPanel
               petitionId={petition.id}
@@ -320,20 +321,20 @@ export default async function PetitionPage({
               petitionType={petition.petitionType}
             />
 
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <PetitionMilestones
                 petitionId={petition.id}
                 currentSignatures={petition.signaturesCount}
                 goal={petition.goal}
               />
-            </div>
+            </Card>
 
             <CommunityInsightsPanel petitionId={petition.id} />
 
             <PetitionEndorsements petitionId={petition.id} />
 
             {/* Updates */}
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">
                 Updates
                 {updates.length > 0 && (
@@ -375,7 +376,7 @@ export default async function PetitionPage({
                   ))}
                 </ul>
               )}
-            </div>
+            </Card>
 
             {/* Comments */}
             <CommentForm petitionId={petition.id} initialComments={comments} />
