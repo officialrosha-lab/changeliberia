@@ -174,7 +174,7 @@ export function AdminPageClient() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-neutral-50">Admin Panel</h1>
         <Link href="/dashboard" className="text-emerald-600 hover:underline text-sm font-medium dark:text-emerald-400">
           Back to Dashboard
@@ -182,40 +182,42 @@ export function AdminPageClient() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-zinc-200 overflow-x-auto dark:border-neutral-800">
-        {(
-          [
-            ['dashboard', 'Dashboard'],
-            ['directory', 'Directory'],
-            ['polls', 'Pending Polls'],
-            ['users', 'Users'],
-            ['analytics', 'Analytics'],
-            ['government', 'Government'],
-            ['officials', 'Officials'],
-            ['geography', 'Geography'],
-            ['endorsements', 'Endorsements'],
-            ['payments', 'Payments'],
-            ['integrations', 'Integrations'],
-            ['ambassadors', 'Ambassadors'],
-            ['social-media', 'Social Media'],
-            ['activity-log', 'Activity Log'],
-            ['cms', 'CMS'],
-            ['settings', 'Settings'],
-            ['email', 'Email'],
-          ] as const
-        ).map(([tab, label]) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === tab
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-neutral-400 dark:hover:text-neutral-50'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="-mx-4 mb-6 overflow-x-auto border-b border-zinc-200 px-4 dark:border-neutral-800">
+        <div className="flex gap-1 sm:gap-2">
+          {(
+            [
+              ['dashboard', 'Dashboard'],
+              ['directory', 'Directory'],
+              ['polls', 'Pending Polls'],
+              ['users', 'Users'],
+              ['analytics', 'Analytics'],
+              ['government', 'Government'],
+              ['officials', 'Officials'],
+              ['geography', 'Geography'],
+              ['endorsements', 'Endorsements'],
+              ['payments', 'Payments'],
+              ['integrations', 'Integrations'],
+              ['ambassadors', 'Ambassadors'],
+              ['social-media', 'Social Media'],
+              ['activity-log', 'Activity Log'],
+              ['cms', 'CMS'],
+              ['settings', 'Settings'],
+              ['email', 'Email'],
+            ] as const
+          ).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-2.5 sm:px-4 sm:py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-600'
+                  : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-neutral-400 dark:hover:text-neutral-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Dashboard Tab */}
