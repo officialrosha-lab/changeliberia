@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmailLoginForm } from './email-login-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
+import { Card } from '../../../components/ui/card';
 import { useAuthStore } from '../../../lib/store';
 
 export default function LoginPage() {
@@ -19,11 +20,11 @@ export default function LoginPage() {
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[460px_minmax(0,1fr)]">
           {/* Form card */}
-          <section className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-10">
+          <Card rounded="3xl" className="p-8 shadow-sm md:p-10">
             <Suspense fallback={<main className="mx-auto max-w-6xl px-4 py-10 text-zinc-500">Loading…</main>}>
               <LoginPageClient />
             </Suspense>
-          </section>
+          </Card>
 
           {/* Right panel — why sign in */}
           <aside className="relative overflow-hidden rounded-3xl bg-emerald-600 md:p-10 p-8">

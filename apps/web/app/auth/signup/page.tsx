@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmailSignupForm } from './email-signup-form';
 import { GoogleAuthButton } from '../../../components/google-auth-button';
+import { Card } from '../../../components/ui/card';
 import { useAuthStore } from '../../../lib/store';
 
 export default function SignupPage() {
@@ -18,7 +19,7 @@ export default function SignupPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 md:py-14">
       <div className="grid gap-8 lg:grid-cols-[460px_minmax(0,1fr)]">
-        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+        <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
             Create your account
           </p>
@@ -48,7 +49,7 @@ export default function SignupPage() {
               Log in
             </Link>
           </p>
-        </section>
+        </Card>
 
         <aside className="relative overflow-hidden rounded-3xl bg-emerald-600 p-6 md:p-8">
           {/* Background illustration */}

@@ -7,6 +7,7 @@ import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { useToast } from '../../../lib/toast-context';
 import { ShareModal } from '../../../components/share-modal';
+import { Card } from '../../../components/ui/card';
 
 const turnstileSiteKey =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
@@ -321,9 +322,10 @@ export function SignForm({
 
   return (
     <>
-      <div
+      <Card
         id="sign"
-        className="sticky top-20 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
+        rounded="3xl"
+        className="sticky top-20 dark:border-neutral-700! dark:bg-neutral-800! p-5 shadow-sm"
       >
         <p className="text-sm font-medium text-zinc-500 dark:text-neutral-400">Verified signatures</p>
         <p className="mt-1 text-4xl font-bold text-zinc-900 dark:text-neutral-50">{count.toLocaleString()}</p>
@@ -504,11 +506,11 @@ export function SignForm({
             </p>
           </>
         )}
-      </div>
+      </Card>
 
       {/* Inline share panel — below the Verified Signatures card */}
       {petitionUrl && (
-        <div className="mt-4 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+        <Card rounded="3xl" className="mt-4 dark:border-neutral-700! dark:bg-neutral-800! p-5 shadow-sm">
           <h3 className="text-sm font-bold text-zinc-900 dark:text-neutral-50">Share this petition</h3>
 
           {/* Row 1: QR code + short link */}
@@ -632,7 +634,7 @@ export function SignForm({
               <span className="text-[10px] font-medium text-zinc-600 dark:text-neutral-400">Email</span>
             </a>
           </div>
-        </div>
+        </Card>
       )}
 
       {!hasSigned && (

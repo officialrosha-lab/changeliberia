@@ -7,6 +7,7 @@ import { CommunityInsightsPanel } from '../../../components/community-insights-p
 import { PetitionEndorsements } from '../../../components/petition-endorsements';
 import { PetitionMilestones } from '../../../components/petition-milestones';
 import { LivePetitionStats } from '../../../components/live-petition-stats';
+import { Card } from '../../../components/ui/card';
 import { CommentForm } from './comment-form';
 import { SignForm } from './sign-form';
 
@@ -91,7 +92,7 @@ export function PetitionClientPage({ id }: { id: string }) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-neutral-950">
         <div className="mx-auto max-w-md px-4 py-16 text-center">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <Card rounded="3xl" className="p-8 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">Not found</p>
             <h1 className="mt-3 text-2xl font-bold text-zinc-900 dark:text-neutral-50">Petition unavailable</h1>
             <p className="mt-3 text-sm text-zinc-500 dark:text-neutral-400">
@@ -103,7 +104,7 @@ export function PetitionClientPage({ id }: { id: string }) {
             >
               Browse petitions
             </a>
-          </div>
+          </Card>
         </div>
       </main>
     );
@@ -134,7 +135,7 @@ export function PetitionClientPage({ id }: { id: string }) {
         <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8 lg:gap-10">
 
           <div className="space-y-5">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   🟢 Active campaign
@@ -171,9 +172,9 @@ export function PetitionClientPage({ id }: { id: string }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">The issue</h2>
               <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
                 Support this campaign to move the issue from public frustration to visible action.
@@ -181,7 +182,7 @@ export function PetitionClientPage({ id }: { id: string }) {
               <div className="mt-4 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300 sm:text-base">
                 {petition.description.split('\n').map(renderDescriptionLine)}
               </div>
-            </div>
+            </Card>
 
             <PetitionGovernmentPanel
               petitionId={petition.id}
@@ -196,15 +197,15 @@ export function PetitionClientPage({ id }: { id: string }) {
 
             <PetitionEndorsements petitionId={petition.id} />
 
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <PetitionMilestones
                 petitionId={petition.id}
                 currentSignatures={petition.signaturesCount}
                 goal={petition.goal}
               />
-            </div>
+            </Card>
 
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">Updates</h2>
               {updates.length === 0 ? (
                 <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 p-6 text-center dark:border-neutral-700">
@@ -223,7 +224,7 @@ export function PetitionClientPage({ id }: { id: string }) {
                   ))}
                 </ul>
               )}
-            </div>
+            </Card>
 
             <CommentForm petitionId={petition.id} initialComments={comments} />
           </div>

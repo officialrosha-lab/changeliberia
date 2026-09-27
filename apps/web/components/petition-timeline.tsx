@@ -1,5 +1,7 @@
 'use client';
 
+import { Card } from './ui/card';
+
 type StatusLog = {
   id: string;
   status: string;
@@ -49,7 +51,7 @@ export function PetitionTimeline({ logs }: { logs: StatusLog[] }) {
   if (!logs.length) return null;
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <Card rounded="3xl" className="p-6 shadow-sm">
       <h2 className="text-lg font-bold text-zinc-900 dark:text-neutral-50">Petition Timeline</h2>
       <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
         Every stage of this petition, tracked publicly.
@@ -100,6 +102,6 @@ export function PetitionTimeline({ logs }: { logs: StatusLog[] }) {
           );
         })}
       </ol>
-    </div>
+    </Card>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '../lib/api';
 import { useToast } from '../lib/toast-context';
 import { useAuthStore } from '../lib/store';
+import { Card } from './ui/card';
 
 interface FacebookHealth {
   status: 'healthy' | 'degraded' | 'error';
@@ -342,7 +343,7 @@ export function AdminSocialMediaDashboard() {
       {/* Configuration Tab */}
       {activeTab === 'configuration' && (
         <div className="space-y-6">
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <Card className="p-6">
             <div className="flex items-center justify-between gap-4 mb-6">
               <div>
                 <h3 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Social Media Configuration</h3>
@@ -464,7 +465,7 @@ export function AdminSocialMediaDashboard() {
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 

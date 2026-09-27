@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { Card } from '../ui/card';
 
 interface User {
   id: string;
@@ -88,7 +89,7 @@ export function ProfileSettings() {
 
       {/* Profile Card */}
       {user && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
+        <Card rounded="2xl" className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{user.fullName}</h2>
@@ -131,7 +132,7 @@ export function ProfileSettings() {
 
           {/* Edit Form */}
           {editing && (
-            <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-700 dark:bg-neutral-800">
+            <Card rounded="xl" className="mt-5 bg-zinc-50 dark:bg-neutral-800! p-5">
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-zinc-500 dark:text-neutral-400">
                 Edit Profile
               </h3>
@@ -172,14 +173,14 @@ export function ProfileSettings() {
                   Cancel
                 </button>
               </div>
-            </div>
+            </Card>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Verification Status */}
       {verification && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
+        <Card rounded="2xl" className="p-6">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-zinc-500 dark:text-neutral-400">
             Verification Status
           </h3>
@@ -213,11 +214,11 @@ export function ProfileSettings() {
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Account Settings */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
+      <Card rounded="2xl" className="p-6">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-zinc-500 dark:text-neutral-400">
           Account Settings
         </h3>
@@ -240,7 +241,7 @@ export function ProfileSettings() {
             </a>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Danger Zone */}
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950/30">

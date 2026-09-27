@@ -1,4 +1,5 @@
 import { SkeletonLoader } from '../../../components/skeleton-loader';
+import { Card } from '../../../components/ui/card';
 
 export default function PetitionDetailLoading() {
   return (
@@ -7,15 +8,17 @@ export default function PetitionDetailLoading() {
       <div className="mx-auto max-w-6xl px-4 py-6 md:py-10">
         <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8 lg:gap-10">
           <div className="space-y-5">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            <Card rounded="3xl" className="p-6">
               <SkeletonLoader variant="text-block" />
-            </div>
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+            </Card>
+            <Card rounded="3xl" className="p-6">
               <SkeletonLoader variant="text-block" count={2} />
-            </div>
+            </Card>
           </div>
           <div className="space-y-4">
-            <SkeletonLoader variant="form-field" count={2} className="rounded-3xl border border-zinc-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900" />
+            <Card rounded="3xl" className="p-5">
+              <SkeletonLoader variant="form-field" count={2} />
+            </Card>
           </div>
         </div>
       </div>
