@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Route-inventory smoke test run output (regenerated each run)
 apps/api/test/route-inventory-results.json
+
+# Playwright run artifacts (screenshots/videos/traces, regenerated each run)
+test-results/
