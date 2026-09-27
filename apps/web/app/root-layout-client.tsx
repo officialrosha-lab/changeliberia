@@ -16,6 +16,9 @@ function BottomNavContent() {
 export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <LayoutProvider>
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       <div className="sticky top-0 z-50">
         <Suspense fallback={null}>
           <TrendingTicker />
@@ -24,7 +27,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
           <Header />
         </Suspense>
       </div>
-      <main className="pb-16 md:pb-0">{children}</main>
+      <main id="main-content" className="pb-16 md:pb-0">{children}</main>
       <Suspense fallback={<div />}>
         <BottomNavContent />
       </Suspense>

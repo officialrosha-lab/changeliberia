@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Tailwind v4 targets `prefers-color-scheme` by default for `dark:` utilities.
+   This app toggles dark mode manually (see lib/theme-context.tsx, which adds
+   a `.dark` class to <html>), so `dark:` needs to be repointed at that class
+   — without this, every `dark:` utility in the app is inert when a user
+   picks a theme that differs from their OS preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Color scheme support for dark mode */
 @supports (color: light-dark(white, black)) {
   html {
@@ -7,21 +14,22 @@
   }
 }
 
-/* Root variables for CSS custom properties */
+/* Root variables for CSS custom properties.
+   These are the page-level ink/paper pair used below for body background
+   and text — not brand/button colors (those are plain Tailwind emerald/zinc
+   utility classes throughout the app; see components/ui/button.tsx). */
 :root {
-  --primary-color: #000000; /* Black */
-  --accent-color: #22C55E; /* Emerald */
-  --neutral-color: #FFFFFF; /* White */
+  --foreground-color: #000000; /* Ink */
+  --background-color: #FFFFFF; /* Paper */
+  --accent-color: #22C55E; /* Emerald — links, selection, focus rings */
   --success-color: #22C55E;
   --warning-color: #F59E0B;
   --danger-color: #EF4444;
   --info-color: #3B82F6;
-  
-  /* Smooth color transitions for dark mode */
+
   color-scheme: light dark;
 }
 
-/* Dark mode classes */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
@@ -59,32 +67,41 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--neutral-color);
-  color: var(--primary-color);
+  background-color: var(--background-color);
+  color: var(--foreground-color);
   transition: background-color 0.3s ease, color 0.3s ease;
   line-height: 1.6;
 }
 
 html.dark body {
-  background-color: var(--primary-color);
-  color: var(--neutral-color);
+  background-color: var(--foreground-color);
+  color: var(--background-color);
 }
 
-/* Serif for headlines */
+/* Skip-to-content link — visually hidden until focused, first tab stop */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--accent-color);
+  color: #fff;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Serif for headlines — kept as an accent utility for the homepage hero */
 .headline-serif {
   font-family: 'Playfair Display', serif;
   font-weight: 700;
 }
 
-/* Asymmetry utilities */
-.offset-left {
-  margin-left: 20%;
-}
-
-.offset-right {
-  margin-right: 20%;
-}
-
 /* Generous spacing */
 .section-spacing {
   padding: 96px 0;
@@ -94,53 +111,6 @@ html.dark body {
   .section-spacing {
     padding: 56px 0;
   }
-  .offset-left, .offset-right {
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-
-/* Custom button styles - no borders, text-based */
-.btn-primary {
-  background: none;
-  border: none;
-  color: var(--accent-color);
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.3s ease;
-}
-
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--accent-color);
-  transition: width 0.3s ease;
-}
-
-.btn-primary:hover::after {
-  width: 100%;
-}
-
-/* Form styles - minimal */
-input, textarea {
-  border: none;
-  border-bottom: 2px solid var(--primary-color);
-  background: transparent;
-  font-size: 16px;
-  padding: 8px 0;
-  width: 100%;
-  transition: border-color 0.3s ease;
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-bottom-color: var(--accent-color);
 }
 
 a {
@@ -152,125 +122,12 @@ a {
 /* Selection styles */
 ::selection {
   background-color: var(--accent-color);
-  color: var(--neutral-color);
+  color: var(--background-color);
 }
 
 html.dark ::selection {
   background-color: var(--accent-color);
-  color: var(--primary-color);
-}
-
-/* Smooth focus outlines */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-}
-
-/* Custom scrollbar for webkit browsers */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgb(244, 244, 245);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgb(212, 212, 216);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgb(161, 161, 165);
-}
-
-html.dark ::-webkit-scrollbar-track {
-  background: rgb(39, 39, 42);
-}
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: rgb(82, 82, 91);
-}
-
-
-/* Generous spacing */
-.section-spacing {
-  padding: 96px 0;
-}
-
-@media (max-width: 768px) {
-  .section-spacing {
-    padding: 56px 0;
-  }
-  .offset-left, .offset-right {
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-
-/* Custom button styles - no borders, text-based */
-.btn-primary {
-  background: none;
-  border: none;
-  color: var(--accent-color);
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.3s ease;
-}
-
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--accent-color);
-  transition: width 0.3s ease;
-}
-
-.btn-primary:hover::after {
-  width: 100%;
-}
-
-/* Form styles - minimal */
-input, textarea {
-  border: none;
-  border-bottom: 2px solid var(--primary-color);
-  background: transparent;
-  font-size: 16px;
-  padding: 8px 0;
-  width: 100%;
-  transition: border-color 0.3s ease;
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-bottom-color: var(--accent-color);
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
-  transition: color 0.2s ease;
-}
-
-/* Selection styles */
-::selection {
-  background-color: var(--accent-color);
-  color: var(--neutral-color);
-}
-
-html.dark ::selection {
-  background-color: var(--accent-color);
-  color: var(--primary-color);
+  color: var(--foreground-color);
 }
 
 /* Smooth focus outlines */
