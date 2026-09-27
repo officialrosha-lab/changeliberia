@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiPost } from '../../../lib/api';
 import { useToast } from '../../../lib/toast-context';
+import { Card } from '../../../components/ui/card';
 
 type Comment = {
   id: string;
@@ -53,7 +54,7 @@ export function CommentForm({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+    <Card rounded="2xl" className="dark:border-neutral-700! p-6 shadow-sm">
       <div className="flex items-center gap-2.5 mb-1">
         <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -140,6 +141,6 @@ export function CommentForm({
           {submitting ? 'Posting…' : 'Post comment'}
         </button>
       </form>
-    </div>
+    </Card>
   );
 }

@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FadeInOnScroll } from './scroll-animations';
+import { Card } from './ui/card';
 
 type Petition = {
   id: string;
@@ -19,7 +20,7 @@ export function HomeFeaturedStory({ petition }: { petition: Petition }) {
             🔥 Trending campaign
           </p>
 
-          <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-800 md:flex">
+          <Card rounded="3xl" className="overflow-hidden shadow-sm md:flex">
             {/* Image */}
             <div className="relative h-56 shrink-0 overflow-hidden bg-zinc-200 dark:bg-neutral-700 md:h-auto md:w-2/5">
               <Image
@@ -67,7 +68,7 @@ export function HomeFeaturedStory({ petition }: { petition: Petition }) {
                 </Link>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       </section>
     </FadeInOnScroll>

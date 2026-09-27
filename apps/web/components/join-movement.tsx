@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { useToast } from '../lib/toast-context';
+import { Card } from './ui/card';
 
 type MemberStatus = { id: string; role: string; joinedAt: string } | null;
 
@@ -66,7 +67,7 @@ export function JoinMovement() {
   const isMember = Boolean(status);
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <Card rounded="3xl" className="p-6 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-950">
           ✊
@@ -113,6 +114,6 @@ export function JoinMovement() {
           {loading ? 'Joining…' : 'Join in solidarity'}
         </button>
       )}
-    </div>
+    </Card>
   );
 }

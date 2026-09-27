@@ -1,12 +1,13 @@
 import { Suspense } from 'react';
 import { CreatePetitionForm } from './create-form';
+import { Card } from '../../components/ui/card';
 
 export default function CreatePetitionPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 md:py-12">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section>
-          <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:p-8">
+          <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
               Petition drafting
             </p>
@@ -16,10 +17,10 @@ export default function CreatePetitionPage() {
             <Suspense fallback={<p className="mt-4 text-zinc-500 dark:text-neutral-500">Loading…</p>}>
               <CreatePetitionForm />
             </Suspense>
-          </div>
+          </Card>
         </section>
         <aside className="space-y-4">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <Card rounded="3xl" className="p-5 shadow-sm">
             <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-50">What happens next</p>
             <ol className="mt-4 space-y-4 text-sm text-zinc-600 dark:text-neutral-400">
               <li>
@@ -35,7 +36,7 @@ export default function CreatePetitionPage() {
                 campaign updates from your dashboard.
               </li>
             </ol>
-          </div>
+          </Card>
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 dark:border-emerald-900/40 dark:bg-emerald-950/20">
             <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">Tips for a stronger petition</p>
             <ul className="mt-3 space-y-2 text-sm text-emerald-900/80 dark:text-emerald-300/80">
