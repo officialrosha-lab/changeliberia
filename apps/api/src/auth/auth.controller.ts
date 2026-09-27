@@ -4,7 +4,20 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetService } from './password-reset.service';
-import { LoginDto, OtpRequestDto, OtpVerifyDto, SignupDto, EmailSignupDto, EmailLoginDto } from './dto';
+import {
+  LoginDto,
+  OtpRequestDto,
+  OtpVerifyDto,
+  SignupDto,
+  EmailSignupDto,
+  EmailLoginDto,
+  SendVerificationEmailDto,
+  VerifyEmailDto,
+  ResendVerificationEmailDto,
+  ForgotPasswordDto,
+  ValidateResetTokenDto,
+  ResetPasswordDto,
+} from './dto';
 import { IsString, IsNotEmpty } from 'class-validator';
 
 class GoogleCallbackDto {
@@ -62,26 +75,26 @@ export class AuthController {
   // Email verification flow
   @Throttle({ default: { limit: 2, ttl: 300000 } })
   @Post('send-verification-email')
-  async sendVerificationEmail(@Body() body: { email: string }) {
+  async sendVerificationEmail(@Body() body: SendVerificationEmailDto) {
     return this.emailVerificationService.sendVerificationEmail(body.email);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('verify-email')
-  async verifyEmail(@Body() body: { email: string; token: string }) {
+  async verifyEmail(@Body() body: VerifyEmailDto) {
     return this.authService.verifyEmailToken(body.email, body.token);
   }
 
   @Throttle({ default: { limit: 2, ttl: 300000 } })
   @Post('resend-verification-email')
-  async resendVerificationEmail(@Body() body: { email: string }) {
+  async resendVerificationEmail(@Body() body: ResendVerificationEmailDto) {
     return this.authService.resendVerificationEmail(body.email);
   }
 
   // Password reset flow
   @Throttle({ default: { limit: 2, ttl: 600000 } })
   @Post('forgot-password')
-  async forgotPassword(@Body() body: { email: string }) {
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
     // Always return the same success response to prevent email enumeration
     try {
       await this.passwordResetService.sendPasswordResetEmail(body.email);
@@ -93,15 +106,13 @@ export class AuthController {
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('validate-reset-token')
-  async validateResetToken(@Body() body: { email: string; token: string }) {
+  async validateResetToken(@Body() body: ValidateResetTokenDto) {
     return this.passwordResetService.validateResetToken(body.token, body.email);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
-  async resetPassword(
-    @Body() body: { email: string; token: string; newPassword: string },
-  ) {
+  async resetPassword(@Body() body: ResetPasswordDto) {
     return this.passwordResetService.resetPassword(body.email, body.token, body.newPassword);
   }
 

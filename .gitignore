@@ -24,3 +24,6 @@ npm-debug.log*
 
 # Claude
 .claude/
+
+# Route-inventory smoke test run output (regenerated each run)
+apps/api/test/route-inventory-results.json
