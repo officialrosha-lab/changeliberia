@@ -32,6 +32,10 @@ type Petition = {
   impactScope?: string | null;
   district?: string | null;
   community?: string | null;
+  creator?: {
+    id: string;
+    fullName: string;
+  } | null;
 };
 
 type StatusLog = {
@@ -304,7 +308,7 @@ export default async function PetitionPage({
                 <span className="font-semibold text-zinc-600 dark:text-neutral-400">
                   {petition.isAnonymous
                     ? (petition.displayName || 'Anonymous')
-                    : 'A verified Liberian citizen'}
+                    : (petition.creator?.fullName || 'A verified Liberian citizen')}
                 </span>
               </p>
             </div>

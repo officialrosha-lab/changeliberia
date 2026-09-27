@@ -9,7 +9,8 @@ interface EmptyStateProps {
   description: string;
   action?: {
     label: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
   };
   illustration?: React.ReactNode;
 }
@@ -41,7 +42,7 @@ export function EmptyState({
         {description}
       </p>
 
-      {action && (
+      {action && action.href && (
         <Link
           href={action.href}
           className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition active:scale-95 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950 outline-none"
@@ -52,6 +53,15 @@ export function EmptyState({
           </svg>
         </Link>
       )}
+      {action && !action.href && action.onClick && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition active:scale-95 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950 outline-none"
+        >
+          {action.label}
+        </button>
+      )}
     </motion.div>
   );
 }
@@ -60,10 +70,10 @@ export function EmptyStatePetitions() {
   return (
     <EmptyState
       icon="📝"
-      title="No Petitions Found"
+      title="No petitions found"
       description="Try adjusting your search filters or browse all petitions to find causes you care about."
       action={{
-        label: 'Browse All Petitions',
+        label: 'Browse all petitions',
         href: '/petitions',
       }}
     />

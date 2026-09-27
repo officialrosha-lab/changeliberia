@@ -1,7 +1,9 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiPost } from '../../../lib/api';
+import { useToast } from '../../../lib/toast-context';
 
 type Comment = {
   id: string;
@@ -25,14 +27,16 @@ export function CommentForm({
   petitionId: string;
   initialComments: Comment[];
 }) {
+  const toast = useToast();
   const [comments, setComments] = useState(initialComments);
   const [authorName, setAuthorName] = useState('');
   const [body, setBody] = useState('');
-  const [status, setStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!authorName.trim() || !body.trim()) return;
+    if (!authorName.trim() || !body.trim() || submitting) return;
+    setSubmitting(true);
     try {
       const created = await apiPost<Comment>(`/petitions/${petitionId}/comments`, {
         authorName: authorName.trim(),
@@ -40,9 +44,11 @@ export function CommentForm({
       });
       setComments((prev) => [created, ...prev]);
       setBody('');
-      setStatus('Posted. Thank you for adding your voice.');
+      toast.show('Posted. Thank you for adding your voice.', 'success');
     } catch {
-      setStatus('Could not post. Try again in a moment.');
+      toast.show('Could not post. Try again in a moment.', 'error');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -66,20 +72,28 @@ export function CommentForm({
       </p>
 
       <ul className="mt-4 space-y-3">
-        {comments.map((c) => (
-          <li key={c.id} className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white dark:bg-emerald-500">
-                  {c.authorName.charAt(0).toUpperCase()}
-                </span>
-                <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-100">{c.authorName}</p>
+        <AnimatePresence initial={false}>
+          {comments.map((c) => (
+            <motion.li
+              key={c.id}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white dark:bg-emerald-500">
+                    {c.authorName.charAt(0).toUpperCase()}
+                  </span>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-100">{c.authorName}</p>
+                </div>
+                <p className="text-xs text-zinc-400 dark:text-neutral-500">{formatDate(c.createdAt)}</p>
               </div>
-              <p className="text-xs text-zinc-400 dark:text-neutral-500">{formatDate(c.createdAt)}</p>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300">{c.body}</p>
-          </li>
-        ))}
+              <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-neutral-300">{c.body}</p>
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
 
       {comments.length === 0 && (
@@ -94,26 +108,37 @@ export function CommentForm({
           value={authorName}
           onChange={(e) => setAuthorName(e.target.value)}
           placeholder="Your name"
-          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400"
+          disabled={submitting}
+          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400"
         />
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Share why this campaign matters to you…"
           rows={3}
-          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400"
+          disabled={submitting}
+          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400"
         />
         <button
           type="submit"
-          className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+          disabled={submitting}
+          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
         >
-          Post comment
+          {submitting && (
+            <motion.svg
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4M4.22 4.22l2.83 2.83m4 0l2.83-2.83M4 12h4m12 0h4m-4.22 7.78l-2.83-2.83m-4 0l-2.83 2.83" />
+            </motion.svg>
+          )}
+          {submitting ? 'Posting…' : 'Post comment'}
         </button>
-        {status ? (
-          <p className={`text-xs font-medium ${status.startsWith('Could') ? 'text-red-600' : 'text-emerald-700 dark:text-emerald-400'}`}>
-            {status}
-          </p>
-        ) : null}
       </form>
     </div>
   );

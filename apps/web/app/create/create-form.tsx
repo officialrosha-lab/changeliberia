@@ -5,6 +5,49 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { useToast } from '../../lib/toast-context';
+
+const DRAFT_KEY = 'change_liberia_petition_draft';
+
+type PetitionDraft = {
+  title?: string;
+  summary?: string;
+  description?: string;
+  tags?: string;
+  priorActions?: string;
+  goal?: string;
+  displayName?: string;
+  selectedCategories?: string[];
+  selectedPetitionType?: string | null;
+  selectedCounty?: string;
+  isAnonymous?: boolean;
+  impactScope?: PetitionPayload['impactScope'];
+  selectedDistrict?: string;
+  selectedCommunity?: string;
+  selectedLandmark?: string;
+  selectedCounties?: string[];
+  imageUrlValue?: string;
+  savedAt?: number;
+};
+
+function loadDraft(): PetitionDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* best-effort */
+  }
+}
 
 type PetitionPayload = {
   title: string;
@@ -79,9 +122,15 @@ export function CreatePetitionForm() {
   const setToken = useAuthStore((s) => s.setToken);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const pendingPayload = useRef<PetitionPayload | null>(null);
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+  const [draft] = useState<PetitionDraft | null>(() => loadDraft());
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; summary?: string; description?: string }>({});
+  const [activeStep, setActiveStep] = useState(1);
 
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -97,24 +146,24 @@ export function CreatePetitionForm() {
   const [authError, setAuthError] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
-  // New fields
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedPetitionType, setSelectedPetitionType] = useState<string | null>(null);
-  const [selectedCounty, setSelectedCounty] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  // New fields — initialized from a saved draft when one exists
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => draft?.selectedCategories ?? []);
+  const [selectedPetitionType, setSelectedPetitionType] = useState<string | null>(() => draft?.selectedPetitionType ?? null);
+  const [selectedCounty, setSelectedCounty] = useState(() => draft?.selectedCounty ?? '');
+  const [isAnonymous, setIsAnonymous] = useState(() => draft?.isAnonymous ?? false);
 
   // Petition Location Verification & Impact Area System (Phase 1)
-  const [impactScope, setImpactScope] = useState<PetitionPayload['impactScope']>('COUNTY');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedCommunity, setSelectedCommunity] = useState('');
-  const [selectedLandmark, setSelectedLandmark] = useState('');
-  const [selectedCounties, setSelectedCounties] = useState<string[]>([]);
+  const [impactScope, setImpactScope] = useState<PetitionPayload['impactScope']>(() => draft?.impactScope ?? 'COUNTY');
+  const [selectedDistrict, setSelectedDistrict] = useState(() => draft?.selectedDistrict ?? '');
+  const [selectedCommunity, setSelectedCommunity] = useState(() => draft?.selectedCommunity ?? '');
+  const [selectedLandmark, setSelectedLandmark] = useState(() => draft?.selectedLandmark ?? '');
+  const [selectedCounties, setSelectedCounties] = useState<string[]>(() => draft?.selectedCounties ?? []);
 
   // Image
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [imageUrlValue, setImageUrlValue] = useState('');
-  const [imagePreviewSrc, setImagePreviewSrc] = useState('');
+  const [imageUrlValue, setImageUrlValue] = useState(() => draft?.imageUrlValue ?? '');
+  const [imagePreviewSrc, setImagePreviewSrc] = useState(() => draft?.imageUrlValue ?? '');
 
   const prefillTitle = searchParams.get('title') ?? '';
 
@@ -137,6 +186,114 @@ export function CreatePetitionForm() {
       .then(({ phone }) => { setPhoneVerified(phone); setVerificationLoaded(true); })
       .catch(() => setVerificationLoaded(true));
   }, [token]);
+
+  // Restore the uncontrolled text fields (title/summary/description/tags/
+  // priorActions/goal/displayName) from a saved draft on mount — these use
+  // defaultValue rather than React state, so restoring them means setting
+  // the DOM value directly once the form has mounted.
+  useEffect(() => {
+    if (!draft || !formRef.current) return;
+    const form = formRef.current;
+    const setVal = (name: string, val?: string) => {
+      if (!val) return;
+      const el = form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el) el.value = val;
+    };
+    // An explicit ?title= prefill link takes priority over an older draft.
+    setVal('title', prefillTitle ? undefined : draft.title);
+    setVal('summary', draft.summary);
+    setVal('description', draft.description);
+    setVal('tags', draft.tags);
+    setVal('priorActions', draft.priorActions);
+    setVal('goal', draft.goal);
+    setVal('displayName', draft.displayName);
+    if (draft.title || draft.summary || draft.description) setDraftRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Autosave the draft (debounced) whenever any field changes.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    let timeout: ReturnType<typeof setTimeout>;
+    const saveDraft = () => {
+      const fd = new FormData(form);
+      const nextDraft: PetitionDraft = {
+        title: String(fd.get('title') ?? ''),
+        summary: String(fd.get('summary') ?? ''),
+        description: String(fd.get('description') ?? ''),
+        tags: String(fd.get('tags') ?? ''),
+        priorActions: String(fd.get('priorActions') ?? ''),
+        goal: String(fd.get('goal') ?? ''),
+        displayName: String(fd.get('displayName') ?? ''),
+        selectedCategories,
+        selectedPetitionType,
+        selectedCounty,
+        isAnonymous,
+        impactScope,
+        selectedDistrict,
+        selectedCommunity,
+        selectedLandmark,
+        selectedCounties,
+        imageUrlValue,
+        savedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(nextDraft));
+      } catch {
+        /* best-effort */
+      }
+    };
+    const onInput = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(saveDraft, 500);
+    };
+    form.addEventListener('input', onInput);
+    // Also save immediately when a button-driven (non-text-input) field changes.
+    saveDraft();
+    return () => {
+      form.removeEventListener('input', onInput);
+      clearTimeout(timeout);
+    };
+  }, [
+    selectedCategories,
+    selectedPetitionType,
+    selectedCounty,
+    isAnonymous,
+    impactScope,
+    selectedDistrict,
+    selectedCommunity,
+    selectedLandmark,
+    selectedCounties,
+    imageUrlValue,
+  ]);
+
+  // Tracks which step section is nearest the viewport, for a real progress
+  // indicator above the step nav (lighter-weight than a gated step wizard).
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const idx = sectionRefs.current.findIndex((el) => el === visible.target);
+        if (idx !== -1) setActiveStep(idx + 1);
+      },
+      { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    sectionRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  function dismissDraftBanner() {
+    setDraftRestored(false);
+  }
+
+  function discardDraft() {
+    clearDraft();
+    window.location.reload();
+  }
 
   const toggleCategory = (id: string) => {
     setSelectedCategories((prev) =>
@@ -177,14 +334,16 @@ export function CreatePetitionForm() {
     setStatus('');
     try {
       await apiPost<CreatedPetition>('/petitions', payload, authToken);
+      clearDraft();
+      toast.show('Petition submitted for review.', 'success');
       setStatus('Petition submitted for review. Taking you to your dashboard…');
       window.setTimeout(() => router.push('/dashboard'), 700);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('phone')) {
-        setStatus('Please verify your phone number in your dashboard before creating a petition.');
+        toast.show('Please verify your phone number in your dashboard before creating a petition.', 'error');
       } else {
-        setStatus(msg || 'We could not submit your petition right now. Please try again.');
+        toast.show(msg || 'We could not submit your petition right now. Please try again.', 'error');
       }
     } finally {
       setSubmitting(false);
@@ -194,6 +353,20 @@ export function CreatePetitionForm() {
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+
+    const titleVal = String(form.get('title') ?? '').trim();
+    const summaryVal = String(form.get('summary') ?? '').trim();
+    const descriptionVal = String(form.get('description') ?? '').trim();
+    const errors: typeof fieldErrors = {};
+    if (!titleVal) errors.title = 'Tell us what needs to change.';
+    if (!summaryVal) errors.summary = 'Add a one-sentence summary.';
+    if (!descriptionVal) errors.description = 'Share the full story — this helps reviewers and supporters.';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      scrollToStep(errors.title || errors.summary ? 1 : 3);
+      return;
+    }
+
     let finalImageUrl = String(form.get('imageUrl') ?? '').trim();
 
     if (uploadedImageFile) {
@@ -205,7 +378,7 @@ export function CreatePetitionForm() {
           reader.readAsDataURL(uploadedImageFile);
         });
       } catch {
-        setStatus('Could not process the image file. Please try again.');
+        toast.show('Could not process the image file. Please try again.', 'error');
         return;
       }
     }
@@ -274,6 +447,20 @@ export function CreatePetitionForm() {
         Fill in each section below. Your petition will be reviewed before it appears publicly.
       </p>
 
+      {draftRestored && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+          <span>We restored your unsaved draft from earlier.</span>
+          <div className="flex gap-3">
+            <button type="button" onClick={discardDraft} className="font-semibold underline hover:no-underline">
+              Clear draft &amp; start fresh
+            </button>
+            <button type="button" onClick={dismissDraftBanner} className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Verification states */}
       {!verificationLoaded && (
         <div className="mt-6 flex items-center gap-3 text-sm text-zinc-500 dark:text-neutral-400">
@@ -313,7 +500,18 @@ export function CreatePetitionForm() {
       {verificationLoaded && (!token || phoneVerified || !systemSettings?.phoneVerificationRequired) && (
         <>
           {/* Step progress indicator */}
-          <nav className="mt-8 mb-6 hidden sm:flex items-center gap-1 overflow-x-auto" aria-label="Form sections">
+          <div className="mt-8">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-neutral-800">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                style={{ width: `${(activeStep / STEPS.length) * 100}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs font-medium text-zinc-500 dark:text-neutral-400">
+              Step {activeStep} of {STEPS.length} — {STEPS[activeStep - 1]?.label}
+            </p>
+          </div>
+          <nav className="mt-3 mb-6 hidden sm:flex items-center gap-1 overflow-x-auto" aria-label="Form sections">
             {STEPS.map((s, i) => (
               <button
                 key={s.n}
@@ -330,7 +528,7 @@ export function CreatePetitionForm() {
             ))}
           </nav>
 
-          <form onSubmit={submit} className="space-y-6">
+          <form ref={formRef} onSubmit={submit} noValidate className="space-y-6">
             {/* STEP 1 — Issue details */}
             <section
               ref={(el) => { sectionRefs.current[0] = el; }}
@@ -345,12 +543,19 @@ export function CreatePetitionForm() {
               <div className="mt-4">
                 <label htmlFor="title" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">I want to…</label>
                 <input id="title" name="title" required key={prefillTitle} defaultValue={prefillTitle}
+                  onChange={() => fieldErrors.title && setFieldErrors((prev) => ({ ...prev, title: undefined }))}
+                  aria-invalid={!!fieldErrors.title} aria-describedby={fieldErrors.title ? 'title-error' : undefined}
                   placeholder="e.g. Fix drainage on 12th Street in Sinkor before the rainy season"
                   className={inputCls} />
+                {fieldErrors.title && <p id="title-error" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{fieldErrors.title}</p>}
               </div>
               <div className="mt-4">
                 <label htmlFor="summary" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">One-line summary</label>
-                <input id="summary" name="summary" required placeholder="Explain the issue in one sentence." className={inputCls} />
+                <input id="summary" name="summary" required placeholder="Explain the issue in one sentence."
+                  onChange={() => fieldErrors.summary && setFieldErrors((prev) => ({ ...prev, summary: undefined }))}
+                  aria-invalid={!!fieldErrors.summary} aria-describedby={fieldErrors.summary ? 'summary-error' : undefined}
+                  className={inputCls} />
+                {fieldErrors.summary && <p id="summary-error" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{fieldErrors.summary}</p>}
               </div>
 
               <div className="mt-5">
@@ -520,8 +725,11 @@ export function CreatePetitionForm() {
               <div className="mt-4">
                 <label htmlFor="description" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">Petition story</label>
                 <textarea id="description" name="description" required rows={8}
+                  onChange={() => fieldErrors.description && setFieldErrors((prev) => ({ ...prev, description: undefined }))}
+                  aria-invalid={!!fieldErrors.description} aria-describedby={fieldErrors.description ? 'description-error' : undefined}
                   placeholder="Tell the story in plain language. Mention the place, the people affected, and what support can achieve."
                   className={`${inputCls} resize-none`} />
+                {fieldErrors.description && <p id="description-error" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{fieldErrors.description}</p>}
               </div>
             </section>
 
