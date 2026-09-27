@@ -2,8 +2,10 @@
 
 import { Turnstile } from '@marsidev/react-turnstile';
 import { FormEvent, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { apiGet, apiPost, apiDelete, getApiBase } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
+import { useToast } from '../../../lib/toast-context';
 import { ShareModal } from '../../../components/share-modal';
 
 const turnstileSiteKey =
@@ -84,6 +86,7 @@ export function SignForm({
   community?: string | null;
 }) {
   const token = useAuthStore((s) => s.token);
+  const toast = useToast();
   const [name, setName] = useState('');
   const [count, setCount] = useState(signatureCount);
   const [hasSigned, setHasSigned] = useState(false);
@@ -281,6 +284,8 @@ export function SignForm({
         }
       } catch { /* analytics must not break the sign flow */ }
 
+      toast.show('Thank you for signing! Your voice has been added.', 'success');
+
       // Show follow prompt first; share modal opens after
       setShowFollowPrompt(true);
     } catch (err) {
@@ -289,7 +294,7 @@ export function SignForm({
         localStorage.setItem(localKey(petitionId), '1');
         setHasSigned(true);
       } else {
-        setStatus(msg || 'Something went wrong. Please try again.');
+        toast.show(msg || 'Something went wrong. Please try again.', 'error');
       }
     } finally {
       setSubmitting(false);
@@ -323,18 +328,35 @@ export function SignForm({
         <p className="text-sm font-medium text-zinc-500 dark:text-neutral-400">Verified signatures</p>
         <p className="mt-1 text-4xl font-bold text-zinc-900 dark:text-neutral-50">{count.toLocaleString()}</p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200">
-          <div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full bg-emerald-500 transition-all duration-700 ease-out"
+            style={{ width: `${progress}%` }}
+          />
         </div>
         <p className="mt-2 text-xs text-zinc-500">
           {progress}% of {goal.toLocaleString()} goal
         </p>
 
         {hasSigned ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40"
+          >
             <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <motion.svg
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.4, delay: 0.15, ease: 'backOut' }}
+                className="h-5 w-5 flex-shrink-0 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+              </motion.svg>
               <p className="font-semibold text-emerald-800 dark:text-emerald-300">
                 You've already signed this petition
               </p>
@@ -366,7 +388,7 @@ export function SignForm({
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
         ) : (
           <>
             <div className="mt-4 rounded-2xl bg-zinc-50 p-4 dark:bg-neutral-700">

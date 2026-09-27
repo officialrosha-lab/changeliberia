@@ -21,7 +21,11 @@ export default async function AboutPage() {
                 About Change Liberia
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-                Loading...
+                We couldn't load this page right now. Please refresh, or reach us at{' '}
+                <a href="mailto:hello@changelib.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
+                  hello@changelib.org
+                </a>
+                .
               </p>
             </div>
           </section>
@@ -45,7 +49,11 @@ export default async function AboutPage() {
                 {page.title}
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-                No content available
+                This page is being updated. Check back soon, or reach us at{' '}
+                <a href="mailto:hello@changelib.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
+                  hello@changelib.org
+                </a>
+                .
               </p>
             </div>
           </section>

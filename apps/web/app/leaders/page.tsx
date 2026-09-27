@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Lead Change in Your Community | Change Liberia',
-  description: 'Become a Change Leader and amplify voices in your community. Guide petitions, mentor organizers, and drive real civic change across Liberia.',
+  title: 'Lead change in your community | Change Liberia',
+  description: 'Apply to become a Change Liberia ambassador — help your community raise issues, gather verified support, and get petitions in front of the people who can act on them.',
 };
 
 export default function LeadersPage() {
@@ -14,26 +14,26 @@ export default function LeadersPage() {
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              🇱🇷 For Every Community
+              🇱🇷 For every community
             </p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-5xl md:text-6xl">
-              Lead Change in Your Community
+              Lead change in your community
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-              Become a Change Leader and amplify the voices of your community. Guide civic petitions, mentor organizers, and help drive real change — from ward to county level.
+              Ambassadors are the people on the ground who turn a single complaint into a petition their whole community signs. If you already do this informally — for your ward, your market, your church, your county — apply to do it with our support behind you.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/apply"
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
-                Get Started as a Leader
+                Apply to become an ambassador
               </Link>
               <Link
                 href="/petitions"
                 className="inline-flex items-center justify-center rounded-full border-2 border-emerald-600 px-8 py-3 text-sm font-semibold text-emerald-600 transition-all hover:bg-emerald-50 active:scale-95 dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
               >
-                Browse Active Petitions
+                Browse active petitions
               </Link>
             </div>
           </div>
@@ -46,21 +46,20 @@ export default function LeadersPage() {
           <div className="grid gap-12 md:grid-cols-2 md:gap-16">
             <div>
               <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">
-                What Is a Change Leader?
+                What does an ambassador actually do?
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-                A Change Leader is a trusted community advocate who empowers others to drive civic change. Whether you're a teacher, trader, chief, youth leader, or activist — if you believe in Liberian progress, you can lead.
+                No title, no office — just someone their community trusts to turn a shared frustration into something official. Teachers, traders, chiefs, youth organizers, pastors: if people already come to you with problems, you're most of the way there.
               </p>
               <p className="mt-4 text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-                Change Leaders help their communities by:
+                In practice, that means:
               </p>
               <ul className="mt-4 space-y-3">
                 {[
-                  'Identifying local issues that matter most',
-                  'Guiding community members to start petitions',
-                  'Mobilizing verified support within your network',
-                  'Mentoring peer organizers',
-                  'Connecting decision-makers with communities',
+                  'Helping neighbors turn a complaint into a well-written petition',
+                  'Sharing petitions through your own network to gather verified signatures',
+                  'Explaining how the process works to people signing for the first time',
+                  'Flagging issues that matter to your community before they escalate',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-zinc-600 dark:text-neutral-300">
                     <span className="mt-1 flex-shrink-0 text-emerald-600 dark:text-emerald-400">✓</span>
@@ -74,7 +73,7 @@ export default function LeadersPage() {
               <div className="text-center">
                 <p className="text-5xl">👥</p>
                 <p className="mt-4 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  Every leader strengthens the movement
+                  Every ambassador strengthens the movement
                 </p>
               </div>
             </div>
@@ -86,55 +85,41 @@ export default function LeadersPage() {
       <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-16 dark:border-neutral-800 dark:bg-neutral-800/30 sm:py-20 md:py-24">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-zinc-900 dark:text-white">
-            How It Works
+            How it works
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-zinc-600 dark:text-neutral-300">
-            Becoming a Change Leader is simple. Here's your journey:
+            Four steps, no bureaucracy.
           </p>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 step: '1',
-                title: 'Sign Up',
+                title: 'Apply',
                 description:
-                  'Create your account on Change Liberia and verify your identity. Leaders are trusted community voices.',
+                  'Tell us about your community and why you want to represent it. Takes about five minutes.',
                 icon: '📝',
               },
               {
                 step: '2',
-                title: 'Choose Your Cause',
+                title: 'Get reviewed',
                 description:
-                  'Select the issues you care about — education, infrastructure, health, governance, or any civic concern.',
-                icon: '🎯',
+                  'Our team reads every application personally — no automated approval, no quotas.',
+                icon: '🔍',
               },
               {
                 step: '3',
-                title: 'Build Your Community',
+                title: 'Start organizing',
                 description:
-                  'Share petitions, guide supporters, and mentor organizers. Your leadership drives real change.',
+                  'Once approved, help your community raise issues, write petitions, and gather verified signatures.',
                 icon: '🤝',
               },
               {
                 step: '4',
-                title: 'Drive Impact',
+                title: 'Track the outcome',
                 description:
-                  'Watch your community mobilize. Reach decision-makers and celebrate wins together.',
-                icon: '🚀',
-              },
-              {
-                step: '5',
-                title: 'Earn Recognition',
-                description:
-                  'Get badges, impact reports, and community appreciation for your leadership.',
-                icon: '⭐',
-              },
-              {
-                step: '6',
-                title: 'Grow the Movement',
-                description:
-                  'Mentor new leaders, expand to new areas, and help other communities find their voice.',
-                icon: '📈',
+                  'Every petition you help launch is tracked publicly — including whether the responsible authority responded.',
+                icon: '📊',
               },
             ].map((item, idx) => (
               <div key={idx} className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
@@ -156,37 +141,25 @@ export default function LeadersPage() {
       <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">
-            Why Become a Change Leader?
+            Why apply?
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2">
             {[
               {
-                title: 'Amplify Your Voice',
-                description: 'Your leadership reaches beyond your immediate circle. Influence civic change at scale.',
+                title: 'Real reach for your issues',
+                description: 'Petitions you help launch are routed to the specific government body responsible — not a general inbox.',
               },
               {
-                title: 'Build Community Trust',
-                description: 'Earn verified badges and recognition as a trusted community advocate.',
+                title: 'A public track record',
+                description: 'Every petition you back is publicly tracked from submission to response, so your community can see exactly what happened.',
               },
               {
-                title: 'Access Tools & Resources',
-                description:
-                  'Get exclusive leader dashboard, templates, guides, and direct support from our team.',
+                title: 'Direct line to our team',
+                description: 'Ambassadors can reach us directly with questions about moderation, routing, or how to frame a difficult petition.',
               },
               {
-                title: 'Connect with Decision-Makers',
-                description:
-                  'Help bridge communities and leaders. Your petitions get priority attention.',
-              },
-              {
-                title: 'Mentorship Opportunities',
-                description:
-                  'Guide the next generation of civic organizers and build leadership pipelines.',
-              },
-              {
-                title: 'Impact Reports',
-                description:
-                  'Track real change. See metrics on community mobilization, petition success, and lives improved.',
+                title: 'Sharing badges, same as any signer',
+                description: 'Sharing petitions in your network earns the same referral badges available to every user — ambassadors just tend to earn them faster.',
               },
             ].map((benefit, idx) => (
               <div key={idx} className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-6 dark:border-emerald-900/30 dark:from-emerald-950/20 dark:to-neutral-900">
@@ -202,20 +175,20 @@ export default function LeadersPage() {
       <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-16 dark:border-neutral-800 dark:bg-neutral-800/30 sm:py-20 md:py-24">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-zinc-900 dark:text-white">
-            All Kinds of Leaders
+            Ambassadors come from everywhere
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-zinc-600 dark:text-neutral-300">
-            Change Leaders come from every walk of life. Here are some examples:
+            There's no fixed profile. Here's who's applied so far:
           </p>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { emoji: '👨‍🏫', title: 'Teachers', desc: 'Champion education reform and youth voices' },
-              { emoji: '👩‍⚕️', title: 'Healthcare Workers', desc: 'Advocate for health access and wellness' },
-              { emoji: '🧑‍🌾', title: 'Farmers & Traders', desc: 'Drive agricultural and economic change' },
-              { emoji: '👩‍💼', title: 'Business Owners', desc: 'Lead workplace and economic empowerment' },
-              { emoji: '🧑‍💻', title: 'Youth Organizers', desc: 'Mobilize young people for civic action' },
-              { emoji: '👩‍⚖️', title: 'Community Advocates', desc: 'Champion justice and governance reform' },
+              { emoji: '👨‍🏫', title: 'Teachers', desc: 'Raising issues in education and youth affairs' },
+              { emoji: '👩‍⚕️', title: 'Healthcare workers', desc: 'Advocating for clinic access and public health' },
+              { emoji: '🧑‍🌾', title: 'Farmers and traders', desc: 'Pushing for market and agricultural reform' },
+              { emoji: '👩‍💼', title: 'Business owners', desc: 'Organizing around local economic issues' },
+              { emoji: '🧑‍💻', title: 'Youth organizers', desc: 'Mobilizing young people for civic action' },
+              { emoji: '👩‍⚖️', title: 'Community advocates', desc: 'Championing justice and governance reform' },
             ].map((leader, idx) => (
               <div key={idx} className="rounded-xl border border-zinc-200 bg-white p-6 text-center dark:border-neutral-700 dark:bg-neutral-900">
                 <p className="text-4xl">{leader.emoji}</p>
@@ -231,27 +204,27 @@ export default function LeadersPage() {
       <section className="px-4 py-16 sm:py-20 md:py-24">
         <div className="mx-auto max-w-2xl rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-8 text-center dark:border-emerald-900/30 dark:from-emerald-950/20 dark:to-neutral-900 sm:p-12">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">
-            Ready to Lead Change?
+            Ready to represent your community?
           </h2>
           <p className="mt-4 text-lg text-zinc-600 dark:text-neutral-300">
-            Join thousands of Liberian leaders who are already driving civic change. Start today — it's free.
+            The application takes a few minutes. It's free, and every submission is read by a real person on our team.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/auth/signup"
+              href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
             >
-              Become a Change Leader
+              Apply now
             </Link>
             <Link
               href="/"
               className="inline-flex items-center justify-center rounded-full border-2 border-zinc-300 px-8 py-3 text-sm font-semibold text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 active:scale-95 dark:border-neutral-600 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
             >
-              Learn More About Change Liberia
+              Learn more about Change Liberia
             </Link>
           </div>
           <p className="mt-6 text-xs text-zinc-500 dark:text-neutral-500">
-            No credit card required. Sign up takes less than 2 minutes.
+            No credit card required.
           </p>
         </div>
       </section>
@@ -260,33 +233,33 @@ export default function LeadersPage() {
       <section className="border-t border-zinc-200 bg-zinc-50 px-4 py-16 dark:border-neutral-800 dark:bg-neutral-800/30 sm:py-20 md:py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-3xl font-bold text-zinc-900 dark:text-white">
-            Frequently Asked Questions
+            Frequently asked questions
           </h2>
           <div className="mt-12 space-y-6">
             {[
               {
                 q: 'Do I need any special qualifications?',
-                a: 'No. If you care about your community and want to drive change, you can be a Change Leader. We provide all the tools and training you need.',
+                a: "No. If your community already comes to you with problems, that's the qualification. We look for judgment and follow-through, not credentials.",
               },
               {
                 q: 'Is there a cost?',
-                a: 'No. Becoming a Change Leader is completely free. Change Liberia is built for every Liberian.',
+                a: 'No. Applying and organizing as an ambassador is completely free.',
               },
               {
                 q: 'How much time do I need to commit?',
-                a: 'As much or as little as you want. Some leaders spend a few hours a week; others dedicate more time. You control your schedule.',
+                a: "As much or as little as you want. There's no minimum — some ambassadors help with one petition a year, others help their community every week.",
               },
               {
-                q: 'What if I want to represent multiple areas?',
-                a: 'Absolutely. Many leaders cover their community, county, or even multiple counties. You can expand your reach as you grow.',
+                q: 'Can I represent more than one area?',
+                a: "Yes. Tell us in your application, and mention it again if you'd like to expand later.",
               },
               {
-                q: 'How do you verify leaders?',
-                a: 'We use ID verification, community feedback, and our trust score system to ensure leaders are authentic and trustworthy.',
+                q: 'How are applications reviewed?',
+                a: "A member of our team reads every application and, when needed, follows up by email or phone before making a decision.",
               },
               {
-                q: 'Can I change causes or areas?',
-                a: "Yes. Leaders can pivot at any time. Your leadership journey evolves with your community's needs.",
+                q: 'What if I want to stop?',
+                a: 'Nothing binds you. Ambassadors can step back at any time — you can keep signing and sharing petitions as anyone else does.',
               },
             ].map((faq, idx) => (
               <div key={idx} className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">

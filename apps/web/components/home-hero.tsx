@@ -1,27 +1,38 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FadeInOnScroll } from './scroll-animations';
 import { CreatePetitionCard } from './create-petition-card';
 import { LiberiaMapBg } from './liberia-map-bg';
 import { useWebSocket } from '../lib/useWebSocket';
-
+import { buttonVariants } from './ui/button';
 
 export function HomeHero() {
-  const [liveCount, setLiveCount] = useState(10247); // Initial count
-  const { getTrending, onSignatureUpdate } = useWebSocket();
+  // Real "signatures today" total, not a fabricated placeholder — stays
+  // hidden until the first real trending/signature event arrives so the
+  // hero never shows a made-up number if the socket doesn't connect.
+  const [liveCount, setLiveCount] = useState<number | null>(null);
+  const { getTrending, onTrendingPetitions, onSignatureUpdate } = useWebSocket();
 
-  // Get trending petitions on mount to get live counts
+  // Get trending petitions on mount, then derive an initial "today" total
+  // from their real todaySignatures counts.
   useEffect(() => {
     getTrending();
   }, [getTrending]);
 
+  useEffect(() => {
+    const unsubscribe = onTrendingPetitions((data: { petitions?: Array<{ todaySignatures?: number }> }) => {
+      const total = (data.petitions ?? []).reduce((sum, p) => sum + (p.todaySignatures ?? 0), 0);
+      setLiveCount(total);
+    });
+    return unsubscribe;
+  }, [onTrendingPetitions]);
+
   // Listen for signature updates
   useEffect(() => {
-    const unsubscribe = onSignatureUpdate((data) => {
-      setLiveCount((prev) => prev + 1);
+    const unsubscribe = onSignatureUpdate(() => {
+      setLiveCount((prev) => (prev ?? 0) + 1);
     });
     return unsubscribe;
   }, [onSignatureUpdate]);
@@ -50,14 +61,16 @@ export function HomeHero() {
               in Lofa. Gather verified support and move leaders to act.
             </p>
 
-            <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
-              {liveCount.toLocaleString()} signatures today
-            </div>
+            {liveCount !== null && (
+              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
+                {liveCount.toLocaleString()} signatures today
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="btn-primary">
+              <Link href="/create" className={buttonVariants({ size: 'lg' })}>
                 Start a petition
-              </button>
+              </Link>
               <Link href="/petitions" className="text-black dark:text-white hover:text-emerald-600 transition-colors self-center text-sm">
                 Browse causes →
               </Link>
