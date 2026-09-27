@@ -17,12 +17,16 @@ export class EmailVerificationService {
    * Generate a verification token and send email to user
    */
   async sendVerificationEmail(email: string): Promise<{ success: boolean; message: string }> {
-    // Check if email is already verified (has active user account)
+    // Check if email is already verified (has active user account). A user
+    // row existing but not yet confirmed is the normal post-signup state —
+    // signupWithEmail creates the row and immediately calls this method to
+    // send the first verification email, so blocking on mere existence
+    // would reject every real signup.
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingUser?.isEmailConfirmed) {
       throw new BadRequestException('Email is already registered');
     }
 
