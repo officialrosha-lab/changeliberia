@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { AmbassadorApplicationForm } from '../../components/ambassador-application-form';
+import { Card } from '../../components/ui/card';
 
 export const metadata: Metadata = {
   title: "Become a Voice for Change | Change Liberia",
@@ -63,7 +64,7 @@ export default function ApplyPage() {
       {/* Application Form Section */}
       <section className="px-4 py-16 sm:py-20 md:py-24">
         <div className="mx-auto max-w-2xl">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-neutral-800 dark:bg-neutral-900 sm:p-10">
+          <Card rounded="2xl" className="p-8 sm:p-10">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Apply Now</h2>
             <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-400">
               Share your story and let us know why you want to be a Voice for Change.
@@ -71,7 +72,7 @@ export default function ApplyPage() {
             <div className="mt-8">
               <AmbassadorApplicationForm />
             </div>
-          </div>
+          </Card>
         </div>
       </section>
 
