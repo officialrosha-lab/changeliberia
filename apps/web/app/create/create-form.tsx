@@ -28,6 +28,7 @@ type PetitionDraft = {
   selectedLandmark?: string;
   selectedCounties?: string[];
   imageUrlValue?: string;
+  currentStep?: number;
   savedAt?: number;
 };
 
@@ -127,11 +128,11 @@ export function CreatePetitionForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const pendingPayload = useRef<PetitionPayload | null>(null);
-  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const [draft] = useState<PetitionDraft | null>(() => loadDraft());
   const [draftRestored, setDraftRestored] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; summary?: string; description?: string }>({});
-  const [activeStep, setActiveStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => draft?.currentStep ?? 1);
+  const [maxStepReached, setMaxStepReached] = useState(() => draft?.currentStep ?? 1);
 
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -237,6 +238,7 @@ export function CreatePetitionForm() {
         selectedLandmark,
         selectedCounties,
         imageUrlValue,
+        currentStep,
         savedAt: Date.now(),
       };
       try {
@@ -267,25 +269,8 @@ export function CreatePetitionForm() {
     selectedLandmark,
     selectedCounties,
     imageUrlValue,
+    currentStep,
   ]);
-
-  // Tracks which step section is nearest the viewport, for a real progress
-  // indicator above the step nav (lighter-weight than a gated step wizard).
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const idx = sectionRefs.current.findIndex((el) => el === visible.target);
-        if (idx !== -1) setActiveStep(idx + 1);
-      },
-      { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] },
-    );
-    sectionRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
 
   function dismissDraftBanner() {
     setDraftRestored(false);
@@ -308,9 +293,52 @@ export function CreatePetitionForm() {
     );
   };
 
-  const scrollToStep = (n: number) => {
-    sectionRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  function getFieldValue(name: string): string {
+    const form = formRef.current;
+    if (!form) return '';
+    const el = form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
+    return el?.value.trim() ?? '';
+  }
+
+  // Validates just the current step's required fields, gating advancement —
+  // the wizard only lets you move forward once the visible step is valid.
+  function validateStep(n: number): boolean {
+    if (n === 1) {
+      const titleVal = getFieldValue('title');
+      const summaryVal = getFieldValue('summary');
+      const next: typeof fieldErrors = {
+        title: titleVal ? undefined : 'Tell us what needs to change.',
+        summary: summaryVal ? undefined : 'Add a one-sentence summary.',
+      };
+      setFieldErrors((prev) => ({ ...prev, ...next }));
+      return !next.title && !next.summary;
+    }
+    if (n === 3) {
+      const descriptionVal = getFieldValue('description');
+      const next: typeof fieldErrors = {
+        description: descriptionVal ? undefined : 'Share the full story — this helps reviewers and supporters.',
+      };
+      setFieldErrors((prev) => ({ ...prev, ...next }));
+      return !next.description;
+    }
+    return true;
+  }
+
+  function goNext() {
+    if (!validateStep(currentStep)) return;
+    const next = Math.min(currentStep + 1, STEPS.length);
+    setCurrentStep(next);
+    setMaxStepReached((m) => Math.max(m, next));
+  }
+
+  function goBack() {
+    setCurrentStep((s) => Math.max(1, s - 1));
+  }
+
+  function goToStep(n: number) {
+    if (n > maxStepReached) return;
+    setCurrentStep(n);
+  }
 
   const handleImageFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -364,7 +392,9 @@ export function CreatePetitionForm() {
     if (!descriptionVal) errors.description = 'Share the full story — this helps reviewers and supporters.';
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      scrollToStep(errors.title || errors.summary ? 1 : 3);
+      const invalidStep = errors.title || errors.summary ? 1 : 3;
+      setCurrentStep(invalidStep);
+      setMaxStepReached((m) => Math.max(m, invalidStep));
       return;
     }
 
@@ -505,36 +535,63 @@ export function CreatePetitionForm() {
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-neutral-800">
               <div
                 className="h-full bg-emerald-500 transition-all duration-500 ease-out"
-                style={{ width: `${(activeStep / STEPS.length) * 100}%` }}
+                style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
               />
             </div>
             <p className="mt-2 text-xs font-medium text-zinc-500 dark:text-neutral-400">
-              Step {activeStep} of {STEPS.length} — {STEPS[activeStep - 1]?.label}
+              Step {currentStep} of {STEPS.length} — {STEPS[currentStep - 1]?.label}
             </p>
           </div>
           <nav className="mt-3 mb-6 hidden sm:flex items-center gap-1 overflow-x-auto" aria-label="Form sections">
-            {STEPS.map((s, i) => (
-              <button
-                key={s.n}
-                type="button"
-                onClick={() => scrollToStep(s.n)}
-                className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:border-emerald-400 hover:text-emerald-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-emerald-500 dark:hover:text-emerald-400 transition"
-              >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-extrabold text-white dark:bg-emerald-500">
-                  {s.n}
-                </span>
-                {s.label}
-                {i < STEPS.length - 1 && <span className="ml-1 text-zinc-300 dark:text-neutral-600">›</span>}
-              </button>
-            ))}
+            {STEPS.map((s, i) => {
+              const isCurrent = s.n === currentStep;
+              const isLocked = s.n > maxStepReached;
+              return (
+                <button
+                  key={s.n}
+                  type="button"
+                  onClick={() => goToStep(s.n)}
+                  disabled={isLocked}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    isCurrent
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-300'
+                      : isLocked
+                        ? 'cursor-not-allowed border-zinc-200 bg-white text-zinc-400 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-600'
+                        : 'border-zinc-200 bg-white text-zinc-600 hover:border-emerald-400 hover:text-emerald-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-emerald-500 dark:hover:text-emerald-400'
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold text-white ${
+                      isLocked ? 'bg-zinc-300 dark:bg-neutral-700' : 'bg-emerald-600 dark:bg-emerald-500'
+                    }`}
+                  >
+                    {s.n}
+                  </span>
+                  {s.label}
+                  {i < STEPS.length - 1 && <span className="ml-1 text-zinc-300 dark:text-neutral-600">›</span>}
+                </button>
+              );
+            })}
           </nav>
 
-          <form ref={formRef} onSubmit={submit} noValidate className="space-y-6">
+          <form
+            ref={formRef}
+            onSubmit={submit}
+            noValidate
+            className="space-y-6"
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+              if (currentStep !== STEPS.length) {
+                e.preventDefault();
+                goNext();
+              }
+            }}
+          >
             {/* STEP 1 — Issue details */}
             <Card
               rounded="2xl"
-              ref={(el) => { sectionRefs.current[0] = el; }}
-              className="bg-zinc-50 p-5"
+              className={currentStep === 1 ? 'bg-zinc-50 p-5' : 'hidden bg-zinc-50 p-5'}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 1</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Issue details</h2>
@@ -586,8 +643,7 @@ export function CreatePetitionForm() {
             {/* STEP 2 — Categories & location */}
             <Card
               rounded="2xl"
-              ref={(el) => { sectionRefs.current[1] = el; }}
-              className="bg-zinc-50 p-5"
+              className={currentStep === 2 ? 'bg-zinc-50 p-5' : 'hidden bg-zinc-50 p-5'}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 2</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Categories &amp; location</h2>
@@ -718,8 +774,7 @@ export function CreatePetitionForm() {
             {/* STEP 3 — Story */}
             <Card
               rounded="2xl"
-              ref={(el) => { sectionRefs.current[2] = el; }}
-              className="bg-zinc-50 p-5"
+              className={currentStep === 3 ? 'bg-zinc-50 p-5' : 'hidden bg-zinc-50 p-5'}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 3</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Why does it matter?</h2>
@@ -740,8 +795,7 @@ export function CreatePetitionForm() {
             {/* STEP 4 — Campaign media */}
             <Card
               rounded="2xl"
-              ref={(el) => { sectionRefs.current[3] = el; }}
-              className="bg-zinc-50 p-5"
+              className={currentStep === 4 ? 'bg-zinc-50 p-5' : 'hidden bg-zinc-50 p-5'}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 4</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Campaign media</h2>
@@ -794,8 +848,7 @@ export function CreatePetitionForm() {
             {/* STEP 5 — Identity & privacy */}
             <Card
               rounded="2xl"
-              ref={(el) => { sectionRefs.current[4] = el; }}
-              className="bg-zinc-50 p-5"
+              className={currentStep === 5 ? 'bg-zinc-50 p-5' : 'hidden bg-zinc-50 p-5'}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-neutral-500">Step 5</p>
               <h2 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-neutral-50">Identity &amp; privacy</h2>
@@ -831,21 +884,31 @@ export function CreatePetitionForm() {
               </p>
             </Card>
 
-            {/* Submit */}
+            {/* Step navigation */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-2 dark:border-neutral-800">
-              <button type="button" onClick={() => history.back()}
-                className="rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700">
-                Back
+              <button
+                type="button"
+                onClick={currentStep === 1 ? () => history.back() : goBack}
+                className="rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                {currentStep === 1 ? 'Cancel' : 'Back'}
               </button>
-              <div className="text-right">
-                <p className="mb-2 text-xs text-zinc-500 dark:text-neutral-500">
-                  After submission, your petition goes to review before it appears publicly.
-                </p>
-                <button type="submit" disabled={submitting}
-                  className="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition-all hover:shadow-md hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600 dark:hover:from-amber-400 dark:hover:to-amber-500">
-                  {submitting ? 'Submitting…' : 'Submit for review'}
+              {currentStep === STEPS.length ? (
+                <div className="text-right">
+                  <p className="mb-2 text-xs text-zinc-500 dark:text-neutral-500">
+                    After submission, your petition goes to review before it appears publicly.
+                  </p>
+                  <button type="submit" disabled={submitting}
+                    className="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition-all hover:shadow-md hover:from-amber-300 hover:to-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600 dark:hover:from-amber-400 dark:hover:to-amber-500">
+                    {submitting ? 'Submitting…' : 'Submit for review'}
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={goNext}
+                  className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400">
+                  Next — {STEPS[currentStep]?.label}
                 </button>
-              </div>
+              )}
             </div>
           </form>
 
