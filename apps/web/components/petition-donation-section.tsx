@@ -19,26 +19,34 @@ export function PetitionDonationSection({
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const [petitionDonationsEnabled, setPetitionDonationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadSettings() {
+      setLoading(true);
+      setSettingsError(false);
       try {
         const settings = await apiGet<{
           donationsEnabled: boolean;
           petitionDonationsEnabled: boolean;
         }>('/settings/system');
+        if (cancelled) return;
         setDonationsEnabled(settings.donationsEnabled);
         setPetitionDonationsEnabled(settings.petitionDonationsEnabled);
       } catch {
-        // Default to hidden on error — showing a broken donation widget is worse than hiding it
-        setDonationsEnabled(false);
-        setPetitionDonationsEnabled(false);
+        // Distinguish "feature intentionally off" from "couldn't load" — a
+        // network blip shouldn't silently make the whole widget vanish.
+        if (cancelled) return;
+        setSettingsError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     loadSettings();
-  }, [token]);
+    return () => { cancelled = true; };
+  }, [token, retryKey]);
 
   async function pollMoMoStatus(referenceId: string) {
     if (!token) return;
@@ -127,7 +135,28 @@ export function PetitionDonationSection({
     window.location.href = res.data.url;
   }
 
-  if (loading || !donationsEnabled || !petitionDonationsEnabled) {
+  if (loading) {
+    return null;
+  }
+
+  if (settingsError) {
+    return (
+      <section className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center dark:border-neutral-700 dark:bg-neutral-900">
+        <p className="text-sm text-zinc-500 dark:text-neutral-400">
+          Couldn't load donation options right now.
+        </p>
+        <button
+          type="button"
+          onClick={() => setRetryKey((k) => k + 1)}
+          className="mt-2 text-sm font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+        >
+          Try again
+        </button>
+      </section>
+    );
+  }
+
+  if (!donationsEnabled || !petitionDonationsEnabled) {
     return null;
   }
 

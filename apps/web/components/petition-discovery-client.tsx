@@ -8,6 +8,7 @@ import { SearchBar, type SearchFilters } from './search-bar';
 import { PetitionGridCard } from './petition-grid-card';
 import { PetitionListItem } from './petition-list-item';
 import { PetitionCategorySection } from './petition-category-section';
+import { EmptyState } from './empty-state';
 
 type Petition = {
   id: string;
@@ -225,19 +226,12 @@ export function PetitionDiscoveryClient({ data }: PetitionDiscoveryClientProps) 
       {/* Content */}
       <div className="mx-auto max-w-6xl px-4 py-6 md:py-10">
         {totalResults === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">No petitions found</h2>
-            <p className="text-zinc-500 dark:text-neutral-400 mb-6">
-              Try adjusting your search filters or browse all categories
-            </p>
-            <button
-              onClick={handleClear}
-              className="inline-block px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            icon="🔍"
+            title="No petitions found"
+            description="Try adjusting your search filters or browse all petitions to find causes you care about."
+            action={{ label: 'Clear filters', onClick: handleClear }}
+          />
         ) : (
           <div className="space-y-8">
             {/* Trending section - always at top if petitions exist */}
