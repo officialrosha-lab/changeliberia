@@ -7,6 +7,14 @@ import {
   PaymentStatus,
   SubscriptionStatus,
 } from './payments.constants';
+import {
+  StripeEvent,
+  StripePaymentIntent,
+  StripeInvoice,
+  StripeSubscription,
+  StripeCharge,
+  StripeCustomer,
+} from '../config/stripe.config';
 
 /**
  * Service to handle specific Stripe webhook event types
@@ -25,65 +33,92 @@ export class WebhookEventHandlerService {
   /**
    * Route webhook event to appropriate handler based on event type
    */
-  async handleWebhookEvent(event: any): Promise<void> {
+  async handleWebhookEvent(event: StripeEvent): Promise<void> {
     this.logger.debug(`Processing webhook event: ${event.type} (${event.id})`);
 
-    switch (event.type) {
+    switch (event.type as StripeEventType) {
       // Payment Intent Events
       case StripeEventType.PAYMENT_INTENT_SUCCEEDED:
-        await this.handlePaymentIntentSucceeded(event.data.object, event.id);
+        await this.handlePaymentIntentSucceeded(
+          event.data.object as StripePaymentIntent,
+          event.id,
+        );
         break;
 
       case StripeEventType.PAYMENT_INTENT_PAYMENT_FAILED:
-        await this.handlePaymentIntentFailed(event.data.object, event.id);
+        await this.handlePaymentIntentFailed(
+          event.data.object as StripePaymentIntent,
+          event.id,
+        );
         break;
 
       case StripeEventType.PAYMENT_INTENT_CANCELED:
-        await this.handlePaymentIntentCanceled(event.data.object, event.id);
+        await this.handlePaymentIntentCanceled(
+          event.data.object as StripePaymentIntent,
+          event.id,
+        );
         break;
 
       // Subscription Events
       case StripeEventType.CUSTOMER_SUBSCRIPTION_CREATED:
-        await this.handleSubscriptionCreated(event.data.object, event.id);
+        await this.handleSubscriptionCreated(
+          event.data.object as StripeSubscription,
+          event.id,
+        );
         break;
 
       case StripeEventType.CUSTOMER_SUBSCRIPTION_UPDATED:
-        await this.handleSubscriptionUpdated(event.data.object, event.id);
+        await this.handleSubscriptionUpdated(
+          event.data.object as StripeSubscription,
+          event.id,
+        );
         break;
 
       case StripeEventType.CUSTOMER_SUBSCRIPTION_DELETED:
-        await this.handleSubscriptionDeleted(event.data.object, event.id);
+        await this.handleSubscriptionDeleted(
+          event.data.object as StripeSubscription,
+          event.id,
+        );
         break;
 
       // Invoice Events
       case StripeEventType.INVOICE_PAYMENT_SUCCEEDED:
-        await this.handleInvoicePaymentSucceeded(event.data.object, event.id);
+        await this.handleInvoicePaymentSucceeded(
+          event.data.object as StripeInvoice,
+          event.id,
+        );
         break;
 
       case StripeEventType.INVOICE_PAYMENT_FAILED:
-        await this.handleInvoicePaymentFailed(event.data.object, event.id);
+        await this.handleInvoicePaymentFailed(
+          event.data.object as StripeInvoice,
+          event.id,
+        );
         break;
 
       // Charge Events
       case StripeEventType.CHARGE_SUCCEEDED:
-        this.handleChargeSucceeded(event.data.object);
+        this.handleChargeSucceeded(event.data.object as StripeCharge);
         break;
 
       case StripeEventType.CHARGE_FAILED:
-        this.handleChargeFailed(event.data.object);
+        this.handleChargeFailed(event.data.object as StripeCharge);
         break;
 
       case StripeEventType.CHARGE_REFUNDED:
-        await this.handleChargeRefunded(event.data.object, event.id);
+        await this.handleChargeRefunded(
+          event.data.object as StripeCharge,
+          event.id,
+        );
         break;
 
       // Customer Events
       case StripeEventType.CUSTOMER_CREATED:
-        this.handleCustomerCreated(event.data.object);
+        this.handleCustomerCreated(event.data.object as StripeCustomer);
         break;
 
       case StripeEventType.CUSTOMER_DELETED:
-        this.handleCustomerDeleted(event.data.object);
+        this.handleCustomerDeleted(event.data.object as StripeCustomer);
         break;
 
       default:
@@ -96,7 +131,7 @@ export class WebhookEventHandlerService {
    * One-time payment completed successfully
    */
   private async handlePaymentIntentSucceeded(
-    paymentIntent: any,
+    paymentIntent: StripePaymentIntent,
     eventId: string,
   ): Promise<void> {
     try {
@@ -123,7 +158,10 @@ export class WebhookEventHandlerService {
         where: { id: payment.id },
         data: {
           status: PaymentStatus.COMPLETED,
-          stripeChargeId: paymentIntent.charges.data[0]?.id || null,
+          stripeChargeId:
+            (typeof paymentIntent.latest_charge === 'string'
+              ? paymentIntent.latest_charge
+              : paymentIntent.latest_charge?.id) || null,
           lastWebhookEventId: eventId,
           completedAt: new Date(),
         },
@@ -174,7 +212,7 @@ export class WebhookEventHandlerService {
    * One-time payment failed
    */
   private async handlePaymentIntentFailed(
-    paymentIntent: any,
+    paymentIntent: StripePaymentIntent,
     eventId: string,
   ): Promise<void> {
     try {
@@ -243,7 +281,7 @@ export class WebhookEventHandlerService {
    * Payment was canceled before completion
    */
   private async handlePaymentIntentCanceled(
-    paymentIntent: any,
+    paymentIntent: StripePaymentIntent,
     eventId: string,
   ): Promise<void> {
     try {
@@ -294,12 +332,16 @@ export class WebhookEventHandlerService {
    * New recurring donation subscription started
    */
   private async handleSubscriptionCreated(
-    subscription: any,
+    subscription: StripeSubscription,
     eventId: string,
   ): Promise<void> {
     try {
       const subscriptionId = subscription.id;
       const customerId = subscription.customer as string;
+      const subscriptionPeriodStart =
+        subscription.items.data[0]?.current_period_start;
+      const subscriptionPeriodEnd =
+        subscription.items.data[0]?.current_period_end;
 
       this.logger.log(`Subscription created: ${subscriptionId}`);
 
@@ -331,10 +373,12 @@ export class WebhookEventHandlerService {
             subscription.items.data[0]?.price?.recurring?.interval,
           ),
           lastWebhookEventId: eventId,
-          currentPeriodStart: new Date(
-            subscription.current_period_start * 1000,
-          ),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: subscriptionPeriodStart
+            ? new Date(subscriptionPeriodStart * 1000)
+            : new Date(),
+          currentPeriodEnd: subscriptionPeriodEnd
+            ? new Date(subscriptionPeriodEnd * 1000)
+            : new Date(),
         },
       });
 
@@ -377,7 +421,7 @@ export class WebhookEventHandlerService {
    * Subscription was modified
    */
   private async handleSubscriptionUpdated(
-    subscription: any,
+    subscription: StripeSubscription,
     eventId: string,
   ): Promise<void> {
     try {
@@ -440,7 +484,7 @@ export class WebhookEventHandlerService {
    * Subscription was canceled
    */
   private async handleSubscriptionDeleted(
-    subscription: any,
+    subscription: StripeSubscription,
     eventId: string,
   ): Promise<void> {
     try {
@@ -503,16 +547,26 @@ export class WebhookEventHandlerService {
    * Recurring subscription payment succeeded
    */
   private async handleInvoicePaymentSucceeded(
-    invoice: any,
+    invoice: StripeInvoice,
     eventId: string,
   ): Promise<void> {
     try {
       const invoiceId = invoice.id;
-      const subscriptionId = invoice.subscription as string;
+      const rawSubscription =
+        invoice.parent?.subscription_details?.subscription;
+      const subscriptionId =
+        typeof rawSubscription === 'string'
+          ? rawSubscription
+          : rawSubscription?.id;
 
       this.logger.log(
         `Invoice payment succeeded: ${invoiceId} (subscription: ${subscriptionId})`,
       );
+
+      if (!subscriptionId) {
+        this.logger.warn(`Invoice ${invoiceId} has no associated subscription`);
+        return;
+      }
 
       const subscription = await this.prisma.subscription.findUnique({
         where: { stripeSubscriptionId: subscriptionId },
@@ -577,16 +631,26 @@ export class WebhookEventHandlerService {
    * Recurring subscription payment failed
    */
   private async handleInvoicePaymentFailed(
-    invoice: any,
+    invoice: StripeInvoice,
     eventId: string,
   ): Promise<void> {
     try {
       const invoiceId = invoice.id;
-      const subscriptionId = invoice.subscription as string;
+      const rawSubscription =
+        invoice.parent?.subscription_details?.subscription;
+      const subscriptionId =
+        typeof rawSubscription === 'string'
+          ? rawSubscription
+          : rawSubscription?.id;
 
       this.logger.warn(
         `Invoice payment failed: ${invoiceId} (subscription: ${subscriptionId})`,
       );
+
+      if (!subscriptionId) {
+        this.logger.warn(`Invoice ${invoiceId} has no associated subscription`);
+        return;
+      }
 
       const subscription = await this.prisma.subscription.findUnique({
         where: { stripeSubscriptionId: subscriptionId },
@@ -650,7 +714,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.succeeded event
    */
-  private handleChargeSucceeded(charge: any): void {
+  private handleChargeSucceeded(charge: StripeCharge): void {
     this.logger.debug(`Charge succeeded: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -658,7 +722,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.failed event
    */
-  private handleChargeFailed(charge: any): void {
+  private handleChargeFailed(charge: StripeCharge): void {
     this.logger.debug(`Charge failed: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -667,7 +731,7 @@ export class WebhookEventHandlerService {
    * Handle charge.refunded event
    */
   private async handleChargeRefunded(
-    charge: any,
+    charge: StripeCharge,
     eventId: string,
   ): Promise<void> {
     try {
@@ -724,7 +788,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.created event
    */
-  private handleCustomerCreated(customer: any): void {
+  private handleCustomerCreated(customer: StripeCustomer): void {
     this.logger.debug(`Customer created: ${customer.id}`);
     // Customer creation is typically initiated by the application
   }
@@ -732,7 +796,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.deleted event
    */
-  private handleCustomerDeleted(customer: any): void {
+  private handleCustomerDeleted(customer: StripeCustomer): void {
     this.logger.debug(`Customer deleted: ${customer.id}`);
     // Clean up user Stripe customer reference if needed
   }
