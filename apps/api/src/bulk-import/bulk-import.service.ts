@@ -71,15 +71,17 @@ export class BulkImportService {
         .on('data', (row: CSVRow) => {
           rows.push(row);
         })
-        .on('end', async () => {
-          try {
-            result.totalRows = rows.length;
-            await this.processCSVRows(rows, result);
-            result.success = result.errors.length === 0;
-            resolve(result);
-          } catch (error) {
-            reject(error);
-          }
+        .on('end', () => {
+          void (async () => {
+            try {
+              result.totalRows = rows.length;
+              await this.processCSVRows(rows, result);
+              result.success = result.errors.length === 0;
+              resolve(result);
+            } catch (error) {
+              reject(error);
+            }
+          })();
         })
         .on('error', (error: Error) => {
           reject(

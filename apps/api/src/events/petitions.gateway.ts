@@ -63,7 +63,7 @@ export class PetitionsGateway
     client_info.petitionId = petitionId;
     this.connectedClients.set(client.id, client_info);
 
-    client.join(`petition:${petitionId}`);
+    void client.join(`petition:${petitionId}`);
     this.logger.log(`Client ${client.id} subscribed to petition ${petitionId}`);
 
     // Send current petition data
@@ -181,7 +181,7 @@ export class PetitionsGateway
   /**
    * Helper: Generate pulse map hotspot data
    */
-  private async getPulseMapData() {
+  private getPulseMapData() {
     // Sample hotspots - in production, query from Prisma
     const counties = [
       { name: 'Montserrado', lat: 6.3183, lng: -10.8085, intensity: 0.8 },

@@ -50,7 +50,6 @@ export class EncryptionService {
    * Derive encryption key from master key
    */
   private deriveKey(masterKey: string): Buffer {
-
     if (this.config.keyDerivation === 'pbkdf2') {
       return crypto.pbkdf2Sync(
         masterKey,

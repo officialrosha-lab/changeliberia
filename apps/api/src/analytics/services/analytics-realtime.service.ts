@@ -17,7 +17,7 @@ export class AnalyticsRealtimeService {
    * Listen to message.created event and broadcast to analytics subscribers
    */
   @OnEvent('message.created')
-  async onMessageCreated(event: {
+  onMessageCreated(event: {
     messageId: string;
     senderId: string;
     recipientId: string;
@@ -46,7 +46,7 @@ export class AnalyticsRealtimeService {
    * Listen to broadcast.sent event and broadcast to analytics subscribers
    */
   @OnEvent('broadcast.sent')
-  async onBroadcastSent(event: {
+  onBroadcastSent(event: {
     broadcastId: string;
     title: string;
     recipientCount: number;

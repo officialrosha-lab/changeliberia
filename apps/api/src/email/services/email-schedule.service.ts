@@ -119,7 +119,7 @@ export class EmailScheduleService {
    * Retry failed emails every 15 minutes
    */
   @Cron('*/15 * * * *') // Every 15 minutes
-  async retryFailedEmails(): Promise<void> {
+  retryFailedEmails(): void {
     try {
       // Retry failed emails directly
       this.logger.log('Retrying failed emails...');

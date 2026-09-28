@@ -17,11 +17,13 @@ export class PushEventService {
     private readonly pushService: PushNotificationService,
     private readonly eventEmitter: EventEmitter2,
   ) {
-    this.eventEmitter.on('petition.milestone', (event) =>
-      this.onMilestone(event),
+    this.eventEmitter.on(
+      'petition.milestone',
+      (event) => void this.onMilestone(event),
     );
-    this.eventEmitter.on('petition.government-response-advanced', (event) =>
-      this.onResponseAdvanced(event),
+    this.eventEmitter.on(
+      'petition.government-response-advanced',
+      (event) => void this.onResponseAdvanced(event),
     );
   }
 

@@ -26,7 +26,7 @@ class RedisIoAdapter extends IoAdapter {
     this.pubClient = createClient({ url: redisUrl });
     this.subClient = this.pubClient.duplicate();
 
-    Promise.allSettled([
+    void Promise.allSettled([
       this.pubClient.connect(),
       this.subClient.connect(),
     ]).then(async ([pubResult, subResult]) => {

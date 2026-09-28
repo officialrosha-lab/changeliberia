@@ -319,10 +319,7 @@ export class FacebookPixelService {
     return `fb_aud_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   }
 
-  private async sendToFacebookAPI(
-    eventId: string,
-    data: Record<string, any>,
-  ): Promise<void> {
+  private sendToFacebookAPI(eventId: string, data: Record<string, any>): void {
     // Placeholder for Facebook Conversions API call
     // In production:
     // POST https://graph.facebook.com/v18.0/{PIXEL_ID}/events
