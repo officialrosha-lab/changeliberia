@@ -44,7 +44,7 @@ export function MobileMenuOverlay() {
     // Mounted outside the sticky/stacking-context wrapper so it is never clipped
     // by overflow-x:hidden or will-change:transform on parent elements.
     <div
-      className={`fixed inset-0 z-[60] flex flex-col bg-white dark:bg-neutral-900 transition-transform duration-300 ease-out md:hidden ${
+      className={`fixed inset-0 z-[60] flex flex-col bg-white dark:bg-neutral-900 transition-transform duration-300 ease-out xl:hidden ${
         isOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none'
       }`}
       aria-hidden={!isOpen}
