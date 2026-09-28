@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { AlertCircle, Trophy } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { apiGet } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 // UI Components (inline)
@@ -26,12 +26,6 @@ const CardContent = ({ children, className = '' }: { children: React.ReactNode; 
 const Skeleton = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded-md bg-gradient-to-r from-zinc-200 to-zinc-100 dark:from-neutral-700 dark:to-neutral-800 ${className}`} />
 );
-
-const Badge = ({ children, className = '', variant = 'default' }: { children: React.ReactNode; className?: string; variant?: 'default' | 'outline' }) => {
-  const baseStyles = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold';
-  const variantStyles = variant === 'outline' ? 'border border-zinc-200 bg-transparent text-zinc-900 dark:border-neutral-700' : 'bg-zinc-200 text-zinc-900 dark:bg-neutral-700';
-  return <span className={`${baseStyles} ${variantStyles} ${className}`}>{children}</span>;
-};
 
 interface BadgeData {
   badgeType: string;

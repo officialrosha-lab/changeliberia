@@ -18,7 +18,7 @@ export default function PollDetailError({
     <main className="mx-auto max-w-xl px-4 py-16 text-center">
       <div className="rounded-3xl border border-red-100 bg-red-50 p-8 dark:border-red-900/40 dark:bg-red-950/20">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-500">Error</p>
-        <h1 className="mt-3 text-2xl font-bold text-zinc-900 dark:text-neutral-50">This poll couldn't load</h1>
+        <h1 className="mt-3 text-2xl font-bold text-zinc-900 dark:text-neutral-50">This poll couldn&apos;t load</h1>
         <p className="mt-3 text-sm text-zinc-600 dark:text-neutral-400">
           {error.message || 'An unexpected error occurred.'}
         </p>

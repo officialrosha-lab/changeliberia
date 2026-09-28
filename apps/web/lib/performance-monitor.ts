@@ -22,6 +22,20 @@ export interface WebVitals {
   ttfb?: PerformanceMetric; // Time to First Byte
 }
 
+// Web Performance API entry subtypes not (yet) covered by TS's default DOM lib.
+interface LargestContentfulPaintEntry extends PerformanceEntry {
+  renderTime?: number;
+  loadTime?: number;
+  id?: string;
+}
+interface LayoutShiftEntry extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
+}
+interface InteractionEntry extends PerformanceEntry {
+  processingDuration?: number;
+}
+
 export interface PerformanceReport {
   url: string;
   timestamp: Date;
@@ -59,7 +73,7 @@ class PerformanceMonitor {
       try {
         const lcpObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1] as any;
+          const lastEntry = entries[entries.length - 1] as LargestContentfulPaintEntry;
           const value = lastEntry.renderTime || lastEntry.loadTime || lastEntry.startTime;
           this.vitals.lcp = {
             name: 'Largest Contentful Paint',
@@ -71,7 +85,7 @@ class PerformanceMonitor {
 
         lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
         this.observers.set('lcp', lcpObserver);
-      } catch (e) {
+      } catch {
         console.warn('LCP observer not supported');
       }
 
@@ -80,8 +94,9 @@ class PerformanceMonitor {
         let clsValue = 0;
         const clsObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            if (!(entry as any).hadRecentInput) {
-              clsValue += (entry as any).value;
+            const layoutShiftEntry = entry as LayoutShiftEntry;
+            if (!layoutShiftEntry.hadRecentInput) {
+              clsValue += layoutShiftEntry.value;
             }
           }
           this.vitals.cls = {
@@ -94,7 +109,7 @@ class PerformanceMonitor {
 
         clsObserver.observe({ entryTypes: ['layout-shift'] });
         this.observers.set('cls', clsObserver);
-      } catch (e) {
+      } catch {
         console.warn('CLS observer not supported');
       }
 
@@ -106,8 +121,8 @@ class PerformanceMonitor {
             const lastEntry = entries[entries.length - 1];
             this.vitals.inp = {
               name: 'Interaction to Next Paint',
-              value: (lastEntry as any).processingDuration || 0,
-              rating: this.getRatingINP((lastEntry as any).processingDuration || 0),
+              value: (lastEntry as InteractionEntry).processingDuration || 0,
+              rating: this.getRatingINP((lastEntry as InteractionEntry).processingDuration || 0),
               id: 'inp',
             };
           }
@@ -115,7 +130,7 @@ class PerformanceMonitor {
 
         inpObserver.observe({ entryTypes: ['first-input', 'event'] });
         this.observers.set('inp', inpObserver);
-      } catch (e) {
+      } catch {
         console.warn('INP observer not supported');
       }
 
@@ -136,7 +151,7 @@ class PerformanceMonitor {
 
         fcpObserver.observe({ entryTypes: ['paint'] });
         this.observers.set('fcp', fcpObserver);
-      } catch (e) {
+      } catch {
         console.warn('FCP observer not supported');
       }
     }

@@ -10,20 +10,16 @@ export default function VerifyEmailPage() {
   const router = useRouter();
   const toast = useToast();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
-  const [message, setMessage] = useState('Verifying your email...');
-  const [error, setError] = useState<string | null>(null);
-
   const email = searchParams.get('email');
   const token = searchParams.get('token');
+  const missingParams = !email || !token;
+
+  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>(missingParams ? 'error' : 'verifying');
+  const [message, setMessage] = useState(missingParams ? 'Invalid verification link' : 'Verifying your email...');
+  const [error, setError] = useState<string | null>(missingParams ? 'Missing email or token' : null);
 
   useEffect(() => {
-    if (!email || !token) {
-      setStatus('error');
-      setMessage('Invalid verification link');
-      setError('Missing email or token');
-      return;
-    }
+    if (!email || !token) return;
 
     const verifyEmail = async () => {
       try {
@@ -34,10 +30,10 @@ export default function VerifyEmailPage() {
         setTimeout(() => {
           router.push('/auth/login');
         }, 2000);
-      } catch (err: any) {
+      } catch (err) {
         setStatus('error');
         setMessage('Email verification failed');
-        setError(err.message || 'An error occurred during verification');
+        setError(err instanceof Error ? err.message : 'An error occurred during verification');
       }
     };
 

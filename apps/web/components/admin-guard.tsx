@@ -14,22 +14,19 @@ type Props = {
 export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
   const token = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s.hydrated);
-  const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
+  const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
+  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!token) {
-      setPhase('denied');
-      return;
-    }
+    if (!hydrated || !token) return;
     let cancelled = false;
     void (async () => {
       try {
         const me = await apiGet<{ role: string }>('/users/me', token);
         if (cancelled) return;
-        setPhase(roles.includes(me.role) ? 'ok' : 'denied');
+        setAsyncPhase(roles.includes(me.role) ? 'ok' : 'denied');
       } catch {
-        if (!cancelled) setPhase('denied');
+        if (!cancelled) setAsyncPhase('denied');
       }
     })();
     return () => { cancelled = true; };

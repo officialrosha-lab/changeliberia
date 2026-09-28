@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch } from '../../lib/api';
+import { useEffect, useState, useCallback } from 'react';
+import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface Institution {
@@ -45,12 +45,7 @@ export function InstitutionsManager() {
     description: '',
   });
 
-  useEffect(() => {
-    if (!token) return;
-    loadInstitutions();
-  }, [token]);
-
-  async function loadInstitutions() {
+  const loadInstitutions = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<Institution[]>('/admin/directory/institutions', token!);
@@ -61,7 +56,12 @@ export function InstitutionsManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadInstitutions();
+  }, [token, loadInstitutions]);
 
   async function loadDepartments(institutionId: string) {
     try {

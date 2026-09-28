@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { Card } from './ui/card';
@@ -34,12 +34,7 @@ export function AdminSponsors() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Sponsor>>({});
 
-  useEffect(() => {
-    if (!token) return;
-    void load();
-  }, [token]);
-
-  async function load() {
+  const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
@@ -50,7 +45,12 @@ export function AdminSponsors() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    void load();
+  }, [token, load]);
 
   async function create() {
     if (!token || !form.name || !form.logoUrl) return;

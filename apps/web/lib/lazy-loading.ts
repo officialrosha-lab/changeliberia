@@ -3,7 +3,7 @@
  * Helpers for dynamic imports and component splitting
  */
 
-import { ComponentType, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 /**
  * Configuration for lazy loading
@@ -32,17 +32,17 @@ export interface LazyLoadConfig {
  */
 export const LAZY_ROUTES = {
   // Admin routes
-  'admin/dashboard': () => Promise.resolve({ default: null }) as any,
-  'admin/settings': () => Promise.resolve({ default: null }) as any,
-  'admin/donations': () => Promise.resolve({ default: null }) as any,
-  'admin/cms': () => Promise.resolve({ default: null }) as any,
+  'admin/dashboard': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'admin/settings': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'admin/donations': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'admin/cms': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
 
   // Public routes
-  'petitions': () => Promise.resolve({ default: null }) as any,
-  'create': () => Promise.resolve({ default: null }) as any,
-  'dashboard': () => Promise.resolve({ default: null }) as any,
-  'auth/login': () => Promise.resolve({ default: null }) as any,
-  'auth/signup': () => Promise.resolve({ default: null }) as any,
+  'petitions': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'create': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'dashboard': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'auth/login': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'auth/signup': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
 };
 
 /**
@@ -50,19 +50,19 @@ export const LAZY_ROUTES = {
  */
 export const LAZY_COMPONENTS = {
   // Heavy components
-  'CMSPageBuilder': () => Promise.resolve({ default: null }) as any,
-  'PetitionWizardForm': () => Promise.resolve({ default: null }) as any,
-  'AnalyticsDashboard': () => Promise.resolve({ default: null }) as any,
-  'GamificationPanel': () => Promise.resolve({ default: null }) as any,
+  'CMSPageBuilder': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'PetitionWizardForm': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'AnalyticsDashboard': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'GamificationPanel': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
 
   // Modal components
-  'ShareModal': () => Promise.resolve({ default: null }) as any,
-  'DonationSuccessModal': () => Promise.resolve({ default: null }) as any,
+  'ShareModal': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'DonationSuccessModal': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
 
   // Admin components
-  'AdminDonationSettings': () => Promise.resolve({ default: null }) as any,
-  'CMSAdminDashboard': () => Promise.resolve({ default: null }) as any,
-  'CMSContentTypeManager': () => Promise.resolve({ default: null }) as any,
+  'AdminDonationSettings': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'CMSAdminDashboard': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
+  'CMSContentTypeManager': () => Promise.resolve({ default: null }) as Promise<{ default: null }>,
 };
 
 /**
@@ -173,7 +173,7 @@ export function createLazyImageObserver(): IntersectionObserver {
 /**
  * Get module entry point for dynamic imports
  */
-export async function dynamicImport<T = any>(
+export async function dynamicImport<T = unknown>(
   modulePath: string,
   config?: LazyLoadConfig
 ): Promise<T> {
@@ -182,8 +182,8 @@ export async function dynamicImport<T = any>(
       await new Promise((resolve) => setTimeout(resolve, config.delay));
     }
 
-    let timeoutId: NodeJS.Timeout | undefined;
     if (config?.timeout) {
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(
           () => reject(new Error(`Module loading timeout: ${modulePath}`)),
@@ -192,12 +192,16 @@ export async function dynamicImport<T = any>(
       });
 
       const modulePromise = import(modulePath);
-      return Promise.race([modulePromise, timeoutPromise]) as Promise<T>;
+      try {
+        return (await Promise.race([modulePromise, timeoutPromise])) as T;
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
 
-    const module = await import(modulePath);
+    const loadedModule = await import(modulePath);
     config?.onLoad?.();
-    return module;
+    return loadedModule;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     config?.onError?.(err);
@@ -276,7 +280,7 @@ export function prefetchOnIdle(urls: string[]): void {
   if (typeof window === 'undefined') return;
 
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => {
+    (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(() => {
       urls.forEach((url) => prefetchResource(url));
     });
   } else {

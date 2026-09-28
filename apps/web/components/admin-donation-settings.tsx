@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useToast } from '../lib/toast-context';
 
 interface DonationCampaign {
@@ -72,7 +72,7 @@ export function AdminDonationSettings({
 
     setSaving(true);
     try {
-      await onCreateCampaign?.(formData as any);
+      await onCreateCampaign?.(formData as Omit<DonationCampaign, 'id' | 'createdAt' | 'currentAmount' | 'donorCount'>);
       setFormData({
         title: '',
         description: '',

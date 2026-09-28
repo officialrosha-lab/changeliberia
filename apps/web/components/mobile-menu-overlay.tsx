@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -53,9 +54,11 @@ export function MobileMenuOverlay() {
     >
       {/* Header row */}
       <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-neutral-800">
-        <img
+        <Image
           src="/logo.png"
           alt="Change Liberia"
+          width={600}
+          height={400}
           className="h-8 w-auto max-w-[150px] object-contain dark:hidden"
         />
         <span className="hidden dark:block text-base font-extrabold text-emerald-400">

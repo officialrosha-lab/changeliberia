@@ -15,11 +15,7 @@ export function ModeratorPageClient() {
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!token) {
-      setPhase('denied');
-      return;
-    }
+    if (!hydrated || !token) return;
     let cancelled = false;
     void (async () => {
       try {

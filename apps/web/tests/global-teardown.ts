@@ -1,11 +1,9 @@
-import { FullConfig } from '@playwright/test';
-
 /**
  * Global teardown for Playwright tests
  * Runs once after all tests complete
  */
 
-async function globalTeardown(config: FullConfig) {
+async function globalTeardown() {
   console.log('\n🧹 Starting test suite cleanup...\n');
 
   // Clean up test data

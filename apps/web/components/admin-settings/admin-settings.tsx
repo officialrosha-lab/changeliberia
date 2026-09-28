@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { Card } from '../ui/card';
@@ -43,12 +43,7 @@ export function AdminSettings() {
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplatePerms, setNewTemplatePerms] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!token) return;
-    loadData();
-  }, [token]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [s, t, st] = await Promise.all([
@@ -65,7 +60,12 @@ export function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadData();
+  }, [token, loadData]);
 
   async function handleSaveScope(scope: ModeratorScope) {
     if (!token) return;
@@ -443,7 +443,7 @@ export function AdminSettings() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
                   <div>
                     <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Platform Support Donations</label>
-                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show 'Support Change Liberia' section</p>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show &apos;Support Change Liberia&apos; section</p>
                   </div>
                   <input
                     type="checkbox"
@@ -458,7 +458,7 @@ export function AdminSettings() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
                   <div>
                     <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Petition Support Donations</label>
-                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show 'Support this Petition' sections</p>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show &apos;Support this Petition&apos; sections</p>
                   </div>
                   <input
                     type="checkbox"

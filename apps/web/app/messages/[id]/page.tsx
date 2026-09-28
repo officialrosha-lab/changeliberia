@@ -78,8 +78,8 @@ export default function MessageThreadPage() {
         if (cancelled) return;
         setCurrentUser(user);
         setThreadData(thread);
-      } catch (err: any) {
-        setError(err?.message || 'Failed to load message thread');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load message thread');
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -129,8 +129,8 @@ export default function MessageThreadPage() {
       show('Reply sent successfully', 'success');
       const updatedThread = await apiGet<ThreadResponse>(`/messages/${messageId}/thread`, token);
       setThreadData(updatedThread);
-    } catch (err: any) {
-      show(err?.message || 'Failed to send reply', 'error');
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Failed to send reply', 'error');
     } finally {
       setIsSending(false);
     }

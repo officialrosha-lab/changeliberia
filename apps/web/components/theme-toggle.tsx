@@ -8,6 +8,9 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Intentional: this mount flag exists specifically to skip rendering
+    // theme-dependent markup on the server, avoiding a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

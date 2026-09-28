@@ -64,9 +64,6 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
   };
 
   const nextMilestone = getNextMilestone();
-  const progressToNextMilestone = Math.round(
-    ((currentSignatures - (nextMilestone / 2)) / (nextMilestone - nextMilestone / 2)) * 100
-  );
 
   const getMilestoneIcon = (target: number) => {
     if (target === 10) return '🚀';

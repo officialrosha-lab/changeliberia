@@ -2,11 +2,8 @@ import { test, expect } from '@playwright/test';
 import {
   fillInput,
   clickElement,
-  expectTextContent,
   generateTestEmail,
   generateTestPassword,
-  waitForNavigation,
-  isVisible,
 } from './test-helpers';
 
 /**
@@ -88,7 +85,7 @@ test.describe('Authentication Flow', () => {
           break;
         }
       }
-    } catch (e) {
+    } catch {
       // Tab might not exist, continue
     }
 
@@ -258,7 +255,7 @@ test.describe('Authentication Flow', () => {
     expect(url).toBeTruthy();
   });
 
-  test('should redirect to login for unauthenticated users', async ({ page, context }) => {
+  test('should redirect to login for unauthenticated users', async ({ context }) => {
     // Try to access protected page without login
     // Use a fresh context to ensure no auth tokens
     const freshPage = await context.newPage();
@@ -286,7 +283,7 @@ test.describe('Authentication Flow', () => {
       await passwordInput.fill('TestPassword123!');
 
       // Check initial type is password
-      let type = await passwordInput.getAttribute('type');
+      const type = await passwordInput.getAttribute('type');
       expect(type).toBe('password');
     }
   });

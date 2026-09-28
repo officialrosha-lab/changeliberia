@@ -136,7 +136,7 @@ export function HomeDonationSection() {
                 Help keep Change Liberia free and independent
               </h2>
               <p className="mt-5 max-w-md text-base leading-relaxed text-zinc-600 dark:text-neutral-400">
-                Change Liberia doesn't take sides on any issue — we just make sure your petition
+                Change Liberia doesn&apos;t take sides on any issue — we just make sure your petition
                 reaches the right people. Your donation keeps the platform running and pays for the
                 verification that makes every signature count, no matter where in Liberia it comes
                 from.

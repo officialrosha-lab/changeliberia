@@ -20,13 +20,6 @@ const SORT_OPTIONS = [
 
 type SortValue = typeof SORT_OPTIONS[number]['value'];
 
-const ONE_DAY_MS = 86_400_000;
-
-function isNew(poll: PollSummary & { createdAt?: string }): boolean {
-  if (!poll.createdAt) return false;
-  return Date.now() - new Date(poll.createdAt).getTime() < ONE_DAY_MS;
-}
-
 function sortPolls(polls: PollSummary[], sort: SortValue): PollSummary[] {
   return [...polls].sort((a, b) => {
     if (sort === 'popular') return b.totalVotes - a.totalVotes;
@@ -82,16 +75,6 @@ export default function CivicPulsePage() {
     }
     return map;
   }, [filtered]);
-
-  // Category counts (unfiltered, for the badge numbers)
-  const categoryCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const poll of polls) {
-      const key = CATEGORIES.includes(poll.category ?? '') ? (poll.category ?? 'Other') : 'Other';
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return map;
-  }, [polls]);
 
   const showFlat = debouncedSearch.length > 0;
 

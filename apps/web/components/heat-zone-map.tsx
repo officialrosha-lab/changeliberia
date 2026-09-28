@@ -21,6 +21,9 @@ export function HeatZoneMap({ rows, heightClassName = 'h-80' }: { rows: InsightR
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Intentional: react-leaflet requires window/document, so the map can
+    // only mount after the client-side render pass.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

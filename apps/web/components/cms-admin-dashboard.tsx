@@ -29,7 +29,7 @@ interface CMSAdminDashboardProps {
   onCreatePage?: (title: string, contentType: string) => Promise<void>;
   onEditPage?: (pageId: string) => void;
   onDeletePage?: (pageId: string) => Promise<void>;
-  onCreateContentType?: (name: string, fields: any[]) => Promise<void>;
+  onCreateContentType?: (name: string, fields: Array<{ name: string; type: string; required: boolean }>) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -40,7 +40,6 @@ export function CMSAdminDashboard({
   onEditPage,
   onDeletePage,
   onCreateContentType,
-  isLoading = false,
 }: CMSAdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'pages' | 'content-types' | 'analytics'>('pages');
   const [showCreatePageModal, setShowCreatePageModal] = useState(false);

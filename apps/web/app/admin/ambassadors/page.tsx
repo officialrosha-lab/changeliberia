@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../lib/store';
 import { apiGet } from '../../../lib/api';
-import { AdminAmbassadorsPanel } from '../../../components/admin/admin-ambassadors-panel';
+import { AdminAmbassadorsPanel, Ambassador } from '../../../components/admin/admin-ambassadors-panel';
 
 export default function AdminAmbassadorsPage() {
   const { token } = useAuthStore();
-  const [ambassadors, setAmbassadors] = useState<any[]>([]);
+  const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,10 +16,10 @@ export default function AdminAmbassadorsPage() {
 
     const fetchAmbassadors = async () => {
       try {
-        const data = await apiGet<any[]>('/ambassadors/admin', token);
+        const data = await apiGet<Ambassador[]>('/ambassadors/admin', token);
         setAmbassadors(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load ambassadors');
       } finally {
         setLoading(false);
       }

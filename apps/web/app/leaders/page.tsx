@@ -50,7 +50,7 @@ export default function LeadersPage() {
                 What does an ambassador actually do?
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-                No title, no office — just someone their community trusts to turn a shared frustration into something official. Teachers, traders, chiefs, youth organizers, pastors: if people already come to you with problems, you're most of the way there.
+                No title, no office — just someone their community trusts to turn a shared frustration into something official. Teachers, traders, chiefs, youth organizers, pastors: if people already come to you with problems, you&apos;re most of the way there.
               </p>
               <p className="mt-4 text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
                 In practice, that means:
@@ -179,7 +179,7 @@ export default function LeadersPage() {
             Ambassadors come from everywhere
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-zinc-600 dark:text-neutral-300">
-            There's no fixed profile. Here's who's applied so far:
+            There&apos;s no fixed profile. Here&apos;s who&apos;s applied so far:
           </p>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -208,7 +208,7 @@ export default function LeadersPage() {
             Ready to represent your community?
           </h2>
           <p className="mt-4 text-lg text-zinc-600 dark:text-neutral-300">
-            The application takes a few minutes. It's free, and every submission is read by a real person on our team.
+            The application takes a few minutes. It&apos;s free, and every submission is read by a real person on our team.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link

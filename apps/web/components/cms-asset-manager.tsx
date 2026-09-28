@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Asset {
   id: string;
@@ -178,7 +178,15 @@ export function CMSAssetManager({
             disabled={uploading}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-all disabled:opacity-60"
           >
-            {uploading ? '⏳ Uploading...' : '+ Upload Files'}
+            {uploading
+              ? (() => {
+                  const values = Object.values(uploadProgress);
+                  const avg = values.length
+                    ? Math.round(values.reduce((sum, v) => sum + v, 0) / values.length)
+                    : 0;
+                  return `⏳ Uploading... ${avg}%`;
+                })()
+              : '+ Upload Files'}
           </motion.button>
 
           <input
@@ -274,6 +282,7 @@ export function CMSAssetManager({
                 >
                   {/* Thumbnail */}
                   {asset.type === 'image' && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={asset.url}
                       alt={asset.name}
@@ -333,6 +342,7 @@ export function CMSAssetManager({
                 </h3>
 
                 {selectedAsset.type === 'image' && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={selectedAsset.url}
                     alt={selectedAsset.name}

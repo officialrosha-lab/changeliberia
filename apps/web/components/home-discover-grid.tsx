@@ -106,7 +106,6 @@ export function HomeDiscoverGrid({ petitions }: { petitions: HomePetition[] }) {
 
     // Filter by category
     if (searchFilters.category && searchFilters.category !== 'all') {
-      const cat = CATEGORIES.find((c) => c.id === searchFilters.category);
       results = results.filter((p) => matchesCategory(p, searchFilters.category || 'all'));
     }
 

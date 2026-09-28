@@ -74,8 +74,10 @@ export const AnimatedPlaceholderInput = forwardRef<HTMLInputElement, AnimatedPla
           }, 20);
         } else {
           // Move to next suggestion
-          setCurrentSuggestionIndex((prev) => (prev + 1) % suggestions.length);
-          setIsTyping(true);
+          timeout = setTimeout(() => {
+            setCurrentSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+            setIsTyping(true);
+          }, 0);
         }
       }
 

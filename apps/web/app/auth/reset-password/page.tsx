@@ -72,10 +72,10 @@ export default function ResetPasswordPage() {
         }
         setIsTokenValid(true);
         setStatus('idle');
-      } catch (err: any) {
+      } catch (err) {
         setStatus('error');
         setMessage('Invalid or expired reset link');
-        setError(err.message || 'Token validation failed');
+        setError(err instanceof Error ? err.message : 'Token validation failed');
       } finally {
         setIsValidating(false);
       }
@@ -114,9 +114,9 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         router.push('/auth/login');
       }, 2000);
-    } catch (err: any) {
+    } catch (err) {
       setStatus('error');
-      setError(err.message || 'Failed to reset password');
+      setError(err instanceof Error ? err.message : 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }

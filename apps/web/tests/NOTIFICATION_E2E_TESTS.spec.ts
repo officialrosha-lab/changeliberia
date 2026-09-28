@@ -8,7 +8,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('E2E: Notification Event System', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async () => {
     // Set up test user and login
     // Clear notifications for fresh test state
   });
@@ -114,7 +114,6 @@ test.describe('E2E: Notification Event System', () => {
     await page.goto('/moderator');
 
     // Step 3: Approve a pending petition
-    const pendingPetition = page.locator('text=Pending Petitions').first();
     const approveButton = page.locator('button:has-text("Approve")').first();
     await approveButton.click();
 
@@ -144,7 +143,7 @@ test.describe('E2E: Notification Event System', () => {
     await creatorPage.close();
   });
 
-  test('Petition Rejection → Notification with Reason', async ({ page }) => {
+  test('Petition Rejection → Notification with Reason', async () => {
     // Similar flow to approval but with rejection reason
     // Step 1-3: Login as moderator, navigate to moderator page
     // Step 4: Reject a petition with reason
@@ -191,7 +190,7 @@ test.describe('E2E: Notification Event System', () => {
     // Would verify successful reconnection in console
   });
 
-  test('Fallback to Polling When WebSocket Unavailable', async ({ page }) => {
+  test('Fallback to Polling When WebSocket Unavailable', async () => {
     // Step 1: Configure WebSocket to fail
     // Step 2: Login
     // Step 3: Verify polling fallback starts
@@ -199,7 +198,7 @@ test.describe('E2E: Notification Event System', () => {
     // Step 5: Verify fallback message in console
   });
 
-  test('Mark All As Read', async ({ page }) => {
+  test('Mark All As Read', async () => {
     // Step 1: Login
     // Step 2: Trigger multiple notifications
     // Step 3: Open notification dropdown
@@ -209,7 +208,7 @@ test.describe('E2E: Notification Event System', () => {
     // Step 7: Verify all marked as read persists after reload
   });
 
-  test('Notification Preferences Respected', async ({ page }) => {
+  test('Notification Preferences Respected', async () => {
     // Step 1: Login
     // Step 2: Navigate to notification preferences
     // Step 3: Disable "In-app notifications"
@@ -220,7 +219,7 @@ test.describe('E2E: Notification Event System', () => {
     // Step 8: Verify notification shows in dropdown
   });
 
-  test('Notification Type Filtering', async ({ page }) => {
+  test('Notification Type Filtering', async () => {
     // Step 1: Login
     // Step 2: Trigger multiple notification types:
     //        - SIGNATURE_RECEIVED
@@ -235,26 +234,26 @@ test.describe('E2E: Notification Event System', () => {
 });
 
 test.describe('Performance & Edge Cases', () => {
-  test('Large number of notifications (100+) should load efficiently', async ({ page }) => {
+  test('Large number of notifications (100+) should load efficiently', async () => {
     // Create 100+ notifications
     // Measure load time
     // Verify pagination works
     // Verify scrolling smooth
   });
 
-  test('Rapid notification creation should queue properly', async ({ page }) => {
+  test('Rapid notification creation should queue properly', async () => {
     // Create 10 signatures within 5 seconds
     // Verify all 10 notifications delivered
     // Verify no notifications lost
   });
 
-  test('Notification with special characters should render correctly', async ({ page }) => {
+  test('Notification with special characters should render correctly', async () => {
     // Create notification with emoji, HTML entities, etc.
     // Verify renders correctly
     // Verify no XSS vulnerabilities
   });
 
-  test('Long notification messages should truncate gracefully', async ({ page }) => {
+  test('Long notification messages should truncate gracefully', async () => {
     // Create very long notification message (500+ chars)
     // Verify it truncates in dropdown
     // Verify full message visible on /notifications page
