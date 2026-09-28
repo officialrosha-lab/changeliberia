@@ -61,14 +61,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       reconnectionAttempts: 5,
     });
 
-    socket.on('connect', () => {
-      console.log('WebSocket connected:', socket.id);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
-
     socket.on('error', (error) => {
       console.error('WebSocket error:', error);
     });

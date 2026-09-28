@@ -1,6 +1,10 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Privacy Settings — Change Liberia' };
+export const metadata = {
+  title: 'Privacy Settings — Change Liberia',
+  description: 'Control what parts of your Change Liberia activity and profile are visible to others.',
+  alternates: { canonical: '/auth/privacy' },
+};
 
 const settings = [
   {

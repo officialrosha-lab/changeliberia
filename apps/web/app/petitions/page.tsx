@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
 import { apiGet } from '../../lib/api';
 import { PetitionDiscoveryClient } from '../../components/petition-discovery-client';
+
+export const metadata: Metadata = {
+  title: 'Browse Petitions — Change Liberia',
+  description: 'Discover and sign petitions raising real civic issues across Liberia — from local infrastructure to national policy.',
+  alternates: { canonical: '/petitions' },
+};
 
 type Petition = {
   id: string;

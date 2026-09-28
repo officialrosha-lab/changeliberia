@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface ImageUploadPreviewProps {
   label?: string;
@@ -121,7 +122,7 @@ export function ImageUploadPreview({
           <div className="relative w-full aspect-video bg-zinc-200 dark:bg-neutral-700 rounded-lg overflow-hidden">
             <Image
               src={preview}
-              alt="Preview"
+              alt={label ? `${label} preview` : 'Selected image preview'}
               fill
               className="object-cover"
               sizes="100vw"
@@ -142,9 +143,7 @@ export function ImageUploadPreview({
               className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 transition-colors"
               title="Remove image"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
           </div>
         </motion.div>

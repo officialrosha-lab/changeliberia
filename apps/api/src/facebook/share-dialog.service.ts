@@ -166,7 +166,6 @@ export class ShareDialogService {
       // Initialize Facebook SDK share tracking
       if (window.FB) {
         window.FB.Event.subscribe('edge.create', function(response) {
-          console.log('Facebook share completed', response);
           // Track share event
           if (window.gtag) {
             gtag('event', 'facebook_share', {
@@ -203,11 +202,7 @@ export class ShareDialogService {
                 petitionId: petitionId,
                 method: 'dialog'
               })
-            }).then(res => res.json()).then(data => {
-              if (data.success) {
-                console.log('Share recorded successfully');
-              }
-            });
+            }).then(res => res.json());
           }
         });
       };

@@ -25,7 +25,7 @@ export function HomeFeaturedStory({ petition }: { petition: Petition }) {
             <div className="relative h-56 shrink-0 overflow-hidden bg-zinc-200 dark:bg-neutral-700 md:h-auto md:w-2/5">
               <Image
                 src={petition.imageUrl || '/globe.svg'}
-                alt=""
+                alt={petition.title}
                 fill
                 className="object-cover transition duration-500 hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 480px"

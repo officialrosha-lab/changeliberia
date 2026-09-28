@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { X } from 'lucide-react';
 import { useAuthStore, useMenuStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
 import { apiGet } from '../lib/api';
@@ -65,9 +66,7 @@ export function MobileMenuOverlay() {
           className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
           aria-label="Close menu"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="h-5 w-5" aria-hidden />
         </button>
       </div>
 

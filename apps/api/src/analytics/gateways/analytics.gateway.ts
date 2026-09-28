@@ -1,6 +1,6 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket, MessageBody } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface AnalyticsUpdate {
@@ -26,18 +26,20 @@ interface AnalyticsSubscription {
 export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
 
+  private readonly logger = new Logger(AnalyticsGateway.name);
+
   // Map of socket ID to subscriptions
   private subscriptions: Map<string, AnalyticsSubscription> = new Map();
 
   constructor(private eventEmitter: EventEmitter2) {}
 
   handleConnection(@ConnectedSocket() client: Socket) {
-    console.log(`[Analytics] Client connected: ${client.id}`);
+    this.logger.debug(`Client connected: ${client.id}`);
     // Client can now subscribe to analytics updates
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket) {
-    console.log(`[Analytics] Client disconnected: ${client.id}`);
+    this.logger.debug(`Client disconnected: ${client.id}`);
     this.subscriptions.delete(client.id);
   }
 
@@ -57,7 +59,7 @@ export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnec
       roles: data.roles,
     };
     this.subscriptions.set(client.id, subscription);
-    console.log(`[Analytics] ${client.id} subscribed to:`, data.types);
+    this.logger.debug(`${client.id} subscribed to: ${data.types.join(', ')}`);
 
     // Send acknowledgment
     client.emit('subscribed', {
@@ -73,7 +75,7 @@ export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('unsubscribe_analytics')
   handleUnsubscribe(@ConnectedSocket() client: Socket) {
     this.subscriptions.delete(client.id);
-    console.log(`[Analytics] ${client.id} unsubscribed`);
+    this.logger.debug(`${client.id} unsubscribed`);
     client.emit('unsubscribed', { success: true });
   }
 

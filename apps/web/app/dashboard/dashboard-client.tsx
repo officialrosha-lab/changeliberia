@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { FormEvent, useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { apiGet, apiGetBlob, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -659,7 +660,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(petitionUrl)}&size=120x120&margin=4`}
-                            alt="QR code"
+                            alt={`QR code for ${p.title}`}
                             className="h-[120px] w-[120px] rounded-xl border border-zinc-200"
                           />
                           <a
@@ -747,9 +748,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 onClick={() => setEditPetitionId(null)}
                 className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-neutral-800"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="mt-4 space-y-4">
@@ -832,7 +831,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 </label>
                 {editImageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={editImageUrl} alt="preview" className="mt-2 h-32 w-full rounded-xl object-cover" />
+                  <img src={editImageUrl} alt="Petition image preview" className="mt-2 h-32 w-full rounded-xl object-cover" />
                 )}
               </div>
             </div>

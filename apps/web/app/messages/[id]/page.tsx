@@ -150,7 +150,7 @@ export default function MessageThreadPage() {
         <div className="mt-8 mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">
-              Message Thread
+              {otherParticipant ? `Conversation with ${otherParticipant.fullName}` : 'Message thread'}
             </h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
               Read the full conversation and send a reply to keep the discussion moving.

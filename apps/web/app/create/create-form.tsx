@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
@@ -865,7 +866,7 @@ export function CreatePetitionForm() {
                   {imagePreviewSrc && (
                     <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imagePreviewSrc} alt="Preview" className="h-40 w-full object-cover"
+                      <img src={imagePreviewSrc} alt="Cover photo preview" className="h-40 w-full object-cover"
                         onError={() => setImagePreviewSrc('')} />
                       <button type="button" onClick={() => { setImagePreviewSrc(''); setImageUrlValue(''); setUploadedImageFile(null); setUploadStatus(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                         className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70">
@@ -896,7 +897,7 @@ export function CreatePetitionForm() {
                     {additionalImages.map((img, i) => (
                       <div key={i} className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img.preview} alt="" className="h-20 w-full object-cover" />
+                        <img src={img.preview} alt={`Additional photo ${i + 1} preview`} className="h-20 w-full object-cover" />
                         <button type="button" onClick={() => removeAdditionalImage(i)}
                           className="absolute right-1 top-1 rounded-full bg-black/50 px-1.5 py-0.5 text-[10px] text-white hover:bg-black/70">
                           ✕
@@ -1023,9 +1024,7 @@ export function CreatePetitionForm() {
               <h2 className="text-base font-bold text-zinc-900 dark:text-white">Sign in to submit your petition</h2>
               <button type="button" onClick={() => setShowAuthModal(false)}
                 className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-neutral-800">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="flex border-b border-zinc-100 dark:border-neutral-800">

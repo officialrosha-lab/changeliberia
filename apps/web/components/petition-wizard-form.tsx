@@ -358,7 +358,7 @@ export function PetitionWizardForm({ onSuccess, isDraft = true }: PetitionWizard
                   <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 mb-2">Image</h4>
                   <img
                     src={formData.imagePreview}
-                    alt="Petition"
+                    alt="Petition cover photo preview"
                     className="w-full max-h-48 object-cover rounded-lg"
                   />
                 </motion.div>

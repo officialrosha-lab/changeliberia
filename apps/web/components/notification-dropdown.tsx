@@ -66,7 +66,6 @@ export function NotificationDropdown() {
 
   // Handle new notification via WebSocket
   const handleNewNotification = (notification: any) => {
-    console.log('[NotificationDropdown] New notification received:', notification.type);
     setNotifications((prev) => [notification, ...prev].slice(0, 10));
     setUnreadCount((prev) => prev + 1);
     
@@ -164,7 +163,6 @@ export function NotificationDropdown() {
     // Set up polling every 30 seconds as fallback when WebSocket not connected
     pollingIntervalRef.current = setInterval(() => {
       if (!isConnected) {
-        console.log('[NotificationDropdown] WebSocket not connected, using polling fallback');
         fetchUnreadCount();
       }
     }, 30000);
