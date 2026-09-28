@@ -8,6 +8,170 @@ import { EmailType } from '@prisma/client';
  * Connects email service to application events
  */
 
+interface UserCreatedEvent {
+  userId: string;
+  email: string;
+  fullName: string;
+}
+
+interface EmailVerificationRequestedEvent {
+  userId: string;
+  email: string;
+  verifyUrl: string;
+  fullName: string;
+}
+
+interface PasswordResetRequestedEvent {
+  userId: string;
+  email: string;
+  resetUrl: string;
+  fullName: string;
+}
+
+interface PasswordChangedEvent {
+  userId: string;
+  email: string;
+  fullName: string;
+}
+
+interface PetitionCreatedEvent {
+  petitionId: string;
+}
+
+interface PetitionApprovedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  petitionTitle: string;
+  petitionUrl: string;
+  creatorName: string;
+}
+
+interface PetitionRejectedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  petitionTitle: string;
+  reason?: string;
+}
+
+interface OfficialVerifiedEvent {
+  userId: string;
+  userEmail?: string;
+  institutionName: string;
+}
+
+interface OfficialRejectedEvent {
+  userId: string;
+  userEmail?: string;
+  institutionName: string;
+  reason?: string;
+}
+
+interface PetitionMilestoneEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  petitionTitle: string;
+  petitionUrl: string;
+  milestone: number;
+  currentSignatures: number;
+}
+
+interface PetitionGovernmentSubmittedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  petitionTitle: string;
+  petitionUrl: string;
+  signatureCount: number;
+  category: string;
+}
+
+interface PetitionGovernmentResponseEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  petitionTitle: string;
+  responseTitle: string;
+  responseExcerpt: string;
+  responseUrl: string;
+  ministry: string;
+}
+
+interface SignatureReceivedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  signerName: string;
+  petitionTitle: string;
+  petitionUrl: string;
+}
+
+interface CommentReceivedEvent {
+  petitionId: string;
+}
+
+interface CommentRepliedEvent {
+  commenterId: string;
+  commenterEmail: string;
+  commenterName: string;
+  petitionTitle: string;
+  petitionUrl: string;
+}
+
+interface AmbassadorJoinedEvent {
+  userId: string;
+  email: string;
+  fullName: string;
+}
+
+interface CommunityUpdateEvent {
+  updateTitle: string;
+}
+
+interface PollApprovedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  pollTitle: string;
+  pollUrl: string;
+}
+
+interface PollRejectedEvent {
+  creatorId: string;
+  creatorEmail: string;
+  creatorName: string;
+  pollTitle: string;
+  reason?: string;
+}
+
+interface MessageCreatedEvent {
+  recipientId: string;
+  recipientEmail: string;
+  recipientName?: string;
+  senderName: string;
+  subject: string;
+  content?: string;
+}
+
+interface BroadcastSentEvent {
+  senderId: string;
+  senderEmail?: string;
+  senderName: string;
+  groupType: string;
+  recipientCount: number;
+  successCount: number;
+  failedCount: number;
+}
+
+interface DonationReceivedEvent {
+  donorId: string;
+  donorEmail: string;
+  donorName: string;
+  petitionTitle: string;
+  amount: number;
+}
+
 @Injectable()
 export class EmailEventService {
   private readonly logger = new Logger(EmailEventService.name);
@@ -26,105 +190,109 @@ export class EmailEventService {
     // User events
     this.eventEmitter.on(
       'user.created',
-      (event) => void this.onUserCreated(event),
+      (event: UserCreatedEvent) => void this.onUserCreated(event),
     );
     this.eventEmitter.on(
       'user.email.verification-requested',
-      (event) => void this.onEmailVerificationRequested(event),
+      (event: EmailVerificationRequestedEvent) =>
+        void this.onEmailVerificationRequested(event),
     );
     this.eventEmitter.on(
       'user.password-reset-requested',
-      (event) => void this.onPasswordResetRequested(event),
+      (event: PasswordResetRequestedEvent) =>
+        void this.onPasswordResetRequested(event),
     );
     this.eventEmitter.on(
       'user.password-changed',
-      (event) => void this.onPasswordChanged(event),
+      (event: PasswordChangedEvent) => void this.onPasswordChanged(event),
     );
 
     // Petition events
     this.eventEmitter.on(
       'petition.created',
-      (event) => void this.onPetitionCreated(event),
+      (event: PetitionCreatedEvent) => void this.onPetitionCreated(event),
     );
     this.eventEmitter.on(
       'petition.approved',
-      (event) => void this.onPetitionApproved(event),
+      (event: PetitionApprovedEvent) => void this.onPetitionApproved(event),
     );
     this.eventEmitter.on(
       'petition.rejected',
-      (event) => void this.onPetitionRejected(event),
+      (event: PetitionRejectedEvent) => void this.onPetitionRejected(event),
     );
     this.eventEmitter.on(
       'petition.milestone',
-      (event) => void this.onPetitionMilestone(event),
+      (event: PetitionMilestoneEvent) => void this.onPetitionMilestone(event),
     );
     this.eventEmitter.on(
       'petition.government-submitted',
-      (event) => void this.onPetitionGovernmentSubmitted(event),
+      (event: PetitionGovernmentSubmittedEvent) =>
+        void this.onPetitionGovernmentSubmitted(event),
     );
     this.eventEmitter.on(
       'petition.government-response',
-      (event) => void this.onPetitionGovernmentResponse(event),
+      (event: PetitionGovernmentResponseEvent) =>
+        void this.onPetitionGovernmentResponse(event),
     );
 
     // Public Officials Portal events
     this.eventEmitter.on(
       'official.verified',
-      (event) => void this.onOfficialVerified(event),
+      (event: OfficialVerifiedEvent) => void this.onOfficialVerified(event),
     );
     this.eventEmitter.on(
       'official.rejected',
-      (event) => void this.onOfficialRejected(event),
+      (event: OfficialRejectedEvent) => void this.onOfficialRejected(event),
     );
 
     // Poll events
     this.eventEmitter.on(
       'poll.approved',
-      (event) => void this.onPollApproved(event),
+      (event: PollApprovedEvent) => void this.onPollApproved(event),
     );
     this.eventEmitter.on(
       'poll.rejected',
-      (event) => void this.onPollRejected(event),
+      (event: PollRejectedEvent) => void this.onPollRejected(event),
     );
 
     // Message and broadcast events
     this.eventEmitter.on(
       'message.created',
-      (event) => void this.onMessageCreated(event),
+      (event: MessageCreatedEvent) => void this.onMessageCreated(event),
     );
     this.eventEmitter.on(
       'broadcast.sent',
-      (event) => void this.onBroadcastSent(event),
+      (event: BroadcastSentEvent) => void this.onBroadcastSent(event),
     );
 
     // Signature/engagement events
     this.eventEmitter.on(
       'signature.received',
-      (event) => void this.onSignatureReceived(event),
+      (event: SignatureReceivedEvent) => void this.onSignatureReceived(event),
     );
     this.eventEmitter.on(
       'comment.received',
-      (event) => void this.onCommentReceived(event),
+      (event: CommentReceivedEvent) => void this.onCommentReceived(event),
     );
     this.eventEmitter.on(
       'comment.replied',
-      (event) => void this.onCommentReplied(event),
+      (event: CommentRepliedEvent) => void this.onCommentReplied(event),
     );
 
     // Community events
     this.eventEmitter.on(
       'ambassador.joined',
-      (event) => void this.onAmbassadorJoined(event),
+      (event: AmbassadorJoinedEvent) => void this.onAmbassadorJoined(event),
     );
     this.eventEmitter.on(
       'community.update',
-      (event) => void this.onCommunityUpdate(event),
+      (event: CommunityUpdateEvent) => void this.onCommunityUpdate(event),
     );
 
     // Donation events
     this.eventEmitter.on(
       'donation.received',
-      (event) => void this.onDonationReceived(event),
+      (event: DonationReceivedEvent) => void this.onDonationReceived(event),
     );
 
     this.logger.log('Email event listeners registered');
@@ -132,7 +300,7 @@ export class EmailEventService {
 
   // User event handlers
 
-  private async onUserCreated(event: any): Promise<void> {
+  private async onUserCreated(event: UserCreatedEvent): Promise<void> {
     try {
       const { userId, email, fullName } = event;
       await this.emailService.sendTransactional(
@@ -152,7 +320,9 @@ export class EmailEventService {
     }
   }
 
-  private async onEmailVerificationRequested(event: any): Promise<void> {
+  private async onEmailVerificationRequested(
+    event: EmailVerificationRequestedEvent,
+  ): Promise<void> {
     try {
       const { userId, email, verifyUrl, fullName } = event;
       await this.emailService.sendTransactional(
@@ -173,7 +343,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPasswordResetRequested(event: any): Promise<void> {
+  private async onPasswordResetRequested(
+    event: PasswordResetRequestedEvent,
+  ): Promise<void> {
     try {
       const { userId, email, resetUrl, fullName } = event;
       await this.emailService.sendTransactional(
@@ -194,7 +366,7 @@ export class EmailEventService {
     }
   }
 
-  private async onPasswordChanged(event: any): Promise<void> {
+  private async onPasswordChanged(event: PasswordChangedEvent): Promise<void> {
     try {
       const { userId, email, fullName } = event;
       await this.emailService.sendTransactional(
@@ -216,7 +388,7 @@ export class EmailEventService {
 
   // Petition event handlers
 
-  private onPetitionCreated(event: any): void {
+  private onPetitionCreated(event: PetitionCreatedEvent): void {
     try {
       // Could send confirmation to creator that petition was created
       this.logger.debug(`Petition created: ${event.petitionId}`);
@@ -227,7 +399,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPetitionApproved(event: any): Promise<void> {
+  private async onPetitionApproved(
+    event: PetitionApprovedEvent,
+  ): Promise<void> {
     try {
       const {
         creatorId,
@@ -254,7 +428,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPetitionRejected(event: any): Promise<void> {
+  private async onPetitionRejected(
+    event: PetitionRejectedEvent,
+  ): Promise<void> {
     try {
       const { creatorId, creatorEmail, creatorName, petitionTitle, reason } =
         event;
@@ -276,7 +452,9 @@ export class EmailEventService {
     }
   }
 
-  private async onOfficialVerified(event: any): Promise<void> {
+  private async onOfficialVerified(
+    event: OfficialVerifiedEvent,
+  ): Promise<void> {
     try {
       const { userId, userEmail, institutionName } = event;
       if (!userEmail) return;
@@ -294,7 +472,9 @@ export class EmailEventService {
     }
   }
 
-  private async onOfficialRejected(event: any): Promise<void> {
+  private async onOfficialRejected(
+    event: OfficialRejectedEvent,
+  ): Promise<void> {
     try {
       const { userId, userEmail, institutionName, reason } = event;
       if (!userEmail) return;
@@ -312,7 +492,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPetitionMilestone(event: any): Promise<void> {
+  private async onPetitionMilestone(
+    event: PetitionMilestoneEvent,
+  ): Promise<void> {
     try {
       const {
         creatorId,
@@ -346,7 +528,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPetitionGovernmentSubmitted(event: any): Promise<void> {
+  private async onPetitionGovernmentSubmitted(
+    event: PetitionGovernmentSubmittedEvent,
+  ): Promise<void> {
     try {
       const {
         creatorId,
@@ -378,7 +562,9 @@ export class EmailEventService {
     }
   }
 
-  private async onPetitionGovernmentResponse(event: any): Promise<void> {
+  private async onPetitionGovernmentResponse(
+    event: PetitionGovernmentResponseEvent,
+  ): Promise<void> {
     try {
       const {
         creatorId,
@@ -414,7 +600,9 @@ export class EmailEventService {
 
   // Engagement event handlers
 
-  private async onSignatureReceived(event: any): Promise<void> {
+  private async onSignatureReceived(
+    event: SignatureReceivedEvent,
+  ): Promise<void> {
     try {
       const {
         creatorId,
@@ -443,7 +631,7 @@ export class EmailEventService {
     }
   }
 
-  private onCommentReceived(event: any): void {
+  private onCommentReceived(event: CommentReceivedEvent): void {
     try {
       // This event might trigger digest emails instead of individual notifications
       this.logger.debug(`Comment received on petition: ${event.petitionId}`);
@@ -454,7 +642,7 @@ export class EmailEventService {
     }
   }
 
-  private async onCommentReplied(event: any): Promise<void> {
+  private async onCommentReplied(event: CommentRepliedEvent): Promise<void> {
     try {
       const {
         commenterId,
@@ -483,7 +671,9 @@ export class EmailEventService {
 
   // Community event handlers
 
-  private async onAmbassadorJoined(event: any): Promise<void> {
+  private async onAmbassadorJoined(
+    event: AmbassadorJoinedEvent,
+  ): Promise<void> {
     try {
       const { userId, email, fullName } = event;
       await this.emailService.sendNotification(
@@ -503,7 +693,7 @@ export class EmailEventService {
     }
   }
 
-  private onCommunityUpdate(event: any): void {
+  private onCommunityUpdate(event: CommunityUpdateEvent): void {
     try {
       const { updateTitle } = event;
       this.logger.debug(`Community update event: ${updateTitle}`);
@@ -517,7 +707,7 @@ export class EmailEventService {
 
   // Poll event handlers
 
-  private async onPollApproved(event: any): Promise<void> {
+  private async onPollApproved(event: PollApprovedEvent): Promise<void> {
     try {
       const { creatorId, creatorEmail, creatorName, pollTitle, pollUrl } =
         event;
@@ -539,7 +729,7 @@ export class EmailEventService {
     }
   }
 
-  private async onPollRejected(event: any): Promise<void> {
+  private async onPollRejected(event: PollRejectedEvent): Promise<void> {
     try {
       const { creatorId, creatorEmail, creatorName, pollTitle, reason } = event;
       await this.emailService.sendNotification(
@@ -560,7 +750,7 @@ export class EmailEventService {
     }
   }
 
-  private async onMessageCreated(event: any): Promise<void> {
+  private async onMessageCreated(event: MessageCreatedEvent): Promise<void> {
     try {
       const { recipientId, recipientEmail, senderName, subject, content } =
         event;
@@ -585,7 +775,7 @@ export class EmailEventService {
     }
   }
 
-  private async onBroadcastSent(event: any): Promise<void> {
+  private async onBroadcastSent(event: BroadcastSentEvent): Promise<void> {
     try {
       const {
         senderId,
@@ -626,7 +816,9 @@ export class EmailEventService {
 
   // Donation event handler
 
-  private async onDonationReceived(event: any): Promise<void> {
+  private async onDonationReceived(
+    event: DonationReceivedEvent,
+  ): Promise<void> {
     try {
       const { donorId, donorEmail, donorName, petitionTitle, amount } = event;
       await this.emailService.sendNotification(
