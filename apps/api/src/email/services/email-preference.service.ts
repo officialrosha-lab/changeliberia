@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotificationPreference, EmailType } from '@prisma/client';
+import { NotificationPreference, EmailType, Prisma } from '@prisma/client';
 
 export interface EmailPreferenceDTO {
   emailEnabled?: boolean;
@@ -52,7 +52,12 @@ export class EmailPreferenceService {
     userId: string,
     updates: EmailPreferenceDTO,
   ): Promise<NotificationPreference> {
-    const data: any = {};
+    const data: {
+      emailEnabled?: boolean;
+      digestFrequency?: string;
+      emailCategories?: string;
+      preferredSendTime?: string;
+    } = {};
 
     if (updates.emailEnabled !== undefined) {
       data.emailEnabled = updates.emailEnabled;
@@ -99,7 +104,7 @@ export class EmailPreferenceService {
 
     // Check muted types
     try {
-      const mutedTypes = JSON.parse(prefs.mutedTypes || '[]');
+      const mutedTypes = JSON.parse(prefs.mutedTypes || '[]') as EmailType[];
       if (mutedTypes.includes(emailType)) {
         return {
           canSend: false,
@@ -138,7 +143,7 @@ export class EmailPreferenceService {
    * Get all users who want to receive emails
    */
   async getUsersForEmailing(emailType?: EmailType): Promise<string[]> {
-    const where: any = {
+    const where: Prisma.NotificationPreferenceWhereInput = {
       emailEnabled: true,
       digestFrequency: { not: 'never' },
     };

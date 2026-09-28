@@ -234,9 +234,9 @@ export class SmartRoutingService {
     // Score each contact based on tag matches
     const scoredMatches = contacts
       .map((contact) => {
-        const contactTags = JSON.parse(contact.issueTags || '[]').map(
-          (t: string) => t.toLowerCase(),
-        ) as string[];
+        const contactTags = (
+          JSON.parse(contact.issueTags || '[]') as string[]
+        ).map((t) => t.toLowerCase());
 
         // Find matching tags
         const matched = normalizedTags.filter((tag) =>
@@ -639,7 +639,7 @@ export class SmartRoutingService {
 
   private parseTagsArray(raw: string): string[] {
     try {
-      const parsed = JSON.parse(raw);
+      const parsed: unknown = JSON.parse(raw);
       return Array.isArray(parsed)
         ? parsed.filter((t): t is string => typeof t === 'string')
         : [];

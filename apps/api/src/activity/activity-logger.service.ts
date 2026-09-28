@@ -1,5 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+export interface ActivityLogFilters {
+  action?: string;
+  entityType?: string;
+  userId?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
 
 export interface ActivityLogInput {
   userId?: string;
@@ -72,18 +82,11 @@ export class ActivityLoggerService {
   async getActivityLogs(
     page: number = 1,
     limit: number = 50,
-    filters: {
-      action?: string;
-      entityType?: string;
-      userId?: string;
-      status?: string;
-      startDate?: Date;
-      endDate?: Date;
-    } = {},
+    filters: ActivityLogFilters = {},
   ) {
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.ActivityLogWhereInput = {};
 
     if (filters.action) where.action = filters.action;
     if (filters.entityType) where.entityType = filters.entityType;
@@ -91,9 +94,10 @@ export class ActivityLoggerService {
     if (filters.status) where.status = filters.status;
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      where.createdAt = {
+        ...(filters.startDate && { gte: filters.startDate }),
+        ...(filters.endDate && { lte: filters.endDate }),
+      };
     }
 
     const [logs, total] = await Promise.all([
@@ -140,22 +144,21 @@ export class ActivityLoggerService {
   async getUserActivityLogs(
     userId: string,
     limit: number = 50,
-    filters: {
-      action?: string;
-      entityType?: string;
-      startDate?: Date;
-      endDate?: Date;
-    } = {},
+    filters: Pick<
+      ActivityLogFilters,
+      'action' | 'entityType' | 'startDate' | 'endDate'
+    > = {},
   ) {
-    const where: any = { userId };
+    const where: Prisma.ActivityLogWhereInput = { userId };
 
     if (filters.action) where.action = filters.action;
     if (filters.entityType) where.entityType = filters.entityType;
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      where.createdAt = {
+        ...(filters.startDate && { gte: filters.startDate }),
+        ...(filters.endDate && { lte: filters.endDate }),
+      };
     }
 
     const logs = await this.prisma.activityLog.findMany({

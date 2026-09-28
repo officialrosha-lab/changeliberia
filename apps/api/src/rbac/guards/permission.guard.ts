@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { RolePermissionService } from '../role-permission.service';
 import { PERMISSION_KEY } from '../decorators/permission.decorator';
 import { PermissionResource, PermissionAction } from '@prisma/client';
+import { RequestUser } from '../../auth/roles.guard';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -27,7 +28,7 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<{ user?: RequestUser }>();
     const user = request.user;
 
     if (!user || !user.userId) {

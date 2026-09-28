@@ -15,6 +15,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
+interface AuthenticatedUser {
+  id: string;
+  role?: string;
+}
+
 @Controller('challenges')
 export class ChallengeController {
   private readonly logger = new Logger(ChallengeController.name);
@@ -73,7 +78,7 @@ export class ChallengeController {
    */
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getUserChallenges(@CurrentUser() user: any) {
+  async getUserChallenges(@CurrentUser() user: AuthenticatedUser) {
     try {
       const challenges = await this.challengeService.getUserChallenges(user.id);
 
@@ -115,7 +120,7 @@ export class ChallengeController {
       challengeId: string;
       increment?: number;
     },
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     const { challengeId, increment = 1 } = progressData;
 
@@ -195,7 +200,7 @@ export class ChallengeController {
    */
   @Get('user/history')
   @UseGuards(JwtAuthGuard)
-  async getChallengeHistory(@CurrentUser() user: any) {
+  async getChallengeHistory(@CurrentUser() user: AuthenticatedUser) {
     try {
       const challenges = await this.challengeService.getUserChallenges(user.id);
 
@@ -248,7 +253,7 @@ export class ChallengeController {
       endDate: string; // ISO date string
       rewardMultiplier?: number;
     },
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     const {
       petitionId,

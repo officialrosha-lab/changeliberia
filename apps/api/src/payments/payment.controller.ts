@@ -24,6 +24,7 @@ import { MoMoWebhookService } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { getStripeApiVersion } from '../config/stripe.config';
 
 @Controller('payments')
 export class PaymentController {
@@ -36,7 +37,7 @@ export class PaymentController {
   ) {
     const apiKey = process.env.STRIPE_API_KEY;
     this.stripe = apiKey
-      ? new Stripe(apiKey, { apiVersion: '2024-11-20' as any })
+      ? new Stripe(apiKey, { apiVersion: getStripeApiVersion() })
       : null;
   }
 
@@ -301,7 +302,7 @@ export class PaymentController {
     // - Records webhook in database for audit trail
     // - Routes to event-specific handlers
     // - Returns 500 if Stripe should retry (on transient errors)
-    await this.webhookService.processWebhook(req as any);
+    await this.webhookService.processWebhook(req);
 
     return {
       success: true,

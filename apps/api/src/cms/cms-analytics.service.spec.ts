@@ -344,10 +344,17 @@ describe('CMSAnalyticsService', () => {
         now,
       );
 
+      interface VariantComparisonResult {
+        views: number;
+        clicks: number;
+        engagement: number;
+      }
+      const results = result.results as Record<string, VariantComparisonResult>;
+
       expect(result.blockId).toBe(blockId);
       expect(result.winner).toBe(variantA);
-      expect(result.results[variantA].engagement).toBe(0.15);
-      expect(result.results[variantB].engagement).toBeCloseTo(0.126, 2);
+      expect(results[variantA].engagement).toBe(0.15);
+      expect(results[variantB].engagement).toBeCloseTo(0.126, 2);
     });
   });
 });

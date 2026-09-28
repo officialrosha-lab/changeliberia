@@ -3,6 +3,44 @@ import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 
 /**
+ * Data accepted by trackConversion() to build a Facebook Conversions API event.
+ */
+export interface ConversionEventData {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  userId?: string;
+  eventId?: string;
+  sourceUrl?: string;
+  value?: number;
+  currency?: string;
+  contentName?: string;
+  contentCategory?: string;
+  shareMethod?: string;
+}
+
+/**
+ * Shape of the Graph API response when requesting the `og_object` field.
+ */
+interface GraphApiOgObjectResponse {
+  og_object?: {
+    url?: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Shape of the Graph API response when requesting the `engagement` field.
+ */
+interface GraphApiEngagementResponse {
+  engagement?: {
+    share_count?: number;
+    comment_count?: number;
+  };
+}
+
+/**
  * FacebookSDKService
  * Handles all interactions with Facebook Graph API and SDK initialization
  * Manages API version, access tokens, and request validation
@@ -112,7 +150,7 @@ export class FacebookSDKService {
    */
   async trackConversion(
     eventName: string,
-    eventData: Record<string, any>,
+    eventData: ConversionEventData,
     userId?: string,
   ): Promise<{
     success: boolean;
@@ -173,13 +211,13 @@ export class FacebookSDKService {
         eventId: payload.data[0].event_id,
       };
     } catch (error) {
-      const err = error as any;
+      const message = error instanceof Error ? error.message : undefined;
       this.logger.error(
-        `Failed to track conversion: ${err?.message || 'Unknown error'}`,
+        `Failed to track conversion: ${message || 'Unknown error'}`,
       );
       return {
         success: false,
-        error: err?.message || 'Failed to track conversion',
+        error: message || 'Failed to track conversion',
       };
     }
   }
@@ -227,7 +265,7 @@ export class FacebookSDKService {
     }
 
     try {
-      const response = await this.graphApi.get('/', {
+      const response = await this.graphApi.get<GraphApiOgObjectResponse>('/', {
         params: {
           id: url,
           fields: 'og_object',
@@ -240,11 +278,11 @@ export class FacebookSDKService {
         scrapedUrl: response.data?.og_object?.url || url,
       };
     } catch (error) {
-      const err = error as any;
-      this.logger.warn(`Share URL validation failed: ${err?.message}`);
+      const message = error instanceof Error ? error.message : undefined;
+      this.logger.warn(`Share URL validation failed: ${message}`);
       return {
         valid: false,
-        error: err?.message || 'Validation failed',
+        error: message || 'Validation failed',
       };
     }
   }
@@ -266,13 +304,16 @@ export class FacebookSDKService {
     }
 
     try {
-      const response = await this.graphApi.get('/', {
-        params: {
-          id: url,
-          fields: 'engagement',
-          access_token: this.accessToken,
+      const response = await this.graphApi.get<GraphApiEngagementResponse>(
+        '/',
+        {
+          params: {
+            id: url,
+            fields: 'engagement',
+            access_token: this.accessToken,
+          },
         },
-      });
+      );
 
       const engagement = response.data?.engagement || {};
       return {
@@ -280,12 +321,12 @@ export class FacebookSDKService {
         commentCount: engagement.comment_count || 0,
       };
     } catch (error) {
-      const err = error as any;
-      this.logger.warn(`Failed to get share count: ${err?.message}`);
+      const message = error instanceof Error ? error.message : undefined;
+      this.logger.warn(`Failed to get share count: ${message}`);
       return {
         shareCount: 0,
         commentCount: 0,
-        error: err?.message,
+        error: message,
       };
     }
   }

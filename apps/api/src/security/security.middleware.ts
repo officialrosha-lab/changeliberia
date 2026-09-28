@@ -8,9 +8,15 @@ import {
   NestMiddleware,
   HttpException,
   HttpStatus,
+  INestApplication,
 } from '@nestjs/common';
 import { Response, Request, NextFunction } from 'express';
 import * as crypto from 'crypto';
+import { RequestUser } from '../auth/roles.guard';
+
+interface RequestWithUser extends Request {
+  user?: RequestUser;
+}
 
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -169,10 +175,12 @@ export class CSRFMiddleware implements NestMiddleware {
     }
 
     // Get CSRF token from header or body
+    const body = req.body as Record<string, unknown> | undefined;
+    const bodyToken = body?.['csrf-token'];
     const token =
       req.get('X-CSRF-Token') ||
       req.get('csrf-token') ||
-      req.body?.['csrf-token'];
+      (typeof bodyToken === 'string' ? bodyToken : undefined);
 
     if (!token) {
       throw new HttpException('CSRF token missing', HttpStatus.BAD_REQUEST);
@@ -226,7 +234,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     private config: RateLimitConfig = DEFAULT_SECURITY_CONFIG.rateLimitConfig!,
   ) {}
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: RequestWithUser, res: Response, next: NextFunction): void {
     const key = this.getClientKey(req);
 
     if (
@@ -247,11 +255,11 @@ export class RateLimitMiddleware implements NestMiddleware {
     next();
   }
 
-  private getClientKey(req: Request): string {
+  private getClientKey(req: RequestWithUser): string {
     // Try to get real IP from headers (for proxied requests)
     const forwarded = req.get('X-Forwarded-For');
     const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip || 'unknown';
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId = req.user?.userId || 'anonymous';
 
     return `${ip}:${userId}`;
   }
@@ -357,13 +365,13 @@ export class InputValidationMiddleware implements NestMiddleware {
  */
 @Injectable()
 export class SecurityLoggingMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: RequestWithUser, res: Response, next: NextFunction): void {
     const startTime = Date.now();
 
     // Log security-relevant events
     const method = req.method;
     const path = req.path;
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId = req.user?.userId || 'anonymous';
     const ip = this.getClientIP(req);
 
     res.on('finish', () => {
@@ -403,7 +411,7 @@ export class SecurityLoggingMiddleware implements NestMiddleware {
  * Helper function to apply all security middleware to app
  */
 export function applySecurityMiddleware(
-  app: any,
+  app: INestApplication,
   config: SecurityConfig = DEFAULT_SECURITY_CONFIG,
 ): void {
   if (config.enableSecurityHeaders) {

@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Petition, Prisma, User } from '@prisma/client';
 import { EventBusService } from '../events/event-bus.service';
 import { FacebookShareCreatedEvent } from '../events/domain-events';
 import { PrismaService } from '../prisma/prisma.service';
@@ -228,7 +229,7 @@ export class FacebookService {
    * Calculate estimated network reach based on user profile
    * Returns multiplier (1-5x) for viral mechanics
    */
-  calculateNetworkReach(user: any): {
+  calculateNetworkReach(user: Pick<User, 'trustScore'>): {
     estimatedReach: number;
     multiplier: number;
     influencer: boolean;
@@ -385,7 +386,7 @@ export class FacebookService {
     estimatedSize: number;
     description: string;
   }> {
-    const query: any = { petitionId };
+    const query: Prisma.ShareLinkWhereInput = { petitionId };
 
     switch (audienceType) {
       case 'SHARERS':
@@ -448,14 +449,14 @@ export class FacebookService {
     return code;
   }
 
-  private estimateNetworkReach(user: any): number {
+  private estimateNetworkReach(user: User): number {
     const baseNetwork = this.LIBERIA_AVG_NETWORK_SIZE;
     const trustMultiplier = 1 + user.trustScore / 100;
     return Math.floor(baseNetwork * trustMultiplier);
   }
 
   private buildFacebookShareMessage(
-    petition: any,
+    petition: Petition,
     reachEstimate: number,
   ): string {
     const estimatedSignatures = Math.floor(

@@ -28,9 +28,7 @@ describe('PaymentService', () => {
     status: 'succeeded',
     metadata: {},
     payment_method: 'pm_test123',
-    charges: {
-      data: [{ id: 'ch_test123' }],
-    },
+    latest_charge: 'ch_test123',
   };
 
   const mockSubscription = {
@@ -160,6 +158,7 @@ describe('PaymentService', () => {
         retrieve: jest.fn().mockResolvedValue(mockSubscription),
         update: jest.fn().mockResolvedValue(mockSubscription),
         del: jest.fn().mockResolvedValue(mockSubscription),
+        cancel: jest.fn().mockResolvedValue(mockSubscription),
       },
       prices: {
         create: jest.fn().mockResolvedValue({
@@ -431,7 +430,7 @@ describe('PaymentService', () => {
       const result = await service.cancelSubscription('sub-1');
 
       expect(result.status).toBe('canceled');
-      expect(stripe.subscriptions.del).toHaveBeenCalledWith('sub_test123');
+      expect(stripe.subscriptions.cancel).toHaveBeenCalledWith('sub_test123');
     });
   });
 
@@ -588,7 +587,13 @@ describe('PaymentService', () => {
 
       await service.handleWebhookEvent({
         type: 'invoice.payment_succeeded',
-        data: { object: { subscription: mockSubscription.id } },
+        data: {
+          object: {
+            parent: {
+              subscription_details: { subscription: mockSubscription.id },
+            },
+          },
+        },
       } as any);
 
       expect(prisma.subscription.updateMany).toHaveBeenCalledWith(

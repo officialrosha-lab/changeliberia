@@ -143,8 +143,9 @@ export class MailerooProvider {
       if (!res.ok) {
         throw new Error(`Domain lookup failed: ${res.statusText}`);
       }
-      const body: MailerooDomainRecord[] | { data?: MailerooDomainRecord[] } =
-        await res.json();
+      const body = (await res.json()) as
+        | MailerooDomainRecord[]
+        | { data?: MailerooDomainRecord[] };
       const domains: MailerooDomainRecord[] = Array.isArray(body)
         ? body
         : (body.data ?? []);
@@ -242,7 +243,7 @@ export class MailerooProvider {
     if (!response.ok) {
       let message = response.statusText;
       try {
-        const error: { message?: string } = await response.json();
+        const error = (await response.json()) as { message?: string };
         message = error.message || JSON.stringify(error);
       } catch {
         // response body wasn't JSON — fall back to statusText above
@@ -252,7 +253,7 @@ export class MailerooProvider {
 
     let result: MailerooSendResponseBody = {};
     try {
-      result = await response.json();
+      result = (await response.json()) as MailerooSendResponseBody;
     } catch {
       // some successful responses may have an empty body — the
       // reference_id we generated above is authoritative either way

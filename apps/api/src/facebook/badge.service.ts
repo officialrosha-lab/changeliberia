@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadgeType } from '@prisma/client';
+import { BadgeType, Prisma } from '@prisma/client';
 
-interface BadgeProgress {
+export interface BadgeProgress {
   badgeType: BadgeType;
   progress: number;
   target: number;
@@ -329,7 +329,7 @@ export class BadgeService {
       petitionId: string;
     }>
   > {
-    const where: any = { userId };
+    const where: Prisma.SocialEngagementBadgeWhereInput = { userId };
     if (petitionId) {
       where.petitionId = petitionId;
     }
@@ -506,8 +506,15 @@ export class BadgeService {
     BadgeType,
     { description: string; multiplier: number }
   > {
-    const result: any = {};
-    Object.entries(this.BADGE_CONDITIONS).forEach(([key, value]) => {
+    const result = {} as Record<
+      BadgeType,
+      { description: string; multiplier: number }
+    >;
+    (
+      Object.entries(this.BADGE_CONDITIONS) as Array<
+        [BadgeType, { description: string; multiplier: number }]
+      >
+    ).forEach(([key, value]) => {
       result[key] = {
         description: value.description,
         multiplier: value.multiplier,
