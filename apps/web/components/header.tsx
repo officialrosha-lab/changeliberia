@@ -86,7 +86,9 @@ export function Header() {
           
           <JoinMovementButton />
 
-          <ThemeToggle />
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
 
           {token && <NotificationDropdown />}
           
