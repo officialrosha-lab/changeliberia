@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CMSPage } from '@prisma/client';
+
+export interface VersionBlock {
+  type: string;
+  order: number;
+  props: unknown;
+}
 
 @Injectable()
 export class VersionHistoryService {
@@ -11,7 +16,7 @@ export class VersionHistoryService {
    */
   async createVersion(
     pageId: string,
-    page: CMSPage & { blocks: any[] },
+    page: { title: string; slug: string; blocks: VersionBlock[] },
     authorId: string,
     description?: string,
   ) {
@@ -59,7 +64,7 @@ export class VersionHistoryService {
       throw new Error('Version not found');
     }
 
-    const blocks = JSON.parse(version.blocks);
+    const blocks = JSON.parse(version.blocks) as VersionBlock[];
 
     // Update all blocks with new data
     await this.prisma.cMSPage.update({
@@ -97,7 +102,7 @@ export class VersionHistoryService {
       {
         ...version,
         blocks,
-      } as any,
+      },
       authorId,
       `Restored from version ${versionId.slice(0, 8)}`,
     );
@@ -120,12 +125,12 @@ export class VersionHistoryService {
       v1: {
         id: v1.id,
         createdAt: v1.createdAt,
-        blocks: JSON.parse(v1.blocks),
+        blocks: JSON.parse(v1.blocks) as VersionBlock[],
       },
       v2: {
         id: v2.id,
         createdAt: v2.createdAt,
-        blocks: JSON.parse(v2.blocks),
+        blocks: JSON.parse(v2.blocks) as VersionBlock[],
       },
     };
   }
@@ -157,16 +162,6 @@ export class VersionHistoryService {
       throw new Error('Page not found');
     }
 
-    const pageWithBlocks = {
-      ...page,
-      blocks: page.blocks,
-    } as any;
-
-    return this.createVersion(
-      pageWithBlocks,
-      page.blocks as any,
-      authorId,
-      'Auto-save',
-    );
+    return this.createVersion(pageId, page, authorId, 'Auto-save');
   }
 }
