@@ -1,5 +1,11 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  Prisma,
+  Signature,
+  Petition,
+  ImpactScope,
+  VerificationStatus,
+} from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
@@ -72,7 +78,7 @@ export class SignaturesService {
     if (duplicate)
       return { success: false, message: 'You already signed this petition.' };
 
-    let txResult: { signature: any; updatedPetition: any };
+    let txResult: { signature: Signature; updatedPetition: Petition };
     try {
       txResult = await this.prisma.$transaction(async (tx) => {
         const signature = await tx.signature.create({
@@ -223,7 +229,7 @@ export class SignaturesService {
     // call and must never hold a DB connection open while it runs.
     const ipRegionHint = await this.ipRegionHint.lookup(ipAddress);
 
-    let txResult: { signature: any; updatedPetition: any };
+    let txResult: { signature: Signature; updatedPetition: Petition };
     try {
       txResult = await this.prisma.$transaction(async (tx) => {
         const signature = await tx.signature.create({
@@ -370,7 +376,7 @@ export class SignaturesService {
   private async buildClassificationInput(
     tx: Prisma.TransactionClient,
     petition: {
-      impactScope: any;
+      impactScope: ImpactScope | null;
       county: string | null;
       district: string | null;
       community: string | null;
@@ -385,7 +391,7 @@ export class SignaturesService {
     let declaredCommunity = dto.confirmedCommunity ?? null;
     let locationSource: LocationSource =
       (dto.locationSource as LocationSource) ?? 'unconfirmed';
-    let userVerificationStatus: any = null;
+    let userVerificationStatus: VerificationStatus | null = null;
 
     if (userId) {
       const user = await tx.user.findUnique({
