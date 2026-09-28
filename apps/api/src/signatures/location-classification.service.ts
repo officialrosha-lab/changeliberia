@@ -5,6 +5,7 @@ import {
   SignatureClassification,
   VerificationStatus,
 } from '@prisma/client';
+import { isAdjacentToAny } from './liberia-county-adjacency';
 
 export type LocationSource = 'profile_match' | 'user_confirmed' | 'unconfirmed';
 
@@ -82,8 +83,12 @@ export class LocationClassificationService {
         if (input.declaredCounty && petition.counties.includes(input.declaredCounty)) {
           return 'DIRECTLY_AFFECTED';
         }
-        // No geo-adjacency table this phase — can't compute NEARBY_COMMUNITY
-        // for multi-county petitions, fall through to the ambiguous case.
+        if (
+          input.declaredCounty &&
+          isAdjacentToAny(input.declaredCounty, petition.counties)
+        ) {
+          return 'NEARBY_COMMUNITY';
+        }
         return this.fallbackClassification(input);
       }
 
