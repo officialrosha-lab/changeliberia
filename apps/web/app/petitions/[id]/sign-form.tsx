@@ -275,7 +275,7 @@ export function SignForm({
         confirmedDistrict: usingConfirmedLocation ? confirmedDistrict || undefined : undefined,
         confirmedCommunity: usingConfirmedLocation ? confirmedCommunity || undefined : undefined,
         locationSource: usingConfirmedLocation ? 'user_confirmed' : undefined,
-      });
+      }, token ?? undefined);
 
       if (response.captchaRequired && !response.signature) {
         setCaptchaRequired(true);
