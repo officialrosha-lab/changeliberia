@@ -107,6 +107,7 @@ export class RealPixelTrackingService {
           contentName: petition?.title || 'Petition',
           contentType: 'petition',
           contentCategory: 'social_cause',
+          shareMethod,
           eventId: `share_${petitionId}_${userId}_${Date.now()}`,
           sourceUrl: `${process.env.APP_URL}/petitions/${petitionId}`,
           email: user?.email,

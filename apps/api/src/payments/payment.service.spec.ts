@@ -3,7 +3,6 @@ import { BadRequestException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MoMoService } from './providers/momo.service';
-import Stripe from 'stripe';
 
 /**
  * Payment Service Unit Tests
@@ -19,11 +18,6 @@ describe('PaymentService', () => {
     title: 'Test Petition',
     description: 'Test Description',
     imageUrl: 'https://example.com/image.jpg',
-  };
-
-  const mockUser = {
-    id: 'user-1',
-    email: 'user@example.com',
   };
 
   const mockPaymentIntent = {

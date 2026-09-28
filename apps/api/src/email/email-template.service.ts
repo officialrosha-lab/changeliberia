@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   EmailTemplate,
-  EmailTemplateType,
   PaymentConfirmationData,
   PaymentFailedData,
   SubscriptionData,

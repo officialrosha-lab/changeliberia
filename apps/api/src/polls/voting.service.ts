@@ -148,7 +148,7 @@ export class VotingService {
           })),
         });
       }
-    } catch (e) {
+    } catch {
       // non-fatal: broadcasting failure should not block vote
     }
     return {

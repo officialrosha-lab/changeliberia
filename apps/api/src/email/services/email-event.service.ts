@@ -449,7 +449,7 @@ export class EmailEventService {
 
   private async onCommunityUpdate(event: any): Promise<void> {
     try {
-      const { updateTitle, updateContent } = event;
+      const { updateTitle } = event;
       this.logger.debug(`Community update event: ${updateTitle}`);
       // Could trigger bulk email sending to ambassadors
     } catch (error) {

@@ -16,8 +16,6 @@ import {
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import { CreateMessageDto, SearchMessagesDto } from './dto';
 
 @Controller('messages')

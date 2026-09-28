@@ -43,7 +43,7 @@ interface AuthUser {
 }
 
 @Controller('admin/directory')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
 @Roles(UserRole.ADMIN)
 export class AdminDirectoryController {
   constructor(

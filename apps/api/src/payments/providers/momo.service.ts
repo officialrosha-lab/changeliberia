@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Payment, Subscription } from '@prisma/client';
 import * as crypto from 'crypto';
 
 export interface MoMoPaymentResponse {
@@ -201,16 +200,12 @@ export class MoMoService {
         `Initiating MoMo payment: ${JSON.stringify(requestPayload)}`,
       );
 
-      const response = await this.apiClient.post(
-        '/v1_0/requesttopay',
-        requestPayload,
-        {
-          headers: {
-            'X-Reference-Id': params.externalId,
-            'X-Callback-Url': this.WEBHOOK_URL,
-          },
+      await this.apiClient.post('/v1_0/requesttopay', requestPayload, {
+        headers: {
+          'X-Reference-Id': params.externalId,
+          'X-Callback-Url': this.WEBHOOK_URL,
         },
-      );
+      });
 
       // Success response is 202 Accepted with no body
       // We return the referenceId that was sent in header
@@ -244,7 +239,6 @@ export class MoMoService {
     }
 
     let retries = 0;
-    const startTime = Date.now();
 
     while (retries < maxRetries) {
       try {
@@ -353,16 +347,12 @@ export class MoMoService {
         validityTime: params.validityTimeInSeconds,
       };
 
-      const response = await this.apiClient.post(
-        '/v2_0/preapproval',
-        requestPayload,
-        {
-          headers: {
-            'X-Reference-Id': params.externalId,
-            'X-Callback-Url': this.WEBHOOK_URL,
-          },
+      await this.apiClient.post('/v2_0/preapproval', requestPayload, {
+        headers: {
+          'X-Reference-Id': params.externalId,
+          'X-Callback-Url': this.WEBHOOK_URL,
         },
-      );
+      });
 
       // Response is 202 Accepted
       return {
@@ -434,15 +424,11 @@ export class MoMoService {
         payerMessage: params.description || 'Subscription charge',
       };
 
-      const response = await this.apiClient.post(
-        '/v2_0/payment',
-        requestPayload,
-        {
-          headers: {
-            'X-Reference-Id': params.externalId,
-          },
+      await this.apiClient.post('/v2_0/payment', requestPayload, {
+        headers: {
+          'X-Reference-Id': params.externalId,
         },
-      );
+      });
 
       return {
         referenceId: params.externalId,

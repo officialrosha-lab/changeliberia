@@ -82,7 +82,7 @@ export function rawBodyMiddleware() {
  * Alternative middleware if NestFactory rawBody option not available
  * Ensures rawBody is populated before JSON body parsing
  */
-export async function enableRawBodyForWebhooks(app: any) {
+export async function enableRawBodyForWebhooks() {
   // Option 1: Configure at bootstrap time (preferred)
   // This is handled in main.ts during NestFactory.create()
   // Option 2: Apply middleware to specific routes
