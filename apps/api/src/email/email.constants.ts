@@ -38,10 +38,10 @@ export const DEFAULT_EMAIL_PREFERENCES = {
   preferredSendTime: '09:00', // 9 AM
 };
 
-// Plunk API configuration
-export const PLUNK_CONFIG = {
-  apiKey: process.env.PLUNK_API_KEY,
-  baseUrl: 'https://api.useplunk.com/v1',
+// Maileroo API configuration
+export const MAILEROO_CONFIG = {
+  apiKey: process.env.MAILEROO_API_KEY,
+  baseUrl: 'https://smtp.maileroo.com/api/v2',
 };
 
 // Tracking configuration
