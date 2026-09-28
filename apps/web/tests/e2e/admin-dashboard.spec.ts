@@ -2,10 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   fillInput,
   clickElement,
-  expectTextContent,
-  generateTestPassword,
   getText,
-  isVisible,
 } from './test-helpers';
 
 /**
@@ -278,11 +275,11 @@ test.describe('Admin Dashboard', () => {
       expect(await activeUsers.isVisible()).toBeTruthy();
 
       // Verify metrics update
-      const firstValue = await getText(page, '[data-testid="active-users"]');
-      
+      await getText(page, '[data-testid="active-users"]');
+
       // Wait a moment and check again
       await page.waitForTimeout(2000);
-      const secondValue = await getText(page, '[data-testid="active-users"]');
+      await getText(page, '[data-testid="active-users"]');
 
       // Values might be the same, but element should still be visible
       expect(await activeUsers.isVisible()).toBeTruthy();

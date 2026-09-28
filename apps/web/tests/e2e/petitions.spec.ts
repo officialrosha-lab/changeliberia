@@ -4,12 +4,9 @@ import {
   clickElement,
   expectTextContent,
   generateTestEmail,
-  generateTestPassword,
   waitForNavigation,
   getText,
   fillForm,
-  isVisible,
-  getTableData,
 } from './test-helpers';
 
 /**
@@ -113,7 +110,6 @@ test.describe('Petitions Functionality', () => {
     const beforeCount = parseInt(signatureCountBefore.match(/\d+/)?.[0] || '0');
 
     // Click sign petition button
-    const signButton = page.locator('button:has-text("Sign Petition")');
     await clickElement(page, 'button:has-text("Sign Petition")');
 
     // Handle modal or form if it appears
@@ -127,7 +123,6 @@ test.describe('Petitions Functionality', () => {
       }
 
       // Confirm signature
-      const confirmButton = modal.locator('button:has-text("Confirm")');
       await clickElement(page, 'button:has-text("Confirm")');
     }
 
@@ -195,7 +190,6 @@ test.describe('Petitions Functionality', () => {
     }
 
     // Submit form
-    const submitButton = page.locator('button:has-text("Create Petition")|button:has-text("Submit")');
     await waitForNavigation(page, async () => {
       await clickElement(page, 'button:has-text("Create Petition")|button:has-text("Submit")');
     });

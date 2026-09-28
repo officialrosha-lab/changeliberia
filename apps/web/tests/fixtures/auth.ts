@@ -28,41 +28,41 @@ function generateTestToken(userId: string, role: string = 'ADMIN'): string {
 /**
  * Setup admin authentication
  */
-const adminTokenFixture = async ({}, use) => {
+const adminTokenFixture = async ({}, run) => {
   const token = generateTestToken('admin-user-123', 'ADMIN');
-  await use(token);
+  await run(token);
 };
 
 /**
  * Setup user authentication
  */
-const userTokenFixture = async ({}, use) => {
+const userTokenFixture = async ({}, run) => {
   const token = generateTestToken('regular-user-456', 'USER');
-  await use(token);
+  await run(token);
 };
 
 /**
  * Create authenticated admin page
  */
-const adminPageFixture = async ({ page, adminToken }, use) => {
+const adminPageFixture = async ({ page, adminToken }, run) => {
   // Set token in localStorage
   await page.addInitScript(({ token }) => {
     localStorage.setItem('auth_token', token);
   }, { token: adminToken });
 
-  await use(page);
+  await run(page);
 };
 
 /**
  * Create authenticated user page
  */
-const userPageFixture = async ({ page, userToken }, use) => {
+const userPageFixture = async ({ page, userToken }, run) => {
   // Set token in localStorage
   await page.addInitScript(({ token }) => {
     localStorage.setItem('auth_token', token);
   }, { token: userToken });
 
-  await use(page);
+  await run(page);
 };
 
 export const test = base.extend<AuthFixtures>({

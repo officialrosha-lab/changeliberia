@@ -2,11 +2,8 @@ import { test, expect } from '@playwright/test';
 import {
   fillInput,
   clickElement,
-  expectTextContent,
   generateTestEmail,
   generateTestPassword,
-  waitForAPIResponse,
-  checkNetworkErrors,
 } from './test-helpers';
 
 /**
@@ -19,8 +16,8 @@ test.describe('Security', () => {
     // Note: This test assumes the app redirects HTTP to HTTPS
     // The test framework may not allow actual HTTP testing in all environments
     
-    const response = await page.goto('/');
-    
+    await page.goto('/');
+
     // Should be HTTPS URL (in testing with localhost, might not apply)
     const url = page.url();
     expect(url).toBeTruthy();
@@ -90,7 +87,7 @@ test.describe('Security', () => {
         const script = document.createElement('script');
         script.textContent = 'window.injectedCode = true';
         document.body.appendChild(script);
-        return typeof (window as any).injectedCode === 'undefined';
+        return typeof (window as unknown as { injectedCode?: boolean }).injectedCode === 'undefined';
       } catch {
         return true;
       }
@@ -262,7 +259,7 @@ test.describe('Security', () => {
           if (postData && postData.includes('password')) {
             passwordSent = postData;
           }
-        } catch (e) {
+        } catch {
           // Binary data, can't check
         }
       }
@@ -297,7 +294,7 @@ test.describe('Security', () => {
     await page.waitForURL(/dashboard/, { timeout: 10000 });
 
     // Try to access another user's profile (assuming ID 999 doesn't exist or isn't theirs)
-    const response = await page.goto('/user/999/profile').catch(() => null);
+    await page.goto('/user/999/profile').catch(() => null);
 
     // Should either 404 or redirect
     const url = page.url();

@@ -260,7 +260,6 @@ test.describe('Messages Feature', () => {
     await adminPage.waitForTimeout(2000);
 
     // Verify refresh button shows activity
-    const refreshButton = adminPage.locator('button[title="Refresh messages"]');
     // In a real test, we'd verify the loading spinner
 
     // Uncheck auto-refresh
