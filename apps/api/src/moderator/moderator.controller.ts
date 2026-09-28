@@ -41,7 +41,9 @@ export class ModeratorController {
     if (!toggle?.config) return [];
     try {
       const parsed = JSON.parse(toggle.config);
-      return Array.isArray(parsed) ? parsed.filter((c) => typeof c === 'string') : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((c) => typeof c === 'string')
+        : [];
     } catch {
       return [];
     }
@@ -56,7 +58,11 @@ export class ModeratorController {
     @Query('status') status?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to review petitions');
     }
@@ -105,7 +111,11 @@ export class ModeratorController {
     @Body('feedback') feedback?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to approve petitions');
     }
@@ -150,7 +160,11 @@ export class ModeratorController {
     @Body('reason') reason: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'REJECT');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'REJECT',
+    );
     if (!can) {
       throw new Error('No permission to reject petitions');
     }
@@ -229,7 +243,11 @@ export class ModeratorController {
     @Query('status') status?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to review fraud flags');
     }
@@ -266,7 +284,11 @@ export class ModeratorController {
     @Body('notes') notes?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to resolve fraud flags');
     }

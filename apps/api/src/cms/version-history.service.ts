@@ -83,7 +83,10 @@ export class VersionHistoryService {
           pageId: version.pageId,
           type: block.type,
           order: block.order,
-          props: typeof block.props === 'string' ? block.props : JSON.stringify(block.props),
+          props:
+            typeof block.props === 'string'
+              ? block.props
+              : JSON.stringify(block.props),
         },
       });
     }
@@ -159,6 +162,11 @@ export class VersionHistoryService {
       blocks: page.blocks,
     } as any;
 
-    return this.createVersion(pageWithBlocks, page.blocks as any, authorId, 'Auto-save');
+    return this.createVersion(
+      pageWithBlocks,
+      page.blocks as any,
+      authorId,
+      'Auto-save',
+    );
   }
 }

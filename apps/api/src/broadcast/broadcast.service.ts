@@ -129,7 +129,13 @@ export class BroadcastService {
   ) {
     const results = await Promise.all(
       groupIds.map((groupId) =>
-        this.broadcastToGroup(groupId, subject, content, senderUserId, category),
+        this.broadcastToGroup(
+          groupId,
+          subject,
+          content,
+          senderUserId,
+          category,
+        ),
       ),
     );
 

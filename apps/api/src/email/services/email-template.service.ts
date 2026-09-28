@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
-import {
-  EmailTemplateProps,
-  EmailTemplatePropsMap,
-} from '../templates/index';
+import { EmailTemplateProps, EmailTemplatePropsMap } from '../templates/index';
 
 export interface RenderedTemplate {
   html: string;
@@ -31,9 +28,7 @@ export class EmailTemplateService {
 
       return { html, text, subject };
     } catch (error) {
-      this.logger.error(
-        `Failed to render template ${templateType}: ${error}`,
-      );
+      this.logger.error(`Failed to render template ${templateType}: ${error}`);
       throw error;
     }
   }
@@ -72,10 +67,7 @@ export class EmailTemplateService {
    * Generate basic HTML for template
    * This is a placeholder that generates valid HTML
    */
-  private generateHtmlForTemplate(
-    templateType: EmailType,
-    props: any,
-  ): string {
+  private generateHtmlForTemplate(templateType: EmailType, props: any): string {
     const recipientName = props?.recipientName || 'User';
     const appUrl = 'https://changeliberia.org';
 
@@ -163,12 +155,18 @@ export class EmailTemplateService {
         content = `
           <p>Here are this week's trending petitions:</p>
           <ul style="list-style: none; padding: 0;">
-            ${props?.topPetitions?.map((p: any) => `
+            ${
+              props?.topPetitions
+                ?.map(
+                  (p: any) => `
               <li style="padding: 10px; background: #f9fafb; margin: 10px 0; border-left: 4px solid #059669;">
                 <strong>${p.title}</strong><br>
                 ${p.signatureCount} signatures
               </li>
-            `).join('') || '<li>No petitions available</li>'}
+            `,
+                )
+                .join('') || '<li>No petitions available</li>'
+            }
           </ul>
         `;
         break;
@@ -228,10 +226,7 @@ export class EmailTemplateService {
   /**
    * Generate plain text version of template
    */
-  private generateTextForTemplate(
-    templateType: EmailType,
-    props: any,
-  ): string {
+  private generateTextForTemplate(templateType: EmailType, props: any): string {
     const recipientName = props?.recipientName || 'User';
     const appUrl = 'https://changeliberia.org';
 
@@ -239,7 +234,9 @@ export class EmailTemplateService {
 
     switch (templateType) {
       case EmailType.WELCOME:
-        text += 'Welcome to Change Liberia! We\'re excited to have you join our community.\n\nYou can now create petitions, sign existing ones, and make your voice heard.\n\nVisit: ' + (props?.verifyUrl || appUrl);
+        text +=
+          "Welcome to Change Liberia! We're excited to have you join our community.\n\nYou can now create petitions, sign existing ones, and make your voice heard.\n\nVisit: " +
+          (props?.verifyUrl || appUrl);
         break;
 
       case EmailType.VERIFY_EMAIL:
@@ -271,7 +268,9 @@ Delivered to ${props?.recipientCount || 0} members with ${props?.successCount ||
         break;
 
       default:
-        text += 'You have received a notification from Change Liberia.\n\nVisit: ' + appUrl;
+        text +=
+          'You have received a notification from Change Liberia.\n\nVisit: ' +
+          appUrl;
     }
 
     text += `\n\n---\nChange Liberia\nBuilding change together\n${appUrl}`;
@@ -292,4 +291,3 @@ Delivered to ${props?.recipientCount || 0} members with ${props?.successCount ||
       .trim();
   }
 }
-

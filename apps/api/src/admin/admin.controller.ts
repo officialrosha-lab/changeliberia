@@ -80,10 +80,7 @@ export class AdminController {
   }
 
   @Get('users')
-  async listUsers(
-    @Query('page') page = '0',
-    @Query('limit') limit = '20',
-  ) {
+  async listUsers(@Query('page') page = '0', @Query('limit') limit = '20') {
     const pageNum = Math.max(0, parseInt(page, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
@@ -104,7 +101,10 @@ export class AdminController {
   }
 
   @Delete('petitions/:id')
-  async deletePetition(@Param('id') id: string, @Req() req: { user: RequestUser }) {
+  async deletePetition(
+    @Param('id') id: string,
+    @Req() req: { user: RequestUser },
+  ) {
     try {
       const petition = await this.prisma.petition.findUnique({ where: { id } });
       if (!petition) throw new NotFoundException('Petition not found');
@@ -119,7 +119,9 @@ export class AdminController {
         await tx.petitionUpdate.deleteMany({ where: { petitionId: id } });
         await tx.petitionSubmission.deleteMany({ where: { petitionId: id } });
         await tx.petitionMilestone.deleteMany({ where: { petitionId: id } });
-        await tx.socialEngagementBadge.deleteMany({ where: { petitionId: id } });
+        await tx.socialEngagementBadge.deleteMany({
+          where: { petitionId: id },
+        });
         await tx.customAudience.deleteMany({ where: { petitionId: id } });
         // ShareLink before Referral — ShareLink.referralId is SetNull, not Cascade
         await tx.shareLink.deleteMany({ where: { petitionId: id } });
@@ -144,7 +146,9 @@ export class AdminController {
       if (error instanceof NotFoundException) throw error;
       const msg = error instanceof Error ? error.message : String(error);
       console.error(`[admin] deletePetition ${id} failed:`, msg);
-      throw new InternalServerErrorException(`Failed to delete petition: ${msg}`);
+      throw new InternalServerErrorException(
+        `Failed to delete petition: ${msg}`,
+      );
     }
   }
 
@@ -160,9 +164,10 @@ export class AdminController {
       where: { id },
       data: { status: body.status, reviewedBy: req.user.userId },
     });
-    
+
     // Log the ID document review action
-    const action = body.status === 'APPROVED' ? 'APPROVE_ID_DOCUMENT' : 'REJECT_ID_DOCUMENT';
+    const action =
+      body.status === 'APPROVED' ? 'APPROVE_ID_DOCUMENT' : 'REJECT_ID_DOCUMENT';
     this.activityLogger.logAsync({
       userId: doc.userId,
       adminId: req.user.userId,
@@ -172,7 +177,7 @@ export class AdminController {
       description: `Admin ${body.status === 'APPROVED' ? 'approved' : 'rejected'} ID document (${doc.type})`,
       changes: { previousStatus: doc.status, newStatus: body.status },
     });
-    
+
     if (body.status === 'APPROVED') {
       const prior = await this.prisma.verificationLog.findFirst({
         where: { userId: doc.userId, type: VerificationType.ID_UPLOAD },

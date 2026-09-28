@@ -105,7 +105,9 @@ export class MailerooProvider {
   /**
    * Send batch emails via Maileroo's API
    */
-  async sendBatch(emails: SendEmailOptions[]): Promise<MailerooEmailResponse[]> {
+  async sendBatch(
+    emails: SendEmailOptions[],
+  ): Promise<MailerooEmailResponse[]> {
     const results: MailerooEmailResponse[] = [];
 
     for (const email of emails) {

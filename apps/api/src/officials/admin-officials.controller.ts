@@ -29,7 +29,10 @@ export class AdminOfficialsController {
 
   @Patch(':institutionId/approve')
   @Permission(PermissionResource.OFFICIAL, PermissionAction.APPROVE)
-  approve(@Param('institutionId') institutionId: string, @CurrentUser() user: AuthUser) {
+  approve(
+    @Param('institutionId') institutionId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.officialsService.approve(institutionId, user.userId);
   }
 

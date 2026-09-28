@@ -51,7 +51,11 @@ export interface ICacheProvider {
  * Abstraction for payment processing
  */
 export interface IPaymentProvider {
-  createPaymentIntent(amount: number, currency: string, metadata?: any): Promise<string>;
+  createPaymentIntent(
+    amount: number,
+    currency: string,
+    metadata?: any,
+  ): Promise<string>;
   confirmPayment(paymentIntentId: string): Promise<boolean>;
   refund(paymentIntentId: string, amount?: number): Promise<boolean>;
   getPaymentStatus(paymentIntentId: string): Promise<string>;

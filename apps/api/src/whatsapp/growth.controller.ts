@@ -94,7 +94,8 @@ export class GrowthController {
         throw new NotFoundException('Petition not found');
       }
 
-      const metrics = await this.growthService.getPetitionGrowthMetrics(petitionId);
+      const metrics =
+        await this.growthService.getPetitionGrowthMetrics(petitionId);
 
       return {
         success: true,
@@ -122,7 +123,8 @@ export class GrowthController {
         throw new NotFoundException('Petition not found');
       }
 
-      const milestones = await this.growthService.getPetitionMilestones(petitionId);
+      const milestones =
+        await this.growthService.getPetitionMilestones(petitionId);
 
       return {
         success: true,
@@ -151,7 +153,8 @@ export class GrowthController {
         throw new NotFoundException('Petition not found');
       }
 
-      const readiness = await this.growthService.getGovernmentReadinessStatus(petitionId);
+      const readiness =
+        await this.growthService.getGovernmentReadinessStatus(petitionId);
 
       return {
         success: true,
@@ -179,7 +182,8 @@ export class GrowthController {
         throw new NotFoundException('Petition not found');
       }
 
-      const shouldTrigger = await this.growthService.shouldTriggerShareModal(petitionId);
+      const shouldTrigger =
+        await this.growthService.shouldTriggerShareModal(petitionId);
 
       return {
         success: true,
@@ -243,7 +247,8 @@ export class GrowthController {
         throw new NotFoundException('Petition not found');
       }
 
-      const milestones = await this.growthService.recalculateMilestones(petitionId);
+      const milestones =
+        await this.growthService.recalculateMilestones(petitionId);
 
       return {
         success: true,

@@ -103,7 +103,10 @@ export class MessagesService {
     } catch (error: any) {
       // Handle missing Message table in production (P2021)
       if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-        console.warn('Message table not yet migrated in database', error.message);
+        console.warn(
+          'Message table not yet migrated in database',
+          error.message,
+        );
         return {
           messages: [],
           total: 0,
@@ -266,7 +269,10 @@ export class MessagesService {
     } catch (error: any) {
       // Handle missing Message table in production (P2021)
       if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-        console.warn('Message table not yet migrated in database', error.message);
+        console.warn(
+          'Message table not yet migrated in database',
+          error.message,
+        );
         return 0;
       }
       throw error;

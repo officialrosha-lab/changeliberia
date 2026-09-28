@@ -14,7 +14,11 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import Stripe from 'stripe';
-import { PaymentService, CreatePaymentIntentDto, CreateSubscriptionDto } from './payment.service';
+import {
+  PaymentService,
+  CreatePaymentIntentDto,
+  CreateSubscriptionDto,
+} from './payment.service';
 import { PaymentWebhookService } from './payment-webhook.service';
 import { MoMoWebhookService } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -31,7 +35,9 @@ export class PaymentController {
     private readonly momoWebhookService: MoMoWebhookService,
   ) {
     const apiKey = process.env.STRIPE_API_KEY;
-    this.stripe = apiKey ? new Stripe(apiKey, { apiVersion: '2024-11-20' as any }) : null;
+    this.stripe = apiKey
+      ? new Stripe(apiKey, { apiVersion: '2024-11-20' as any })
+      : null;
   }
 
   /**
@@ -73,7 +79,9 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
-  async createCheckoutSession(@Body() dto: CreatePaymentIntentDto & { recurringInterval?: string }) {
+  async createCheckoutSession(
+    @Body() dto: CreatePaymentIntentDto & { recurringInterval?: string },
+  ) {
     const session = await this.paymentService.createCheckoutSession(dto);
 
     return {
@@ -102,8 +110,7 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard)
   @Post('subscription')
   async createSubscription(@Body() dto: CreateSubscriptionDto) {
-    const subscription =
-      await this.paymentService.createSubscription(dto);
+    const subscription = await this.paymentService.createSubscription(dto);
 
     return {
       success: true,
@@ -136,9 +143,7 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete('subscription/:subscriptionId')
-  async cancelSubscription(
-    @Param('subscriptionId') subscriptionId: string,
-  ) {
+  async cancelSubscription(@Param('subscriptionId') subscriptionId: string) {
     const subscription =
       await this.paymentService.cancelSubscription(subscriptionId);
 
@@ -153,8 +158,14 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('history/:userId')
-  async getUserPaymentHistory(@Param('userId') userId: string, @Req() req: Request & { user: { userId: string } }) {
-    if (req.user.userId !== userId) throw new ForbiddenException('Cannot access another user\'s payment history');
+  async getUserPaymentHistory(
+    @Param('userId') userId: string,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    if (req.user.userId !== userId)
+      throw new ForbiddenException(
+        "Cannot access another user's payment history",
+      );
     const history = await this.paymentService.getUserPaymentHistory(userId);
 
     return {
@@ -218,14 +229,12 @@ export class PaymentController {
    * Processes payment confirmations and subscription updates
    */
   @Post('momo/webhook')
-  async handleMoMoWebhook(
-    @Body() payload: any,
-    @Req() req: Request,
-  ) {
+  async handleMoMoWebhook(@Body() payload: any, @Req() req: Request) {
     // Extract signature from headers (case-insensitive)
-    const signature = req.headers['x-momo-signature'] as string ||
-                     req.headers['X-MOMO-SIGNATURE'] as string ||
-                     req.headers['x-momo-signature'.toLowerCase()] as string;
+    const signature =
+      (req.headers['x-momo-signature'] as string) ||
+      (req.headers['X-MOMO-SIGNATURE'] as string) ||
+      (req.headers['x-momo-signature'.toLowerCase()] as string);
 
     try {
       await this.momoWebhookService.handleWebhook(payload, signature);
@@ -273,7 +282,9 @@ export class PaymentController {
       success: true,
       data: {
         valid: isValid,
-        formatted: isValid ? await this.paymentService.formatPhoneNumber(phoneNumber) : null,
+        formatted: isValid
+          ? await this.paymentService.formatPhoneNumber(phoneNumber)
+          : null,
       },
     };
   }

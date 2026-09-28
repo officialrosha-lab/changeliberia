@@ -33,98 +33,59 @@ export class WebhookEventHandlerService {
     switch (event.type) {
       // Payment Intent Events
       case StripeEventType.PAYMENT_INTENT_SUCCEEDED:
-        await this.handlePaymentIntentSucceeded(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handlePaymentIntentSucceeded(event.data.object, event.id);
         break;
 
       case StripeEventType.PAYMENT_INTENT_PAYMENT_FAILED:
-        await this.handlePaymentIntentFailed(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handlePaymentIntentFailed(event.data.object, event.id);
         break;
 
       case StripeEventType.PAYMENT_INTENT_CANCELED:
-        await this.handlePaymentIntentCanceled(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handlePaymentIntentCanceled(event.data.object, event.id);
         break;
 
       // Subscription Events
       case StripeEventType.CUSTOMER_SUBSCRIPTION_CREATED:
-        await this.handleSubscriptionCreated(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleSubscriptionCreated(event.data.object, event.id);
         break;
 
       case StripeEventType.CUSTOMER_SUBSCRIPTION_UPDATED:
-        await this.handleSubscriptionUpdated(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleSubscriptionUpdated(event.data.object, event.id);
         break;
 
       case StripeEventType.CUSTOMER_SUBSCRIPTION_DELETED:
-        await this.handleSubscriptionDeleted(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleSubscriptionDeleted(event.data.object, event.id);
         break;
 
       // Invoice Events
       case StripeEventType.INVOICE_PAYMENT_SUCCEEDED:
-        await this.handleInvoicePaymentSucceeded(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleInvoicePaymentSucceeded(event.data.object, event.id);
         break;
 
       case StripeEventType.INVOICE_PAYMENT_FAILED:
-        await this.handleInvoicePaymentFailed(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleInvoicePaymentFailed(event.data.object, event.id);
         break;
 
       // Charge Events
       case StripeEventType.CHARGE_SUCCEEDED:
-        await this.handleChargeSucceeded(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleChargeSucceeded(event.data.object, event.id);
         break;
 
       case StripeEventType.CHARGE_FAILED:
-        await this.handleChargeFailed(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleChargeFailed(event.data.object, event.id);
         break;
 
       case StripeEventType.CHARGE_REFUNDED:
-        await this.handleChargeRefunded(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleChargeRefunded(event.data.object, event.id);
         break;
 
       // Customer Events
       case StripeEventType.CUSTOMER_CREATED:
-        await this.handleCustomerCreated(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleCustomerCreated(event.data.object, event.id);
         break;
 
       case StripeEventType.CUSTOMER_DELETED:
-        await this.handleCustomerDeleted(
-          event.data.object as any,
-          event.id,
-        );
+        await this.handleCustomerDeleted(event.data.object, event.id);
         break;
 
       default:
@@ -351,9 +312,7 @@ export class WebhookEventHandlerService {
       });
 
       if (!user) {
-        this.logger.warn(
-          `User not found for Stripe customer: ${customerId}`,
-        );
+        this.logger.warn(`User not found for Stripe customer: ${customerId}`);
         return;
       }
 
@@ -375,7 +334,9 @@ export class WebhookEventHandlerService {
             subscription.items.data[0]?.price?.recurring?.interval,
           ),
           lastWebhookEventId: eventId,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodStart: new Date(
+            subscription.current_period_start * 1000,
+          ),
           currentPeriodEnd: new Date(subscription.current_period_end * 1000),
         },
       });
@@ -432,7 +393,9 @@ export class WebhookEventHandlerService {
       });
 
       if (!dbSubscription) {
-        this.logger.warn(`Subscription not found in database: ${subscriptionId}`);
+        this.logger.warn(
+          `Subscription not found in database: ${subscriptionId}`,
+        );
         return;
       }
 
@@ -440,7 +403,9 @@ export class WebhookEventHandlerService {
       await this.prisma.subscription.update({
         where: { id: dbSubscription.id },
         data: {
-          amount: subscription.items.data[0]?.price?.unit_amount || dbSubscription.amount,
+          amount:
+            subscription.items.data[0]?.price?.unit_amount ||
+            dbSubscription.amount,
           lastWebhookEventId: eventId,
         },
       });
@@ -454,7 +419,9 @@ export class WebhookEventHandlerService {
         entityId: dbSubscription.id,
         description: `Stripe subscription updated for subscription ${subscriptionId}`,
         changes: {
-          amount: subscription.items.data[0]?.price?.unit_amount || dbSubscription.amount,
+          amount:
+            subscription.items.data[0]?.price?.unit_amount ||
+            dbSubscription.amount,
         },
       });
 
@@ -489,7 +456,9 @@ export class WebhookEventHandlerService {
       });
 
       if (!dbSubscription) {
-        this.logger.warn(`Subscription not found in database: ${subscriptionId}`);
+        this.logger.warn(
+          `Subscription not found in database: ${subscriptionId}`,
+        );
         return;
       }
 
@@ -695,7 +664,10 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.failed event
    */
-  private async handleChargeFailed(charge: any, eventId: string): Promise<void> {
+  private async handleChargeFailed(
+    charge: any,
+    eventId: string,
+  ): Promise<void> {
     this.logger.debug(`Charge failed: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -830,13 +802,17 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queuePaymentConfirmation(user.email, user.fullName || 'Donor', {
-          amount: payment.amount,
-          currency: payment.currency,
-          petitionTitle: payment.petition?.title,
-          transactionId: payment.stripePaymentIntentId || 'N/A',
-          date: payment.createdAt,
-        });
+        await this.emailQueue.queuePaymentConfirmation(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: payment.amount,
+            currency: payment.currency,
+            petitionTitle: payment.petition?.title,
+            transactionId: payment.stripePaymentIntentId || 'N/A',
+            date: payment.createdAt,
+          },
+        );
       }
 
       this.logger.debug(`Queued confirmation email for payment ${paymentId}`);
@@ -852,7 +828,10 @@ export class WebhookEventHandlerService {
   /**
    * Queue failure email to be sent
    */
-  private async queueFailureEmail(paymentId: string, userId: string): Promise<void> {
+  private async queueFailureEmail(
+    paymentId: string,
+    userId: string,
+  ): Promise<void> {
     try {
       // Fetch payment and user details
       const [payment, user] = await Promise.all([
@@ -878,12 +857,16 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
-          amount: payment.amount,
-          currency: payment.currency,
-          reason: payment.failureReason || 'Card declined',
-          retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/payments/retry/${paymentId}`,
-        });
+        await this.emailQueue.queuePaymentFailed(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: payment.amount,
+            currency: payment.currency,
+            reason: payment.failureReason || 'Card declined',
+            retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/payments/retry/${paymentId}`,
+          },
+        );
       }
 
       this.logger.debug(`Queued failure email for payment ${paymentId}`);
@@ -925,12 +908,16 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queueSubscriptionWelcome(user.email, user.fullName || 'Donor', {
-          amount: subscription.amount,
-          currency: subscription.currency,
-          interval: subscription.interval,
-          nextBillingDate: subscription.nextBillingDate || new Date(),
-        });
+        await this.emailQueue.queueSubscriptionWelcome(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: subscription.amount,
+            currency: subscription.currency,
+            interval: subscription.interval,
+            nextBillingDate: subscription.nextBillingDate || new Date(),
+          },
+        );
       }
 
       this.logger.debug(`Queued welcome email for user ${userId}`);
@@ -946,7 +933,9 @@ export class WebhookEventHandlerService {
   /**
    * Queue subscription cancellation email
    */
-  private async queueSubscriptionCancellationEmail(userId: string): Promise<void> {
+  private async queueSubscriptionCancellationEmail(
+    userId: string,
+  ): Promise<void> {
     try {
       // Fetch user and subscription details
       const user = await this.prisma.user.findUnique({
@@ -1031,11 +1020,15 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queueSubscriptionReceipt(user.email, user.fullName || 'Donor', {
-          amount: payment.amount,
-          currency: payment.currency,
-          interval: subscription?.interval || 'monthly',
-        });
+        await this.emailQueue.queueSubscriptionReceipt(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: payment.amount,
+            currency: payment.currency,
+            interval: subscription?.interval || 'monthly',
+          },
+        );
       }
 
       this.logger.debug(`Queued receipt email for invoice ${invoiceId}`);
@@ -1080,12 +1073,16 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queuePaymentFailed(user.email, user.fullName || 'Donor', {
-          amount: payment.amount,
-          currency: payment.currency,
-          reason: payment.failureReason || 'Card declined',
-          retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/subscriptions/retry/${userId}`,
-        });
+        await this.emailQueue.queuePaymentFailed(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: payment.amount,
+            currency: payment.currency,
+            reason: payment.failureReason || 'Card declined',
+            retryUrl: `${process.env.APP_URL || 'https://liberianvoices.org'}/subscriptions/retry/${userId}`,
+          },
+        );
       }
 
       this.logger.debug(`Queued failure email for invoice ${invoiceId}`);
@@ -1112,7 +1109,12 @@ export class WebhookEventHandlerService {
         this.prisma.payment.findFirst({
           where: { userId, status: PaymentStatus.COMPLETED },
           orderBy: { updatedAt: 'desc' },
-          select: { id: true, amount: true, currency: true, stripeChargeId: true },
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            stripeChargeId: true,
+          },
         }),
       ]);
 
@@ -1128,12 +1130,16 @@ export class WebhookEventHandlerService {
 
       // Queue email
       if (this.emailQueue) {
-        await this.emailQueue.queueRefund(user.email, user.fullName || 'Donor', {
-          amount: payment.amount,
-          currency: payment.currency,
-          reason: 'Refund processed',
-          originalTransactionId: payment.stripeChargeId || payment.id,
-        });
+        await this.emailQueue.queueRefund(
+          user.email,
+          user.fullName || 'Donor',
+          {
+            amount: payment.amount,
+            currency: payment.currency,
+            reason: 'Refund processed',
+            originalTransactionId: payment.stripeChargeId || payment.id,
+          },
+        );
       }
 
       this.logger.debug(`Queued refund email for user ${userId}`);
@@ -1160,7 +1166,9 @@ export class WebhookEventHandlerService {
   /**
    * Update petition signature count
    */
-  private async updatePetitionSignatureCount(petitionId: string): Promise<void> {
+  private async updatePetitionSignatureCount(
+    petitionId: string,
+  ): Promise<void> {
     // TODO: Implement petition signature count update
     this.logger.debug(`Updated signature count for petition ${petitionId}`);
   }

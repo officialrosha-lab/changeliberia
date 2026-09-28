@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  INestApplication,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { BadgeController } from './badge.controller';
 import { BadgeService } from './badge.service';
 
@@ -60,7 +64,7 @@ describe('BadgeController', () => {
     await app.init();
 
     controller = module.get<BadgeController>(BadgeController);
-    badgeService = module.get(BadgeService) as jest.Mocked<BadgeService>;
+    badgeService = module.get(BadgeService);
   });
 
   afterEach(async () => {

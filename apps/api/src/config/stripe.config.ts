@@ -6,10 +6,10 @@
 export const stripeConfig = {
   // API Configuration
   apiVersion: '2024-11-20' as const,
-  
+
   // Currency and Amount Settings
   currency: (process.env.STRIPE_CURRENCY || 'USD').toLowerCase(),
-  
+
   // Webhook Configuration
   webhook: {
     // Timestamp tolerance in seconds (default: 5 minutes)
@@ -81,7 +81,8 @@ export const stripeConfig = {
     // Timeout for Stripe API calls (milliseconds)
     apiTimeout: 30000,
     // Enable detailed error messages in development
-    verboseErrors: !process.env.NODE_ENV || process.env.NODE_ENV === 'development',
+    verboseErrors:
+      !process.env.NODE_ENV || process.env.NODE_ENV === 'development',
   },
 };
 
@@ -91,7 +92,7 @@ export const stripeConfig = {
  */
 export function validateStripeConfig(): void {
   const apiKey = process.env.STRIPE_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('STRIPE_API_KEY environment variable is required');
   }
@@ -137,6 +138,8 @@ export function getWebhookSignatureTolerance(): number {
 /**
  * Check if feature is enabled
  */
-export function isFeatureEnabled(feature: keyof typeof stripeConfig.features): boolean {
+export function isFeatureEnabled(
+  feature: keyof typeof stripeConfig.features,
+): boolean {
   return stripeConfig.features[feature];
 }

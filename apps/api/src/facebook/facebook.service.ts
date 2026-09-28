@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventBusService } from '../events/event-bus.service';
 import { FacebookShareCreatedEvent } from '../events/domain-events';
 import { PrismaService } from '../prisma/prisma.service';
@@ -39,7 +44,8 @@ export class FacebookService {
       Math.round((petition.signaturesCount / petition.goal) * 100),
     );
 
-    const ogImage = petition.imageUrl || 'https://changeliberia.org/og-default.png';
+    const ogImage =
+      petition.imageUrl || 'https://changeliberia.org/og-default.png';
     const ogTitle = `${petition.title} - ${progressPercent}% of ${petition.goal} signatures`;
     const ogDescription = `${petition.summary || petition.description.substring(0, 160)}...`;
     const ogUrl = `https://changeliberia.org/petitions/${petitionId}`;
@@ -102,7 +108,10 @@ export class FacebookService {
     const reachEstimate = this.estimateNetworkReach(user);
 
     // Generate share message
-    const prefilledMessage = this.buildFacebookShareMessage(petition, reachEstimate);
+    const prefilledMessage = this.buildFacebookShareMessage(
+      petition,
+      reachEstimate,
+    );
 
     // Publish share created event for viral mechanics
     this.eventBus.publish(
@@ -166,7 +175,9 @@ export class FacebookService {
     });
 
     if (!shareLink) {
-      throw new NotFoundException(`Share link with code ${shortCode} not found`);
+      throw new NotFoundException(
+        `Share link with code ${shortCode} not found`,
+      );
     }
 
     // Increment click count
@@ -295,15 +306,22 @@ export class FacebookService {
       },
     });
 
-    const totalClicks = shareLinks.reduce((sum, link) => sum + link.clickCount, 0);
-    const conversions = shareLinks.reduce((sum, link) => sum + link.conversions, 0);
+    const totalClicks = shareLinks.reduce(
+      (sum, link) => sum + link.clickCount,
+      0,
+    );
+    const conversions = shareLinks.reduce(
+      (sum, link) => sum + link.conversions,
+      0,
+    );
     const reachEstimate = shareLinks.reduce(
       (sum, link) => sum + link.networkReachEstimate,
       0,
     );
 
     const totalShares = shareLinks.length;
-    const conversionRate = totalClicks > 0 ? (conversions / totalClicks) * 100 : 0;
+    const conversionRate =
+      totalClicks > 0 ? (conversions / totalClicks) * 100 : 0;
 
     // Get top sharers
     const topSharers = await this.getTopFacebookSharers(petitionId);
@@ -372,7 +390,7 @@ export class FacebookService {
     estimatedSize: number;
     description: string;
   }> {
-    let query: any = { petitionId };
+    const query: any = { petitionId };
 
     switch (audienceType) {
       case 'SHARERS':
@@ -402,13 +420,16 @@ export class FacebookService {
     });
 
     const userIds = Array.from(
-      new Set(shareLinks.map((link) => link.referral?.referrerId).filter(Boolean)),
+      new Set(
+        shareLinks.map((link) => link.referral?.referrerId).filter(Boolean),
+      ),
     ) as string[];
 
     const descriptions = {
       SHARERS: 'Users who shared the petition on Facebook',
       CONVERTERS: 'Users whose Facebook shares resulted in signatures',
-      INFLUENCERS: 'High-reach Influencers with viral impact (5%+ network conversion)',
+      INFLUENCERS:
+        'High-reach Influencers with viral impact (5%+ network conversion)',
       ENGAGED: 'Highly engaged sharers with 5+ clicks from their links',
     };
 

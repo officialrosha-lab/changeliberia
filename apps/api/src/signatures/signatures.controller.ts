@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CreateSignatureDto } from './dto';
 import { SignaturesService } from './signatures.service';
@@ -18,7 +26,10 @@ export class SignaturesController {
     @Req() req: { user?: { userId: string } },
   ) {
     if (!req.user?.userId) return { signed: false };
-    const existing = await this.service.findByUserAndPetition(req.user.userId, petitionId);
+    const existing = await this.service.findByUserAndPetition(
+      req.user.userId,
+      petitionId,
+    );
     return { signed: !!existing };
   }
 
@@ -35,7 +46,7 @@ export class SignaturesController {
   ) {
     const ip = req.ip ?? req.headers['x-forwarded-for'] ?? 'unknown';
     const result = await this.service.create(req.user?.userId, String(ip), dto);
-    
+
     // Log signature creation only if signature was actually created (not rejected by CAPTCHA)
     if (result.signature && req.user?.userId) {
       this.activityLogger.logAsync({
@@ -47,7 +58,7 @@ export class SignaturesController {
         changes: { petitionId: dto.petitionId },
       });
     }
-    
+
     return result;
   }
 }

@@ -52,23 +52,42 @@ export class VerificationController {
 
   @UseGuards(JwtAuthGuard)
   @Post('geo')
-  async verifyGeo(@Req() req: { user: { userId: string }; headers: Record<string, string | string[] | undefined>; socket?: { remoteAddress?: string } }) {
+  async verifyGeo(
+    @Req()
+    req: {
+      user: { userId: string };
+      headers: Record<string, string | string[] | undefined>;
+      socket?: { remoteAddress?: string };
+    },
+  ) {
     const forwarded = req.headers['x-forwarded-for'];
     const rawIp = Array.isArray(forwarded)
       ? forwarded[0]
       : typeof forwarded === 'string'
         ? forwarded.split(',')[0].trim()
-        : req.socket?.remoteAddress ?? '';
+        : (req.socket?.remoteAddress ?? '');
 
     let countryCode = 'XX';
     try {
       const ip = rawIp.replace(/^::ffff:/, '').trim();
-      const isPrivate = !ip || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+      const isPrivate =
+        !ip ||
+        ip === '127.0.0.1' ||
+        ip.startsWith('192.168.') ||
+        ip.startsWith('10.') ||
+        ip.startsWith('172.');
       if (!isPrivate) {
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode,status`, { signal: AbortSignal.timeout(5000) });
+        const geoRes = await fetch(
+          `http://ip-api.com/json/${ip}?fields=countryCode,status`,
+          { signal: AbortSignal.timeout(5000) },
+        );
         if (geoRes.ok) {
-          const data = await geoRes.json() as { status?: string; countryCode?: string };
-          if (data.status === 'success' && data.countryCode) countryCode = data.countryCode;
+          const data = (await geoRes.json()) as {
+            status?: string;
+            countryCode?: string;
+          };
+          if (data.status === 'success' && data.countryCode)
+            countryCode = data.countryCode;
         }
       }
     } catch {

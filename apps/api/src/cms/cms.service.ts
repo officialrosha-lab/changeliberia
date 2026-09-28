@@ -37,7 +37,10 @@ export class CMSService {
       // Parse props from JSON strings
       page.blocks = page.blocks.map((block: any) => ({
         ...block,
-        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+        props:
+          typeof block.props === 'string'
+            ? JSON.parse(block.props)
+            : block.props,
       }));
     }
 
@@ -58,7 +61,10 @@ export class CMSService {
       // Parse props from JSON strings
       page.blocks = page.blocks.map((block: any) => ({
         ...block,
-        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+        props:
+          typeof block.props === 'string'
+            ? JSON.parse(block.props)
+            : block.props,
       }));
     }
 
@@ -84,7 +90,8 @@ export class CMSService {
 
     return {
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
     };
   }
 
@@ -107,7 +114,8 @@ export class CMSService {
 
     return {
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
     };
   }
 
@@ -126,11 +134,15 @@ export class CMSService {
     // Parse props from JSON strings
     return blocks.map((block: any) => ({
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
     }));
   }
 
-  async createPage(authorId: string, data: { title: string; slug: string; content?: string; blocks?: any[] }) {
+  async createPage(
+    authorId: string,
+    data: { title: string; slug: string; content?: string; blocks?: any[] },
+  ) {
     const page = await this.prisma.cMSPage.create({
       data: {
         title: data.title,
@@ -173,7 +185,7 @@ export class CMSService {
     },
   ) {
     const updateData: any = { ...data };
-    
+
     // Remove publishedAt from updateData if provided, handle separately
     if (data.publishedAt !== undefined) {
       updateData.publishedAt = data.publishedAt;

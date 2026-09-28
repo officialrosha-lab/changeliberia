@@ -101,7 +101,11 @@ export class AuthController {
     } catch {
       // Swallow — caller sees same message whether email exists or not
     }
-    return { success: true, message: 'If an account with that email exists, a reset link has been sent.' };
+    return {
+      success: true,
+      message:
+        'If an account with that email exists, a reset link has been sent.',
+    };
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -113,7 +117,11 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
   async resetPassword(@Body() body: ResetPasswordDto) {
-    return this.passwordResetService.resetPassword(body.email, body.token, body.newPassword);
+    return this.passwordResetService.resetPassword(
+      body.email,
+      body.token,
+      body.newPassword,
+    );
   }
 
   // Google OAuth (new)
@@ -135,4 +143,3 @@ export class AuthController {
     return this.authService.verifyGoogleToken(dto.token);
   }
 }
-

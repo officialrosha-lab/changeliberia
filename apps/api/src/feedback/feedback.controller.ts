@@ -1,4 +1,10 @@
-import { BadRequestException, Body, Controller, Logger, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Logger,
+  Post,
+} from '@nestjs/common';
 import { EmailService } from '../email/email.service';
 
 function escapeHtml(value: string): string {
@@ -60,7 +66,9 @@ export class FeedbackController {
         textContent: `New feedback from ${name.trim()} (${email || 'no-email'}) via ${source || 'floating-widget'}:\n\n${message.trim()}`,
       });
       if (!sent) {
-        this.logger.warn('Feedback email delivery failed; feedback preserved in logs only');
+        this.logger.warn(
+          'Feedback email delivery failed; feedback preserved in logs only',
+        );
       }
     } else {
       this.logger.warn(
@@ -70,7 +78,8 @@ export class FeedbackController {
 
     return {
       success: true,
-      message: 'Thank you for your feedback! We appreciate your input and will review it shortly.',
+      message:
+        'Thank you for your feedback! We appreciate your input and will review it shortly.',
     };
   }
 }

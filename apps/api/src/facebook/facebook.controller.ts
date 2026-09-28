@@ -39,7 +39,7 @@ export class FacebookController {
     try {
       const initCode =
         typeof this.facebookSdk?.getSdkInitCode === 'function'
-          ? this.facebookSdk!.getSdkInitCode()
+          ? this.facebookSdk.getSdkInitCode()
           : '<!-- SDK not configured -->';
 
       return {
@@ -57,24 +57,28 @@ export class FacebookController {
     try {
       const pixelCode =
         typeof this.facebookSdk?.getPixelInitCode === 'function'
-          ? this.facebookSdk!.getPixelInitCode()
+          ? this.facebookSdk.getPixelInitCode()
           : this.pixelService.getPixelInitCode();
       const pixelId =
         typeof this.facebookSdk?.getPixelId === 'function'
-          ? this.facebookSdk!.getPixelId()
+          ? this.facebookSdk.getPixelId()
           : this.pixelService.getPixelId();
 
       return { success: true, data: { pixelId, initCode: pixelCode } };
     } catch (err) {
       this.logger.error(`Failed to get pixel code: ${String(err)}`);
-      return { success: false, error: `Failed to get pixel code: ${String(err)}` };
+      return {
+        success: false,
+        error: `Failed to get pixel code: ${String(err)}`,
+      };
     }
   }
 
   @Get('og-meta/:petitionId')
   async getOpenGraphMeta(@Param('petitionId') petitionId: string) {
     try {
-      const ogMeta = await this.facebookService.generateOpenGraphMeta(petitionId);
+      const ogMeta =
+        await this.facebookService.generateOpenGraphMeta(petitionId);
       return { success: true, data: ogMeta };
     } catch (err) {
       this.logger.error(`Failed to get OG meta: ${String(err)}`);
@@ -83,20 +87,34 @@ export class FacebookController {
   }
 
   @Get('share-dialog/:petitionId')
-  async getShareDialog(@Param('petitionId') petitionId: string, @Query('networkSize') networkSize?: string) {
+  async getShareDialog(
+    @Param('petitionId') petitionId: string,
+    @Query('networkSize') networkSize?: string,
+  ) {
     try {
       const userNetworkSize = networkSize ? parseInt(networkSize, 10) : 250;
 
       let dialogConfig: any;
       if (typeof this.shareDialog?.getShareDialogConfig === 'function') {
-        const ogMeta = await this.facebookService.generateOpenGraphMeta(petitionId);
+        const ogMeta =
+          await this.facebookService.generateOpenGraphMeta(petitionId);
         if (ogMeta?.title && ogMeta?.image) {
-          dialogConfig = this.shareDialog.getShareDialogConfig(petitionId, ogMeta.title, ogMeta.image);
+          dialogConfig = this.shareDialog.getShareDialogConfig(
+            petitionId,
+            ogMeta.title,
+            ogMeta.image,
+          );
         } else {
-          dialogConfig = this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
+          dialogConfig = this.facebookService.buildFacebookShareDialog(
+            petitionId,
+            userNetworkSize,
+          );
         }
       } else {
-        dialogConfig = this.facebookService.buildFacebookShareDialog(petitionId, userNetworkSize);
+        dialogConfig = this.facebookService.buildFacebookShareDialog(
+          petitionId,
+          userNetworkSize,
+        );
       }
 
       return { success: true, data: dialogConfig };
@@ -125,17 +143,29 @@ export class FacebookController {
     }
 
     if (!petitionId || (!shortCode && !method)) {
-      throw new BadRequestException('petitionId and shortCode or method are required');
+      throw new BadRequestException(
+        'petitionId and shortCode or method are required',
+      );
     }
 
     try {
       if (method) {
         if (typeof this.shareDialog?.recordShareCompletion !== 'function') {
-          throw new BadRequestException('shareDialog service unavailable for method-based shares');
+          throw new BadRequestException(
+            'shareDialog service unavailable for method-based shares',
+          );
         }
-        await this.shareDialog.recordShareCompletion(userId, petitionId, method);
+        await this.shareDialog.recordShareCompletion(
+          userId,
+          petitionId,
+          method,
+        );
       } else if (shortCode) {
-        await this.facebookService.recordFacebookShare(petitionId, userId, shortCode);
+        await this.facebookService.recordFacebookShare(
+          petitionId,
+          userId,
+          shortCode,
+        );
       }
 
       return { success: true, message: 'Share event recorded' };
@@ -146,43 +176,87 @@ export class FacebookController {
   }
 
   @Post('track-view')
-  async trackView(@Body() body: { petitionId: string; userId?: string; metadata?: any }) {
+  async trackView(
+    @Body() body: { petitionId: string; userId?: string; metadata?: any },
+  ) {
     const { petitionId, userId, metadata } = body || ({} as any);
     if (!petitionId) throw new BadRequestException('petitionId is required');
 
-    if (!this.pixelTracking) return { success: false, message: 'pixel tracking unavailable' };
-    const result = await this.pixelTracking.trackViewContent(petitionId, userId, metadata);
+    if (!this.pixelTracking)
+      return { success: false, message: 'pixel tracking unavailable' };
+    const result = await this.pixelTracking.trackViewContent(
+      petitionId,
+      userId,
+      metadata,
+    );
     return { success: result.success, data: result };
   }
 
   @Post('track-lead')
-  async trackLead(@Body() body: { petitionId: string; userId: string; metadata?: any }) {
+  async trackLead(
+    @Body() body: { petitionId: string; userId: string; metadata?: any },
+  ) {
     const { petitionId, userId, metadata } = body || ({} as any);
-    if (!petitionId || !userId) throw new BadRequestException('petitionId and userId are required');
+    if (!petitionId || !userId)
+      throw new BadRequestException('petitionId and userId are required');
 
-    if (!this.pixelTracking) return { success: false, message: 'pixel tracking unavailable' };
-    const result = await this.pixelTracking.trackLead(petitionId, userId, metadata);
+    if (!this.pixelTracking)
+      return { success: false, message: 'pixel tracking unavailable' };
+    const result = await this.pixelTracking.trackLead(
+      petitionId,
+      userId,
+      metadata,
+    );
     return { success: result.success, data: result };
   }
 
   @Post('track-share')
-  async trackShare(@Body() body: { petitionId: string; userId: string; method?: string }) {
+  async trackShare(
+    @Body() body: { petitionId: string; userId: string; method?: string },
+  ) {
     const { petitionId, userId, method } = body || ({} as any);
-    if (!petitionId || !userId) throw new BadRequestException('petitionId and userId are required');
+    if (!petitionId || !userId)
+      throw new BadRequestException('petitionId and userId are required');
 
-    if (!this.pixelTracking) return { success: false, message: 'pixel tracking unavailable' };
-    const methodValue: 'dialog' | 'native' | 'other' = method === 'dialog' || method === 'native' ? (method as any) : 'other';
-    const result = await this.pixelTracking.trackShare(petitionId, userId, methodValue);
+    if (!this.pixelTracking)
+      return { success: false, message: 'pixel tracking unavailable' };
+    const methodValue: 'dialog' | 'native' | 'other' =
+      method === 'dialog' || method === 'native' ? (method as any) : 'other';
+    const result = await this.pixelTracking.trackShare(
+      petitionId,
+      userId,
+      methodValue,
+    );
     return { success: result.success, data: result };
   }
 
   @Post('track-purchase')
-  async trackPurchase(@Body() body: { petitionId: string; userId: string; amount: number; currency?: string; metadata?: any }) {
-    const { petitionId, userId, amount, currency, metadata } = body || ({} as any);
-    if (!petitionId || !userId || amount === undefined) throw new BadRequestException('petitionId, userId and amount are required');
+  async trackPurchase(
+    @Body()
+    body: {
+      petitionId: string;
+      userId: string;
+      amount: number;
+      currency?: string;
+      metadata?: any;
+    },
+  ) {
+    const { petitionId, userId, amount, currency, metadata } =
+      body || ({} as any);
+    if (!petitionId || !userId || amount === undefined)
+      throw new BadRequestException(
+        'petitionId, userId and amount are required',
+      );
 
-    if (!this.pixelTracking) return { success: false, message: 'pixel tracking unavailable' };
-    const result = await this.pixelTracking.trackPurchase(petitionId, userId, amount, currency || 'USD', metadata);
+    if (!this.pixelTracking)
+      return { success: false, message: 'pixel tracking unavailable' };
+    const result = await this.pixelTracking.trackPurchase(
+      petitionId,
+      userId,
+      amount,
+      currency || 'USD',
+      metadata,
+    );
     return { success: result.success, data: result };
   }
 
@@ -199,13 +273,23 @@ export class FacebookController {
   }
 
   @Post('create-audience')
-  async createAudience(@Body() body: { name: string; petitionId: string; eventType: string }) {
+  async createAudience(
+    @Body() body: { name: string; petitionId: string; eventType: string },
+  ) {
     const { name, petitionId, eventType } = body || ({} as any);
-    if (!name || !petitionId || !eventType) throw new BadRequestException('name, petitionId and eventType are required');
+    if (!name || !petitionId || !eventType)
+      throw new BadRequestException(
+        'name, petitionId and eventType are required',
+      );
     const pixelTracking = this.pixelTracking;
-    if (!pixelTracking) throw new BadRequestException('pixel tracking unavailable');
+    if (!pixelTracking)
+      throw new BadRequestException('pixel tracking unavailable');
 
-    const result = await pixelTracking.createCustomAudience(name, petitionId, eventType);
+    const result = await pixelTracking.createCustomAudience(
+      name,
+      petitionId,
+      eventType,
+    );
     return { success: result.success, data: result };
   }
 
@@ -234,7 +318,8 @@ export class FacebookController {
   async health() {
     try {
       const facebookSdk = this.facebookSdk;
-      if (!facebookSdk) throw new BadRequestException('facebook sdk unavailable');
+      if (!facebookSdk)
+        throw new BadRequestException('facebook sdk unavailable');
       const status = await facebookSdk.healthCheck();
       return { success: true, data: status };
     } catch (err) {
@@ -260,8 +345,18 @@ export class FacebookController {
     if (!userId) throw new BadRequestException('Authenticated user required');
 
     try {
-      const result = await this.facebookService.createFacebookShareLink(petitionId, userId);
-      return { success: true, data: { shareUrl: result.shareUrl, shortCode: result.shortCode, reachEstimate: result.reachEstimate } };
+      const result = await this.facebookService.createFacebookShareLink(
+        petitionId,
+        userId,
+      );
+      return {
+        success: true,
+        data: {
+          shareUrl: result.shareUrl,
+          shortCode: result.shortCode,
+          reachEstimate: result.reachEstimate,
+        },
+      };
     } catch (err) {
       this.logger.error(`Failed to create share: ${String(err)}`);
       throw new NotFoundException('Petition not found');
@@ -273,7 +368,8 @@ export class FacebookController {
     if (!shortCode) throw new BadRequestException('shortCode is required');
 
     try {
-      const redirectUrl = await this.facebookService.trackFacebookClick(shortCode);
+      const redirectUrl =
+        await this.facebookService.trackFacebookClick(shortCode);
       return { success: true, data: { redirectUrl } };
     } catch (err) {
       this.logger.error(`Failed to track click: ${String(err)}`);
@@ -291,4 +387,4 @@ export class FacebookController {
       return { success: false };
     }
   }
-};
+}

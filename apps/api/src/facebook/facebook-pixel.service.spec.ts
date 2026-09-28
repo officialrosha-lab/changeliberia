@@ -55,7 +55,7 @@ describe('FacebookPixelService', () => {
     }).compile();
 
     service = module.get<FacebookPixelService>(FacebookPixelService);
-    prismaService = module.get(PrismaService) as any;
+    prismaService = module.get(PrismaService);
   });
 
   describe('getPixelId', () => {
@@ -73,8 +73,8 @@ describe('FacebookPixelService', () => {
 
       expect(code).toContain('<!-- Facebook Pixel Code -->');
       expect(code).toContain('fbq');
-      expect(code).toContain('fbq(\'init\'');
-      expect(code).toContain('fbq(\'track\', \'PageView\')');
+      expect(code).toContain("fbq('init'");
+      expect(code).toContain("fbq('track', 'PageView')");
     });
 
     it('should include pixel ID in init code', () => {
@@ -325,7 +325,9 @@ describe('FacebookPixelService', () => {
       prismaService.customAudience.findUnique.mockResolvedValue(
         mockAudience as any,
       );
-      prismaService.customAudience.update.mockResolvedValue(mockAudience as any);
+      prismaService.customAudience.update.mockResolvedValue(
+        mockAudience as any,
+      );
 
       await service.resyncAudience('audience-1');
 

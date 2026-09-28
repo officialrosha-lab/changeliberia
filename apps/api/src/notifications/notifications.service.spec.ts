@@ -79,7 +79,7 @@ describe('NotificationsService', () => {
     }).compile();
 
     service = moduleFixture.get<NotificationsService>(NotificationsService);
-    prismaService = moduleFixture.get(PrismaService) as any;
+    prismaService = moduleFixture.get(PrismaService);
   });
 
   describe('createNotification', () => {
@@ -263,7 +263,9 @@ describe('NotificationsService', () => {
 
   describe('Mark Notification As Read', () => {
     it('should mark notification as read', async () => {
-      prismaService.notification.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaService.notification.updateMany.mockResolvedValue({
+        count: 1,
+      } as any);
 
       await service.markAsRead('notif-1', 'user-1');
 
@@ -297,7 +299,9 @@ describe('NotificationsService', () => {
 
   describe('Delete Notification', () => {
     it('should delete notification', async () => {
-      prismaService.notification.deleteMany.mockResolvedValue({ count: 1 } as any);
+      prismaService.notification.deleteMany.mockResolvedValue({
+        count: 1,
+      } as any);
 
       await service.deleteNotification('notif-1', 'user-1');
 
@@ -359,9 +363,9 @@ describe('NotificationsService', () => {
 
       const result = await service.getPreferences('user-1');
 
-      expect(prismaService.notificationPreference.findUnique).toHaveBeenCalledWith(
-        { where: { userId: 'user-1' } },
-      );
+      expect(
+        prismaService.notificationPreference.findUnique,
+      ).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
       expect(result).toEqual(mockPrefs);
     });
 
@@ -400,9 +404,7 @@ describe('NotificationsService', () => {
 
   describe('Share Milestone Notifications', () => {
     it('should send milestone notification for 10 shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       prismaService.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
@@ -418,9 +420,7 @@ describe('NotificationsService', () => {
     });
 
     it('should send milestone notification for 50 and 100 shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       prismaService.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
@@ -432,9 +432,7 @@ describe('NotificationsService', () => {
     });
 
     it('should not send notification for non-milestone shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
 
       await service.notifyShareMilestone('user-1', 'petition-1', 15);
 

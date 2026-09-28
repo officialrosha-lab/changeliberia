@@ -1,4 +1,11 @@
-import { BadRequestException, Controller, Header, Logger, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Header,
+  Logger,
+  Post,
+  Req,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import twilio from 'twilio';
 import { PrismaService } from '../prisma/prisma.service';
@@ -29,7 +36,9 @@ export class SmsInboundController {
         );
         return false;
       }
-      this.logger.warn('TWILIO_AUTH_TOKEN not set — skipping inbound signature validation (dev mode only)');
+      this.logger.warn(
+        'TWILIO_AUTH_TOKEN not set — skipping inbound signature validation (dev mode only)',
+      );
       return true;
     }
 
@@ -61,12 +70,19 @@ export class SmsInboundController {
     }
 
     const shortCode = match[1].toLowerCase();
-    const shareLink = await this.prisma.shareLink.findUnique({ where: { shortCode } });
+    const shareLink = await this.prisma.shareLink.findUnique({
+      where: { shortCode },
+    });
     if (!shareLink) {
-      return this.twiml(`We couldn't find a petition for code "${shortCode}". Please check the code and try again.`);
+      return this.twiml(
+        `We couldn't find a petition for code "${shortCode}". Please check the code and try again.`,
+      );
     }
 
-    const result = await this.signaturesService.createFromSms(from, shareLink.petitionId);
+    const result = await this.signaturesService.createFromSms(
+      from,
+      shareLink.petitionId,
+    );
     return this.twiml(result.message);
   }
 

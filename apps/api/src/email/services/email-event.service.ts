@@ -24,9 +24,7 @@ export class EmailEventService {
    */
   private registerEventListeners(): void {
     // User events
-    this.eventEmitter.on('user.created', (event) =>
-      this.onUserCreated(event),
-    );
+    this.eventEmitter.on('user.created', (event) => this.onUserCreated(event));
     this.eventEmitter.on('user.email.verification-requested', (event) =>
       this.onEmailVerificationRequested(event),
     );
@@ -197,7 +195,13 @@ export class EmailEventService {
 
   private async onPetitionApproved(event: any): Promise<void> {
     try {
-      const { creatorId, creatorEmail, petitionTitle, petitionUrl, creatorName } = event;
+      const {
+        creatorId,
+        creatorEmail,
+        petitionTitle,
+        petitionUrl,
+        creatorName,
+      } = event;
       await this.emailService.sendNotification(
         creatorId,
         creatorEmail,
@@ -216,7 +220,8 @@ export class EmailEventService {
 
   private async onPetitionRejected(event: any): Promise<void> {
     try {
-      const { creatorId, creatorEmail, creatorName, petitionTitle, reason } = event;
+      const { creatorId, creatorEmail, creatorName, petitionTitle, reason } =
+        event;
       await this.emailService.sendNotification(
         creatorId,
         creatorEmail,
@@ -289,7 +294,9 @@ export class EmailEventService {
           currentSignatures,
         },
       );
-      this.logger.log(`Milestone email sent to ${creatorEmail} for ${milestone} signatures`);
+      this.logger.log(
+        `Milestone email sent to ${creatorEmail} for ${milestone} signatures`,
+      );
     } catch (error) {
       this.logger.error(`Failed to send milestone email: ${error}`);
     }
@@ -361,8 +368,14 @@ export class EmailEventService {
 
   private async onSignatureReceived(event: any): Promise<void> {
     try {
-      const { creatorId, creatorEmail, creatorName, signerName, petitionTitle, petitionUrl } =
-        event;
+      const {
+        creatorId,
+        creatorEmail,
+        creatorName,
+        signerName,
+        petitionTitle,
+        petitionUrl,
+      } = event;
 
       await this.emailService.sendNotification(
         creatorId,
@@ -391,7 +404,13 @@ export class EmailEventService {
 
   private async onCommentReplied(event: any): Promise<void> {
     try {
-      const { commenterId, commenterEmail, commenterName, petitionTitle, petitionUrl } = event;
+      const {
+        commenterId,
+        commenterEmail,
+        commenterName,
+        petitionTitle,
+        petitionUrl,
+      } = event;
 
       await this.emailService.sendNotification(
         commenterId,
@@ -413,10 +432,15 @@ export class EmailEventService {
   private async onAmbassadorJoined(event: any): Promise<void> {
     try {
       const { userId, email, fullName } = event;
-      await this.emailService.sendNotification(userId, email, EmailType.WELCOME_TO_MOVEMENT, {
-        recipientName: fullName,
-        appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      });
+      await this.emailService.sendNotification(
+        userId,
+        email,
+        EmailType.WELCOME_TO_MOVEMENT,
+        {
+          recipientName: fullName,
+          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        },
+      );
       this.logger.log(`Ambassador welcome email sent to ${email}`);
     } catch (error) {
       this.logger.error(`Failed to send ambassador welcome email: ${error}`);
@@ -437,7 +461,8 @@ export class EmailEventService {
 
   private async onPollApproved(event: any): Promise<void> {
     try {
-      const { creatorId, creatorEmail, creatorName, pollTitle, pollUrl } = event;
+      const { creatorId, creatorEmail, creatorName, pollTitle, pollUrl } =
+        event;
       await this.emailService.sendNotification(
         creatorId,
         creatorEmail,
@@ -475,13 +500,8 @@ export class EmailEventService {
 
   private async onMessageCreated(event: any): Promise<void> {
     try {
-      const {
-        recipientId,
-        recipientEmail,
-        senderName,
-        subject,
-        content,
-      } = event;
+      const { recipientId, recipientEmail, senderName, subject, content } =
+        event;
       const messagePreview = content?.slice(0, 180) || '';
       await this.emailService.sendNotification(
         recipientId,
@@ -513,7 +533,9 @@ export class EmailEventService {
         failedCount,
       } = event;
       if (!senderEmail) {
-        this.logger.warn('Broadcast sent event missing senderEmail, skipping summary email');
+        this.logger.warn(
+          'Broadcast sent event missing senderEmail, skipping summary email',
+        );
         return;
       }
       await this.emailService.sendNotification(
@@ -541,12 +563,17 @@ export class EmailEventService {
   private async onDonationReceived(event: any): Promise<void> {
     try {
       const { donorId, donorEmail, donorName, petitionTitle, amount } = event;
-      await this.emailService.sendNotification(donorId, donorEmail, EmailType.DONATION_RECEIVED, {
-        recipientName: donorName,
-        petitionTitle,
-        amount,
-        receiptUrl: `${process.env.NEXT_PUBLIC_APP_URL}/donations/${donorId}`,
-      });
+      await this.emailService.sendNotification(
+        donorId,
+        donorEmail,
+        EmailType.DONATION_RECEIVED,
+        {
+          recipientName: donorName,
+          petitionTitle,
+          amount,
+          receiptUrl: `${process.env.NEXT_PUBLIC_APP_URL}/donations/${donorId}`,
+        },
+      );
       this.logger.log(`Donation receipt email sent to ${donorEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send donation receipt email: ${error}`);

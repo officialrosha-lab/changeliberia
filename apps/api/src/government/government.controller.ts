@@ -33,18 +33,30 @@ export class GovernmentController {
   @Post('submit')
   @UseGuards(JwtAuthGuard)
   async submitPetition(
-    @Body() submitData: { petitionId: string; governmentEmail: string; notes?: string },
+    @Body()
+    submitData: { petitionId: string; governmentEmail: string; notes?: string },
     @CurrentUser() user: any,
   ) {
     if (!submitData || typeof submitData !== 'object') {
       throw new BadRequestException('Request body is required');
     }
-    const petitionId = typeof submitData.petitionId === 'string' ? submitData.petitionId.trim() : '';
-    const governmentEmail = typeof submitData.governmentEmail === 'string' ? submitData.governmentEmail.trim() : '';
-    const notes = typeof submitData.notes === 'string' ? submitData.notes.trim() : undefined;
+    const petitionId =
+      typeof submitData.petitionId === 'string'
+        ? submitData.petitionId.trim()
+        : '';
+    const governmentEmail =
+      typeof submitData.governmentEmail === 'string'
+        ? submitData.governmentEmail.trim()
+        : '';
+    const notes =
+      typeof submitData.notes === 'string'
+        ? submitData.notes.trim()
+        : undefined;
 
     if (!petitionId || !governmentEmail) {
-      throw new BadRequestException('petitionId and governmentEmail are required');
+      throw new BadRequestException(
+        'petitionId and governmentEmail are required',
+      );
     }
 
     // Validate email format
@@ -67,7 +79,9 @@ export class GovernmentController {
         submission,
       };
     } catch (error) {
-      this.logger.error(`Submission failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -81,9 +95,8 @@ export class GovernmentController {
   @UseGuards(OptionalJwtAuthGuard)
   async getPetitionStatus(@Param('petitionId') petitionId: string) {
     try {
-      const submissions = await this.governmentService.getPetitionSubmissions(
-        petitionId,
-      );
+      const submissions =
+        await this.governmentService.getPetitionSubmissions(petitionId);
 
       if (submissions.length === 0) {
         return {
@@ -105,7 +118,9 @@ export class GovernmentController {
         submissions,
       };
     } catch (error) {
-      this.logger.error(`Status check failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Status check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -136,7 +151,9 @@ export class GovernmentController {
       );
       res.send(reportBuffer);
     } catch (error) {
-      this.logger.error(`Report generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Report generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -166,7 +183,9 @@ export class GovernmentController {
       );
       res.send(csv);
     } catch (error) {
-      this.logger.error(`CSV export failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `CSV export failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -180,7 +199,9 @@ export class GovernmentController {
   @UseGuards(JwtAuthGuard)
   async getMySubmissions(@CurrentUser() user: any) {
     try {
-      const submissions = await this.governmentService.getUserSubmissions(user.id);
+      const submissions = await this.governmentService.getUserSubmissions(
+        user.id,
+      );
 
       return {
         success: true,
@@ -188,7 +209,9 @@ export class GovernmentController {
         submissions,
       };
     } catch (error) {
-      this.logger.error(`Submission retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Submission retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -209,7 +232,9 @@ export class GovernmentController {
         contacts,
       };
     } catch (error) {
-      this.logger.error(`Contact retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Contact retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -239,7 +264,9 @@ export class GovernmentController {
         contact,
       };
     } catch (error) {
-      this.logger.error(`Contact creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Contact creation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -278,7 +305,9 @@ export class GovernmentController {
         updateData.status as any,
       );
 
-      this.logger.log(`Petition ${petitionId} status updated to ${updateData.status}`);
+      this.logger.log(
+        `Petition ${petitionId} status updated to ${updateData.status}`,
+      );
 
       return {
         success: true,
@@ -286,7 +315,9 @@ export class GovernmentController {
         submission: updated,
       };
     } catch (error) {
-      this.logger.error(`Status update failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Status update failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -308,7 +339,9 @@ export class GovernmentController {
         stats,
       };
     } catch (error) {
-      this.logger.error(`Stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }

@@ -14,7 +14,10 @@ import {
 import { Response } from 'express';
 import { createClient } from 'redis';
 import { EmailService } from '../services/email.service';
-import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
+import {
+  EmailPreferenceService,
+  EmailPreferenceDTO,
+} from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
 import { MailerooProvider } from '../providers/maileroo.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -50,10 +53,10 @@ export class EmailController {
 
       // Return a 1x1 transparent GIF pixel
       const pixel = Buffer.from([
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
-        0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04,
-        0x01, 0x0a, 0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
+        0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x0a,
+        0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+        0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
       ]);
 
       res.setHeader('Content-Type', 'image/gif');
@@ -64,10 +67,10 @@ export class EmailController {
       this.logger.error(`Error tracking open: ${error}`);
       // Still return pixel even on error
       const pixel = Buffer.from([
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
-        0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04,
-        0x01, 0x0a, 0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
+        0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x0a,
+        0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+        0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
       ]);
       res.setHeader('Content-Type', 'image/gif');
       res.setHeader('Content-Length', pixel.length);
@@ -174,7 +177,10 @@ export class EmailController {
     @Body() updates: EmailPreferenceDTO,
   ): Promise<any> {
     const userId = req.user.userId;
-    const prefs = await this.preferenceService.updatePreferences(userId, updates);
+    const prefs = await this.preferenceService.updatePreferences(
+      userId,
+      updates,
+    );
 
     return {
       emailEnabled: prefs.emailEnabled,
@@ -221,7 +227,6 @@ export class EmailController {
       offset: parseInt(offset || '0'),
     };
   }
-
 }
 
 @Controller('admin/email')
@@ -317,7 +322,11 @@ export class AdminEmailController {
 
     const allUp = apiKey && redisConnected && databaseConnected;
     const allDown = !apiKey && !redisConnected && !databaseConnected;
-    const status: 'ok' | 'warning' | 'error' = allUp ? 'ok' : allDown ? 'error' : 'warning';
+    const status: 'ok' | 'warning' | 'error' = allUp
+      ? 'ok'
+      : allDown
+        ? 'error'
+        : 'warning';
     const downParts = [
       !apiKey && 'Maileroo API',
       !redisConnected && 'Redis',
@@ -326,7 +335,9 @@ export class AdminEmailController {
 
     return {
       status,
-      message: allUp ? 'All systems operational' : `Unreachable: ${downParts.join(', ')}`,
+      message: allUp
+        ? 'All systems operational'
+        : `Unreachable: ${downParts.join(', ')}`,
       lastChecked: new Date().toISOString(),
       apiKey,
       redisConnected,
@@ -347,7 +358,10 @@ export class AdminEmailController {
     const redisUrl = process.env.REDIS_URL;
     if (!redisUrl) return false;
 
-    const client = createClient({ url: redisUrl, socket: { connectTimeout: 2000 } });
+    const client = createClient({
+      url: redisUrl,
+      socket: { connectTimeout: 2000 },
+    });
     client.on('error', () => {});
     try {
       await client.connect();

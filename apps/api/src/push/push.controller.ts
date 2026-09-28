@@ -28,7 +28,10 @@ export class PushController {
 
   @Post('subscribe')
   @UseGuards(OptionalJwtAuthGuard)
-  async subscribe(@CurrentUser() user: AuthUser | undefined, @Body() dto: SubscribeDto) {
+  async subscribe(
+    @CurrentUser() user: AuthUser | undefined,
+    @Body() dto: SubscribeDto,
+  ) {
     await this.pushService.subscribe(user?.userId, dto);
     return { success: true };
   }

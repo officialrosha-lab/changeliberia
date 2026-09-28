@@ -1,10 +1,20 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
+import {
+  LoginDto,
+  SignupDto,
+  EmailSignupDto,
+  EmailLoginDto,
+  GoogleAuthCallbackDto,
+} from './dto';
 import { OtpProvider } from './otp.provider';
 import { PasswordProvider } from './password.provider';
 import { EmailVerificationService } from './email-verification.service';
@@ -35,7 +45,7 @@ export class AuthService {
         where: { phone: dto.phone },
       });
       if (!user) throw new UnauthorizedException('Invalid credentials');
-      
+
       return this.issueToken(user.id, user.phone);
     } catch (error) {
       throw error;
@@ -71,7 +81,9 @@ export class AuthService {
    */
   async signupWithEmail(dto: EmailSignupDto) {
     // Validate password strength
-    const passwordValidation = this.passwordProvider.validatePasswordStrength(dto.password);
+    const passwordValidation = this.passwordProvider.validatePasswordStrength(
+      dto.password,
+    );
     if (!passwordValidation.isValid) {
       throw new BadRequestException(passwordValidation.message);
     }
@@ -125,7 +137,8 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Account created successfully. Please check your email to verify your account.',
+      message:
+        'Account created successfully. Please check your email to verify your account.',
       email: dto.email,
     };
   }
@@ -148,12 +161,13 @@ export class AuthService {
       if (!user.isEmailConfirmed) {
         const createdAt = new Date(user.createdAt);
         const now = new Date();
-        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-        
+        const hoursDiff =
+          (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
         // Only require verification for accounts less than 24 hours old
         if (hoursDiff < 24) {
           throw new UnauthorizedException(
-            'email_not_verified|Your email address needs to be verified. Please check your inbox for a verification link from Change Liberia. If you don\'t see it, you can request a new one below.'
+            "email_not_verified|Your email address needs to be verified. Please check your inbox for a verification link from Change Liberia. If you don't see it, you can request a new one below.",
           );
         }
       }
@@ -233,14 +247,27 @@ export class AuthService {
   async verifyGoogleToken(idToken: string) {
     const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
     if (!clientId) {
-      throw new UnauthorizedException('Google OAuth is not configured on this server');
+      throw new UnauthorizedException(
+        'Google OAuth is not configured on this server',
+      );
     }
     const client = new OAuth2Client(clientId);
-    let payload: { sub: string; email?: string; name?: string; picture?: string } | undefined;
+    let payload:
+      | { sub: string; email?: string; name?: string; picture?: string }
+      | undefined;
     try {
-      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: clientId,
+      });
       const p = ticket.getPayload();
-      if (p) payload = { sub: p.sub, email: p.email, name: p.name, picture: p.picture };
+      if (p)
+        payload = {
+          sub: p.sub,
+          email: p.email,
+          name: p.name,
+          picture: p.picture,
+        };
     } catch {
       throw new UnauthorizedException('Invalid Google token');
     }
@@ -303,4 +330,3 @@ export class AuthService {
     return await this.emailVerificationService.resendVerificationEmail(email);
   }
 }
-

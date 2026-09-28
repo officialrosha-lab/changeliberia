@@ -119,7 +119,9 @@ export class FacebookSDKService {
     error?: string;
   }> {
     if (!this.pixelId || !this.accessToken) {
-      this.logger.warn('Cannot track conversion: Pixel ID or access token missing');
+      this.logger.warn(
+        'Cannot track conversion: Pixel ID or access token missing',
+      );
       return { success: false, error: 'Pixel not configured' };
     }
 

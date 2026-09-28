@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Query,
-  Param,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, Param, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -141,7 +134,11 @@ export class ActivityLogController {
     const csv =
       headers.join(',') +
       '\n' +
-      rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      rows
+        .map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+        )
+        .join('\n');
 
     if (!res) {
       return csv;

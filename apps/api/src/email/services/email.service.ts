@@ -30,9 +30,12 @@ export class EmailService {
    * - 5-minute cooldown per recipient+type (prevents rapid resend attacks)
    * - 5 emails/day across all types per address (caps total daily spend)
    */
-  private async checkEmailRateLimit(recipient: string, emailType: EmailType): Promise<void> {
+  private async checkEmailRateLimit(
+    recipient: string,
+    emailType: EmailType,
+  ): Promise<void> {
     const COOLDOWN_MS = 5 * 60 * 1000; // 5 min cooldown per recipient+type
-    const DAILY_LIMIT = 5;             // max emails per address per 24 h
+    const DAILY_LIMIT = 5; // max emails per address per 24 h
 
     const recent = await this.prisma.emailLog.findFirst({
       where: {
@@ -51,7 +54,10 @@ export class EmailService {
         `Email cooldown enforced: ${emailType} to ${recipient} (retry in ${waitSecs}s)`,
       );
       throw new HttpException(
-        { message: `Please wait ${waitSecs} seconds before requesting another email.`, retryAfter: waitSecs },
+        {
+          message: `Please wait ${waitSecs} seconds before requesting another email.`,
+          retryAfter: waitSecs,
+        },
         429,
       );
     }
@@ -64,9 +70,14 @@ export class EmailService {
       },
     });
     if (dailyCount >= DAILY_LIMIT) {
-      this.logger.warn(`Daily email quota reached for ${recipient} (${dailyCount} sent today)`);
+      this.logger.warn(
+        `Daily email quota reached for ${recipient} (${dailyCount} sent today)`,
+      );
       throw new HttpException(
-        { message: 'Daily email limit reached for this address. Please try again tomorrow.' },
+        {
+          message:
+            'Daily email limit reached for this address. Please try again tomorrow.',
+        },
         429,
       );
     }
@@ -236,10 +247,15 @@ export class EmailService {
         where: { id: emailLogId },
         // resendMessageId now holds whichever provider's message id — kept
         // as-is to avoid a schema migration for a rename.
-        data: { status: 'SENT', sentAt: new Date(), resendMessageId: result.id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          resendMessageId: result.id,
+        },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to send email ${emailLogId}: ${errorMessage}`);
       await this.prisma.emailLog.update({
         where: { id: emailLogId },
@@ -273,8 +289,7 @@ export class EmailService {
         }
 
         // Get template props for this user
-        const templateProps =
-          await getTemplatePropsForUser(userId);
+        const templateProps = await getTemplatePropsForUser(userId);
 
         const result = await this.sendNotification(
           userId,
@@ -287,9 +302,7 @@ export class EmailService {
           results.push(result);
         }
       } catch (error) {
-        this.logger.error(
-          `Failed to send email for user ${userId}: ${error}`,
-        );
+        this.logger.error(`Failed to send email for user ${userId}: ${error}`);
       }
     }
 

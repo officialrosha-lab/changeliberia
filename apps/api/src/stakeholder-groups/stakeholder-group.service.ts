@@ -76,7 +76,10 @@ export class StakeholderGroupService {
   /**
    * Get a specific stakeholder group with its members
    */
-  async getGroupWithMembers(petitionId: string, groupType: StakeholderGroupType) {
+  async getGroupWithMembers(
+    petitionId: string,
+    groupType: StakeholderGroupType,
+  ) {
     const group = await this.prisma.petitionStakeholderGroup.findUnique({
       where: {
         petitionId_groupType: { petitionId, groupType },

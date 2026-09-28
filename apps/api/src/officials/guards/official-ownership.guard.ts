@@ -58,8 +58,12 @@ export class OfficialOwnershipGuard implements CanActivate {
     const institutionId = request.params?.institutionId;
 
     let institution = institutionId
-      ? await this.prisma.institution.findUnique({ where: { id: institutionId } })
-      : await this.prisma.institution.findUnique({ where: { holderUserId: user.userId } });
+      ? await this.prisma.institution.findUnique({
+          where: { id: institutionId },
+        })
+      : await this.prisma.institution.findUnique({
+          where: { holderUserId: user.userId },
+        });
 
     let access: OfficialAccess | null = null;
 
@@ -78,14 +82,20 @@ export class OfficialOwnershipGuard implements CanActivate {
       // the caller's own ACTIVE staff membership ("my dashboard" case).
       const staff = institutionId
         ? await this.prisma.officialStaffMember.findUnique({
-            where: { institutionId_userId: { institutionId, userId: user.userId } },
+            where: {
+              institutionId_userId: { institutionId, userId: user.userId },
+            },
           })
         : await this.prisma.officialStaffMember.findFirst({
             where: { userId: user.userId, status: 'ACTIVE' },
           });
 
       if (staff && staff.status === 'ACTIVE') {
-        institution = institution ?? (await this.prisma.institution.findUnique({ where: { id: staff.institutionId } }));
+        institution =
+          institution ??
+          (await this.prisma.institution.findUnique({
+            where: { id: staff.institutionId },
+          }));
         access = {
           isOfficeholder: false,
           canView: staff.canView,

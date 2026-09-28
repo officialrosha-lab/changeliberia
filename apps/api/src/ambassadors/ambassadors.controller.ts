@@ -1,6 +1,18 @@
-import { Controller, Post, Get, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { AmbassadorsService } from './ambassadors.service';
-import { CreateAmbassadorApplicationDto, UpdateAmbassadorApplicationDto } from './ambassadors.dto';
+import {
+  CreateAmbassadorApplicationDto,
+  UpdateAmbassadorApplicationDto,
+} from './ambassadors.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';

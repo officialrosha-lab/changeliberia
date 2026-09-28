@@ -165,9 +165,7 @@ export class AnalyticsController {
   async getTrendingPetitions(@Query('limit') limit: string = '10') {
     const limitNum = parseInt(limit);
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-      throw new BadRequestException(
-        'Limit must be a number between 1 and 100',
-      );
+      throw new BadRequestException('Limit must be a number between 1 and 100');
     }
 
     const petitions = await this.analytics.getTrendingPetitions(limitNum);
@@ -230,7 +228,9 @@ export class AnalyticsController {
   @Roles(UserRole.ADMIN)
   @Get('geographic-insights')
   getGeographicInsights(@Query('days') days = '30') {
-    return this.analytics.getGeographicInsights(Math.max(1, Number(days) || 30));
+    return this.analytics.getGeographicInsights(
+      Math.max(1, Number(days) || 30),
+    );
   }
 
   // ── Message Analytics (admin only) ───────────────────────────────────────
@@ -247,7 +247,10 @@ export class AnalyticsController {
       throw new BadRequestException('Invalid date format');
     }
 
-    const analytics = await this.messageAnalytics.getMessageAnalytics(period, end);
+    const analytics = await this.messageAnalytics.getMessageAnalytics(
+      period,
+      end,
+    );
     return {
       success: true,
       data: analytics,
@@ -268,7 +271,10 @@ export class AnalyticsController {
       throw new BadRequestException('Invalid date format');
     }
 
-    const analytics = await this.broadcastAnalytics.getBroadcastAnalytics(period, end);
+    const analytics = await this.broadcastAnalytics.getBroadcastAnalytics(
+      period,
+      end,
+    );
     return {
       success: true,
       data: analytics,

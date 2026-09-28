@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   Institution,
@@ -83,9 +87,7 @@ export class ContactDirectoryService {
   /**
    * Create a new institution
    */
-  async createInstitution(
-    dto: CreateInstitutionDto,
-  ): Promise<Institution> {
+  async createInstitution(dto: CreateInstitutionDto): Promise<Institution> {
     // Validate email format
     this.validateEmail(dto.officialEmail);
 
@@ -108,7 +110,7 @@ export class ContactDirectoryService {
 
     // Validate secondary emails
     const secondaryEmails = dto.secondaryEmails || [];
-    secondaryEmails.forEach(email => this.validateEmail(email));
+    secondaryEmails.forEach((email) => this.validateEmail(email));
 
     const institution = await this.prisma.institution.create({
       data: {
@@ -151,7 +153,7 @@ export class ContactDirectoryService {
       this.validateEmail(dto.officialEmail);
     }
     if (dto.secondaryEmails) {
-      dto.secondaryEmails.forEach(email => this.validateEmail(email));
+      dto.secondaryEmails.forEach((email) => this.validateEmail(email));
     }
 
     const updateData: any = { ...dto };
@@ -189,7 +191,7 @@ export class ContactDirectoryService {
     return {
       ...institution,
       secondaryEmails: JSON.parse(institution.secondaryEmails || '[]'),
-      contacts: institution.contacts.map(c => ({
+      contacts: institution.contacts.map((c) => ({
         ...c,
         issueTags: JSON.parse(c.issueTags || '[]'),
       })),
@@ -245,12 +247,12 @@ export class ContactDirectoryService {
       orderBy: { name: 'asc' },
     });
 
-    return institutions.map(inst => ({
+    return institutions.map((inst) => ({
       ...inst,
       secondaryEmails: JSON.parse(inst.secondaryEmails || '[]'),
       departmentCount: inst.departments.length,
       contactCount: inst.contacts.length,
-      primaryContact: inst.contacts.find(c => c.isPrimary),
+      primaryContact: inst.contacts.find((c) => c.isPrimary),
     }));
   }
 
@@ -383,7 +385,7 @@ export class ContactDirectoryService {
 
     return {
       ...department,
-      contacts: department.contacts.map(c => ({
+      contacts: department.contacts.map((c) => ({
         ...c,
         issueTags: JSON.parse(c.issueTags || '[]'),
       })),
@@ -575,13 +577,10 @@ export class ContactDirectoryService {
       include: {
         department: { select: { name: true } },
       },
-      orderBy: [
-        { isPrimary: 'desc' },
-        { priorityLevel: 'desc' },
-      ],
+      orderBy: [{ isPrimary: 'desc' }, { priorityLevel: 'desc' }],
     });
 
-    return contacts.map(c => ({
+    return contacts.map((c) => ({
       ...c,
       issueTags: JSON.parse(c.issueTags || '[]'),
     }));
@@ -591,7 +590,7 @@ export class ContactDirectoryService {
    * Search institutions by tags
    */
   async searchByTags(tags: string[]) {
-    const normalizedTags = tags.map(t => t.toLowerCase());
+    const normalizedTags = tags.map((t) => t.toLowerCase());
 
     const contacts = await this.prisma.contactDirectory.findMany({
       where: {
@@ -610,10 +609,11 @@ export class ContactDirectoryService {
     });
 
     const matches = contacts
-      .map(contact => {
-        const contactTags = JSON.parse(contact.issueTags || '[]')
-          .map((t: string) => t.toLowerCase()) as string[];
-        const matched = normalizedTags.filter(tag =>
+      .map((contact) => {
+        const contactTags = JSON.parse(contact.issueTags || '[]').map(
+          (t: string) => t.toLowerCase(),
+        ) as string[];
+        const matched = normalizedTags.filter((tag) =>
           contactTags.includes(tag),
         );
 
@@ -624,7 +624,7 @@ export class ContactDirectoryService {
           matchCount: matched.length,
         };
       })
-      .filter(c => c.matchCount > 0)
+      .filter((c) => c.matchCount > 0)
       .sort((a, b) => b.matchCount - a.matchCount);
 
     return matches;
@@ -665,9 +665,7 @@ export class ContactDirectoryService {
   private normalizeTags(tags: string[]): string[] {
     return Array.from(
       new Set(
-        tags
-          .map(t => t.toLowerCase().trim())
-          .filter(t => t.length > 0),
+        tags.map((t) => t.toLowerCase().trim()).filter((t) => t.length > 0),
       ),
     );
   }

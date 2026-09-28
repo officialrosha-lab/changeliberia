@@ -38,7 +38,10 @@ export class VotingController {
     const userAgent = this.fingerprintService.extractUserAgent(req);
 
     let userId: string | undefined;
-    const rawToken = (req.headers.authorization as string | undefined)?.replace('Bearer ', '');
+    const rawToken = (req.headers.authorization as string | undefined)?.replace(
+      'Bearer ',
+      '',
+    );
     if (rawToken) {
       try {
         const payload = this.jwtService.verify<{ sub: string }>(rawToken);
@@ -46,6 +49,12 @@ export class VotingController {
       } catch {}
     }
 
-    return this.votingService.castVote(pollId, voteDto, ipAddress, userAgent, userId);
+    return this.votingService.castVote(
+      pollId,
+      voteDto,
+      ipAddress,
+      userAgent,
+      userId,
+    );
   }
 }

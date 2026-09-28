@@ -11,7 +11,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { NotificationService, NotificationFilterDto } from './notification.service';
+import {
+  NotificationService,
+  NotificationFilterDto,
+} from './notification.service';
 
 @Controller('notifications')
 export class NotificationController {
