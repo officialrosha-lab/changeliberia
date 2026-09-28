@@ -6,7 +6,6 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
   HttpStatus,
   HttpCode,
   BadRequestException,
@@ -16,6 +15,8 @@ import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/roles.guard';
 
 @Controller('admin/broadcast')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,7 +40,7 @@ export class BroadcastController {
       content: string;
       category?: string;
     },
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
   ) {
     if (!body.subject || !body.content) {
       throw new BadRequestException('subject and content are required');
@@ -49,7 +50,7 @@ export class BroadcastController {
       groupId,
       body.subject,
       body.content,
-      req.user.id,
+      user.userId,
       body.category,
     );
   }
@@ -67,7 +68,7 @@ export class BroadcastController {
       content: string;
       category?: string;
     },
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
   ) {
     if (!body.groupIds || !Array.isArray(body.groupIds)) {
       throw new BadRequestException('groupIds must be an array');
@@ -81,7 +82,7 @@ export class BroadcastController {
       body.groupIds,
       body.subject,
       body.content,
-      req.user.id,
+      user.userId,
       body.category,
     );
   }
@@ -100,7 +101,7 @@ export class BroadcastController {
       excludeGroupTypes?: string[];
       category?: string;
     },
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
   ) {
     if (!body.subject || !body.content) {
       throw new BadRequestException('subject and content are required');
@@ -110,7 +111,7 @@ export class BroadcastController {
       petitionId,
       body.subject,
       body.content,
-      req.user.id,
+      user.userId,
       body.excludeGroupTypes,
       body.category,
     );
