@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PetitionStatus } from '@prisma/client';
+import { PetitionMediaType, PetitionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SmartRoutingService } from '../contact-directory/routing/smart-routing.service';
 import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group.service';
@@ -152,7 +152,39 @@ export class PetitionsService {
   getById(id: string) {
     return this.prisma.petition.findUnique({
       where: { id },
-      include: { creator: { select: { id: true, fullName: true } } },
+      include: {
+        creator: { select: { id: true, fullName: true } },
+        media: { orderBy: { order: 'asc' } },
+      },
+    });
+  }
+
+  /**
+   * Gallery images / video links attached beyond the petition's single
+   * cover imageUrl. Capped per petition so the wizard can't be used to
+   * spam an unbounded number of rows onto one campaign.
+   */
+  private static readonly MAX_MEDIA_PER_PETITION = 8;
+
+  async addMedia(
+    petitionId: string,
+    userId: string,
+    type: PetitionMediaType,
+    url: string,
+  ) {
+    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.creatorId !== userId) throw new ForbiddenException('Not your petition');
+
+    const count = await this.prisma.petitionMedia.count({ where: { petitionId } });
+    if (count >= PetitionsService.MAX_MEDIA_PER_PETITION) {
+      throw new BadRequestException(
+        `A petition can have at most ${PetitionsService.MAX_MEDIA_PER_PETITION} additional media items.`,
+      );
+    }
+
+    return this.prisma.petitionMedia.create({
+      data: { petitionId, type, url, order: count },
     });
   }
 

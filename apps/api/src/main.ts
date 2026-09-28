@@ -170,6 +170,19 @@ async function ensureSchema(prisma: PrismaService) {
     `CREATE UNIQUE INDEX IF NOT EXISTS "AmbassadorApplication_email_key" ON "AmbassadorApplication"("email")`,
     `CREATE INDEX IF NOT EXISTS "AmbassadorApplication_status_idx" ON "AmbassadorApplication"("status")`,
     `CREATE INDEX IF NOT EXISTS "AmbassadorApplication_createdAt_idx" ON "AmbassadorApplication"("createdAt")`,
+    // PetitionMedia table (add_petition_media migration) — gallery images
+    // and video links attached to a petition beyond its single imageUrl cover
+    `CREATE TYPE "PetitionMediaType" AS ENUM ('IMAGE', 'VIDEO')`,
+    `CREATE TABLE IF NOT EXISTS "PetitionMedia" (
+      "id" TEXT NOT NULL,
+      "petitionId" TEXT NOT NULL,
+      "type" "PetitionMediaType" NOT NULL,
+      "url" TEXT NOT NULL,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PetitionMedia_pkey" PRIMARY KEY ("id")
+    )`,
+    `CREATE INDEX IF NOT EXISTS "PetitionMedia_petitionId_order_idx" ON "PetitionMedia"("petitionId", "order")`,
     // Sponsor table
     `CREATE TABLE IF NOT EXISTS "Sponsor" (
       "id" TEXT NOT NULL,
@@ -195,6 +208,7 @@ async function ensureSchema(prisma: PrismaService) {
   const fks = [
     `ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     `ALTER TABLE "PetitionStatusLog" ADD CONSTRAINT "PetitionStatusLog_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+    `ALTER TABLE "PetitionMedia" ADD CONSTRAINT "PetitionMedia_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
   ];
   for (const sql of fks) {
     try { await prisma.$executeRawUnsafe(sql); } catch { /* already exists */ }
