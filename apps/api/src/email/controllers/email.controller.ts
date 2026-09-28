@@ -64,7 +64,9 @@ export class EmailController {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.end(pixel);
     } catch (error) {
-      this.logger.error(`Error tracking open: ${error}`);
+      this.logger.error(
+        `Error tracking open: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Still return pixel even on error
       const pixel = Buffer.from([
         0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
@@ -101,7 +103,9 @@ export class EmailController {
 
       res.json({ ok: true });
     } catch (error) {
-      this.logger.error(`Error tracking click: ${error}`);
+      this.logger.error(
+        `Error tracking click: ${error instanceof Error ? error.message : String(error)}`,
+      );
       if (redirect) {
         const url = Buffer.from(redirect, 'base64').toString('utf-8');
         return res.redirect(url);
@@ -141,7 +145,9 @@ export class EmailController {
       // lookup failure (e.g. a foreign-key violation on preference
       // auto-creation for a nonexistent user) — that's an invalid link,
       // not a server error, so it's a 404 rather than a 500.
-      this.logger.warn(`Invalid unsubscribe link for user ${userId}: ${error}`);
+      this.logger.warn(
+        `Invalid unsubscribe link for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       res.status(404).json({ error: 'Invalid or expired unsubscribe link' });
     }
   }

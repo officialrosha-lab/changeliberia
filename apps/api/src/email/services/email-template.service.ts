@@ -28,7 +28,9 @@ export class EmailTemplateService {
 
       return { html, text, subject };
     } catch (error) {
-      this.logger.error(`Failed to render template ${templateType}: ${error}`);
+      this.logger.error(
+        `Failed to render template ${templateType}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
