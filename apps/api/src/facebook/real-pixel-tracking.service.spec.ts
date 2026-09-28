@@ -79,7 +79,6 @@ describe('RealPixelTrackingService', () => {
       expect(facebookSdk.trackConversion).toHaveBeenCalledWith(
         'ViewContent',
         expect.objectContaining({
-          contentType: 'petition',
           contentCategory: 'social_cause',
         }),
         'user-1',

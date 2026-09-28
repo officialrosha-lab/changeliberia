@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   UseGuards,
-  Req,
   Query,
   Res,
   Logger,
@@ -21,10 +20,36 @@ import {
 import { EmailTrackingService } from '../services/email-tracking.service';
 import { MailerooProvider } from '../providers/maileroo.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CurrentUser } from '../../auth/current-user.decorator';
+import { RequestUser } from '../../auth/roles.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionResource, PermissionAction } from '@prisma/client';
+
+interface EmailPreferencesResponse {
+  emailEnabled: boolean;
+  digestFrequency: string;
+  emailCategories: string[];
+  preferredSendTime: string;
+}
+
+interface EmailLogsResponse {
+  emails: Array<{
+    id: string;
+    type: string;
+    subject: string;
+    recipient: string;
+    status: string;
+    sentAt: Date | null;
+    openedAt: Date | null;
+    clickedAt: Date | null;
+    createdAt: Date;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 @Controller('email')
 export class EmailController {
@@ -158,15 +183,17 @@ export class EmailController {
    */
   @Get('preferences')
   @UseGuards(JwtAuthGuard)
-  async getPreferences(@Req() req: any): Promise<any> {
-    const userId = req.user.userId;
+  async getPreferences(
+    @CurrentUser() user: RequestUser,
+  ): Promise<EmailPreferencesResponse> {
+    const userId = user.userId;
     const prefs = await this.preferenceService.getPreferences(userId);
 
     return {
       emailEnabled: prefs?.emailEnabled ?? true,
       digestFrequency: prefs?.digestFrequency ?? 'weekly',
       emailCategories: prefs?.emailCategories
-        ? JSON.parse(prefs.emailCategories)
+        ? (JSON.parse(prefs.emailCategories) as string[])
         : [],
       preferredSendTime: prefs?.preferredSendTime ?? '09:00',
     };
@@ -179,10 +206,10 @@ export class EmailController {
   @Patch('preferences')
   @UseGuards(JwtAuthGuard)
   async updatePreferences(
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
     @Body() updates: EmailPreferenceDTO,
-  ): Promise<any> {
-    const userId = req.user.userId;
+  ): Promise<EmailPreferencesResponse> {
+    const userId = user.userId;
     const prefs = await this.preferenceService.updatePreferences(
       userId,
       updates,
@@ -192,7 +219,7 @@ export class EmailController {
       emailEnabled: prefs.emailEnabled,
       digestFrequency: prefs.digestFrequency,
       emailCategories: prefs.emailCategories
-        ? JSON.parse(prefs.emailCategories)
+        ? (JSON.parse(prefs.emailCategories) as string[])
         : [],
       preferredSendTime: prefs.preferredSendTime,
     };
@@ -205,11 +232,11 @@ export class EmailController {
   @Get('logs')
   @UseGuards(JwtAuthGuard)
   async getEmailLogs(
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
-  ): Promise<any> {
-    const userId = req.user.userId;
+  ): Promise<EmailLogsResponse> {
+    const userId = user.userId;
     const { emails, total } = await this.emailService.listUserEmails(
       userId,
       parseInt(limit || '50'),
