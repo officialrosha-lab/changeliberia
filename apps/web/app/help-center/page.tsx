@@ -22,8 +22,8 @@ export default async function HelpCenterPage() {
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
                 We couldn't load this page right now. Please refresh, or reach us at{' '}
-                <a href="mailto:hello@changelib.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
-                  hello@changelib.org
+                <a href="mailto:hello@changeliberia.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
+                  hello@changeliberia.org
                 </a>
                 .
               </p>
@@ -50,8 +50,8 @@ export default async function HelpCenterPage() {
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
                 This page is being updated. Check back soon, or reach us at{' '}
-                <a href="mailto:hello@changelib.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
-                  hello@changelib.org
+                <a href="mailto:hello@changeliberia.org" className="font-semibold text-emerald-600 underline dark:text-emerald-400">
+                  hello@changeliberia.org
                 </a>
                 .
               </p>

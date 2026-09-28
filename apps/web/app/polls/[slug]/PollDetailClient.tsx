@@ -244,7 +244,7 @@ function VerticalBar({
   );
 }
 
-const SITE_ORIGIN = 'https://changelib.org';
+const SITE_ORIGIN = 'https://changeliberia.org';
 
 function PollSharePanel({ slug, title }: { slug: string; title: string }) {
   const [copiedLink, setCopiedLink] = useState(false);
@@ -282,7 +282,7 @@ function PollSharePanel({ slug, title }: { slug: string; title: string }) {
           {/* Short link row */}
           <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-900">
             <span className="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-300">
-              changelib.org/polls/{slug}
+              changeliberia.org/polls/{slug}
             </span>
             <button
               onClick={copyLink}

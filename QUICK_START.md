@@ -178,7 +178,7 @@ curl -X POST http://localhost:3001/api/whatsapp/create-referral \
 ```json
 {
   "referralCode": "SATT001",
-  "shareUrl": "https://changelib.org/r/satt001",
+  "shareUrl": "https://changeliberia.org/r/satt001",
   "whatsappMessage": "...",
   "expiresAt": "2026-05-17T..."
 }

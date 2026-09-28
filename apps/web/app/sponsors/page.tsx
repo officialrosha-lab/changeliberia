@@ -101,7 +101,7 @@ export default async function SponsorsPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <a
-                href="mailto:hello@changelib.org?subject=Sponsorship%20%2F%20Partnership%20Inquiry"
+                href="mailto:hello@changeliberia.org?subject=Sponsorship%20%2F%20Partnership%20Inquiry"
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
                 Get in touch

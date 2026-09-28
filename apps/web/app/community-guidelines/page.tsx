@@ -169,8 +169,8 @@ export default function CommunityGuidelinesPage() {
             <div className="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300">
               <p>
                 Email:{' '}
-                <a href="mailto:hello@changelib.org" className="text-emerald-600 underline dark:text-emerald-400">
-                  hello@changelib.org
+                <a href="mailto:hello@changeliberia.org" className="text-emerald-600 underline dark:text-emerald-400">
+                  hello@changeliberia.org
                 </a>
               </p>
             </div>

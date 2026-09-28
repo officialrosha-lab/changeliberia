@@ -4,7 +4,7 @@
 
 The Change Liberia Admin API provides comprehensive endpoints for managing Stripe payments and Facebook integration. All endpoints are protected with JWT authentication and require admin role authorization.
 
-**Base URL:** `http://localhost:4000/api/v1` (development) or `https://api.changelib.org/api/v1` (production)
+**Base URL:** `http://localhost:4000/api/v1` (development) or `https://api.changeliberia.org/api/v1` (production)
 
 **Authentication:** JWT Bearer Token  
 **Authorization:** `UserRole.ADMIN` required for all endpoints
@@ -531,7 +531,7 @@ Get performance metrics for all share links.
   "shareLinks": [
     {
       "id": "link_123",
-      "url": "https://changelib.org/p/petition-abc123",
+      "url": "https://changeliberia.org/p/petition-abc123",
       "reach": 1250,
       "clicks": 340,
       "conversions": 45,
@@ -990,10 +990,10 @@ Facebook pixel events are automatically tracked and stored when:
 
 For technical support or API issues:
 
-- **Email:** api-support@changelib.org
+- **Email:** api-support@changeliberia.org
 - **Slack:** #admin-api-support
-- **Documentation:** https://docs.changelib.org/admin-api
-- **Status Page:** https://status.changelib.org
+- **Documentation:** https://docs.changeliberia.org/admin-api
+- **Status Page:** https://status.changeliberia.org
 
 ---
 

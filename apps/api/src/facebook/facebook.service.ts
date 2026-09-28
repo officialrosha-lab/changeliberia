@@ -39,10 +39,10 @@ export class FacebookService {
       Math.round((petition.signaturesCount / petition.goal) * 100),
     );
 
-    const ogImage = petition.imageUrl || 'https://changelib.org/og-default.png';
+    const ogImage = petition.imageUrl || 'https://changeliberia.org/og-default.png';
     const ogTitle = `${petition.title} - ${progressPercent}% of ${petition.goal} signatures`;
     const ogDescription = `${petition.summary || petition.description.substring(0, 160)}...`;
-    const ogUrl = `https://changelib.org/petitions/${petitionId}`;
+    const ogUrl = `https://changeliberia.org/petitions/${petitionId}`;
 
     return {
       title: ogTitle,
@@ -83,13 +83,13 @@ export class FacebookService {
 
     // Generate unique short code for tracking
     const shortCode = this.generateShortCode();
-    const shareUrl = `https://changelib.org/r/${shortCode}`;
+    const shareUrl = `https://changeliberia.org/r/${shortCode}`;
 
     // Create ShareLink record
     const shareLink = await this.prisma.shareLink.create({
       data: {
         shortCode,
-        targetUrl: `https://changelib.org/petitions/${petitionId}`,
+        targetUrl: `https://changeliberia.org/petitions/${petitionId}`,
         petitionId,
         source: 'facebook',
         medium: 'social',
@@ -140,7 +140,7 @@ export class FacebookService {
     dialogTitle: string;
   } {
     const hashtag = '#ChangeLiberia #CommunityVoice';
-    const link = `https://changelib.org/petitions/${petitionId}`;
+    const link = `https://changeliberia.org/petitions/${petitionId}`;
 
     const networkReach = userNetworkSize || this.LIBERIA_AVG_NETWORK_SIZE;
     const estimatedSignatures = Math.floor(

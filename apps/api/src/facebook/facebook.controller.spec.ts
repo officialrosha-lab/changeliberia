@@ -14,12 +14,12 @@ describe('FacebookController', () => {
     title: 'Test Petition - 20% of 500 signatures',
     description: 'This is a test petition',
     image: 'https://example.com/image.jpg',
-    url: 'https://changelib.org/petitions/petition-1',
+    url: 'https://changeliberia.org/petitions/petition-1',
     type: 'website',
   };
 
   const mockShareLink = {
-    shareUrl: 'https://changelib.org/r/abc12345',
+    shareUrl: 'https://changeliberia.org/r/abc12345',
     shortCode: 'abc12345',
     reachEstimate: 250,
     prefilledMessage: 'Join this petition!',
@@ -126,7 +126,7 @@ describe('FacebookController', () => {
       const dialogConfig = {
         quote: 'Join this petition!',
         hashtag: '#ChangeLiberia',
-        link: 'https://changelib.org/petitions/petition-1',
+        link: 'https://changeliberia.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       };
       facebookService.buildFacebookShareDialog.mockReturnValue(dialogConfig);
@@ -144,7 +144,7 @@ describe('FacebookController', () => {
       const dialogConfig = {
         quote: 'Join this petition!',
         hashtag: '#ChangeLiberia',
-        link: 'https://changelib.org/petitions/petition-1',
+        link: 'https://changeliberia.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       };
       facebookService.buildFacebookShareDialog.mockReturnValue(dialogConfig);
@@ -157,13 +157,13 @@ describe('FacebookController', () => {
 
   describe('trackShortCode', () => {
     it('should track a share short code click', async () => {
-      facebookService.trackFacebookClick.mockResolvedValue('https://changelib.org/petitions/petition-1');
+      facebookService.trackFacebookClick.mockResolvedValue('https://changeliberia.org/petitions/petition-1');
 
       const result = await controller.trackShortCode('abc12345');
 
       expect(result).toEqual({
         success: true,
-        data: { redirectUrl: 'https://changelib.org/petitions/petition-1' },
+        data: { redirectUrl: 'https://changeliberia.org/petitions/petition-1' },
       });
       expect(facebookService.trackFacebookClick).toHaveBeenCalledWith('abc12345');
     });
