@@ -6,9 +6,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 
 export interface EncryptionConfig {
-  algorithm: string;
+  algorithm: 'aes-256-gcm';
   encryptionKey: string;
   keyDerivation: 'pbkdf2' | 'scrypt';
 }
@@ -20,12 +21,11 @@ export interface EncryptedData {
   encrypted: string;
   iv: string;
   authTag: string;
-  algorithm: string;
+  algorithm: 'aes-256-gcm';
 }
 
 @Injectable()
 export class EncryptionService {
-  private cipher = require('crypto');
   private config: EncryptionConfig;
   private encryptionKey: Buffer;
 
@@ -50,7 +50,6 @@ export class EncryptionService {
    * Derive encryption key from master key
    */
   private deriveKey(masterKey: string): Buffer {
-    const crypto = require('crypto');
 
     if (this.config.keyDerivation === 'pbkdf2') {
       return crypto.pbkdf2Sync(
@@ -72,10 +71,10 @@ export class EncryptionService {
   encrypt(plaintext: string, additionalData?: string): EncryptedData {
     try {
       // Generate random IV
-      const iv = this.cipher.randomBytes(16);
+      const iv = crypto.randomBytes(16);
 
       // Create cipher
-      const cipher = this.cipher.createCipheriv(
+      const cipher = crypto.createCipheriv(
         this.config.algorithm,
         this.encryptionKey,
         iv,
@@ -113,7 +112,7 @@ export class EncryptionService {
       const authTag = Buffer.from(encryptedData.authTag, 'hex');
 
       // Create decipher
-      const decipher = this.cipher.createDecipheriv(
+      const decipher = crypto.createDecipheriv(
         encryptedData.algorithm,
         this.encryptionKey,
         iv,
@@ -163,7 +162,6 @@ export class EncryptionService {
    * Hash value (one-way, for comparison)
    */
   hash(value: string, iterations: number = 100000): string {
-    const crypto = require('crypto');
     return crypto
       .pbkdf2Sync(value, 'compare-salt', iterations, 32, 'sha256')
       .toString('hex');
@@ -180,7 +178,7 @@ export class EncryptionService {
    * Generate random salt
    */
   generateSalt(length: number = 16): string {
-    return this.cipher.randomBytes(length).toString('hex');
+    return crypto.randomBytes(length).toString('hex');
   }
 
   /**
@@ -191,7 +189,6 @@ export class EncryptionService {
     salt: string,
     iterations: number = 100000,
   ): string {
-    const crypto = require('crypto');
     return crypto
       .pbkdf2Sync(value, salt, iterations, 32, 'sha256')
       .toString('hex');
@@ -233,7 +230,7 @@ export class EncryptionService {
    * Useful for logging/monitoring without exposing actual values
    */
   tokenizeSensitiveData(data: string): string {
-    const hash = this.cipher
+    const hash = crypto
       .createHash('sha256')
       .update(data)
       .digest()
@@ -256,7 +253,6 @@ export class EncryptionService {
     publicKey: string;
     privateKey: string;
   } {
-    const crypto = require('crypto');
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 4096,
       publicKeyEncoding: {
@@ -279,7 +275,6 @@ export class EncryptionService {
    * Encrypt data with public key (RSA)
    */
   encryptWithPublicKey(plaintext: string, publicKey: string): string {
-    const crypto = require('crypto');
     const buffer = Buffer.from(plaintext, 'utf8');
 
     const encrypted = crypto.publicEncrypt(
@@ -298,7 +293,6 @@ export class EncryptionService {
    * Decrypt data with private key (RSA)
    */
   decryptWithPrivateKey(encrypted: string, privateKey: string): string {
-    const crypto = require('crypto');
     const buffer = Buffer.from(encrypted, 'base64');
 
     const decrypted = crypto.privateDecrypt(
@@ -317,7 +311,6 @@ export class EncryptionService {
    * Generate HMAC signature
    */
   generateSignature(data: string): string {
-    const crypto = require('crypto');
     return crypto
       .createHmac('sha256', this.encryptionKey)
       .update(data)
@@ -339,7 +332,6 @@ export class EncryptionService {
   private timingSafeEqual(a: string, b: string): boolean {
     if (a.length !== b.length) return false;
 
-    const crypto = require('crypto');
     try {
       return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
     } catch {

@@ -10,6 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response, Request, NextFunction } from 'express';
+import * as crypto from 'crypto';
 
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -189,7 +190,6 @@ export class CSRFMiddleware implements NestMiddleware {
   }
 
   generateToken(sessionId: string): string {
-    const crypto = require('crypto');
     const token = crypto.randomBytes(32).toString('hex');
 
     this.csrfTokens.set(sessionId, {

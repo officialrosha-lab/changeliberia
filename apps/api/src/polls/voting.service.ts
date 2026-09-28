@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 import { CastVoteDto } from './dto/vote.dto';
 import { PollsGateway } from './polls.gateway';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class VotingService {
@@ -195,7 +196,6 @@ export class VotingService {
    * Hash IP address for privacy
    */
   private hashIP(ipAddress: string): string {
-    const crypto = require('crypto');
     return crypto
       .createHash('sha256')
       .update(ipAddress)

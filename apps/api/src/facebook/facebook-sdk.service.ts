@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
+import * as crypto from 'crypto';
 
 /**
  * FacebookSDKService
@@ -330,7 +331,6 @@ export class FacebookSDKService {
    * Hash value using SHA256
    */
   private hashValue(value: string): string {
-    const crypto = require('crypto');
     return crypto.createHash('sha256').update(value).digest('hex');
   }
 
