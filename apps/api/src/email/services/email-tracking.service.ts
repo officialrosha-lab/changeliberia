@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EmailLog } from '@prisma/client';
+import { EmailLog, Prisma } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
@@ -169,11 +169,12 @@ export class EmailTrackingService {
     openRate: number;
     clickRate: number;
   }> {
-    const where: any = {};
+    const where: Prisma.EmailLogWhereInput = {};
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = startDate;
+      if (endDate) createdAt.lte = endDate;
+      where.createdAt = createdAt;
     }
 
     const [total, sent, delivered, opened, clicked, bounced, failed] =

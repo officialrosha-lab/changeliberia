@@ -8,10 +8,16 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { BadgeType } from '@prisma/client';
 import { BadgeService } from './badge.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+
+interface AuthenticatedUser {
+  id: string;
+  role?: string;
+}
 
 @Controller('badges')
 export class BadgeController {
@@ -106,9 +112,9 @@ export class BadgeController {
   async getBadgeProgress(
     @Param('userId') userId: string,
     @Param('petitionId') petitionId: string,
-    @Param('badgeType') badgeType: string,
-    @CurrentUser() user: any,
-  ): Promise<any> {
+    @Param('badgeType') badgeType: BadgeType,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     if (!userId || !petitionId || !badgeType) {
       throw new BadRequestException(
         'userId, petitionId, and badgeType are required',
@@ -124,7 +130,7 @@ export class BadgeController {
       const progress = await this.badgeService.getBadgeProgress(
         userId,
         petitionId,
-        badgeType as any,
+        badgeType,
       );
 
       return {

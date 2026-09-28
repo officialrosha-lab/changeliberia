@@ -11,6 +11,7 @@ import {
   InstitutionType,
   InstitutionCategory,
   ContactPriorityLevel,
+  Prisma,
 } from '@prisma/client';
 
 export interface CreateInstitutionDto {
@@ -156,9 +157,10 @@ export class ContactDirectoryService {
       dto.secondaryEmails.forEach((email) => this.validateEmail(email));
     }
 
-    const updateData: any = { ...dto };
-    if (dto.secondaryEmails) {
-      updateData.secondaryEmails = JSON.stringify(dto.secondaryEmails);
+    const { secondaryEmails, ...rest } = dto;
+    const updateData: Prisma.InstitutionUpdateInput = { ...rest };
+    if (secondaryEmails) {
+      updateData.secondaryEmails = JSON.stringify(secondaryEmails);
     }
 
     return this.prisma.institution.update({
@@ -190,10 +192,12 @@ export class ContactDirectoryService {
     // Parse JSON fields
     return {
       ...institution,
-      secondaryEmails: JSON.parse(institution.secondaryEmails || '[]'),
+      secondaryEmails: JSON.parse(
+        institution.secondaryEmails || '[]',
+      ) as string[],
       contacts: institution.contacts.map((c) => ({
         ...c,
-        issueTags: JSON.parse(c.issueTags || '[]'),
+        issueTags: JSON.parse(c.issueTags || '[]') as string[],
       })),
     };
   }
@@ -207,7 +211,7 @@ export class ContactDirectoryService {
     verified?: boolean;
     search?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.InstitutionWhereInput = {};
 
     if (filters?.type) {
       where.type = filters.type;
@@ -249,7 +253,7 @@ export class ContactDirectoryService {
 
     return institutions.map((inst) => ({
       ...inst,
-      secondaryEmails: JSON.parse(inst.secondaryEmails || '[]'),
+      secondaryEmails: JSON.parse(inst.secondaryEmails || '[]') as string[],
       departmentCount: inst.departments.length,
       contactCount: inst.contacts.length,
       primaryContact: inst.contacts.find((c) => c.isPrimary),
@@ -387,7 +391,7 @@ export class ContactDirectoryService {
       ...department,
       contacts: department.contacts.map((c) => ({
         ...c,
-        issueTags: JSON.parse(c.issueTags || '[]'),
+        issueTags: JSON.parse(c.issueTags || '[]') as string[],
       })),
     };
   }
@@ -511,9 +515,10 @@ export class ContactDirectoryService {
       this.validateEmail(dto.email);
     }
 
-    const updateData: any = { ...dto };
-    if (dto.issueTags) {
-      updateData.issueTags = JSON.stringify(this.normalizeTags(dto.issueTags));
+    const { issueTags, ...rest } = dto;
+    const updateData: Prisma.ContactDirectoryUpdateInput = { ...rest };
+    if (issueTags) {
+      updateData.issueTags = JSON.stringify(this.normalizeTags(issueTags));
     }
 
     // If marking as primary, unset other primary contacts for this institution
@@ -556,7 +561,7 @@ export class ContactDirectoryService {
 
     return {
       ...contact,
-      issueTags: JSON.parse(contact.issueTags || '[]'),
+      issueTags: JSON.parse(contact.issueTags || '[]') as string[],
     };
   }
 
@@ -582,7 +587,7 @@ export class ContactDirectoryService {
 
     return contacts.map((c) => ({
       ...c,
-      issueTags: JSON.parse(c.issueTags || '[]'),
+      issueTags: JSON.parse(c.issueTags || '[]') as string[],
     }));
   }
 
@@ -610,9 +615,9 @@ export class ContactDirectoryService {
 
     const matches = contacts
       .map((contact) => {
-        const contactTags = JSON.parse(contact.issueTags || '[]').map(
-          (t: string) => t.toLowerCase(),
-        ) as string[];
+        const contactTags = (
+          JSON.parse(contact.issueTags || '[]') as string[]
+        ).map((t) => t.toLowerCase());
         const matched = normalizedTags.filter((tag) =>
           contactTags.includes(tag),
         );

@@ -17,7 +17,10 @@ import { Throttle } from '@nestjs/throttler';
 import { FacebookService } from './facebook.service';
 import { FacebookPixelService } from './facebook-pixel.service';
 import { FacebookSDKService } from './facebook-sdk.service';
-import { RealPixelTrackingService } from './real-pixel-tracking.service';
+import {
+  PixelEventMetadata,
+  RealPixelTrackingService,
+} from './real-pixel-tracking.service';
 import { ShareDialogService } from './share-dialog.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -94,7 +97,9 @@ export class FacebookController {
     try {
       const userNetworkSize = networkSize ? parseInt(networkSize, 10) : 250;
 
-      let dialogConfig: any;
+      let dialogConfig:
+        | ReturnType<ShareDialogService['getShareDialogConfig']>
+        | ReturnType<FacebookService['buildFacebookShareDialog']>;
       if (typeof this.shareDialog?.getShareDialogConfig === 'function') {
         const ogMeta =
           await this.facebookService.generateOpenGraphMeta(petitionId);
@@ -135,7 +140,7 @@ export class FacebookController {
     },
     @CurrentUser() user: { sub: string },
   ) {
-    const { petitionId, shortCode, method } = shareEvent || ({} as any);
+    const { petitionId, shortCode, method } = shareEvent ?? {};
     const userId = user?.sub;
 
     if (!userId) {
@@ -177,9 +182,14 @@ export class FacebookController {
 
   @Post('track-view')
   async trackView(
-    @Body() body: { petitionId: string; userId?: string; metadata?: any },
+    @Body()
+    body: {
+      petitionId: string;
+      userId?: string;
+      metadata?: PixelEventMetadata;
+    },
   ) {
-    const { petitionId, userId, metadata } = body || ({} as any);
+    const { petitionId, userId, metadata } = body ?? {};
     if (!petitionId) throw new BadRequestException('petitionId is required');
 
     if (!this.pixelTracking)
@@ -194,9 +204,14 @@ export class FacebookController {
 
   @Post('track-lead')
   async trackLead(
-    @Body() body: { petitionId: string; userId: string; metadata?: any },
+    @Body()
+    body: {
+      petitionId: string;
+      userId: string;
+      metadata?: PixelEventMetadata;
+    },
   ) {
-    const { petitionId, userId, metadata } = body || ({} as any);
+    const { petitionId, userId, metadata } = body ?? {};
     if (!petitionId || !userId)
       throw new BadRequestException('petitionId and userId are required');
 
@@ -214,14 +229,14 @@ export class FacebookController {
   async trackShare(
     @Body() body: { petitionId: string; userId: string; method?: string },
   ) {
-    const { petitionId, userId, method } = body || ({} as any);
+    const { petitionId, userId, method } = body ?? {};
     if (!petitionId || !userId)
       throw new BadRequestException('petitionId and userId are required');
 
     if (!this.pixelTracking)
       return { success: false, message: 'pixel tracking unavailable' };
     const methodValue: 'dialog' | 'native' | 'other' =
-      method === 'dialog' || method === 'native' ? (method as any) : 'other';
+      method === 'dialog' || method === 'native' ? method : 'other';
     const result = await this.pixelTracking.trackShare(
       petitionId,
       userId,
@@ -238,11 +253,10 @@ export class FacebookController {
       userId: string;
       amount: number;
       currency?: string;
-      metadata?: any;
+      metadata?: PixelEventMetadata;
     },
   ) {
-    const { petitionId, userId, amount, currency, metadata } =
-      body || ({} as any);
+    const { petitionId, userId, amount, currency, metadata } = body ?? {};
     if (!petitionId || !userId || amount === undefined)
       throw new BadRequestException(
         'petitionId, userId and amount are required',
@@ -276,7 +290,7 @@ export class FacebookController {
   async createAudience(
     @Body() body: { name: string; petitionId: string; eventType: string },
   ) {
-    const { name, petitionId, eventType } = body || ({} as any);
+    const { name, petitionId, eventType } = body ?? {};
     if (!name || !petitionId || !eventType)
       throw new BadRequestException(
         'name, petitionId and eventType are required',
@@ -296,7 +310,7 @@ export class FacebookController {
   @Post('validate-url')
   @HttpCode(200)
   async validateUrl(@Body() body: { url: string }) {
-    const { url } = body || ({} as any);
+    const { url } = body ?? {};
     if (!url) throw new BadRequestException('url is required');
     const facebookSdk = this.facebookSdk;
     if (!facebookSdk) throw new BadRequestException('facebook sdk unavailable');
@@ -338,7 +352,7 @@ export class FacebookController {
     @Body() body: { petitionId: string },
     @CurrentUser() user: { sub: string },
   ) {
-    const { petitionId } = body || ({} as any);
+    const { petitionId } = body ?? {};
     const userId = user?.sub;
 
     if (!petitionId) throw new BadRequestException('petitionId is required');

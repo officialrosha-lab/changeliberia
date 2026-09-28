@@ -115,7 +115,7 @@ export class FacebookPixelService {
       | 'CompleteRegistration',
     userId: string | null,
     petitionId: string,
-    eventData: Record<string, any>,
+    eventData: Record<string, unknown> & { value?: number },
   ): Promise<void> {
     try {
       const eventId = this.generateEventId();

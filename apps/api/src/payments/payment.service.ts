@@ -9,6 +9,13 @@ import {
 } from '@prisma/client';
 import { MoMoService } from './providers/momo.service';
 import * as crypto from 'crypto';
+import {
+  getStripeApiVersion,
+  StripeEvent,
+  StripePaymentIntent,
+  StripeInvoice,
+  StripeSubscription,
+} from '../config/stripe.config';
 
 export interface CreatePaymentIntentDto {
   petitionId?: string;
@@ -95,7 +102,7 @@ export class PaymentService {
     const apiKey = process.env.STRIPE_API_KEY;
     if (apiKey) {
       this.stripe = new Stripe(apiKey, {
-        apiVersion: '2024-11-20' as any,
+        apiVersion: getStripeApiVersion(),
       });
     } else {
       this.logger.warn(
@@ -563,6 +570,11 @@ export class PaymentService {
         },
       });
 
+      // Current period dates live on the subscription's first item, not on
+      // the subscription itself (Stripe moved them in a later API version).
+      const currentPeriodStart = subscription.items.data[0]?.current_period_start;
+      const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
+
       // Store in database
       const stored = await this.prisma.subscription.create({
         data: {
@@ -574,15 +586,15 @@ export class PaymentService {
           status: 'ACTIVE' as SubscriptionStatus,
           stripeSubscriptionId: subscription.id,
           stripeCustomerId: customer.id,
-          currentPeriodStart: new Date(
-            (subscription as any).current_period_start * 1000,
-          ),
-          currentPeriodEnd: new Date(
-            (subscription as any).current_period_end * 1000,
-          ),
-          nextBillingDate: new Date(
-            (subscription as any).current_period_end * 1000,
-          ),
+          currentPeriodStart: currentPeriodStart
+            ? new Date(currentPeriodStart * 1000)
+            : new Date(),
+          currentPeriodEnd: currentPeriodEnd
+            ? new Date(currentPeriodEnd * 1000)
+            : new Date(),
+          nextBillingDate: currentPeriodEnd
+            ? new Date(currentPeriodEnd * 1000)
+            : new Date(),
         },
       });
 
@@ -723,8 +735,8 @@ export class PaymentService {
                 ).items.data[0].id,
                 price: price.id,
               },
-            ] as any,
-          } as any,
+            ],
+          },
         );
 
         updated = await this.prisma.subscription.update({
@@ -755,9 +767,11 @@ export class PaymentService {
         throw new BadRequestException('Subscription not found');
       }
 
-      await (this.getStripe().subscriptions as any).del(
-        stored.stripeSubscriptionId,
-      );
+      if (stored.stripeSubscriptionId) {
+        await this.getStripe().subscriptions.cancel(
+          stored.stripeSubscriptionId,
+        );
+      }
 
       const updated = await this.prisma.subscription.update({
         where: { id: subscriptionId },
@@ -822,12 +836,12 @@ export class PaymentService {
         payment.stripePaymentIntentId,
       );
 
-      const charges = (intent as any).charges?.data || [];
-      if (!charges[0]) {
+      const latestCharge = intent.latest_charge;
+      const chargeId =
+        typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+      if (!chargeId) {
         throw new BadRequestException('No charge found for this payment');
       }
-
-      const chargeId = charges[0].id;
 
       // Create refund
       const refund = await this.getStripe().refunds.create({
@@ -871,20 +885,28 @@ export class PaymentService {
   /**
    * Handle Stripe webhook event
    */
-  async handleWebhookEvent(event: any): Promise<void> {
+  async handleWebhookEvent(event: StripeEvent): Promise<void> {
     try {
       switch (event.type) {
         case 'payment_intent.succeeded':
-          await this.handlePaymentIntentSucceeded(event.data.object);
+          await this.handlePaymentIntentSucceeded(
+            event.data.object as StripePaymentIntent,
+          );
           break;
         case 'payment_intent.payment_failed':
-          await this.handlePaymentIntentFailed(event.data.object);
+          await this.handlePaymentIntentFailed(
+            event.data.object as StripePaymentIntent,
+          );
           break;
         case 'invoice.payment_succeeded':
-          await this.handleInvoicePaymentSucceeded(event.data.object);
+          await this.handleInvoicePaymentSucceeded(
+            event.data.object as StripeInvoice,
+          );
           break;
         case 'customer.subscription.deleted':
-          await this.handleSubscriptionDeleted(event.data.object);
+          await this.handleSubscriptionDeleted(
+            event.data.object as StripeSubscription,
+          );
           break;
       }
     } catch (error) {
@@ -895,14 +917,18 @@ export class PaymentService {
 
   // Private helper methods
 
-  private async handlePaymentIntentSucceeded(intent: any): Promise<void> {
+  private async handlePaymentIntentSucceeded(
+    intent: StripePaymentIntent,
+  ): Promise<void> {
     await this.prisma.payment.updateMany({
       where: { stripePaymentIntentId: intent.id },
       data: { status: 'COMPLETED' as PaymentStatus, completedAt: new Date() },
     });
   }
 
-  private async handlePaymentIntentFailed(intent: any): Promise<void> {
+  private async handlePaymentIntentFailed(
+    intent: StripePaymentIntent,
+  ): Promise<void> {
     await this.prisma.payment.updateMany({
       where: { stripePaymentIntentId: intent.id },
       data: {
@@ -912,14 +938,27 @@ export class PaymentService {
     });
   }
 
-  private async handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
+  private async handleInvoicePaymentSucceeded(
+    invoice: StripeInvoice,
+  ): Promise<void> {
+    const subscriptionId =
+      invoice.parent?.subscription_details?.subscription;
+    const stripeSubscriptionId =
+      typeof subscriptionId === 'string' ? subscriptionId : subscriptionId?.id;
+
+    if (!stripeSubscriptionId) {
+      return;
+    }
+
     await this.prisma.subscription.updateMany({
-      where: { stripeSubscriptionId: invoice.subscription },
+      where: { stripeSubscriptionId },
       data: { status: 'ACTIVE' as SubscriptionStatus },
     });
   }
 
-  private async handleSubscriptionDeleted(subscription: any): Promise<void> {
+  private async handleSubscriptionDeleted(
+    subscription: StripeSubscription,
+  ): Promise<void> {
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: subscription.id },
       data: {

@@ -133,7 +133,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req: any) {
+  googleAuthRedirect(@Req() req: { user: { accessToken: string } }) {
     return req.user;
   }
 

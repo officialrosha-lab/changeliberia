@@ -8,7 +8,12 @@ import {
 } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { SubmissionStatus } from '@prisma/client';
+import {
+  SubmissionStatus,
+  Prisma,
+  PetitionSubmission,
+  GovernmentContact,
+} from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { SignatureAddedEvent } from '../events/domain-events';
 import PDFDocument from 'pdfkit';
@@ -65,7 +70,7 @@ export class GovernmentService {
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks: Buffer[] = [];
-    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
 
     doc
       .fillColor('#0f172a')
@@ -319,7 +324,7 @@ export class GovernmentService {
     petitionId: string,
     governmentEmail: string,
     additionalNotes?: string,
-  ): Promise<any> {
+  ): Promise<PetitionSubmission & { documentUrl: string }> {
     const petition = await this.prisma.petition.findUnique({
       where: { id: petitionId },
       include: { creator: true },
@@ -385,7 +390,7 @@ export class GovernmentService {
   async trackPetitionStatus(
     petitionId: string,
     status: SubmissionStatus,
-  ): Promise<any> {
+  ): Promise<PetitionSubmission> {
     const submission = await this.prisma.petitionSubmission.findFirst({
       where: { petitionId },
       orderBy: { createdAt: 'desc' },
@@ -455,7 +460,9 @@ export class GovernmentService {
   /**
    * Get submission history for a petition
    */
-  async getPetitionSubmissions(petitionId: string): Promise<any[]> {
+  async getPetitionSubmissions(
+    petitionId: string,
+  ): Promise<PetitionSubmission[]> {
     return this.prisma.petitionSubmission.findMany({
       where: { petitionId },
       orderBy: { createdAt: 'desc' },
@@ -465,7 +472,7 @@ export class GovernmentService {
   /**
    * Get government contacts (can be filtered by region or category)
    */
-  async getGovernmentContacts(category?: string): Promise<any[]> {
+  async getGovernmentContacts(category?: string): Promise<GovernmentContact[]> {
     const where = category ? { category, isActive: true } : { isActive: true };
 
     return this.prisma.governmentContact.findMany({
@@ -488,7 +495,7 @@ export class GovernmentService {
   }
 
   private async sendGovernmentSubmissionEmail(
-    petition: any,
+    petition: Prisma.PetitionGetPayload<{ include: { creator: true } }>,
     governmentEmail: string,
     notes?: string,
   ): Promise<boolean> {
@@ -580,12 +587,15 @@ export class GovernmentService {
     category: string;
     region?: string;
     priority: number;
-  }): Promise<any> {
+  }): Promise<GovernmentContact | null> {
     try {
       return await this.prisma.governmentContact.create({ data });
-    } catch (error: any) {
+    } catch (error) {
       // Unique constraint on email — return existing contact without overwriting its fields
-      if (error?.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         return this.prisma.governmentContact.findUnique({
           where: { email: data.email },
         });
@@ -597,7 +607,11 @@ export class GovernmentService {
   /**
    * Get all submissions for a user
    */
-  async getUserSubmissions(userId: string): Promise<any[]> {
+  async getUserSubmissions(
+    userId: string,
+  ): Promise<
+    Prisma.PetitionSubmissionGetPayload<{ include: { petition: true } }>[]
+  > {
     return this.prisma.petitionSubmission.findMany({
       where: { submittedBy: userId },
       include: { petition: true },

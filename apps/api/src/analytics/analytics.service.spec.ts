@@ -8,7 +8,37 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
-  let prisma: any;
+
+  const mockPrisma = {
+    facebookPixelEvent: {
+      count: jest.fn().mockResolvedValue(0),
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
+    petition: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    signature: {
+      count: jest.fn().mockResolvedValue(0),
+    },
+    donation: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    shareLink: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    shareCompletion: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+  };
 
   const mockPetition = {
     id: 'petition-1',
@@ -37,52 +67,24 @@ describe('AnalyticsService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [
         AnalyticsService,
         {
           provide: PrismaService,
-          useValue: {
-            facebookPixelEvent: {
-              count: jest.fn().mockResolvedValue(0) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              findFirst: jest.fn().mockResolvedValue(null) as any,
-            },
-            petition: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-            user: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-            signature: {
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-            donation: {
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-            shareLink: {
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-            shareCompletion: {
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-          },
+          useValue: mockPrisma,
         },
       ],
     }).compile();
 
     service = moduleFixture.get<AnalyticsService>(AnalyticsService);
-    prisma = moduleFixture.get(PrismaService);
   });
 
   describe('Conversion Funnel Analysis', () => {
     it('should calculate conversion funnel correctly', async () => {
-      prisma.facebookPixelEvent.count
+      mockPrisma.facebookPixelEvent.count
         .mockResolvedValueOnce(100) // views
         .mockResolvedValueOnce(20) // signups
         .mockResolvedValueOnce(10) // shares
@@ -100,7 +102,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should handle zero views in conversion funnel', async () => {
-      prisma.facebookPixelEvent.count.mockResolvedValue(0);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(0);
 
       const funnel = await service.getConversionFunnel('petition-1');
 
@@ -114,11 +116,11 @@ describe('AnalyticsService', () => {
       const startDate = new Date('2026-04-01');
       const endDate = new Date('2026-04-17');
 
-      prisma.facebookPixelEvent.count.mockResolvedValue(50);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(50);
 
       await service.getConversionFunnel('petition-1', startDate, endDate);
 
-      expect(prisma.facebookPixelEvent.count).toHaveBeenCalledWith(
+      expect(mockPrisma.facebookPixelEvent.count).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             petitionId: 'petition-1',
@@ -126,7 +128,7 @@ describe('AnalyticsService', () => {
               gte: startDate,
               lte: endDate,
             },
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
@@ -134,8 +136,8 @@ describe('AnalyticsService', () => {
 
   describe('Petition Metrics', () => {
     it('should get comprehensive petition metrics', async () => {
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.count
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.count
         .mockResolvedValueOnce(100) // views
         .mockResolvedValueOnce(20) // signups
         .mockResolvedValueOnce(30) // shares
@@ -154,14 +156,14 @@ describe('AnalyticsService', () => {
     });
 
     it('should throw error for non-existent petition', async () => {
-      prisma.petition.findUnique.mockResolvedValue(null);
+      mockPrisma.petition.findUnique.mockResolvedValue(null);
 
       await expect(service.getPetitionMetrics('invalid')).rejects.toThrow();
     });
 
     it('should calculate engagement score correctly', async () => {
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.count
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.count
         .mockResolvedValueOnce(100) // views
         .mockResolvedValueOnce(50) // signups (50%)
         .mockResolvedValueOnce(30) // shares (30%)
@@ -177,10 +179,10 @@ describe('AnalyticsService', () => {
 
   describe('User Engagement Metrics', () => {
     it('should get user engagement metrics', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser as any);
-      prisma.shareLink.count.mockResolvedValue(5);
-      prisma.shareCompletion.count.mockResolvedValue(5);
-      prisma.facebookPixelEvent.findFirst.mockResolvedValue({
+      mockPrisma.user.findUnique.mockResolvedValue(mockUser as any);
+      mockPrisma.shareLink.count.mockResolvedValue(5);
+      mockPrisma.shareCompletion.count.mockResolvedValue(5);
+      mockPrisma.facebookPixelEvent.findFirst.mockResolvedValue({
         createdAt: new Date(),
       } as any);
 
@@ -196,7 +198,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should calculate engagement level', async () => {
-      prisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         fullName: 'Active User',
         petitions: [{ id: '1' }, { id: '2' }],
@@ -205,9 +207,9 @@ describe('AnalyticsService', () => {
         updatedAt: new Date(),
       } as any);
 
-      prisma.shareLink.count.mockResolvedValue(8);
-      prisma.shareCompletion.count.mockResolvedValue(8);
-      prisma.facebookPixelEvent.findFirst.mockResolvedValue({
+      mockPrisma.shareLink.count.mockResolvedValue(8);
+      mockPrisma.shareCompletion.count.mockResolvedValue(8);
+      mockPrisma.facebookPixelEvent.findFirst.mockResolvedValue({
         createdAt: new Date(),
       } as any);
 
@@ -219,7 +221,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should throw error for non-existent user', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.getUserEngagementMetrics('invalid'),
@@ -229,25 +231,25 @@ describe('AnalyticsService', () => {
 
   describe('Share Analytics', () => {
     it('should get share metrics', async () => {
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([
         { userId: 'user-1', method: 'dialog' },
         { userId: 'user-2', method: 'dialog' },
         { userId: 'user-1', method: 'native' },
       ] as any);
 
-      prisma.shareLink.findMany.mockResolvedValue([
+      mockPrisma.shareLink.findMany.mockResolvedValue([
         { source: 'dialog' },
         { source: 'dialog' },
         { source: 'native' },
       ] as any);
 
-      prisma.shareCompletion.findMany.mockResolvedValue([
+      mockPrisma.shareCompletion.findMany.mockResolvedValue([
         { method: 'dialog' },
         { method: 'dialog' },
         { method: 'native' },
       ] as any);
 
-      prisma.signature.count.mockResolvedValue(2);
+      mockPrisma.signature.count.mockResolvedValue(2);
 
       const metrics = await service.getShareMetrics('petition-1');
 
@@ -258,22 +260,22 @@ describe('AnalyticsService', () => {
     });
 
     it('should calculate share conversion rate', async () => {
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([
         { userId: 'user-1' },
         { userId: 'user-2' },
       ] as any);
 
-      prisma.shareLink.findMany.mockResolvedValue([
+      mockPrisma.shareLink.findMany.mockResolvedValue([
         { source: 'dialog' },
         { source: 'dialog' },
       ] as any);
 
-      prisma.shareCompletion.findMany.mockResolvedValue([
+      mockPrisma.shareCompletion.findMany.mockResolvedValue([
         { method: 'dialog' },
         { method: 'dialog' },
       ] as any);
 
-      prisma.signature.count.mockResolvedValue(1);
+      mockPrisma.signature.count.mockResolvedValue(1);
 
       const metrics = await service.getShareMetrics('petition-1');
 
@@ -289,7 +291,7 @@ describe('AnalyticsService', () => {
         { amount: 25, donorUserId: 'user-1' },
       ];
 
-      prisma.donation.findMany.mockResolvedValue(donations as any);
+      mockPrisma.donation.findMany.mockResolvedValue(donations as any);
 
       const metrics = await service.getDonationMetrics();
 
@@ -307,7 +309,7 @@ describe('AnalyticsService', () => {
         { amount: 25, donorUserId: 'user-2' },
       ];
 
-      prisma.donation.findMany.mockResolvedValue(donations as any);
+      mockPrisma.donation.findMany.mockResolvedValue(donations as any);
 
       const metrics = await service.getDonationMetrics();
 
@@ -316,11 +318,11 @@ describe('AnalyticsService', () => {
     });
 
     it('should filter donations by petition', async () => {
-      prisma.donation.findMany.mockResolvedValue([] as any);
+      mockPrisma.donation.findMany.mockResolvedValue([] as any);
 
       await service.getDonationMetrics('petition-1');
 
-      expect(prisma.donation.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.donation.findMany).toHaveBeenCalledWith({
         where: { contentId: 'petition-1' },
       });
     });
@@ -328,16 +330,16 @@ describe('AnalyticsService', () => {
 
   describe('Dashboard Overview', () => {
     it('should generate dashboard overview', async () => {
-      prisma.petition.count
+      mockPrisma.petition.count
         .mockResolvedValueOnce(50) // total
         .mockResolvedValueOnce(30); // active
 
-      prisma.signature.count.mockResolvedValue(500);
-      prisma.shareLink.count.mockResolvedValue(200);
+      mockPrisma.signature.count.mockResolvedValue(500);
+      mockPrisma.shareLink.count.mockResolvedValue(200);
 
-      prisma.petition.findMany.mockResolvedValue([mockPetition as any]);
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrisma.petition.findMany.mockResolvedValue([mockPetition as any]);
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const overview = await service.getDashboardOverview();
 
@@ -350,11 +352,13 @@ describe('AnalyticsService', () => {
     });
 
     it('should calculate average metrics correctly', async () => {
-      prisma.petition.count.mockResolvedValueOnce(10).mockResolvedValueOnce(10);
-      prisma.signature.count.mockResolvedValue(100);
-      prisma.shareLink.count.mockResolvedValue(0);
-      prisma.petition.findMany.mockResolvedValue([]);
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrisma.petition.count
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(10);
+      mockPrisma.signature.count.mockResolvedValue(100);
+      mockPrisma.shareLink.count.mockResolvedValue(0);
+      mockPrisma.petition.findMany.mockResolvedValue([]);
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const overview = await service.getDashboardOverview();
 
@@ -364,7 +368,7 @@ describe('AnalyticsService', () => {
 
   describe('Audience Insights', () => {
     it('should get audience insights from pixel data', async () => {
-      prisma.facebookPixelEvent.count
+      mockPrisma.facebookPixelEvent.count
         .mockResolvedValueOnce(1000) // views
         .mockResolvedValueOnce(300) // engaged (Lead + Share + Purchase)
         .mockResolvedValueOnce(200) // leads
@@ -381,7 +385,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should handle zero engagement', async () => {
-      prisma.facebookPixelEvent.count.mockResolvedValue(0);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(0);
 
       const insights = await service.getAudienceInsights('petition-1');
 
@@ -399,7 +403,7 @@ describe('AnalyticsService', () => {
         { createdAt: new Date(now.getTime() - 3000000), userId: 'user-3' },
       ];
 
-      prisma.facebookPixelEvent.findMany.mockResolvedValue(events as any);
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue(events as any);
 
       const activity = await service.getPeakActivity('petition-1', 30);
 
@@ -410,23 +414,23 @@ describe('AnalyticsService', () => {
     });
 
     it('should respect day range filter', async () => {
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       await service.getPeakActivity('petition-1', 7);
 
-      expect(prisma.facebookPixelEvent.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.facebookPixelEvent.findMany).toHaveBeenCalledWith({
         where: expect.objectContaining({
-          createdAt: { gte: expect.any(Date) },
-        }),
+          createdAt: { gte: expect.any(Date) as Date },
+        }) as Record<string, unknown>,
       });
     });
   });
 
   describe('Trending Petitions', () => {
     it('should get trending petitions', async () => {
-      prisma.petition.findMany.mockResolvedValue([mockPetition as any]);
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.count.mockResolvedValue(0);
+      mockPrisma.petition.findMany.mockResolvedValue([mockPetition as any]);
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(0);
 
       const petitions = await service.getTrendingPetitions(10);
 
@@ -435,12 +439,12 @@ describe('AnalyticsService', () => {
     });
 
     it('should respect limit parameter', async () => {
-      prisma.petition.findMany.mockResolvedValue([]);
-      prisma.facebookPixelEvent.count.mockResolvedValue(0);
+      mockPrisma.petition.findMany.mockResolvedValue([]);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(0);
 
       await service.getTrendingPetitions(5);
 
-      expect(prisma.petition.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.petition.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ take: 5 }),
       );
     });
@@ -448,9 +452,9 @@ describe('AnalyticsService', () => {
 
   describe('CSV Export', () => {
     it('should export petition analytics as CSV', async () => {
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.count.mockResolvedValue(100);
-      prisma.shareCompletion.findMany.mockResolvedValue([]);
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(100);
+      mockPrisma.shareCompletion.findMany.mockResolvedValue([]);
 
       const csv = await service.exportPetitionAnalytics('petition-1');
 
@@ -462,10 +466,10 @@ describe('AnalyticsService', () => {
     });
 
     it('should include all metrics in export', async () => {
-      prisma.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prisma.facebookPixelEvent.count.mockResolvedValue(100);
-      prisma.shareCompletion.findMany.mockResolvedValue([]);
-      prisma.signature.count.mockResolvedValue(10);
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(100);
+      mockPrisma.shareCompletion.findMany.mockResolvedValue([]);
+      mockPrisma.signature.count.mockResolvedValue(10);
 
       const csv = await service.exportPetitionAnalytics('petition-1');
 
@@ -478,13 +482,15 @@ describe('AnalyticsService', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      prisma.petition.findUnique.mockRejectedValue(new Error('Database error'));
+      mockPrisma.petition.findUnique.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       await expect(service.getPetitionMetrics('petition-1')).rejects.toThrow();
     });
 
     it('should handle missing required data', async () => {
-      prisma.petition.findUnique.mockResolvedValue(null);
+      mockPrisma.petition.findUnique.mockResolvedValue(null);
 
       await expect(service.getPetitionMetrics('invalid')).rejects.toThrow(
         'not found',
@@ -494,7 +500,7 @@ describe('AnalyticsService', () => {
 
   describe('Edge Cases', () => {
     it('should handle decimal conversion rates', async () => {
-      prisma.facebookPixelEvent.count
+      mockPrisma.facebookPixelEvent.count
         .mockResolvedValueOnce(333) // views
         .mockResolvedValueOnce(1) // signup
         .mockResolvedValueOnce(1)
@@ -506,12 +512,12 @@ describe('AnalyticsService', () => {
     });
 
     it('should handle large numbers in analytics', async () => {
-      prisma.petition.count.mockResolvedValueOnce(1000000);
-      prisma.petition.count.mockResolvedValueOnce(500000);
-      prisma.signature.count.mockResolvedValue(50000000);
-      prisma.shareLink.count.mockResolvedValue(5000000);
-      prisma.petition.findMany.mockResolvedValue([]);
-      prisma.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrisma.petition.count.mockResolvedValueOnce(1000000);
+      mockPrisma.petition.count.mockResolvedValueOnce(500000);
+      mockPrisma.signature.count.mockResolvedValue(50000000);
+      mockPrisma.shareLink.count.mockResolvedValue(5000000);
+      mockPrisma.petition.findMany.mockResolvedValue([]);
+      mockPrisma.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const overview = await service.getDashboardOverview();
 

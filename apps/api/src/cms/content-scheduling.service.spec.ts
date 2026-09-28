@@ -2,6 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContentSchedulingService } from './content-scheduling.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+// `expect.objectContaining` is typed to return `any`, so nesting it as the
+// value of an object literal property trips no-unsafe-assignment. This
+// wraps it with the sample's own inferred type so the matcher stays
+// type-safe at the call site.
+function matching<T extends object>(sample: T): T {
+  return expect.objectContaining(sample) as unknown as T;
+}
+
 describe('ContentSchedulingService', () => {
   let module: TestingModule;
   let service: ContentSchedulingService;
@@ -69,7 +77,7 @@ describe('ContentSchedulingService', () => {
 
       expect(prisma.cMSSchedule.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
+          data: matching({
             pageId: data.pageId,
             action: data.action,
             scheduledFor: data.scheduledFor,
@@ -139,7 +147,7 @@ describe('ContentSchedulingService', () => {
 
       expect(prisma.cMSSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
+          where: matching({
             executed: false,
           }),
         }),
@@ -148,7 +156,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSPage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'page-1' },
-          data: expect.objectContaining({ published: true }),
+          data: matching({ published: true }),
         }),
       );
 
@@ -184,7 +192,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSPage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'page-2' },
-          data: expect.objectContaining({ published: false }),
+          data: matching({ published: false }),
         }),
       );
     });
