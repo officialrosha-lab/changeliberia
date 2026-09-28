@@ -157,7 +157,7 @@ export class EmailEventService {
         {
           recipientName: fullName,
           resetUrl,
-          expiresIn: '1 hour',
+          expiresIn: 60, // minutes — matches the token's actual 1-hour expiry in password-reset.service.ts
         },
       );
       this.logger.log(`Password reset email sent to ${email}`);

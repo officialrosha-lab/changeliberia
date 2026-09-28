@@ -1,16 +1,14 @@
-import { Injectable, BadRequestException, UnauthorizedException, Optional, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
 import { randomBytes } from 'crypto';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class EmailVerificationService {
-  private readonly logger = new Logger(EmailVerificationService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly emailService: EmailService | null,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -51,20 +49,15 @@ export class EmailVerificationService {
       },
     });
 
-    // Send verification email
+    // Send verification email via the Plunk-backed EmailService (EmailEventService listens for this)
     const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-    
-    if (this.emailService) {
-      await this.emailService.sendEmail({
-        recipientEmail: email,
-        subject: 'Verify your Change Liberia email address',
-        templateType: 'email_verification',
-        htmlContent: `Click to verify: ${verificationUrl}`,
-        textContent: `Click to verify: ${verificationUrl}`,
-      });
-    } else {
-      this.logger.warn('EmailService not available - cannot send verification email');
-    }
+
+    this.eventEmitter.emit('user.email.verification-requested', {
+      userId: existingUser?.id,
+      email,
+      verifyUrl: verificationUrl,
+      fullName: existingUser?.fullName,
+    });
 
     return {
       success: true,

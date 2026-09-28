@@ -1,17 +1,15 @@
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException, Optional, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
 import { PasswordProvider } from './password.provider';
 import { randomBytes } from 'crypto';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class PasswordResetService {
-  private readonly logger = new Logger(PasswordResetService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly emailService: EmailService | null,
+    private readonly eventEmitter: EventEmitter2,
     private readonly passwordProvider: PasswordProvider,
   ) {}
 
@@ -56,20 +54,15 @@ export class PasswordResetService {
       },
     });
 
-    // Send password reset email
+    // Send password reset email via the Plunk-backed EmailService (EmailEventService listens for this)
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-    
-    if (this.emailService) {
-      await this.emailService.sendEmail({
-        recipientEmail: email,
-        subject: 'Reset your Change Liberia password',
-        templateType: 'password_reset',
-        htmlContent: `Click to reset: ${resetUrl}`,
-        textContent: `Click to reset: ${resetUrl}`,
-      });
-    } else {
-      this.logger.warn('EmailService not available - cannot send password reset email');
-    }
+
+    this.eventEmitter.emit('user.password-reset-requested', {
+      userId: user.id,
+      email,
+      resetUrl,
+      fullName: user.fullName,
+    });
 
     return {
       success: true,
@@ -133,18 +126,12 @@ export class PasswordResetService {
       }),
     ]);
 
-    // Send confirmation email
-    if (this.emailService) {
-      await this.emailService.sendEmail({
-        recipientEmail: email,
-        subject: 'Your Change Liberia password has been reset',
-        templateType: 'password_reset_confirmation',
-        htmlContent: `Your password has been successfully reset.`,
-        textContent: `Your password has been successfully reset.`,
-      });
-    } else {
-      this.logger.warn('EmailService not available - cannot send password reset confirmation email');
-    }
+    // Send confirmation email via the Plunk-backed EmailService
+    this.eventEmitter.emit('user.password-changed', {
+      userId: resetToken.userId,
+      email,
+      fullName: resetToken.user.fullName,
+    });
 
     return {
       success: true,

@@ -1,12 +1,12 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { OtpProvider } from './otp.provider';
 import { PasswordProvider } from './password.provider';
 import { EmailVerificationService } from './email-verification.service';
-import { EmailService } from '../email/services/email.service';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,7 @@ export class AuthService {
     private readonly otpProvider: OtpProvider,
     private readonly passwordProvider: PasswordProvider,
     private readonly emailVerificationService: EmailVerificationService,
-    private readonly emailService: EmailService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -106,7 +106,12 @@ export class AuthService {
       },
     });
 
-    // Generate and send verification email
+    // Welcome email + generate and send verification email
+    this.eventEmitter.emit('user.created', {
+      userId: user.id,
+      email: user.email,
+      fullName: user.fullName,
+    });
     await this.emailVerificationService.sendVerificationEmail(dto.email);
 
     return {
