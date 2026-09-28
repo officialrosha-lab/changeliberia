@@ -5,6 +5,7 @@ import { EmailTemplateService } from './email-template.service';
 import { EmailTrackingService } from './email-tracking.service';
 import { EmailPreferenceService } from './email-preference.service';
 import { EmailLog, EmailType } from '@prisma/client';
+import { EmailTemplateProps } from '../templates/index';
 
 export interface QueuedEmailResult {
   emailLogId: string;
@@ -90,7 +91,7 @@ export class EmailService {
     recipient: string,
     userId: string | undefined,
     emailType: EmailType,
-    templateProps: any,
+    templateProps: Record<string, unknown>,
   ): Promise<QueuedEmailResult> {
     // Block flooding before any work is done
     await this.checkEmailRateLimit(recipient, emailType);
@@ -121,7 +122,7 @@ export class EmailService {
     // Render template
     const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
-      templateProps,
+      templateProps as unknown as EmailTemplateProps,
     );
 
     // Create email log record
@@ -157,7 +158,7 @@ export class EmailService {
     userId: string,
     recipient: string,
     emailType: EmailType,
-    templateProps: any,
+    templateProps: Record<string, unknown>,
   ): Promise<QueuedEmailResult | null> {
     // Check preferences
     const { canSend, reason } = await this.preferenceService.canSendEmail(
@@ -197,7 +198,7 @@ export class EmailService {
     // Render template
     const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
-      templateProps,
+      templateProps as unknown as EmailTemplateProps,
     );
 
     // Create email log
@@ -270,7 +271,9 @@ export class EmailService {
   async sendBulk(
     userIds: string[],
     emailType: EmailType,
-    getTemplatePropsForUser: (userId: string) => Promise<any>,
+    getTemplatePropsForUser: (
+      userId: string,
+    ) => Promise<Record<string, unknown>>,
   ): Promise<QueuedEmailResult[]> {
     const results: QueuedEmailResult[] = [];
 
