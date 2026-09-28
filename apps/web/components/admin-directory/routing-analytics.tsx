@@ -14,8 +14,8 @@ interface RoutingStats {
 
 interface RoutingEvent {
   id: string;
-  petitionId: string;
-  institutionId: string;
+  petitionId: string | null;
+  institutionId: string | null;
   decision: string;
   emailSentAt: string | null;
   emailDeliveredAt: string | null;
@@ -141,7 +141,7 @@ export function RoutingAnalytics() {
               {events.map((event) => (
                 <tr key={event.id} className="border-b border-zinc-200 hover:bg-zinc-50">
                   <td className="px-4 py-3 font-medium text-blue-600">
-                    {event.petitionId.slice(0, 8)}...
+                    {event.petitionId ? `${event.petitionId.slice(0, 8)}...` : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">

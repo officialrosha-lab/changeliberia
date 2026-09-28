@@ -604,6 +604,37 @@ export class SmartRoutingService {
   }
 
   /**
+   * Get recent routing events for the admin analytics table
+   */
+  async getRoutingEvents(limit: number = 50) {
+    const logs = await this.prisma.routingLog.findMany({
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      petitionId: log.petitionId,
+      institutionId: log.institutionId,
+      decision: log.decision,
+      emailSentAt: log.emailSentAt,
+      emailDeliveredAt: log.emailDeliveredAt,
+      emailFailureReason: log.emailFailureReason,
+      matchedTags: this.parseTagsArray(log.matchedTags),
+      notes: log.adminNotes ?? '',
+    }));
+  }
+
+  private parseTagsArray(raw: string): string[] {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Manual override - reassign routing to different institution
    */
   async overrideRouting(
