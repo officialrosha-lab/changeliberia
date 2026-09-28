@@ -32,7 +32,7 @@ export function PetitionListItem({ petition }: PetitionListItemProps) {
 
   return (
     <Link href={`/petitions/${petition.id}`}>
-      <Card className="group flex gap-4 p-4 hover:border-zinc-300 dark:hover:border-neutral-600 hover:shadow-md transition-all duration-200">
+      <Card rounded="xl" className="group flex gap-4 p-4 hover:border-zinc-300 dark:hover:border-neutral-600 hover:shadow-md transition-all duration-200">
         {/* Image */}
         <div className="relative h-24 w-24 md:h-28 md:w-28 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600">
           {petition.imageUrl ? (
