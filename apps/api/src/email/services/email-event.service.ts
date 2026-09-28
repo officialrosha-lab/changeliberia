@@ -24,83 +24,107 @@ export class EmailEventService {
    */
   private registerEventListeners(): void {
     // User events
-    this.eventEmitter.on('user.created', (event) => this.onUserCreated(event));
-    this.eventEmitter.on('user.email.verification-requested', (event) =>
-      this.onEmailVerificationRequested(event),
+    this.eventEmitter.on(
+      'user.created',
+      (event) => void this.onUserCreated(event),
     );
-    this.eventEmitter.on('user.password-reset-requested', (event) =>
-      this.onPasswordResetRequested(event),
+    this.eventEmitter.on(
+      'user.email.verification-requested',
+      (event) => void this.onEmailVerificationRequested(event),
     );
-    this.eventEmitter.on('user.password-changed', (event) =>
-      this.onPasswordChanged(event),
+    this.eventEmitter.on(
+      'user.password-reset-requested',
+      (event) => void this.onPasswordResetRequested(event),
+    );
+    this.eventEmitter.on(
+      'user.password-changed',
+      (event) => void this.onPasswordChanged(event),
     );
 
     // Petition events
-    this.eventEmitter.on('petition.created', (event) =>
-      this.onPetitionCreated(event),
+    this.eventEmitter.on(
+      'petition.created',
+      (event) => void this.onPetitionCreated(event),
     );
-    this.eventEmitter.on('petition.approved', (event) =>
-      this.onPetitionApproved(event),
+    this.eventEmitter.on(
+      'petition.approved',
+      (event) => void this.onPetitionApproved(event),
     );
-    this.eventEmitter.on('petition.rejected', (event) =>
-      this.onPetitionRejected(event),
+    this.eventEmitter.on(
+      'petition.rejected',
+      (event) => void this.onPetitionRejected(event),
     );
-    this.eventEmitter.on('petition.milestone', (event) =>
-      this.onPetitionMilestone(event),
+    this.eventEmitter.on(
+      'petition.milestone',
+      (event) => void this.onPetitionMilestone(event),
     );
-    this.eventEmitter.on('petition.government-submitted', (event) =>
-      this.onPetitionGovernmentSubmitted(event),
+    this.eventEmitter.on(
+      'petition.government-submitted',
+      (event) => void this.onPetitionGovernmentSubmitted(event),
     );
-    this.eventEmitter.on('petition.government-response', (event) =>
-      this.onPetitionGovernmentResponse(event),
+    this.eventEmitter.on(
+      'petition.government-response',
+      (event) => void this.onPetitionGovernmentResponse(event),
     );
 
     // Public Officials Portal events
-    this.eventEmitter.on('official.verified', (event) =>
-      this.onOfficialVerified(event),
+    this.eventEmitter.on(
+      'official.verified',
+      (event) => void this.onOfficialVerified(event),
     );
-    this.eventEmitter.on('official.rejected', (event) =>
-      this.onOfficialRejected(event),
+    this.eventEmitter.on(
+      'official.rejected',
+      (event) => void this.onOfficialRejected(event),
     );
 
     // Poll events
-    this.eventEmitter.on('poll.approved', (event) =>
-      this.onPollApproved(event),
+    this.eventEmitter.on(
+      'poll.approved',
+      (event) => void this.onPollApproved(event),
     );
-    this.eventEmitter.on('poll.rejected', (event) =>
-      this.onPollRejected(event),
+    this.eventEmitter.on(
+      'poll.rejected',
+      (event) => void this.onPollRejected(event),
     );
 
     // Message and broadcast events
-    this.eventEmitter.on('message.created', (event) =>
-      this.onMessageCreated(event),
+    this.eventEmitter.on(
+      'message.created',
+      (event) => void this.onMessageCreated(event),
     );
-    this.eventEmitter.on('broadcast.sent', (event) =>
-      this.onBroadcastSent(event),
+    this.eventEmitter.on(
+      'broadcast.sent',
+      (event) => void this.onBroadcastSent(event),
     );
 
     // Signature/engagement events
-    this.eventEmitter.on('signature.received', (event) =>
-      this.onSignatureReceived(event),
+    this.eventEmitter.on(
+      'signature.received',
+      (event) => void this.onSignatureReceived(event),
     );
-    this.eventEmitter.on('comment.received', (event) =>
-      this.onCommentReceived(event),
+    this.eventEmitter.on(
+      'comment.received',
+      (event) => void this.onCommentReceived(event),
     );
-    this.eventEmitter.on('comment.replied', (event) =>
-      this.onCommentReplied(event),
+    this.eventEmitter.on(
+      'comment.replied',
+      (event) => void this.onCommentReplied(event),
     );
 
     // Community events
-    this.eventEmitter.on('ambassador.joined', (event) =>
-      this.onAmbassadorJoined(event),
+    this.eventEmitter.on(
+      'ambassador.joined',
+      (event) => void this.onAmbassadorJoined(event),
     );
-    this.eventEmitter.on('community.update', (event) =>
-      this.onCommunityUpdate(event),
+    this.eventEmitter.on(
+      'community.update',
+      (event) => void this.onCommunityUpdate(event),
     );
 
     // Donation events
-    this.eventEmitter.on('donation.received', (event) =>
-      this.onDonationReceived(event),
+    this.eventEmitter.on(
+      'donation.received',
+      (event) => void this.onDonationReceived(event),
     );
 
     this.logger.log('Email event listeners registered');
@@ -184,7 +208,7 @@ export class EmailEventService {
 
   // Petition event handlers
 
-  private async onPetitionCreated(event: any): Promise<void> {
+  private onPetitionCreated(event: any): void {
     try {
       // Could send confirmation to creator that petition was created
       this.logger.debug(`Petition created: ${event.petitionId}`);
@@ -393,7 +417,7 @@ export class EmailEventService {
     }
   }
 
-  private async onCommentReceived(event: any): Promise<void> {
+  private onCommentReceived(event: any): void {
     try {
       // This event might trigger digest emails instead of individual notifications
       this.logger.debug(`Comment received on petition: ${event.petitionId}`);
@@ -447,7 +471,7 @@ export class EmailEventService {
     }
   }
 
-  private async onCommunityUpdate(event: any): Promise<void> {
+  private onCommunityUpdate(event: any): void {
     try {
       const { updateTitle } = event;
       this.logger.debug(`Community update event: ${updateTitle}`);

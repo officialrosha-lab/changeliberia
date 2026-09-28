@@ -79,7 +79,7 @@ export class PetitionsController {
   }
 
   @Get('media/:filename')
-  async serveMedia(@Param('filename') filename: string, @Res() res: Response) {
+  serveMedia(@Param('filename') filename: string, @Res() res: Response) {
     const abs = this.mediaStorage.resolveSafe(filename);
     if (!abs || !existsSync(abs))
       throw new NotFoundException('Media not found');

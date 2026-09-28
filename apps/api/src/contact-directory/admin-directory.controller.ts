@@ -374,7 +374,7 @@ export class AdminDirectoryController {
 
   @Get('import/template')
   @Permission(PermissionResource.DIRECTORY, PermissionAction.READ)
-  async downloadTemplate() {
+  downloadTemplate() {
     const csvContent = this.bulkImportService.generateTemplateCSV();
 
     return {

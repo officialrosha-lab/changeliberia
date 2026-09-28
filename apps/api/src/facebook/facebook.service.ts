@@ -109,7 +109,7 @@ export class FacebookService {
     );
 
     // Publish share created event for viral mechanics
-    this.eventBus.publish(
+    void this.eventBus.publish(
       new FacebookShareCreatedEvent(
         shortCode,
         petitionId,

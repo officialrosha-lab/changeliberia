@@ -17,10 +17,10 @@ export class EmailTemplateService {
    * Note: This is a simplified implementation that generates basic HTML.
    * For production, consider using proper email templating (EJS, Handlebars, etc.)
    */
-  async renderTemplate<T extends EmailType>(
+  renderTemplate<T extends EmailType>(
     templateType: T,
     props: EmailTemplatePropsMap[T],
-  ): Promise<RenderedTemplate> {
+  ): RenderedTemplate {
     try {
       const subject = this.getSubjectForType(templateType);
       const html = this.generateHtmlForTemplate(templateType, props);
