@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { ProfileSettings } from '../../components/dashboard/profile-settings';
 import { PushNotificationToggle } from '../../components/push-notification-toggle';
 
-export const metadata = { title: 'Account Settings — Change Liberia' };
+export const metadata = {
+  title: 'Account Settings — Change Liberia',
+  description: 'Manage your Change Liberia profile, notifications, and account security.',
+  alternates: { canonical: '/settings' },
+};
 
 export default function SettingsPage() {
   return (

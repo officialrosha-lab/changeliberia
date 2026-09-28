@@ -22,9 +22,10 @@ export default function GlobalError({
         </svg>
       </div>
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Something went wrong</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">This page hit a snag</h1>
         <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-          An unexpected error occurred. Our team has been notified.
+          Something broke loading this page. Try again, or head back to the homepage —
+          the rest of Change Liberia is unaffected.
         </p>
         {error.digest && (
           <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">Error ID: {error.digest}</p>

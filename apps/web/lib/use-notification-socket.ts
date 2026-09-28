@@ -111,10 +111,6 @@ export function useNotificationSocket({
         setIsConnected(false);
       });
 
-      socket.on('subscribed', (data: { userId: string }) => {
-        console.log('[NotificationSocket] Subscribed for user:', data.userId);
-      });
-
       socket.on('new_notification', (data: NotificationEvent) => {
         callbacksRef.current.onNewNotification?.(data);
       });

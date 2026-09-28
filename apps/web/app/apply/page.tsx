@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/card';
 export const metadata: Metadata = {
   title: "Become a Voice for Change | Change Liberia",
   description: "Apply to become an Ambassador and represent your community. Help drive civic change across Liberia.",
+  alternates: { canonical: '/apply' },
 };
 
 export default function ApplyPage() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiGet } from '../lib/api';
 
 const STAGE_LABELS: Record<string, string> = {
@@ -65,9 +66,9 @@ export function OfficialResponseTimeline({ petitionId }: { petitionId: string })
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-semibold text-zinc-900">
                 {response.institution.slug ? (
-                  <a href={`/official/${response.institution.slug}`} className="hover:underline">
+                  <Link href={`/official/${response.institution.slug}`} className="hover:underline">
                     {response.institution.name}
-                  </a>
+                  </Link>
                 ) : (
                   response.institution.name
                 )}

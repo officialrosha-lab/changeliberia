@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'Change Liberia',
   description: 'Change Liberia — the civic petition platform where Liberians raise issues, gather trusted support, and drive real change.',
   metadataBase: new URL('https://changeliberia.org'),
+  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -31,9 +32,8 @@ export const metadata: Metadata = {
     description: 'Change Liberia — raise issues, gather trusted support, and drive real civic change in Liberia.',
     images: ['https://changeliberia.org/og-image.png'],
   },
-  icons: {
-    icon: '/favicon.ico',
-  },
+  // favicon.ico / icon.png / apple-icon.png in app/ are picked up automatically
+  // by Next's file-convention metadata — no explicit `icons` entry needed.
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

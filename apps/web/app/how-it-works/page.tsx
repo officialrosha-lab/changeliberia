@@ -6,6 +6,7 @@ import { fetchCmsPageWithBlocks } from '../../lib/cms';
 export const metadata: Metadata = {
   title: 'How It Works — Change Liberia',
   description: 'A step-by-step guide to creating a petition, building support, and reaching decision-makers on Change Liberia.',
+  alternates: { canonical: '/how-it-works' },
 };
 
 export default async function HowItWorksPage() {
@@ -39,9 +40,14 @@ export default async function HowItWorksPage() {
     <>
       <main className="min-h-screen bg-white dark:bg-neutral-950">
         {page.blocks && page.blocks.length > 0 ? (
-          page.blocks.map((block) => (
-            <CMSBlockRenderer key={block.id} block={block} />
-          ))
+          <>
+            {!page.blocks.some((block) => block.type === 'hero') && (
+              <h1 className="sr-only">{page.title}</h1>
+            )}
+            {page.blocks.map((block) => (
+              <CMSBlockRenderer key={block.id} block={block} />
+            ))}
+          </>
         ) : (
           <section className="border-b border-zinc-200 bg-gradient-to-br from-emerald-50 to-white px-4 py-16 dark:border-neutral-800 dark:from-emerald-950/20 dark:to-neutral-900 sm:py-20 md:py-24">
             <div className="mx-auto max-w-3xl text-center">
