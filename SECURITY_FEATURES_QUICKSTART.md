@@ -187,7 +187,7 @@ SMTP_PORT=1025
 DATABASE_URL=postgresql://user:password@localhost:5432/change_liberia
 
 # Email
-EMAIL_FROM=noreply@changelib.org
+EMAIL_FROM=noreply@changeliberia.org
 EMAIL_PROVIDER=smtp
 SMTP_HOST=localhost
 SMTP_PORT=1025
