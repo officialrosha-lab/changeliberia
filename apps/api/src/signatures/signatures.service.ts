@@ -81,7 +81,8 @@ export class SignaturesService {
           { personallyAffected: undefined, relationshipType: undefined } as unknown as CreateSignatureDto,
           null, // SMS channel has no IP to derive a region hint from
         );
-        const { classification, confidenceScore } = this.locationClassification.classify(classificationInput);
+        const { classification, confidenceScore, unknownReason } =
+          this.locationClassification.classify(classificationInput);
         await tx.signatureLocation.create({
           data: {
             signatureId: signature.id,
@@ -91,6 +92,7 @@ export class SignaturesService {
             locationSource: classificationInput.locationSource,
             classification,
             confidenceScore,
+            unknownReason,
           },
         });
 
@@ -222,7 +224,8 @@ export class SignaturesService {
           dto,
           ipRegionHint,
         );
-        const { classification, confidenceScore } = this.locationClassification.classify(classificationInput);
+        const { classification, confidenceScore, unknownReason } =
+          this.locationClassification.classify(classificationInput);
         await tx.signatureLocation.create({
           data: {
             signatureId: signature.id,
@@ -234,6 +237,7 @@ export class SignaturesService {
             locationSource: classificationInput.locationSource,
             classification,
             confidenceScore,
+            unknownReason,
           },
         });
 

@@ -27,9 +27,23 @@ export interface ClassificationInput {
   ipRegionHint?: string | null; // optional, non-blocking supporting signal only
 }
 
+// Why a signature landed on UNKNOWN — several distinct situations used to
+// collapse into that one bucket with no way to tell them apart later.
+export type UnknownReason =
+  | 'no_impact_scope' // legacy petition with no impactScope set
+  | 'step1_skipped' // signer never answered "were you personally affected?"
+  | 'multi_county_no_match' // MULTI_COUNTY petition, declared county not listed or adjacent
+  | 'no_location_match'; // COUNTY/DISTRICT/COMMUNITY petition, declared location didn't match
+
 export interface ClassificationResult {
   classification: SignatureClassification;
   confidenceScore: number;
+  unknownReason: UnknownReason | null;
+}
+
+interface DeterminedClassification {
+  classification: SignatureClassification;
+  unknownReason: UnknownReason | null;
 }
 
 const STRONG_RELATIONSHIPS: RelationshipType[] = [
@@ -53,22 +67,30 @@ function isDiaspora(status: VerificationStatus | null): boolean {
 @Injectable()
 export class LocationClassificationService {
   classify(input: ClassificationInput): ClassificationResult {
-    const classification = this.determineClassification(input);
+    const { classification, unknownReason } =
+      this.determineClassification(input);
     const confidenceScore = this.scoreConfidence(input, classification);
-    return { classification, confidenceScore };
+    return { classification, confidenceScore, unknownReason };
   }
 
-  private determineClassification(input: ClassificationInput): SignatureClassification {
+  private determineClassification(
+    input: ClassificationInput,
+  ): DeterminedClassification {
     const { petition, personallyAffected, userVerificationStatus } = input;
 
     // Rule 1: explicitly not personally affected
     if (personallyAffected === false) {
-      return isDiaspora(userVerificationStatus) ? 'DIASPORA_SUPPORTER' : 'SUPPORTER';
+      return {
+        classification: isDiaspora(userVerificationStatus)
+          ? 'DIASPORA_SUPPORTER'
+          : 'SUPPORTER',
+        unknownReason: null,
+      };
     }
 
     // Legacy petitions with no impact scope set can't be evaluated
     if (!petition.impactScope) {
-      return 'UNKNOWN';
+      return { classification: 'UNKNOWN', unknownReason: 'no_impact_scope' };
     }
 
     if (personallyAffected === true) {
@@ -76,36 +98,50 @@ export class LocationClassificationService {
       // affected, unless the signer is diaspora-verified (diaspora label
       // takes precedence for national-scope petitions).
       if (petition.impactScope === 'NATIONAL') {
-        return isDiaspora(userVerificationStatus) ? 'DIASPORA_SUPPORTER' : 'DIRECTLY_AFFECTED';
+        return {
+          classification: isDiaspora(userVerificationStatus)
+            ? 'DIASPORA_SUPPORTER'
+            : 'DIRECTLY_AFFECTED',
+          unknownReason: null,
+        };
       }
 
       if (petition.impactScope === 'MULTI_COUNTY') {
-        if (input.declaredCounty && petition.counties.includes(input.declaredCounty)) {
-          return 'DIRECTLY_AFFECTED';
+        if (
+          input.declaredCounty &&
+          petition.counties.includes(input.declaredCounty)
+        ) {
+          return { classification: 'DIRECTLY_AFFECTED', unknownReason: null };
         }
         if (
           input.declaredCounty &&
           isAdjacentToAny(input.declaredCounty, petition.counties)
         ) {
-          return 'NEARBY_COMMUNITY';
+          return { classification: 'NEARBY_COMMUNITY', unknownReason: null };
         }
-        return this.fallbackClassification(input);
+        return this.fallbackClassification(input, 'multi_county_no_match');
       }
 
       const match = this.matchLevel(input);
-      if (match === 'full') return 'DIRECTLY_AFFECTED';
-      if (match === 'partial') return 'NEARBY_COMMUNITY';
-      return this.fallbackClassification(input);
+      if (match === 'full')
+        return { classification: 'DIRECTLY_AFFECTED', unknownReason: null };
+      if (match === 'partial')
+        return { classification: 'NEARBY_COMMUNITY', unknownReason: null };
+      return this.fallbackClassification(input, 'no_location_match');
     }
 
     // personallyAffected is null/undefined (Step 1 skipped/dismissed)
-    return this.fallbackClassification(input);
+    return this.fallbackClassification(input, 'step1_skipped');
   }
 
-  private fallbackClassification(input: ClassificationInput): SignatureClassification {
-    if (isDiaspora(input.userVerificationStatus)) return 'DIASPORA_SUPPORTER';
-    if (input.locationSource === 'unconfirmed' && !input.declaredCounty) return 'UNKNOWN';
-    return 'UNKNOWN';
+  private fallbackClassification(
+    input: ClassificationInput,
+    reason: UnknownReason,
+  ): DeterminedClassification {
+    if (isDiaspora(input.userVerificationStatus)) {
+      return { classification: 'DIASPORA_SUPPORTER', unknownReason: null };
+    }
+    return { classification: 'UNKNOWN', unknownReason: reason };
   }
 
   /**
@@ -113,7 +149,8 @@ export class LocationClassificationService {
    * the fields the petition's impactScope actually requires.
    */
   private matchLevel(input: ClassificationInput): 'full' | 'partial' | 'none' {
-    const { petition, declaredCounty, declaredDistrict, declaredCommunity } = input;
+    const { petition, declaredCounty, declaredDistrict, declaredCommunity } =
+      input;
 
     if (!declaredCounty || !petition.county) return 'none';
     const countyMatches = declaredCounty === petition.county;
@@ -151,13 +188,21 @@ export class LocationClassificationService {
 
     const match = this.matchLevel(input);
     if (match === 'full') score += 20;
-    else if (input.declaredCounty && input.petition.county === input.declaredCounty) score += 10;
+    else if (
+      input.declaredCounty &&
+      input.petition.county === input.declaredCounty
+    )
+      score += 10;
 
     if (input.relationshipType) {
       score += STRONG_RELATIONSHIPS.includes(input.relationshipType) ? 15 : 5;
     }
 
-    if (input.ipRegionHint && input.declaredCounty && input.ipRegionHint === input.declaredCounty) {
+    if (
+      input.ipRegionHint &&
+      input.declaredCounty &&
+      input.ipRegionHint === input.declaredCounty
+    ) {
       score += 5;
     }
 
