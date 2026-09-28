@@ -282,7 +282,7 @@ Template files:
 ### Backend (.env)
 ```env
 # Email Configuration
-EMAIL_FROM=noreply@changelib.org
+EMAIL_FROM=noreply@changeliberia.org
 SMTP_HOST=localhost
 SMTP_PORT=1025
 EMAIL_PROVIDER=smtp
@@ -472,7 +472,7 @@ EMAIL_PROVIDER=sendgrid
 SENDGRID_API_KEY=your-sendgrid-key
 
 # Frontend URLs
-NEXT_PUBLIC_APP_URL=https://changelib.org
+NEXT_PUBLIC_APP_URL=https://changeliberia.org
 ```
 
 ### 3. Build and Deploy
