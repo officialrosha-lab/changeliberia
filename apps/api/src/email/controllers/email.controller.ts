@@ -12,6 +12,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { createClient } from 'redis';
 import { EmailService } from '../services/email.service';
 import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
@@ -19,6 +20,7 @@ import { MailerooProvider } from '../providers/maileroo.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionResource, PermissionAction } from '@prisma/client';
 
 @Controller('email')
@@ -229,6 +231,7 @@ export class AdminEmailController {
   constructor(
     private readonly trackingService: EmailTrackingService,
     private readonly mailerooProvider: MailerooProvider,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -277,8 +280,19 @@ export class AdminEmailController {
   @Permission(PermissionResource.EMAIL, PermissionAction.UPDATE)
   async verifyDomain(@Body('domain') domain: string): Promise<any> {
     try {
-      const status = await this.mailerooProvider.verifyDomain(domain);
-      return status;
+      const result = await this.mailerooProvider.verifyDomain(domain);
+      const verified = result.status === 'verified';
+      return {
+        domain: result.domain,
+        verified,
+        // Maileroo's /domains list only reports one overall verification
+        // status, not a per-record (DKIM/SPF/DMARC) breakdown — these
+        // mirror the overall result rather than a fabricated finer signal.
+        dkimVerified: verified,
+        spfVerified: verified,
+        dmarcVerified: verified,
+        verificationStatus: result.status,
+      };
     } catch (error) {
       return {
         error: 'Failed to verify domain',
@@ -295,17 +309,54 @@ export class AdminEmailController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async healthCheck(): Promise<any> {
+    const [apiKey, redisConnected, databaseConnected] = await Promise.all([
+      this.mailerooProvider.healthCheck().catch(() => false),
+      this.checkRedis(),
+      this.checkDatabase(),
+    ]);
+
+    const allUp = apiKey && redisConnected && databaseConnected;
+    const allDown = !apiKey && !redisConnected && !databaseConnected;
+    const status: 'ok' | 'warning' | 'error' = allUp ? 'ok' : allDown ? 'error' : 'warning';
+    const downParts = [
+      !apiKey && 'Maileroo API',
+      !redisConnected && 'Redis',
+      !databaseConnected && 'database',
+    ].filter((p): p is string => Boolean(p));
+
+    return {
+      status,
+      message: allUp ? 'All systems operational' : `Unreachable: ${downParts.join(', ')}`,
+      lastChecked: new Date().toISOString(),
+      apiKey,
+      redisConnected,
+      databaseConnected,
+    };
+  }
+
+  private async checkDatabase(): Promise<boolean> {
     try {
-      const health = await this.mailerooProvider.healthCheck();
-      return {
-        healthy: true,
-        ...(typeof health === 'object' && health !== null ? health : {}),
-      };
-    } catch (error) {
-      return {
-        healthy: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async checkRedis(): Promise<boolean> {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) return false;
+
+    const client = createClient({ url: redisUrl, socket: { connectTimeout: 2000 } });
+    client.on('error', () => {});
+    try {
+      await client.connect();
+      await client.ping();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      if (client.isOpen) await client.disconnect().catch(() => {});
     }
   }
 }
