@@ -5,6 +5,14 @@ import { MoMoService } from './providers/momo.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
+interface MoMoWebhookPayload {
+  eventType?: 'requestToPay' | 'preApproval' | 'payment';
+  externalId: string;
+  status: string;
+  transactionId?: string;
+  reason?: string;
+}
+
 @Injectable()
 export class MoMoWebhookService {
   private readonly logger = new Logger(MoMoWebhookService.name);
@@ -18,7 +26,10 @@ export class MoMoWebhookService {
   /**
    * Handle MoMo webhook events
    */
-  async handleWebhook(payload: any, signature?: string): Promise<void> {
+  async handleWebhook(
+    payload: MoMoWebhookPayload,
+    signature?: string,
+  ): Promise<void> {
     try {
       this.logger.debug(`Received MoMo webhook: ${JSON.stringify(payload)}`);
 
@@ -266,7 +277,10 @@ export class MoMoWebhookService {
   /**
    * Verify webhook signature
    */
-  private verifyWebhookSignature(payload: any, signature?: string): boolean {
+  private verifyWebhookSignature(
+    payload: MoMoWebhookPayload,
+    signature?: string,
+  ): boolean {
     const secret = process.env.MOMO_WEBHOOK_SECRET;
     if (!secret) {
       if (process.env.NODE_ENV === 'production') {
