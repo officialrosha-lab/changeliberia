@@ -48,9 +48,9 @@ export function validateEnvOrThrow(): void {
 export function validateEmailEnvOrThrow(): void {
   if (process.env.NODE_ENV !== 'production') return;
 
-  const mailerSendApiKey = process.env.MAILERSEND_API_KEY ?? '';
-  if (!mailerSendApiKey.trim()) {
-    throw new Error('Production requires MAILERSEND_API_KEY to be set.');
+  const plunkApiKey = process.env.PLUNK_API_KEY ?? '';
+  if (!plunkApiKey.trim()) {
+    throw new Error('Production requires PLUNK_API_KEY to be set.');
   }
 
   const mailFrom = process.env.MAIL_FROM ?? '';

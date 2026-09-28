@@ -1,6 +1,6 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { MailerSendProvider } from '../providers/mailersend.provider';
+import { PlunkProvider } from '../providers/plunk.provider';
 import { EmailTemplateService } from './email-template.service';
 import { EmailTrackingService } from './email-tracking.service';
 import { EmailPreferenceService } from './email-preference.service';
@@ -19,7 +19,7 @@ export class EmailService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailerSendProvider: MailerSendProvider,
+    private readonly plunkProvider: PlunkProvider,
     private readonly templateService: EmailTemplateService,
     private readonly trackingService: EmailTrackingService,
     private readonly preferenceService: EmailPreferenceService,
@@ -215,7 +215,7 @@ export class EmailService {
     };
   }
 
-  /** Sends via MailerSend and records the outcome on the EmailLog row. */
+  /** Sends via Plunk and records the outcome on the EmailLog row. */
   private async sendViaProvider(
     emailLogId: string,
     recipient: string,
@@ -224,7 +224,7 @@ export class EmailService {
     text: string,
   ): Promise<void> {
     try {
-      const result = await this.mailerSendProvider.send({
+      const result = await this.plunkProvider.send({
         to: recipient,
         from: process.env.MAIL_FROM || 'noreply@changeliberia.org',
         replyTo: process.env.MAIL_REPLY_TO || 'support@changeliberia.org',
