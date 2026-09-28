@@ -183,10 +183,6 @@ export class WhatsAppService {
       },
     });
 
-    const totalBonusAwarded = await this.prisma.user.aggregate({
-      _sum: { trustScore: true },
-    });
-
     return {
       referrals: Object.fromEntries(
         referrals.map((r) => [

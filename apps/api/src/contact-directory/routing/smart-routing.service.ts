@@ -73,7 +73,7 @@ export class SmartRoutingService {
     const allTags = this.extractAndNormalizeTags(petitionTitle, petitionTags);
 
     // Step 1: Try to find matching institution by tags
-    let match = await this.findMatchingInstitution(allTags, petitionCategory);
+    let match = await this.findMatchingInstitution(allTags);
 
     if (match) {
       this.logger.debug(
@@ -205,7 +205,6 @@ export class SmartRoutingService {
    */
   private async findMatchingInstitution(
     tags: string[],
-    category?: string | null,
   ): Promise<RoutingMatch | null> {
     if (!tags || tags.length === 0) {
       return null;

@@ -14,22 +14,10 @@ describe('NotificationsService', () => {
   let service: NotificationsService;
   let prismaService: any;
 
-  const mockUser = {
-    id: 'user-1',
-    name: 'Test User',
-    email: 'test@example.com',
-  };
-
   const mockPetition = {
     id: 'petition-1',
     title: 'Test Petition',
     creatorId: 'creator-1',
-  };
-
-  const mockBadge = {
-    id: 'badge-1',
-    userId: 'user-1',
-    badgeType: 'SHARE_WIZARD',
   };
 
   const mockChallenge = {

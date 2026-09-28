@@ -151,18 +151,17 @@ export class FacebookSDKService {
               content_name: eventData.contentName || 'Petition Share',
               content_type: 'petition',
               content_category: eventData.contentCategory || 'social_share',
+              ...(eventData.shareMethod && {
+                share_method: eventData.shareMethod,
+              }),
             },
           },
         ],
       };
 
-      const response = await this.graphApi.post(
-        `/${this.pixelId}/events`,
-        payload,
-        {
-          params: { access_token: this.accessToken },
-        },
-      );
+      await this.graphApi.post(`/${this.pixelId}/events`, payload, {
+        params: { access_token: this.accessToken },
+      });
 
       this.logger.log(
         `Conversion tracked: ${eventName} (Event ID: ${payload.data[0].event_id})`,
@@ -397,7 +396,7 @@ export class FacebookSDKService {
         pixelConnected: !!this.pixelId,
         apiVersion: this.apiVersion,
       };
-    } catch (error) {
+    } catch {
       this.logger.error('Facebook API health check failed');
       return {
         appConnected: false,

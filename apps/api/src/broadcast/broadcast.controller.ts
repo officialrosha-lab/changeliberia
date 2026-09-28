@@ -9,7 +9,6 @@ import {
   Req,
   HttpStatus,
   HttpCode,
-  NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { BroadcastService } from './broadcast.service';

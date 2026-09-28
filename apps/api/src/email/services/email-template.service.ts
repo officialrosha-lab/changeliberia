@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
-import { EmailTemplateProps, EmailTemplatePropsMap } from '../templates/index';
+import { EmailTemplatePropsMap } from '../templates/index';
 
 export interface RenderedTemplate {
   html: string;

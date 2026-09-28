@@ -90,7 +90,7 @@ export class EmailScheduleService {
               {
                 recipientName: user.fullName,
                 digestDate: new Date().toLocaleDateString(),
-                petitions: petitions.map((p, i) => ({
+                petitions: petitions.map((p) => ({
                   title: p.title,
                   signatures: p._count.signatures,
                   url: `${process.env.NEXT_PUBLIC_APP_URL}/petitions/${p.id}`,

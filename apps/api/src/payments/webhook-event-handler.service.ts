@@ -1,5 +1,4 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailQueueService } from '../email/email-queue.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
@@ -7,7 +6,6 @@ import {
   StripeEventType,
   PaymentStatus,
   SubscriptionStatus,
-  PaymentErrorCode,
 } from './payments.constants';
 
 /**
@@ -68,11 +66,11 @@ export class WebhookEventHandlerService {
 
       // Charge Events
       case StripeEventType.CHARGE_SUCCEEDED:
-        await this.handleChargeSucceeded(event.data.object, event.id);
+        await this.handleChargeSucceeded(event.data.object);
         break;
 
       case StripeEventType.CHARGE_FAILED:
-        await this.handleChargeFailed(event.data.object, event.id);
+        await this.handleChargeFailed(event.data.object);
         break;
 
       case StripeEventType.CHARGE_REFUNDED:
@@ -81,11 +79,11 @@ export class WebhookEventHandlerService {
 
       // Customer Events
       case StripeEventType.CUSTOMER_CREATED:
-        await this.handleCustomerCreated(event.data.object, event.id);
+        await this.handleCustomerCreated(event.data.object);
         break;
 
       case StripeEventType.CUSTOMER_DELETED:
-        await this.handleCustomerDeleted(event.data.object, event.id);
+        await this.handleCustomerDeleted(event.data.object);
         break;
 
       default:
@@ -105,7 +103,6 @@ export class WebhookEventHandlerService {
       const paymentIntentId = paymentIntent.id;
       const amount = paymentIntent.amount;
       const currency = paymentIntent.currency;
-      const customerId = paymentIntent.customer as string | null;
 
       this.logger.log(
         `Payment intent succeeded: ${paymentIntentId} (${amount} ${currency})`,
@@ -653,10 +650,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.succeeded event
    */
-  private async handleChargeSucceeded(
-    charge: any,
-    eventId: string,
-  ): Promise<void> {
+  private async handleChargeSucceeded(charge: any): Promise<void> {
     this.logger.debug(`Charge succeeded: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -664,10 +658,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.failed event
    */
-  private async handleChargeFailed(
-    charge: any,
-    eventId: string,
-  ): Promise<void> {
+  private async handleChargeFailed(charge: any): Promise<void> {
     this.logger.debug(`Charge failed: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -733,10 +724,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.created event
    */
-  private async handleCustomerCreated(
-    customer: any,
-    eventId: string,
-  ): Promise<void> {
+  private async handleCustomerCreated(customer: any): Promise<void> {
     this.logger.debug(`Customer created: ${customer.id}`);
     // Customer creation is typically initiated by the application
   }
@@ -744,10 +732,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.deleted event
    */
-  private async handleCustomerDeleted(
-    customer: any,
-    eventId: string,
-  ): Promise<void> {
+  private async handleCustomerDeleted(customer: any): Promise<void> {
     this.logger.debug(`Customer deleted: ${customer.id}`);
     // Clean up user Stripe customer reference if needed
   }

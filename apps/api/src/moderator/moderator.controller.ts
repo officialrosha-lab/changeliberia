@@ -108,7 +108,6 @@ export class ModeratorController {
   async approvePetition(
     @CurrentUser() user: { id: string; email: string },
     @Param('id') petitionId: string,
-    @Body('feedback') feedback?: string,
   ) {
     // Check permission
     const can = await this.rolePermissionService.hasPermission(
@@ -129,7 +128,7 @@ export class ModeratorController {
     }
 
     // Update petition status
-    const updatedPetition = await this.prisma.petition.update({
+    await this.prisma.petition.update({
       where: { id: petitionId },
       data: {
         status: 'APPROVED' as PetitionStatus,
@@ -238,10 +237,7 @@ export class ModeratorController {
    * Get fraud flags for moderator review
    */
   @Get('fraud-flags')
-  async getFraudFlags(
-    @CurrentUser() user: { id: string; email: string },
-    @Query('status') status?: string,
-  ) {
+  async getFraudFlags(@CurrentUser() user: { id: string; email: string }) {
     // Check permission
     const can = await this.rolePermissionService.hasPermission(
       user.id,
@@ -254,7 +250,6 @@ export class ModeratorController {
 
     // Placeholder: return empty array until FraudLog model is added to schema
     // In production, would query FraudLog model filtered by status
-    const statusFilter = status === 'all' ? undefined : status || 'PENDING';
 
     // Mock data structure:
     return [];

@@ -144,13 +144,12 @@ export class MoMoWebhookService {
     }
 
     // Update pre-approval authorization
-    const authUpdate =
-      await this.prisma.moMoSubscriptionAuthorization.updateMany({
-        where: { preapprovalId: externalId },
-        data: {
-          status: status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED',
-        },
-      });
+    await this.prisma.moMoSubscriptionAuthorization.updateMany({
+      where: { preapprovalId: externalId },
+      data: {
+        status: status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED',
+      },
+    });
 
     // Update subscription status
     if (status.toUpperCase() === 'APPROVED') {

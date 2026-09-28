@@ -97,7 +97,7 @@ describe('BadgeService', () => {
         mockBadge as any,
       );
 
-      const result = await service.checkAndAwardBadges('user-1', 'petition-1');
+      await service.checkAndAwardBadges('user-1', 'petition-1');
 
       expect(prismaService.socialEngagementBadge.create).not.toHaveBeenCalled();
     });
@@ -184,7 +184,7 @@ describe('BadgeService', () => {
         mockBadge,
       ] as any);
 
-      const result = await service.getUserBadges('user-1');
+      await service.getUserBadges('user-1');
 
       expect(prismaService.socialEngagementBadge.findMany).toHaveBeenCalledWith(
         expect.objectContaining({

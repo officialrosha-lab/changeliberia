@@ -16,7 +16,7 @@ export class PollsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('polls:connected', { socketId: client.id });
   }
 
-  handleDisconnect(_client: Socket) {
+  handleDisconnect() {
     // Socket.IO handles cleanup on disconnect automatically.
   }
 

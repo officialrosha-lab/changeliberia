@@ -5,7 +5,6 @@ import { EmailTemplateService } from './email-template.service';
 import { EmailTrackingService } from './email-tracking.service';
 import { EmailPreferenceService } from './email-preference.service';
 import { EmailLog, EmailType } from '@prisma/client';
-import { EmailTemplateProps } from '../templates/index';
 
 export interface QueuedEmailResult {
   emailLogId: string;

@@ -160,7 +160,7 @@ export class PollsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async archivePoll(@Param('id') pollId: string, @Request() req: any) {
+  async archivePoll(@Param('id') pollId: string) {
     await this.pollsService.archivePoll(pollId);
     return { success: true, message: 'Poll archived' };
   }

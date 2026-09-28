@@ -283,14 +283,14 @@ export class FacebookEventsListener {
 
   private async updateBadgeLeaderboard(userId: string): Promise<void> {
     // Cache badge counts for quick leaderboard queries
-    const badgeCount = await this.prisma.socialEngagementBadge.count({
+    await this.prisma.socialEngagementBadge.count({
       where: { userId },
     });
   }
 
   private async updateChallengeLeaderboard(userId: string): Promise<void> {
     // Cache challenge completions for leaderboard
-    const completionCount = await this.prisma.challengeMembership.count({
+    await this.prisma.challengeMembership.count({
       where: {
         userId,
         completed: true,

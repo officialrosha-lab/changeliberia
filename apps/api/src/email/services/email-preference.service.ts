@@ -106,7 +106,7 @@ export class EmailPreferenceService {
           reason: `${emailType} emails are muted`,
         };
       }
-    } catch (error) {
+    } catch {
       this.logger.error(`Failed to parse muted types for user ${userId}`);
     }
 
