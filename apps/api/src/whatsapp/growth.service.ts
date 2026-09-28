@@ -83,6 +83,7 @@ export class GrowthService {
         createdAt: {
           gte: sevenDaysAgo,
         },
+        ...(county && { county }),
       },
       select: {
         id: true,

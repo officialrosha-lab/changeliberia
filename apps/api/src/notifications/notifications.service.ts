@@ -11,7 +11,6 @@ import {
   ContentPublishedEvent,
   ContentRejectedEvent,
   SignatureAddedEvent,
-  UserVerifiedEvent,
   FraudDetectedEvent,
   DonationReceivedEvent,
   BadgeUnlockedEvent,

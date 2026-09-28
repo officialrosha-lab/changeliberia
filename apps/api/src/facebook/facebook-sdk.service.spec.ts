@@ -212,7 +212,7 @@ describe('FacebookSDKService', () => {
 
   describe('Configuration Validation', () => {
     it('should warn about missing configuration', () => {
-      const loggerSpy = jest.spyOn(console, 'log');
+      jest.spyOn(console, 'log');
 
       process.env.FACEBOOK_APP_ID = '';
       const newService = new FacebookSDKService();

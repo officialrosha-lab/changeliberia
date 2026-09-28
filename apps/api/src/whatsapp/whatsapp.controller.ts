@@ -4,11 +4,8 @@ import {
   Post,
   Body,
   Param,
-  Query,
   UseGuards,
   Req,
-  HttpCode,
-  HttpStatus,
   BadRequestException,
   NotFoundException,
   Logger,
@@ -36,7 +33,6 @@ export class WhatsAppController {
   @Post('generate-message')
   async generateMessage(
     @Body() dto: { petitionId: string; signerName?: string },
-    @Req() req: { user?: { userId: string } },
   ) {
     if (!dto.petitionId) {
       throw new BadRequestException('petitionId is required');
@@ -152,10 +148,7 @@ export class WhatsAppController {
    * This is the /r/abc123 endpoint that gets shared
    */
   @Get('share-link/:shortCode')
-  async followShareLink(
-    @Param('shortCode') shortCode: string,
-    @Query() query: Record<string, any>,
-  ) {
+  async followShareLink(@Param('shortCode') shortCode: string) {
     try {
       const shareLink = await this.prisma.shareLink.findUnique({
         where: { shortCode },
@@ -194,8 +187,11 @@ export class WhatsAppController {
   @Post('track-conversion')
   async trackConversion(
     @Body()
-    dto: { referralCode: string; signatureId: string; trustBonus?: number },
-    @Req() req: { user: { userId: string } },
+    dto: {
+      referralCode: string;
+      signatureId: string;
+      trustBonus?: number;
+    },
   ) {
     if (!dto.referralCode || !dto.signatureId) {
       throw new BadRequestException(

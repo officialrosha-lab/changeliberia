@@ -3,7 +3,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
 import { RoutingResult } from '../routing/smart-routing.service';
-import { PetitionStatus } from '@prisma/client';
 
 /**
  * Petition Email Service

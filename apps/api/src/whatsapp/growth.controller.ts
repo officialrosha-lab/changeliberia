@@ -7,7 +7,6 @@ import {
   UseGuards,
   BadRequestException,
   NotFoundException,
-  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';

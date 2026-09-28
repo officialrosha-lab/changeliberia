@@ -422,10 +422,7 @@ export class StripeAdminController {
    * Get analytics: revenue trends and subscription metrics
    */
   @Get('analytics')
-  async getAnalytics(
-    @Query('days') days: string = '30',
-    @Query('metric') metric?: 'revenue' | 'subscriptions' | 'refunds' | 'all',
-  ) {
+  async getAnalytics(@Query('days') days: string = '30') {
     try {
       const numDays = Math.min(parseInt(days), 365);
       const startDate = new Date();
@@ -443,11 +440,6 @@ export class StripeAdminController {
       const subscriptions = await this.prisma.subscription.findMany({
         where: { createdAt: { gte: startDate } },
         select: { amount: true, interval: true, createdAt: true, status: true },
-      });
-
-      const refunds = await this.prisma.refund.findMany({
-        where: { createdAt: { gte: startDate } },
-        select: { amount: true, createdAt: true },
       });
 
       // Group revenue by day
@@ -489,6 +481,7 @@ export class StripeAdminController {
         revenueTrend,
         mrr: Math.round(mrr * 100) / 100,
         mrrTrend: Math.round(mrrTrend * 100) / 100,
+        projectedMonthly: Math.round(projectedMonthly * 100) / 100,
         dailyBreakdown: revenueByDay,
         currency: process.env.STRIPE_CURRENCY || 'USD',
       };

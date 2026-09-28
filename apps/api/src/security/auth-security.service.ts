@@ -213,7 +213,7 @@ export class AuthSecurityService {
    */
   verifyToken(token: string): Record<string, unknown> | null {
     try {
-      return this.jwtService.verify(token) as Record<string, unknown>;
+      return this.jwtService.verify<Record<string, unknown>>(token);
     } catch (error) {
       console.error('Token verification failed:', error);
       return null;

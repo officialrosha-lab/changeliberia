@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventBusService } from '../events/event-bus.service';
 import { FacebookShareCreatedEvent } from '../events/domain-events';
 import { PrismaService } from '../prisma/prisma.service';
@@ -92,7 +87,7 @@ export class FacebookService {
     const shareUrl = `https://changeliberia.org/r/${shortCode}`;
 
     // Create ShareLink record
-    const shareLink = await this.prisma.shareLink.create({
+    await this.prisma.shareLink.create({
       data: {
         shortCode,
         targetUrl: `https://changeliberia.org/petitions/${petitionId}`,

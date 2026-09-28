@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
-import * as ipaddr from 'ipaddr.js';
 
 @Injectable()
 export class SessionFingerprintService {

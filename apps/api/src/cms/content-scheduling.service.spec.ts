@@ -251,8 +251,6 @@ describe('ContentSchedulingService', () => {
     });
 
     it('should not execute future scheduled actions', async () => {
-      const future = new Date(Date.now() + 3600000); // 1 hour from now
-
       mockPrisma.cMSSchedule.findMany.mockResolvedValueOnce([]);
 
       await service.executeScheduledActions();

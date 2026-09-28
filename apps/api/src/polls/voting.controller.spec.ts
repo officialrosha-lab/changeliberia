@@ -8,7 +8,6 @@ import { SessionFingerprintService } from './session-fingerprint.service';
 describe('VotingController (unit)', () => {
   let app: INestApplication;
   let votingService: jest.Mocked<VotingService>;
-  let fingerprintService: jest.Mocked<SessionFingerprintService>;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,7 +31,6 @@ describe('VotingController (unit)', () => {
     await app.init();
 
     votingService = module.get(VotingService);
-    fingerprintService = module.get(SessionFingerprintService);
   });
 
   afterAll(async () => {

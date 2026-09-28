@@ -243,7 +243,7 @@ describe('ChallengeService', () => {
         completed: true,
       } as any);
 
-      const result = await service.trackProgress('user-1', 'challenge-1', 3);
+      await service.trackProgress('user-1', 'challenge-1', 3);
 
       expect(prismaService.challengeMembership.update).toHaveBeenCalledWith(
         expect.any(Object),

@@ -199,12 +199,8 @@ export class ChallengeController {
     try {
       const challenges = await this.challengeService.getUserChallenges(user.id);
 
-      const completedChallenges = challenges
-        .filter((c) => c.completed)
-        .sort((a, b) => {
-          // Sort by recent first (would need completedAt in data)
-          return 0;
-        });
+      // Sort by recent first (would need completedAt in data)
+      const completedChallenges = challenges.filter((c) => c.completed);
 
       return {
         success: true,
@@ -335,11 +331,6 @@ export class ChallengeController {
     try {
       const challenges =
         await this.challengeService.getActiveChallenges(petitionId);
-
-      const totalRewards = challenges.reduce(
-        (sum, c) => sum + c.rewardMultiplier,
-        0,
-      );
 
       return {
         success: true,
