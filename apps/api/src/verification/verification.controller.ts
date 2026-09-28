@@ -13,7 +13,6 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole, VerificationType } from '@prisma/client';
 import { createReadStream, existsSync } from 'fs';
@@ -45,39 +44,10 @@ export class VerificationController {
     });
     const types = new Set(logs.map((l) => String(l.type)));
     return {
-      phone: types.has('OTP'),
       geo: types.has('IP_GEO'),
       device: types.has('DEVICE'),
       idDocument: types.has('ID_UPLOAD'),
     };
-  }
-
-  @Throttle({ default: { limit: 3, ttl: 300000 } })
-  @UseGuards(JwtAuthGuard)
-  @Post('phone/request-otp')
-  requestPhoneOtp(@Body() body: { phone: string }) {
-    return this.service.requestPhoneOtp(body.phone);
-  }
-
-  @Throttle({ default: { limit: 5, ttl: 300000 } })
-  @UseGuards(JwtAuthGuard)
-  @Post('phone/verify-otp')
-  verifyPhoneOtp(
-    @Req() req: { user: { userId: string } },
-    @Body() body: { phone: string; code: string },
-  ) {
-    return this.service.verifyPhoneOtp(req.user.userId, body.phone, body.code);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('phone')
-  verifyPhone(@Req() req: { user: { userId: string } }) {
-    return this.service.applyEvent(
-      req.user.userId,
-      VerificationType.OTP,
-      40,
-      'Phone OTP completed',
-    );
   }
 
   @UseGuards(JwtAuthGuard)

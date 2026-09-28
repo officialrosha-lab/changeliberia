@@ -446,9 +446,6 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
 
   // verification/verification.controller.ts
   { method: 'GET', path: '/verification/completed', controller: 'VerificationController', category: 'auth-read' },
-  { method: 'POST', path: '/verification/phone/request-otp', controller: 'VerificationController', category: 'guard-only-write', note: 'sends a real SMS via Twilio — never execute' },
-  { method: 'POST', path: '/verification/phone/verify-otp', controller: 'VerificationController', category: 'guard-only-write' },
-  { method: 'POST', path: '/verification/phone', controller: 'VerificationController', category: 'guard-only-write' },
   { method: 'POST', path: '/verification/geo', controller: 'VerificationController', category: 'guard-only-write' },
   { method: 'POST', path: '/verification/device', controller: 'VerificationController', category: 'guard-only-write' },
   { method: 'GET', path: '/verification/id-documents/:id/file', controller: 'VerificationController', category: 'auth-read', paramFallback: 'fake' },
