@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, TooltipValueType } from 'recharts';
 
 interface BundleChunk {
   name: string;
@@ -270,7 +270,7 @@ export function AdminBundleAnalyzer() {
                 borderRadius: '8px',
                 color: '#fff',
               }}
-              formatter={(value: any) => formatBytes(Number(value))}
+              formatter={(value: TooltipValueType | undefined) => formatBytes(Number(value))}
             />
             <Legend />
             <Bar dataKey="size" fill="#3b82f6" name="Uncompressed" />
@@ -298,17 +298,17 @@ export function AdminBundleAnalyzer() {
               cx="50%"
               cy="50%"
               outerRadius={80}
-              label={({ name, value }: any) => {
+              label={({ name, value }: { name?: string; value?: number }) => {
                 const total = analysis.totalSize;
-                const percent = Math.round((value / total) * 100);
-                return `${name} (${percent}%)`;
+                const percent = Math.round(((value ?? 0) / total) * 100);
+                return `${name ?? ''} (${percent}%)`;
               }}
             >
               {analysis.chunks.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={CHUNK_COLORS[index % CHUNK_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(value: any) => formatBytes(Number(value))} />
+            <Tooltip formatter={(value: TooltipValueType | undefined) => formatBytes(Number(value))} />
           </PieChart>
         </ResponsiveContainer>
       </motion.div>
@@ -333,7 +333,7 @@ export function AdminBundleAnalyzer() {
                 borderRadius: '8px',
                 color: '#fff',
               }}
-              formatter={(value: any) => (value / 1024).toFixed(2) + 'MB'}
+              formatter={(value: TooltipValueType | undefined) => (Number(value) / 1024).toFixed(2) + 'MB'}
             />
             <Line
               type="monotone"

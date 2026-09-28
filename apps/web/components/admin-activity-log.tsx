@@ -29,6 +29,14 @@ interface ActivityLogEntry {
   };
 }
 
+interface ActivityStats {
+  totalActivities: number;
+  failedActivities: number;
+  period: string;
+  activitiesByAction: { action: string; count: number }[];
+  topUsers: { userId?: string; count: number }[];
+}
+
 interface PaginationInfo {
   page: number;
   limit: number;
@@ -65,7 +73,7 @@ export function AdminActivityLog() {
   const [userLoading, setUserLoading] = useState(false);
   
   // Stats
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<ActivityStats | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +121,7 @@ export function AdminActivityLog() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const result = await apiGet<any>('/admin/activity-logs/stats?days=30', authToken);
+        const result = await apiGet<ActivityStats>('/admin/activity-logs/stats?days=30', authToken);
         setStats(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load stats');
@@ -486,7 +494,7 @@ export function AdminActivityLog() {
               <div className="bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Activities by Action</h3>
                 <div className="space-y-3">
-                  {stats.activitiesByAction.map((item: any) => (
+                  {stats.activitiesByAction.map((item) => (
                     <div key={item.action} className="flex items-center justify-between">
                       <span className="text-sm font-medium text-zinc-900 dark:text-white">{item.action}</span>
                       <div className="flex items-center gap-3">
@@ -512,7 +520,7 @@ export function AdminActivityLog() {
                 <div className="bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Top Active Users</h3>
                   <div className="space-y-3">
-                    {stats.topUsers.map((user: any, idx: number) => (
+                    {stats.topUsers.map((user, idx) => (
                       <div key={user.userId || idx} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-neutral-800 rounded-lg">
                         <span className="text-sm font-medium text-zinc-900 dark:text-white">
                           User ID: {user.userId?.substring(0, 8)}...

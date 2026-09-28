@@ -66,7 +66,7 @@ export function PageBuilder({
     });
   };
 
-  const handleUpdateBlock = (blockId: string, props: Record<string, any>) => {
+  const handleUpdateBlock = (blockId: string, props: Record<string, unknown>) => {
     setPageState({
       ...pageState,
       blocks: pageState.blocks.map(b => (b.id === blockId ? { ...b, props } : b)),
@@ -371,14 +371,18 @@ export function PageBuilder({
 
 interface BlockPropsEditorProps {
   blockType: string;
-  props: Record<string, any>;
-  onChange: (props: Record<string, any>) => void;
+  props: Record<string, unknown>;
+  onChange: (props: Record<string, unknown>) => void;
 }
 
 function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps) {
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: unknown) => {
     onChange({ ...props, [key]: value });
   };
+
+  const str = (value: unknown, fallback = ''): string => (typeof value === 'string' ? value : fallback);
+  const ctaValue = (value: unknown): { label?: string; href?: string } =>
+    value && typeof value === 'object' ? (value as { label?: string; href?: string }) : {};
 
   const renderEditor = () => {
     switch (blockType) {
@@ -388,13 +392,13 @@ function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps)
             <input
               type="text"
               placeholder="Title"
-              value={props.title || ''}
+              value={str(props.title)}
               onChange={e => handleChange('title', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
             <textarea
               placeholder="Subtitle (optional)"
-              value={props.subtitle || ''}
+              value={str(props.subtitle)}
               onChange={e => handleChange('subtitle', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 h-16"
             />
@@ -404,7 +408,7 @@ function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps)
         return (
           <textarea
             placeholder="Enter text content..."
-            value={props.content || ''}
+            value={str(props.content)}
             onChange={e => handleChange('content', e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 h-24"
           />
@@ -415,14 +419,14 @@ function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps)
             <input
               type="text"
               placeholder="Image URL"
-              value={props.src || ''}
+              value={str(props.src)}
               onChange={e => handleChange('src', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
             <input
               type="text"
               placeholder="Alt text"
-              value={props.alt || ''}
+              value={str(props.alt)}
               onChange={e => handleChange('alt', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
@@ -434,24 +438,24 @@ function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps)
             <input
               type="text"
               placeholder="CTA Title"
-              value={props.title || ''}
+              value={str(props.title)}
               onChange={e => handleChange('title', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
             <input
               type="text"
               placeholder="Button label"
-              value={props.primaryCta?.label || ''}
+              value={str(ctaValue(props.primaryCta).label)}
               onChange={e =>
-                handleChange('primaryCta', { ...props.primaryCta, label: e.target.value })
+                handleChange('primaryCta', { ...ctaValue(props.primaryCta), label: e.target.value })
               }
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
             <input
               type="text"
               placeholder="Button URL"
-              value={props.primaryCta?.href || ''}
-              onChange={e => handleChange('primaryCta', { ...props.primaryCta, href: e.target.value })}
+              value={str(ctaValue(props.primaryCta).href)}
+              onChange={e => handleChange('primaryCta', { ...ctaValue(props.primaryCta), href: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
             />
           </div>
@@ -464,7 +468,7 @@ function BlockPropsEditor({ blockType, props, onChange }: BlockPropsEditorProps)
   return <div>{renderEditor()}</div>;
 }
 
-function getDefaultProps(blockType: string): Record<string, any> {
+function getDefaultProps(blockType: string): Record<string, unknown> {
   switch (blockType) {
     case 'hero':
       return {
