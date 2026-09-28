@@ -5,10 +5,11 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
-import { ImpactScope } from '@prisma/client';
+import { ImpactScope, PetitionMediaType } from '@prisma/client';
 
 export class UpdatePetitionDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;
@@ -72,4 +73,9 @@ export class CreatePetitionCommentDto {
   @IsString()
   @MaxLength(4000)
   body!: string;
+}
+
+export class AddPetitionMediaLinkDto {
+  @IsUrl({ require_protocol: true }) @MaxLength(2000) url!: string;
+  @IsOptional() @IsEnum(PetitionMediaType) type?: PetitionMediaType;
 }
