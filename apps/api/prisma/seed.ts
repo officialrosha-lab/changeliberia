@@ -190,7 +190,7 @@ async function main() {
         petitionId: petition.id,
         referrerId: user.id,
         referralCode: ref.code,
-        shareUrl: `https://changelib.org/r/${ref.code.toLowerCase()}`,
+        shareUrl: `https://changeliberia.org/r/${ref.code.toLowerCase()}`,
         whatsappMessage: `🇱🇷 Check this important petition! We need to fix our roads before the rainy season. Every signature counts! ${ref.code}`,
         status: ref.conversions > 0 ? 'CONVERTED' : 'PENDING',
         trustBonusApplied: ref.trustBonusApplied,
@@ -209,7 +209,7 @@ async function main() {
       },
       create: {
         shortCode,
-        targetUrl: `https://changelib.org/petitions/${petition.id}?ref=${ref.code}`,
+        targetUrl: `https://changeliberia.org/petitions/${petition.id}?ref=${ref.code}`,
         petitionId: petition.id,
         referralId: referral.id,
         clickCount: ref.clickCount,
@@ -612,7 +612,7 @@ async function main() {
             },
             {
               q: 'How do I report a problem?',
-              a: 'Email us at support@changelib.org or use the "Report Issue" button on any page. We respond within 24 hours.',
+              a: 'Email us at support@changeliberia.org or use the "Report Issue" button on any page. We respond within 24 hours.',
             },
             {
               q: 'How is my data protected?',

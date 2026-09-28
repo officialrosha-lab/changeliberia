@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = 'April 27, 2026';
-const CONTACT_EMAIL = 'legal@changelib.org';
+const CONTACT_EMAIL = 'legal@changeliberia.org';
 
 export default function TermsOfServicePage() {
   return (
@@ -30,7 +30,7 @@ export default function TermsOfServicePage() {
         {/* Intro */}
         <section>
           <p>
-            Welcome to <strong>Change Liberia</strong>. By accessing or using changelib.org (the &ldquo;Platform&rdquo;) you
+            Welcome to <strong>Change Liberia</strong>. By accessing or using changeliberia.org (the &ldquo;Platform&rdquo;) you
             agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). Please read them carefully. If you do not
             agree to all of these Terms, do not use the Platform.
           </p>

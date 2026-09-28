@@ -8,17 +8,17 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Change Liberia',
   description: 'Change Liberia — the civic petition platform where Liberians raise issues, gather trusted support, and drive real change.',
-  metadataBase: new URL('https://changelib.org'),
+  metadataBase: new URL('https://changeliberia.org'),
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://changelib.org',
+    url: 'https://changeliberia.org',
     siteName: 'Change Liberia',
     title: 'Change Liberia — Petition Platform for Liberia',
     description: 'Make your voice heard on issues that matter to Liberia. Sign and share petitions that drive real change in our community.',
     images: [
       {
-        url: 'https://changelib.org/og-image.png',
+        url: 'https://changeliberia.org/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Change Liberia',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Change Liberia',
     description: 'Change Liberia — raise issues, gather trusted support, and drive real civic change in Liberia.',
-    images: ['https://changelib.org/og-image.png'],
+    images: ['https://changeliberia.org/og-image.png'],
   },
   icons: {
     icon: '/favicon.ico',

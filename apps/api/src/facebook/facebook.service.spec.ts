@@ -95,7 +95,7 @@ describe('FacebookService', () => {
         title: expect.stringContaining('Test Petition'),
         description: expect.stringContaining('Test Summary'),
         image: 'https://example.com/image.jpg',
-        url: 'https://changelib.org/petitions/petition-1',
+        url: 'https://changeliberia.org/petitions/petition-1',
         type: 'website',
       });
       expect(result.title).toContain('20%');
@@ -117,7 +117,7 @@ describe('FacebookService', () => {
 
       const result = await service.generateOpenGraphMeta('petition-1');
 
-      expect(result.image).toBe('https://changelib.org/og-default.png');
+      expect(result.image).toBe('https://changeliberia.org/og-default.png');
     });
   });
 
@@ -139,7 +139,7 @@ describe('FacebookService', () => {
       expect(eventBusService.publish).toHaveBeenCalled();
       expect(prismaService.shareLink.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          targetUrl: 'https://changelib.org/petitions/petition-1',
+          targetUrl: 'https://changeliberia.org/petitions/petition-1',
           petitionId: 'petition-1',
           source: 'facebook',
         }),
@@ -182,7 +182,7 @@ describe('FacebookService', () => {
       expect(result).toEqual({
         quote: expect.stringContaining('petition'),
         hashtag: expect.stringContaining('#ChangeLiberia'),
-        link: 'https://changelib.org/petitions/petition-1',
+        link: 'https://changeliberia.org/petitions/petition-1',
         dialogTitle: 'Share This Petition',
       });
       expect(result.hashtag).toContain('#CommunityVoice');
