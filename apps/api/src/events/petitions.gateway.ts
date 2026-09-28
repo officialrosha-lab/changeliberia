@@ -167,7 +167,7 @@ export class PetitionsGateway
   @SubscribeMessage('get_pulse_map')
   async handleGetPulseMap(@ConnectedSocket() client: Socket) {
     try {
-      const hotspots = await this.getPulseMapData();
+      const hotspots = this.getPulseMapData();
       client.emit('pulse_map_data', {
         hotspots,
         timestamp: new Date().toISOString(),
