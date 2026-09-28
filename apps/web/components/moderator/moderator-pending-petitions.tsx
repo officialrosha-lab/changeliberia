@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -30,12 +30,7 @@ export function ModeratorPendingPetitions() {
   const [selectedPetitionId, setSelectedPetitionId] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState(false);
 
-  useEffect(() => {
-    if (!token) return;
-    loadData();
-  }, [token, statusFilter]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [p, s] = await Promise.all([
@@ -50,7 +45,12 @@ export function ModeratorPendingPetitions() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, statusFilter]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadData();
+  }, [token, statusFilter, loadData]);
 
   async function handleApprove(petitionId: string, feedback?: string) {
     if (!token) return;
@@ -247,7 +247,6 @@ interface PetitionApprovalPanelProps {
 }
 
 function PetitionApprovalPanel({
-  petition,
   onApprove,
   onReject,
   isLoading,

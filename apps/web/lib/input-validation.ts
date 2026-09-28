@@ -427,7 +427,7 @@ export class InputValidator {
   }
 }
 
-export default {
+const inputValidation = {
   containsXSSAttempt,
   containsSQLInjection,
   sanitizeHTML,
@@ -444,3 +444,5 @@ export default {
   ALLOWED_ATTRIBUTES,
   SAFE_URL_SCHEMES,
 };
+
+export default inputValidation;

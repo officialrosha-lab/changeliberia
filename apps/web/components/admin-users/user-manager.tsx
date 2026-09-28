@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { Card } from '../ui/card';
@@ -41,12 +41,7 @@ export function AdminUserManager() {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
-  useEffect(() => {
-    if (!token) return;
-    loadData();
-  }, [token, page]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [u, r] = await Promise.all([
@@ -61,7 +56,12 @@ export function AdminUserManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, page]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadData();
+  }, [token, page, loadData]);
 
   async function loadUserRoles(userId: string) {
     try {

@@ -2,8 +2,6 @@ import { test, expect } from '@playwright/test';
 import {
   fillInput,
   clickElement,
-  expectTextContent,
-  getText,
   pressKeys,
   isFocused,
 } from './test-helpers';
@@ -128,9 +126,6 @@ test.describe('Accessibility (a11y)', () => {
     const navLink = page.locator('nav a').first();
     if (await navLink.isVisible()) {
       await navLink.focus();
-
-      // Get the href
-      const href = await navLink.getAttribute('href');
 
       // Press Enter
       await pressKeys(page, 'Enter');
@@ -260,7 +255,6 @@ test.describe('Accessibility (a11y)', () => {
     await fillInput(page, 'input[name="password"]', 'weak');
 
     // Submit
-    const submitButton = page.locator('button[type="submit"]');
     await clickElement(page, 'button[type="submit"]');
 
     // Wait for errors
@@ -330,9 +324,6 @@ test.describe('Accessibility (a11y)', () => {
     // Wait for response
     await page.waitForTimeout(500);
 
-    // Should have status message
-    const statusMessage = page.locator('[role="status"], [aria-live="polite"]');
-    
     // At minimum, some feedback should exist
     expect(await page.locator('[role="alert"], [role="status"]').count()).toBeGreaterThanOrEqual(0);
   });

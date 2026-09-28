@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPatch } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { Card } from '../ui/card';
@@ -33,12 +33,7 @@ export function ProfileSettings() {
   const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({ fullName: '', bio: '' });
 
-  useEffect(() => {
-    if (!token) return;
-    loadProfile();
-  }, [token]);
-
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       const [u, v] = await Promise.all([
@@ -54,7 +49,12 @@ export function ProfileSettings() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadProfile();
+  }, [token, loadProfile]);
 
   async function handleSaveProfile() {
     if (!token || !user) return;

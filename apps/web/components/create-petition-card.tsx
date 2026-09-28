@@ -34,7 +34,7 @@ export function CreatePetitionCard() {
             </h2>
             <p className="text-sm text-zinc-500">
               A pothole, a clinic with no medicine, a road that floods every rainy season —
-              tell us what's wrong and we'll walk you through the rest.
+              tell us what&apos;s wrong and we&apos;ll walk you through the rest.
             </p>
           </div>
 

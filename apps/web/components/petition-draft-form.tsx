@@ -12,7 +12,7 @@ export function PetitionDraftForm({
   onSubmit,
   isLoading = false,
 }: {
-  onSubmit?: (data: Record<string, any>) => void;
+  onSubmit?: (data: Record<string, unknown>) => void;
   isLoading?: boolean;
 }) {
   const form = useFormValidation({

@@ -19,22 +19,17 @@ type Props = {
   };
 };
 
-export function ShareModal({ 
-  petitionUrl, 
+export function ShareModal({
+  petitionUrl,
   petitionId,
   onClose,
-  title = 'This Petition',
-  goal = 1000,
-  signatures = 0,
-  imageUrl,
   reachEstimate = 250,
-  activeChallenge 
+  activeChallenge
 }: Props) {
   const [showFacebookDialog, setShowFacebookDialog] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const wa = `https://wa.me/?text=${encodeURIComponent(`I just signed this petition: ${petitionUrl}`)}`;
-  const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(petitionUrl)}`;
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(petitionUrl);

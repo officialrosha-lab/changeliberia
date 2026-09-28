@@ -103,7 +103,11 @@ test.describe('Performance Tests', () => {
     // Create a promise that resolves when WebSocket connects
     const wsConnect = adminPage.evaluate(() => {
       return new Promise<number>((resolve) => {
-        const socket = (window as any).io('http://localhost:4000/analytics');
+        const socket = (
+          window as unknown as {
+            io: (url: string) => { on: (event: string, cb: () => void) => void; disconnect: () => void };
+          }
+        ).io('http://localhost:4000/analytics');
 
         socket.on('connect', () => {
           resolve(Date.now());
@@ -167,11 +171,11 @@ test.describe('Performance Tests', () => {
 
     // Measure time from message creation to dashboard update
     const latency = await adminPage.evaluate(
-      async ({ token }: any) => {
+      async ({ token }: { token: string }) => {
         const startTime = Date.now();
 
         // Create message
-        const response = await fetch('http://localhost:4000/api/messages', {
+        await fetch('http://localhost:4000/api/messages', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -272,7 +276,7 @@ test.describe('Performance Tests', () => {
     // Take 5 memory measurements
     for (let i = 0; i < 5; i++) {
       const memory = await adminPage.evaluate(() => {
-        return (performance as any).memory?.usedJSHeapSize || 0;
+        return (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       });
 
       measurements.push(memory);

@@ -36,10 +36,12 @@ export function PetitionListItem({ petition }: PetitionListItemProps) {
         {/* Image */}
         <div className="relative h-24 w-24 md:h-28 md:w-28 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600">
           {petition.imageUrl ? (
-            <img
+            <Image
               src={petition.imageUrl}
               alt={petition.title}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="112px"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white text-3xl opacity-30">

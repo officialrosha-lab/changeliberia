@@ -151,7 +151,6 @@ export async function getTableData(page: Page, tableSelector: string) {
 export async function mockAPIEndpoint(
   page: Page,
   urlPattern: string | RegExp,
-  responseData: any
 ) {
   await page.route(urlPattern, (route) => {
     route.abort('blockedbyclient');
@@ -303,7 +302,6 @@ export function generateTestEmail(): string {
 
 export function generateTestPassword(): string {
   // Must have: 8+ chars, uppercase, lowercase, number
-  const random = Math.random().toString(36).substring(2, 8);
   return `TestPass${Math.floor(Math.random() * 1000)}`;
 }
 

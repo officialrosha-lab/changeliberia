@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { apiPost } from '../../../lib/api';
@@ -30,9 +29,9 @@ export function PhoneSignupForm() {
       setAuthMethod('phone');
       setMessage('Account created. Redirecting to your dashboard...');
       window.setTimeout(() => router.push('/dashboard'), 400);
-    } catch (error: any) {
+    } catch (error) {
       setIsError(true);
-      setMessage(error?.message || 'We could not create your account. Please try again.');
+      setMessage(error instanceof Error ? error.message : 'We could not create your account. Please try again.');
     } finally {
       setSubmitting(false);
     }

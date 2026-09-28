@@ -1,12 +1,7 @@
 import { test, expect, devices } from '@playwright/test';
 import {
-  fillInput,
   clickElement,
-  expectTextContent,
-  generateTestEmail,
-  generateTestPassword,
   pressKeys,
-  isVisible,
   isFocused,
 } from './test-helpers';
 
@@ -36,7 +31,6 @@ test.describe('Responsive Design & Mobile', () => {
 
       // Check for mobile menu button
       const menuButton = page.locator('[aria-label="Menu"]|[aria-label="Open menu"]|button:has-text("☰")');
-      const desktopNav = page.locator('nav');
 
       // On mobile, hamburger menu should be visible instead of full nav
       const isMobileView = await page.evaluate(() => window.innerWidth < 768);

@@ -54,8 +54,8 @@ export function HomeHowItWorks() {
               Civic action for Liberia, made simple
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600 dark:text-neutral-400 sm:text-base">
-              From typing out what's wrong to a government office actually responding —
-              here's exactly what happens to your petition at every step.
+              From typing out what&apos;s wrong to a government office actually responding —
+              here&apos;s exactly what happens to your petition at every step.
             </p>
           </div>
 

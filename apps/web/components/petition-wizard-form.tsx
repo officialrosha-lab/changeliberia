@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ChangeEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FormStepper, FormStep } from './form-stepper';
 import { FormCard } from './form-section';
 import { FormFieldWrapper, FormSection } from './form-section';
@@ -356,6 +356,7 @@ export function PetitionWizardForm({ onSuccess, isDraft = true }: PetitionWizard
                   transition={{ delay: 0.4 }}
                 >
                   <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 mb-2">Image</h4>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={formData.imagePreview}
                     alt="Petition cover photo preview"

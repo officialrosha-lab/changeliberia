@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
 import { OfficialResponseTimeline } from '../../../components/official-response-timeline';
@@ -98,12 +99,12 @@ export function PetitionClientPage({ id }: { id: string }) {
             <p className="mt-3 text-sm text-zinc-500 dark:text-neutral-400">
               This petition may be pending review, has been removed, or the link is incorrect.
             </p>
-            <a
+            <Link
               href="/petitions"
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               Browse petitions
-            </a>
+            </Link>
           </Card>
         </div>
       </main>

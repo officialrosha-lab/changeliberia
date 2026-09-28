@@ -60,6 +60,7 @@ export function PollOptionInput({
             onClick={() => onImageChange(index, undefined)}
             className="group relative h-12 w-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={text ? `Image for option: ${text}` : `Image for option ${index + 1}`}

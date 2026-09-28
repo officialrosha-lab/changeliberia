@@ -27,13 +27,11 @@ interface CommentSystemProps {
 }
 
 export function CommentSystem({
-  petitionId,
   comments,
   onAddComment,
   onLikeComment,
   onReplyComment,
   isAuthenticated = false,
-  currentUserName = 'Anonymous',
   totalComments = 0,
 }: CommentSystemProps) {
   const [commentText, setCommentText] = useState('');

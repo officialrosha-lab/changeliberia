@@ -53,7 +53,7 @@ export default function ApplyPage() {
               Become a Voice for Change
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-              If people in your community already bring you their problems, you're basically doing this job already. Apply to do it with real tools and support behind you.
+              If people in your community already bring you their problems, you&apos;re basically doing this job already. Apply to do it with real tools and support behind you.
             </p>
           </div>
         </div>

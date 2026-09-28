@@ -12,11 +12,6 @@ const SORT_OPTIONS = [
 
 type SortValue = typeof SORT_OPTIONS[number]['value'];
 
-function isNew(expiresAt: string, createdAt?: string): boolean {
-  // PollSummary doesn't carry createdAt so we approximate using expiresAt absence — skip badge if we can't tell
-  return false;
-}
-
 export default function PollsPage() {
   const [sort, setSort] = useState<SortValue>('recent');
   const [search, setSearch] = useState('');
@@ -33,6 +28,9 @@ export default function PollsPage() {
   }, [search]);
 
   useEffect(() => {
+    // Intentional: flips the loading indicator back on synchronously so the
+    // list doesn't show stale results while the new sort/search fetch runs.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const params = new URLSearchParams({ status: 'ACTIVE', sort });
     if (debouncedSearch) params.set('search', debouncedSearch);

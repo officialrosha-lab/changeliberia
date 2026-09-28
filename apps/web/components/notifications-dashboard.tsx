@@ -23,7 +23,7 @@ interface Notification {
   metadata?: {
     petitionId?: string;
     userId?: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
   };
 }
 

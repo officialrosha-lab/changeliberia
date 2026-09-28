@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export interface ContentField {
   id: string;
@@ -403,13 +403,14 @@ function FieldFormModal({
   onCancel: () => void;
 }) {
   const [formData, setFormData] = useState<ContentField>(
-    field || {
-      id: `field-${Date.now()}`,
-      name: '',
-      fieldType: 'text',
-      label: '',
-      required: false,
-    }
+    () =>
+      field || {
+        id: `field-${Date.now()}`,
+        name: '',
+        fieldType: 'text',
+        label: '',
+        required: false,
+      }
   );
 
   const [selectOptions, setSelectOptions] = useState<Array<{ label: string; value: string }>>(

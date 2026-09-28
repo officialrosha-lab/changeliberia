@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -23,7 +24,7 @@ export function Header() {
           donationsEnabled: boolean;
         }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
-      } catch (err) {
+      } catch {
         // If error, default to enabled
         setDonationsEnabled(true);
       }
@@ -41,15 +42,21 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 md:py-4">
         <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6 lg:gap-10">
           <Link href="/" className="shrink-0 flex items-center gap-2">
-            <img
+            <Image
               src="/logo.png"
               alt="Change Liberia"
+              width={600}
+              height={400}
+              priority
               className="h-7 w-auto max-w-[120px] sm:h-8 sm:max-w-[140px] md:h-9 md:max-w-[160px] object-contain dark:hidden"
             />
-            <img
+            <Image
               src="/logo-icon.png"
               alt=""
               aria-hidden
+              width={300}
+              height={195}
+              priority
               className="hidden dark:block h-7 sm:h-8 md:h-9 w-auto object-contain"
             />
             <span className="hidden dark:block text-sm font-bold tracking-tight text-emerald-400 sm:text-base md:text-lg">

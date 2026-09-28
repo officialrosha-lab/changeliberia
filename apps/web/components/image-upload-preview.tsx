@@ -20,7 +20,6 @@ export function ImageUploadPreview({
   maxSize = 5,
   acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'],
   error,
-  touched,
 }: ImageUploadPreviewProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);

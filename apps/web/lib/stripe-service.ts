@@ -321,6 +321,7 @@ export class StripeService {
     const url = new URL('https://connect.stripe.com/oauth/authorize');
     url.searchParams.append('client_id', clientId);
     url.searchParams.append('state', state);
+    url.searchParams.append('redirect_uri', redirectUri);
     url.searchParams.append('stripe_user[email]', '');
     url.searchParams.append('stripe_user[url]', window.location.origin);
     url.searchParams.append('stripe_user[country]', 'US');
@@ -400,16 +401,6 @@ export class StripeService {
    */
   getWebhookSigningSecret(): string {
     return process.env.STRIPE_WEBHOOK_SECRET || '';
-  }
-
-  /**
-   * Verify webhook signature
-   */
-  verifyWebhookSignature(body: string, signature: string): boolean {
-    // This should be implemented on the server side using Stripe's SDK
-    // For now, we'll just return false as a placeholder
-    console.warn('Webhook signature verification should be done server-side');
-    return false;
   }
 }
 

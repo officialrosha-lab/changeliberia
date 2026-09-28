@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { apiPost } from '../../../lib/api';
@@ -148,8 +149,8 @@ function AnimatedBar({
 
   useEffect(() => {
     if (mounted.current) {
-      setWidth(percentage);
-      return;
+      const t = setTimeout(() => setWidth(percentage), 0);
+      return () => clearTimeout(t);
     }
     mounted.current = true;
     const t = setTimeout(() => setWidth(percentage), delay + 80);
@@ -273,11 +274,12 @@ function PollSharePanel({ slug, title }: { slug: string; title: string }) {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
         {/* QR Code */}
         <div className="flex-shrink-0">
-          <img
+          <Image
             src={qrSrc}
             alt="QR code for this poll"
             width={110}
             height={110}
+            unoptimized
             className="rounded-2xl border border-zinc-100 dark:border-neutral-800"
           />
         </div>
@@ -416,8 +418,9 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
       setVotedOptionId(optionId);
       // Analytics is best-effort — must not surface as "Vote failed"
       try {
-        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-          (window as any).fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
+        const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
+        if (typeof window !== 'undefined' && typeof fbq === 'function') {
+          fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
         }
       } catch { /* ignore */ }
     } catch (e) {
@@ -574,10 +577,12 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 dark:bg-neutral-800">
                     {option.imageUrl ? (
-                      <img
+                      <Image
                         src={option.imageUrl}
                         alt={option.text}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        fill
+                        sizes="(min-width: 768px) 33vw, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-zinc-300 dark:text-neutral-600">
