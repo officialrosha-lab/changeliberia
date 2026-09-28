@@ -28,11 +28,13 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import {
+  AddPetitionMediaLinkDto,
   CreatePetitionCommentDto,
   CreatePetitionDto,
   CreatePetitionUpdateDto,
   UpdatePetitionDto,
 } from './dto';
+import { PetitionMediaType } from '@prisma/client';
 import { PetitionsService } from './petitions.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { ImpactAreaReportService } from './impact-area-report.service';
@@ -251,14 +253,33 @@ export class PetitionsController {
     @Param('id') id: string,
     @Req() req: { user: { userId: string } },
     @UploadedFile() file: MemoryUploadedFile | undefined,
+    @Body('type') type?: string,
   ) {
     if (!file) throw new BadRequestException('No file provided or unsupported file type');
-    const petition = await this.service.getById(id);
-    if (!petition || petition.creatorId !== req.user.userId) {
-      throw new BadRequestException('Not your petition');
-    }
     const url = await this.mediaStorage.save(file);
-    return { url };
+    const mediaType = file.mimetype.startsWith('video/')
+      ? PetitionMediaType.VIDEO
+      : type === 'VIDEO'
+        ? PetitionMediaType.VIDEO
+        : PetitionMediaType.IMAGE;
+    const media = await this.service.addMedia(id, req.user.userId, mediaType, url);
+    return media;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Post(':id/media/link')
+  async addMediaLink(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+    @Body() dto: AddPetitionMediaLinkDto,
+  ) {
+    return this.service.addMedia(
+      id,
+      req.user.userId,
+      dto.type ?? PetitionMediaType.VIDEO,
+      dto.url,
+    );
   }
 
   @Throttle({ default: { limit: 30, ttl: 60000 } })
