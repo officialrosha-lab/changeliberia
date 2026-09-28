@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { UserRole, ChallengeStatus, BadgeType, Prisma } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -62,7 +62,7 @@ export class FacebookAdminController {
           select: { id: true, earnedAt: true },
         }),
         this.prisma.shareChallenge.findMany({
-          where: { status: 'ACTIVE' as any },
+          where: { status: ChallengeStatus.ACTIVE },
         }),
       ]);
 
@@ -103,7 +103,7 @@ export class FacebookAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.FacebookPixelEventWhereInput = {};
       if (type) filters.eventType = type;
       if (startDate || endDate) {
         filters.createdAt = {};
@@ -148,7 +148,7 @@ export class FacebookAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = { source: 'facebook' };
+      const filters: Prisma.ShareLinkWhereInput = { source: 'facebook' };
       if (petitionId) filters.petitionId = petitionId;
 
       const shareLinks = await this.prisma.shareLink.findMany({
@@ -410,7 +410,7 @@ export class FacebookAdminController {
   async getBadgeStats(@Param('type') type: string) {
     try {
       const unlocks = await this.prisma.socialEngagementBadge.findMany({
-        where: { badgeType: type as any },
+        where: { badgeType: type as BadgeType },
         include: {
           user: { select: { id: true, fullName: true } },
           petition: { select: { id: true, title: true } },
@@ -440,9 +440,9 @@ export class FacebookAdminController {
   @Get('challenges')
   async listChallenges(@Query('status') status?: string) {
     try {
-      const filters = status
-        ? { status: status as any }
-        : { status: 'ACTIVE' as any };
+      const filters: Prisma.ShareChallengeWhereInput = status
+        ? { status: status as ChallengeStatus }
+        : { status: ChallengeStatus.ACTIVE };
 
       const challenges = await this.prisma.shareChallenge.findMany({
         where: filters,
