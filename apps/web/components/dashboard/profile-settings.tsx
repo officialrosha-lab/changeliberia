@@ -18,7 +18,6 @@ interface User {
 }
 
 interface VerificationStatus {
-  phone: boolean;
   geo: boolean;
   device: boolean;
   idDocument: boolean;
@@ -186,7 +185,6 @@ export function ProfileSettings() {
           </h3>
           <div className="space-y-2">
             {([
-              { key: 'phone', label: 'Phone Verified', icon: '📱' },
               { key: 'geo', label: 'Liberia Location Confirmed', icon: '📍' },
               { key: 'device', label: 'Device Linked', icon: '💻' },
               { key: 'idDocument', label: 'ID Document Submitted', icon: '🆔' },
