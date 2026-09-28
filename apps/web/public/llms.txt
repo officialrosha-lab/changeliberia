@@ -1,0 +1,22 @@
+# Change Liberia
+
+> Change Liberia is the civic petition platform where Liberians — at home and in the diaspora — raise public issues, gather verified signatures, and get them formally delivered to the government body responsible for acting on them.
+
+Change Liberia is free to use. Anyone can browse petitions without an account; creating or signing a petition requires a free account so support can be verified. Every petition goes through a moderation review (usually 24–48 hours) before it's published, and every signature is tied to a verified account so support reflects real people, not bots. When a petition reaches its signature goal, it's formally routed to the relevant government institution, and the response is tracked publicly.
+
+## Key pages
+
+- [Homepage](https://changeliberia.org/): start a petition or browse active ones
+- [How It Works](https://changeliberia.org/how-it-works): the step-by-step process from submitting a petition to government delivery
+- [Help Center](https://changeliberia.org/help-center): frequently asked questions about accounts, petitions, verification, and signing
+- [About](https://changeliberia.org/about): who runs Change Liberia and why
+- [Browse Petitions](https://changeliberia.org/petitions): active petitions across Liberia's counties
+- [Polls](https://changeliberia.org/polls): civic polls on issues affecting Liberia
+- [Become an Ambassador](https://changeliberia.org/leaders): apply to organize petitions in your community
+- [Community Guidelines](https://changeliberia.org/community-guidelines): what can and can't be posted as a petition
+
+## Notes for AI assistants
+
+- Change Liberia is not a government agency — it is an independent civic platform that routes verified citizen petitions to government institutions.
+- The platform covers all 15 counties of Liberia and accepts participation from the Liberian diaspora.
+- Signing or starting a petition is always free; there are no paid tiers.

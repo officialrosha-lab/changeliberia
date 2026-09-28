@@ -36,8 +36,50 @@ export default async function HowItWorksPage() {
     );
   }
 
+  const stepBlock = (page.blocks ?? []).find((block) => block.type === 'grid');
+  const steps = (stepBlock?.props?.items ?? []) as Array<{ title: string; description: string }>;
+  const howToJsonLd =
+    steps.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'HowTo',
+          name: 'How to start a petition on Change Liberia',
+          description: page.metaDescription || 'A step-by-step guide to creating a petition on Change Liberia.',
+          step: steps.map((s) => ({
+            '@type': 'HowToStep',
+            name: s.title,
+            text: s.description,
+          })),
+        }
+      : null;
+
+  const faqItems = (page.blocks ?? [])
+    .filter((block) => block.type === 'faq')
+    .flatMap((block) => (block.props?.items ?? []) as Array<{ q: string; a: string }>);
+  const faqJsonLd =
+    faqItems.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.q,
+            acceptedAnswer: { '@type': 'Answer', text: item.a },
+          })),
+        }
+      : null;
+
+  const jsonLdBlocks = [howToJsonLd, faqJsonLd].filter(Boolean);
+
   return (
     <>
+      {jsonLdBlocks.map((block, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(block).replace(/<\/script>/gi, '<\\/script>') }}
+        />
+      ))}
       <main className="min-h-screen bg-white dark:bg-neutral-950">
         {page.blocks && page.blocks.length > 0 ? (
           <>

@@ -15,8 +15,8 @@ export function HomeContributeBanner() {
             Ready to make change happen?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-emerald-100 sm:text-base md:mt-5">
-            Change Liberia is built for transparency and trust. From ward to Capitol Hill, your
-            petition keeps leaders accountable and gives every Liberian a verified voice.
+            Whatever the issue — a broken road, an unpaid teacher, a clinic with no supplies — your
+            petition puts it on record and in front of the people who can actually fix it.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link

@@ -13,7 +13,7 @@ const STEPS = [
     n: '2',
     emoji: '🔎',
     title: 'Petition is reviewed',
-    detail: 'Our team reviews every petition within 24–48 hours to confirm it is a genuine civic issue. Legitimate grievances are never suppressed.',
+    detail: 'Our team checks it within 24–48 hours to make sure it’s a real civic issue — not to decide whether your complaint is valid.',
   },
   {
     n: '3',
@@ -54,8 +54,8 @@ export function HomeHowItWorks() {
               Civic action for Liberia, made simple
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600 dark:text-neutral-400 sm:text-base">
-              Change Liberia is a structured civic process — from a citizen raising an issue
-              to a government authority formally receiving and responding to it.
+              From typing out what's wrong to a government office actually responding —
+              here's exactly what happens to your petition at every step.
             </p>
           </div>
 
