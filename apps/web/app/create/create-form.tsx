@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
-import { apiGet, apiPost } from '../../lib/api';
+import { apiGet, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
 import { Card } from '../../components/ui/card';
@@ -166,6 +166,18 @@ export function CreatePetitionForm() {
   const [uploadStatus, setUploadStatus] = useState('');
   const [imageUrlValue, setImageUrlValue] = useState(() => draft?.imageUrlValue ?? '');
   const [imagePreviewSrc, setImagePreviewSrc] = useState(() => draft?.imageUrlValue ?? '');
+
+  // Additional gallery images (beyond the single cover image above) and
+  // external video links — uploaded/attached right after the petition is
+  // created, via POST /petitions/:id/media[/link].
+  const [additionalImages, setAdditionalImages] = useState<{ file: File; preview: string }[]>([]);
+  const additionalImageInputRef = useRef<HTMLInputElement>(null);
+  const [videoUrlDraft, setVideoUrlDraft] = useState('');
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [mediaError, setMediaError] = useState('');
+
+  const MAX_ADDITIONAL_IMAGES = 4;
+  const MAX_VIDEO_LINKS = 3;
 
   const prefillTitle = searchParams.get('title') ?? '';
 
@@ -358,11 +370,94 @@ export function CreatePetitionForm() {
     else setImagePreviewSrc('');
   };
 
+  const handleAdditionalImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setMediaError('');
+
+    const room = MAX_ADDITIONAL_IMAGES - additionalImages.length;
+    if (room <= 0) {
+      setMediaError(`You can add up to ${MAX_ADDITIONAL_IMAGES} extra images.`);
+      if (additionalImageInputRef.current) additionalImageInputRef.current.value = '';
+      return;
+    }
+
+    const accepted: { file: File; preview: string }[] = [];
+    for (const file of files.slice(0, room)) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > 8 * 1024 * 1024) {
+        setMediaError('Each image must be smaller than 8MB.');
+        continue;
+      }
+      accepted.push({ file, preview: URL.createObjectURL(file) });
+    }
+    if (accepted.length) setAdditionalImages((prev) => [...prev, ...accepted]);
+    if (additionalImageInputRef.current) additionalImageInputRef.current.value = '';
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addVideoUrl = () => {
+    const val = videoUrlDraft.trim();
+    if (!val) return;
+    if (!/^https?:\/\//i.test(val)) {
+      setMediaError('Video links must start with http:// or https://');
+      return;
+    }
+    if (videoUrls.length >= MAX_VIDEO_LINKS) {
+      setMediaError(`You can add up to ${MAX_VIDEO_LINKS} video links.`);
+      return;
+    }
+    if (videoUrls.includes(val)) { setVideoUrlDraft(''); return; }
+    setMediaError('');
+    setVideoUrls((prev) => [...prev, val]);
+    setVideoUrlDraft('');
+  };
+
+  const removeVideoUrl = (index: number) => {
+    setVideoUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  async function attachAdditionalMedia(petitionId: string, authToken: string) {
+    let failures = 0;
+
+    for (const { file } of additionalImages) {
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        await apiPostFormData(`/petitions/${petitionId}/media`, fd, authToken);
+      } catch {
+        failures += 1;
+      }
+    }
+
+    for (const url of videoUrls) {
+      try {
+        await apiPost(`/petitions/${petitionId}/media/link`, { url, type: 'VIDEO' }, authToken);
+      } catch {
+        failures += 1;
+      }
+    }
+
+    if (failures > 0) {
+      toast.show(
+        `Petition submitted, but ${failures} extra media item${failures > 1 ? 's' : ''} failed to attach. You can leave those out — the petition itself was created fine.`,
+        'error',
+      );
+    }
+  }
+
   async function doSubmitPetition(payload: PetitionPayload, authToken: string) {
     setSubmitting(true);
     setStatus('');
     try {
-      await apiPost<CreatedPetition>('/petitions', payload, authToken);
+      const created = await apiPost<CreatedPetition>('/petitions', payload, authToken);
+      if (additionalImages.length || videoUrls.length) {
+        setStatus('Attaching photos and videos…');
+        await attachAdditionalMedia(created.id, authToken);
+      }
       clearDraft();
       toast.show('Petition submitted for review.', 'success');
       setStatus('Petition submitted for review. Taking you to your dashboard…');
@@ -842,6 +937,67 @@ export function CreatePetitionForm() {
                   <input id="goal" name="goal" type="number" defaultValue={1000} min={100}
                     placeholder="1000" className={inputCls} />
                 </div>
+              </div>
+
+              {/* Additional gallery images */}
+              <div className="mt-6 border-t border-zinc-200 pt-5 dark:border-neutral-700">
+                <label htmlFor="additionalImages" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
+                  More photos <span className="font-normal text-zinc-400 dark:text-neutral-500">(optional, up to {MAX_ADDITIONAL_IMAGES})</span>
+                </label>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-neutral-400">Shown as a gallery on your petition page, alongside the cover photo above.</p>
+                <input ref={additionalImageInputRef} id="additionalImages" type="file" accept="image/*" multiple
+                  disabled={additionalImages.length >= MAX_ADDITIONAL_IMAGES}
+                  onChange={handleAdditionalImagesChange}
+                  className="mt-2 block w-full cursor-pointer rounded-2xl border border-dashed border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-600 file:mr-3 file:rounded-xl file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-zinc-700 hover:border-zinc-400 hover:file:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:file:bg-neutral-700 dark:file:text-neutral-300" />
+                {additionalImages.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {additionalImages.map((img, i) => (
+                      <div key={i} className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.preview} alt="" className="h-20 w-full object-cover" />
+                        <button type="button" onClick={() => removeAdditionalImage(i)}
+                          className="absolute right-1 top-1 rounded-full bg-black/50 px-1.5 py-0.5 text-[10px] text-white hover:bg-black/70">
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Video links */}
+              <div className="mt-6 border-t border-zinc-200 pt-5 dark:border-neutral-700">
+                <label htmlFor="videoUrlDraft" className="text-sm font-semibold text-zinc-800 dark:text-neutral-200">
+                  Video links <span className="font-normal text-zinc-400 dark:text-neutral-500">(optional, up to {MAX_VIDEO_LINKS})</span>
+                </label>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-neutral-400">A YouTube or Vimeo link, or a direct link to a video file.</p>
+                <div className="mt-2 flex gap-2">
+                  <input id="videoUrlDraft" type="url" value={videoUrlDraft}
+                    onChange={(e) => setVideoUrlDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVideoUrl(); } }}
+                    placeholder="https://youtube.com/watch?v=…"
+                    disabled={videoUrls.length >= MAX_VIDEO_LINKS}
+                    className={`${inputCls} mt-0 disabled:cursor-not-allowed disabled:opacity-50`} />
+                  <button type="button" onClick={addVideoUrl}
+                    disabled={videoUrls.length >= MAX_VIDEO_LINKS || !videoUrlDraft.trim()}
+                    className="shrink-0 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900">
+                    Add
+                  </button>
+                </div>
+                {videoUrls.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {videoUrls.map((url, i) => (
+                      <li key={i} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        <span className="truncate">{url}</span>
+                        <button type="button" onClick={() => removeVideoUrl(i)}
+                          className="shrink-0 font-semibold text-red-500 hover:text-red-600">
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {mediaError && <p className="mt-2 text-xs text-red-500">{mediaError}</p>}
               </div>
             </Card>
 

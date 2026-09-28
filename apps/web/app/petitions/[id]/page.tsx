@@ -37,6 +37,14 @@ type Petition = {
     id: string;
     fullName: string;
   } | null;
+  media?: PetitionMediaItem[];
+};
+
+type PetitionMediaItem = {
+  id: string;
+  type: 'IMAGE' | 'VIDEO';
+  url: string;
+  order: number;
 };
 
 type StatusLog = {
@@ -88,6 +96,41 @@ function renderDescriptionLine(line: string, index: number) {
     );
   }
   return <span key={index}>{line}<br /></span>;
+}
+
+/** Embeds a YouTube/Vimeo link as an iframe player, or falls back to a native <video> tag for a direct file URL. */
+function renderVideoEmbed(url: string, key: string) {
+  const youtubeMatch = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+  );
+  if (youtubeMatch) {
+    return (
+      <div key={key} className="aspect-video overflow-hidden rounded-2xl bg-black">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeMatch[1]}`}
+          className="h-full w-full"
+          allowFullScreen
+          title={key}
+        />
+      </div>
+    );
+  }
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch) {
+    return (
+      <div key={key} className="aspect-video overflow-hidden rounded-2xl bg-black">
+        <iframe
+          src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+          className="h-full w-full"
+          allowFullScreen
+          title={key}
+        />
+      </div>
+    );
+  }
+  return (
+    <video key={key} src={url} controls className="w-full rounded-2xl bg-black" />
+  );
 }
 
 export async function generateMetadata({
@@ -313,6 +356,38 @@ export default async function PetitionPage({
                 </span>
               </p>
             </Card>
+
+            {/* Gallery — additional photos and video links attached beyond the cover image */}
+            {(() => {
+              const images = (petition.media ?? []).filter((m) => m.type === 'IMAGE');
+              const videos = (petition.media ?? []).filter((m) => m.type === 'VIDEO');
+              if (images.length === 0 && videos.length === 0) return null;
+              return (
+                <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
+                  <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">
+                    Gallery
+                  </h2>
+                  {images.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {images.map((img) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={img.id}
+                          src={img.url}
+                          alt=""
+                          className="aspect-square w-full rounded-xl object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {videos.length > 0 && (
+                    <div className={`space-y-4 ${images.length > 0 ? 'mt-6' : 'mt-4'}`}>
+                      {videos.map((vid) => renderVideoEmbed(vid.url, vid.id))}
+                    </div>
+                  )}
+                </Card>
+              );
+            })()}
 
             <PetitionGovernmentPanel
               petitionId={petition.id}
