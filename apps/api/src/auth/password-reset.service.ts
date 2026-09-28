@@ -54,7 +54,7 @@ export class PasswordResetService {
       },
     });
 
-    // Send password reset email via the Plunk-backed EmailService (EmailEventService listens for this)
+    // Send password reset email via the Maileroo-backed EmailService (EmailEventService listens for this)
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
     this.eventEmitter.emit('user.password-reset-requested', {
@@ -126,7 +126,7 @@ export class PasswordResetService {
       }),
     ]);
 
-    // Send confirmation email via the Plunk-backed EmailService
+    // Send confirmation email via the Maileroo-backed EmailService
     this.eventEmitter.emit('user.password-changed', {
       userId: resetToken.userId,
       email,

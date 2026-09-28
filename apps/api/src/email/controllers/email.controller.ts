@@ -15,7 +15,7 @@ import { Response } from 'express';
 import { EmailService } from '../services/email.service';
 import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
-import { PlunkProvider } from '../providers/plunk.provider';
+import { MailerooProvider } from '../providers/maileroo.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
@@ -29,7 +29,7 @@ export class EmailController {
     private readonly emailService: EmailService,
     private readonly preferenceService: EmailPreferenceService,
     private readonly trackingService: EmailTrackingService,
-    private readonly plunkProvider: PlunkProvider,
+    private readonly mailerooProvider: MailerooProvider,
   ) {}
 
   /**
@@ -228,7 +228,7 @@ export class AdminEmailController {
 
   constructor(
     private readonly trackingService: EmailTrackingService,
-    private readonly plunkProvider: PlunkProvider,
+    private readonly mailerooProvider: MailerooProvider,
   ) {}
 
   /**
@@ -269,7 +269,7 @@ export class AdminEmailController {
   }
 
   /**
-   * Admin: Verify Plunk domain
+   * Admin: Verify Maileroo domain
    * POST /api/v1/admin/email/verify-domain
    */
   @Post('verify-domain')
@@ -277,7 +277,7 @@ export class AdminEmailController {
   @Permission(PermissionResource.EMAIL, PermissionAction.UPDATE)
   async verifyDomain(@Body('domain') domain: string): Promise<any> {
     try {
-      const status = await this.plunkProvider.verifyDomain(domain);
+      const status = await this.mailerooProvider.verifyDomain(domain);
       return status;
     } catch (error) {
       return {
@@ -288,7 +288,7 @@ export class AdminEmailController {
   }
 
   /**
-   * Admin: Get Plunk health status
+   * Admin: Get Maileroo health status
    * GET /api/v1/admin/email/health
    */
   @Get('health')
@@ -296,7 +296,7 @@ export class AdminEmailController {
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
   async healthCheck(): Promise<any> {
     try {
-      const health = await this.plunkProvider.healthCheck();
+      const health = await this.mailerooProvider.healthCheck();
       return {
         healthy: true,
         ...(typeof health === 'object' && health !== null ? health : {}),
