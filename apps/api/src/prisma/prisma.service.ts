@@ -133,6 +133,55 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     }
 
+    // Broadcast admin-messaging feature — the BroadcastStatus enum and
+    // Broadcast table were bundled into the add_poll_option_images migration
+    // (alongside unrelated PollOption columns, which were already guarded
+    // above). Only the PollOption part was ever mirrored here, so the
+    // Broadcast table itself never actually got created in production.
+    const safeBroadcastAlters = [
+      `DO $$ BEGIN
+        CREATE TYPE "BroadcastStatus" AS ENUM ('DRAFT', 'SCHEDULED', 'SENT', 'FAILED');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+      `CREATE TABLE IF NOT EXISTS "Broadcast" (
+        "id" TEXT NOT NULL,
+        "creatorId" TEXT NOT NULL,
+        "title" TEXT NOT NULL,
+        "content" TEXT NOT NULL,
+        "category" TEXT,
+        "status" "BroadcastStatus" NOT NULL DEFAULT 'DRAFT',
+        "recipientCount" INTEGER NOT NULL DEFAULT 0,
+        "sentAt" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Broadcast_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE INDEX IF NOT EXISTS "Broadcast_creatorId_idx" ON "Broadcast"("creatorId")`,
+      `CREATE INDEX IF NOT EXISTS "Broadcast_category_idx" ON "Broadcast"("category")`,
+      `CREATE INDEX IF NOT EXISTS "Broadcast_status_idx" ON "Broadcast"("status")`,
+      `CREATE INDEX IF NOT EXISTS "Broadcast_createdAt_idx" ON "Broadcast"("createdAt")`,
+    ];
+    for (const sql of safeBroadcastAlters) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Broadcast guard skipped: ${sql.slice(0, 60)}`, err);
+      }
+    }
+
+    // Message threading (replyToId) — from the add_message_threading
+    // migration, which was likewise never mirrored into this bootstrap.
+    const safeMessageThreadingAlters = [
+      `ALTER TABLE "Message" ADD COLUMN IF NOT EXISTS "replyToId" TEXT`,
+      `CREATE INDEX IF NOT EXISTS "Message_replyToId_idx" ON "Message"("replyToId")`,
+    ];
+    for (const sql of safeMessageThreadingAlters) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err) {
+        this.logger.warn(`Message threading guard skipped: ${sql.slice(0, 60)}`, err);
+      }
+    }
+
     // Public Officials Portal (leftover work): delegated staff + endorsements
     const safeStaffAndEndorsementEnums = [
       `DO $$ BEGIN
