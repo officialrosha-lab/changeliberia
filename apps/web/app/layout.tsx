@@ -36,6 +36,31 @@ export const metadata: Metadata = {
   // by Next's file-convention metadata — no explicit `icons` entry needed.
 };
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Change Liberia',
+  url: 'https://changeliberia.org',
+  logo: 'https://changeliberia.org/icon.png',
+  description:
+    'Change Liberia is the civic petition platform where Liberians raise issues, gather trusted support, and drive real change.',
+  areaServed: {
+    '@type': 'Country',
+    name: 'Liberia',
+  },
+};
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Change Liberia',
+  url: 'https://changeliberia.org',
+  description:
+    'Sign and start petitions on the issues that matter to Liberia — infrastructure, healthcare, education, and government accountability.',
+  inLanguage: 'en',
+  publisher: { '@type': 'Organization', name: 'Change Liberia' },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -43,6 +68,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
       </head>
       <body className="bg-white text-zinc-900 dark:bg-neutral-900 dark:text-neutral-50 antialiased transition-colors duration-300">
         {process.env.NEXT_PUBLIC_GA_ID && (

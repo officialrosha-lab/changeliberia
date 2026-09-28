@@ -54,8 +54,23 @@ export default async function OfficialProfilePage({
   const profile = await fetchProfile(slug);
   if (!profile) notFound();
 
+  const personJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile.name,
+    jobTitle: profile.category,
+    ...(profile.bio && { description: profile.bio }),
+    ...(profile.photoUrl && { image: profile.photoUrl }),
+    ...(profile.county && {
+      homeLocation: { '@type': 'AdministrativeArea', name: `${profile.county} County, Liberia` },
+    }),
+    url: `https://changeliberia.org/official/${slug}`,
+  };
+  const safeJsonLd = JSON.stringify(personJsonLd).replace(/<\/script>/gi, '<\\/script>');
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd }} />
       <OfficialProfileCard profile={profile} />
     </main>
   );

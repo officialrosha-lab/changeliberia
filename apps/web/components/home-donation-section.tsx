@@ -136,16 +136,17 @@ export function HomeDonationSection() {
                 Help keep Change Liberia free and independent
               </h2>
               <p className="mt-5 max-w-md text-base leading-relaxed text-zinc-600 dark:text-neutral-400">
-                Change Liberia is a non-partisan civic platform built to give every Liberian a
-                verified voice. Your donation funds the infrastructure that connects citizens with
-                decision-makers — from Monrovia to the most rural counties.
+                Change Liberia doesn't take sides on any issue — we just make sure your petition
+                reaches the right people. Your donation keeps the platform running and pays for the
+                verification that makes every signature count, no matter where in Liberia it comes
+                from.
               </p>
 
               <ul className="mt-8 space-y-4">
                 {[
-                  { icon: '🔒', title: 'Fraud-resistant signatures', desc: 'Every signature is verified to protect petition integrity.' },
-                  { icon: '📡', title: 'Real-time transparency', desc: 'Live signature counts show the true weight of public support.' },
-                  { icon: '🌍', title: 'Built for Liberia', desc: 'Local language support, low-bandwidth optimised, and mobile-first.' },
+                  { icon: '🔒', title: 'Signatures you can trust', desc: 'Every signer is verified, so no one can pad the numbers with fakes.' },
+                  { icon: '📡', title: 'Counts update live', desc: 'Watch support grow in real time — no waiting, no guessing.' },
+                  { icon: '🌍', title: 'Made to work here', desc: "Runs fine on a slow connection and an older phone, and reads in Liberian English." },
                 ].map(({ icon, title, desc }) => (
                   <li key={title} className="flex items-start gap-3">
                     <span className="text-2xl leading-none">{icon}</span>

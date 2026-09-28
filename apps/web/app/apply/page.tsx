@@ -8,8 +8,39 @@ export const metadata: Metadata = {
   alternates: { canonical: '/apply' },
 };
 
+const FAQS = [
+  {
+    q: 'How long does review take?',
+    a: 'Applications are typically reviewed within 7-10 business days.',
+  },
+  {
+    q: 'What if my application is rejected?',
+    a: "We'll send feedback. You can reapply after addressing our suggestions.",
+  },
+  {
+    q: 'Do I need to live in Liberia?',
+    a: 'We welcome Liberians both in-country and diaspora who want to drive change.',
+  },
+  {
+    q: 'What happens after approval?',
+    a: 'You\'ll get access to ambassador tools, training, and your own dashboard.',
+  },
+];
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
 export default function ApplyPage() {
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
     <main className="min-h-screen bg-white dark:bg-neutral-900">
       {/* Hero Section */}
       <section className="border-b border-zinc-200 bg-gradient-to-br from-emerald-50 to-white px-4 py-16 dark:border-neutral-800 dark:from-emerald-950/20 dark:to-neutral-900 sm:py-20 md:py-24">
@@ -22,7 +53,7 @@ export default function ApplyPage() {
               Become a Voice for Change
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
-              Ambassadors represent their communities and help drive civic change. If you're passionate about Liberia's future, we want to hear from you.
+              If people in your community already bring you their problems, you're basically doing this job already. Apply to do it with real tools and support behind you.
             </p>
           </div>
         </div>
@@ -39,17 +70,17 @@ export default function ApplyPage() {
               {
                 icon: '📢',
                 title: 'Spread Awareness',
-                description: 'Help your community know about issues that matter and empower them to take action.',
+                description: "Tell your neighbors what's happening and how signing a petition actually helps.",
               },
               {
                 icon: '📋',
                 title: 'Drive Petitions',
-                description: 'Support campaigns that matter to you and help move them from idea to impact.',
+                description: 'Turn a shared complaint into a properly written petition people will actually sign.',
               },
               {
                 icon: '🤝',
                 title: 'Represent Your Community',
-                description: 'Be the voice of your ward, town, or county and make real change happen.',
+                description: 'Speak for your ward, town, or county — with your name attached, not lost in the crowd.',
               },
             ].map((benefit, idx) => (
               <div key={idx} className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-6 dark:border-emerald-900/30 dark:bg-emerald-950/20">
@@ -84,24 +115,7 @@ export default function ApplyPage() {
             Questions?
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2">
-            {[
-              {
-                q: 'How long does review take?',
-                a: 'Applications are typically reviewed within 7-10 business days.',
-              },
-              {
-                q: 'What if my application is rejected?',
-                a: "We'll send feedback. You can reapply after addressing our suggestions.",
-              },
-              {
-                q: 'Do I need to live in Liberia?',
-                a: 'We welcome Liberians both in-country and diaspora who want to drive change.',
-              },
-              {
-                q: 'What happens after approval?',
-                a: 'You\'ll get access to ambassador tools, training, and your own dashboard.',
-              },
-            ].map((faq, idx) => (
+            {FAQS.map((faq, idx) => (
               <div key={idx} className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
                 <h3 className="font-semibold text-zinc-900 dark:text-white">{faq.q}</h3>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-400">{faq.a}</p>
@@ -111,5 +125,6 @@ export default function ApplyPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }

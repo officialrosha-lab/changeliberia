@@ -33,7 +33,8 @@ export function CreatePetitionCard() {
               What change does Liberia need?
             </h2>
             <p className="text-sm text-zinc-500">
-              Start by sharing the issue you care about. We'll guide you through the rest.
+              A pothole, a clinic with no medicine, a road that floods every rainy season —
+              tell us what's wrong and we'll walk you through the rest.
             </p>
           </div>
 

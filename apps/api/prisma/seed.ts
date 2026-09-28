@@ -332,8 +332,8 @@ async function main() {
         order: 0,
         props: JSON.stringify({
           title: 'About Change Liberia',
-          subtitle: 'Empowering Citizens to Drive Civic Change',
-          description: 'Change Liberia is a civic petition platform built by and for Liberians — at home and in the diaspora. We believe that every citizen has the right to raise issues, collect verified support, and have their voices heard by decision-makers.',
+          subtitle: 'Built so a complaint doesn\'t just disappear',
+          description: 'We got tired of watching real problems — bad roads, clinics with no supplies, unpaid teachers — get raised once and then go nowhere. Change Liberia gives any Liberian, at home or abroad, a way to put an issue on the record, gather signatures that are actually verified, and send it to the government office responsible for it.',
           backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
           ctaText: 'Start a Petition',
           ctaUrl: '/create',
@@ -344,8 +344,8 @@ async function main() {
         type: 'text',
         order: 1,
         props: JSON.stringify({
-          title: 'Our Mission',
-          body: 'To strengthen Liberian democracy by giving every citizen a voice in governance. We do this by providing a transparent, secure platform where Liberians can organize around shared concerns and demand accountability from their leaders.',
+          title: 'What we\'re trying to do',
+          body: 'Liberians have never lacked things to say — what\'s been missing is a way to say them that officials can\'t easily ignore. So we built a place where a petition isn\'t just words: it carries real, verified signatures, gets sent to the right desk, and stays public so everyone can see whether it got a response.',
           alignment: 'left',
           emphasize: true,
         }),
@@ -355,27 +355,27 @@ async function main() {
         type: 'grid',
         order: 2,
         props: JSON.stringify({
-          title: 'Our Core Values',
+          title: 'What matters to us',
           items: [
             {
               icon: '🔍',
-              title: 'Transparency',
-              description: 'Every petition lifecycle is tracked publicly — from creation to government response. Citizens deserve to see what happens with their voices.',
+              title: 'Nothing hidden',
+              description: 'You can watch a petition move from the day it\'s filed to whatever the government office does — or doesn\'t do — about it.',
             },
             {
               icon: '🛡️',
-              title: 'Trust & Integrity',
-              description: 'We verify identities through email and national ID to ensure that every signature carries real weight.',
+              title: 'Real signatures only',
+              description: 'We check identities by email and, optionally, national ID — so a thousand signatures means a thousand actual people.',
             },
             {
               icon: '⚖️',
-              title: 'Accountability',
-              description: 'We route petitions to the right authority and publicly track whether a response was given. Silence is also an answer.',
+              title: 'Someone has to answer',
+              description: 'Every petition gets routed to the office responsible for it, and we track the response in public. If they stay quiet, that\'s public too.',
             },
             {
               icon: '🌍',
-              title: 'Inclusion',
-              description: 'Change Liberia is for every Liberian — at home and in the diaspora. Anyone with a Liberian connection can raise an issue.',
+              title: 'Open to every Liberian',
+              description: 'Whether you\'re in Monrovia or Minnesota — if you have a connection to Liberia, you can raise an issue here.',
             },
           ],
           columns: 2,
@@ -386,8 +386,8 @@ async function main() {
         type: 'text',
         order: 3,
         props: JSON.stringify({
-          title: 'Who Runs Change Liberia?',
-          body: 'Change Liberia is run by a dedicated team of technologists, civic organizers, and community leaders committed to strengthening democratic participation. We partner with civil society organizations, government ministries, and community groups across all 15 counties.',
+          title: 'Who\'s behind this',
+          body: 'Change Liberia is built and run by a small team of Liberian technologists and civic organizers, working alongside community leaders, civil society groups, and government contacts in all 15 counties to make sure petitions actually reach someone who can act on them.',
           alignment: 'center',
         }),
       },
@@ -396,8 +396,8 @@ async function main() {
         type: 'cta',
         order: 4,
         props: JSON.stringify({
-          title: 'Ready to Make a Difference?',
-          description: 'Your voice matters. Start a petition today and build support for the change you want to see.',
+          title: 'Got something that needs fixing?',
+          description: 'Put it into words, gather support, and put it in front of the people responsible. It takes a few minutes to start.',
           buttons: [
             { text: 'Create a Petition', url: '/create', primary: true },
             { text: 'Browse Petitions', url: '/petitions', primary: false },
@@ -435,8 +435,8 @@ async function main() {
         order: 0,
         props: JSON.stringify({
           title: 'How It Works',
-          subtitle: 'Four Simple Steps to Civic Change',
-          description: 'Creating a petition on Change Liberia is straightforward. From submission to delivery — we guide you every step of the way.',
+          subtitle: 'From complaint to a real response, in four steps',
+          description: 'Here\'s exactly what happens after you hit submit — no guesswork, no black box.',
           backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
           ctaText: 'Start Now',
           ctaUrl: '/create',
@@ -503,7 +503,7 @@ async function main() {
         order: 2,
         props: JSON.stringify({
           title: 'Why Verified Signatures Matter',
-          body: 'On Change Liberia, every signature is verified through email confirmation and optional national ID verification. This means your petition carries real credibility with government decision-makers — not just volume, but proven support from real Liberians.',
+          body: 'Anyone can claim a thousand people agree with them. We check — every signer confirms their email, and can add national ID verification on top. So when your petition says 1,000 signatures, that\'s 1,000 real Liberians, not a number someone made up.',
           alignment: 'center',
           emphasize: true,
         }),
@@ -569,8 +569,8 @@ async function main() {
         order: 0,
         props: JSON.stringify({
           title: 'Help Center',
-          subtitle: 'Everything You Need to Know',
-          description: 'Find answers to frequently asked questions about Change Liberia, petitions, signing, verification, and more.',
+          subtitle: 'Straight answers to the questions people actually ask',
+          description: 'Not finding what you need? Email support@changeliberia.org and a real person will get back to you within a day.',
           backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
         }),
       },

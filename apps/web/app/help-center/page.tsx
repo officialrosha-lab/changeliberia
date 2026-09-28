@@ -36,8 +36,29 @@ export default async function HelpCenterPage() {
     );
   }
 
+  const faqItems = (page.blocks ?? [])
+    .filter((block) => block.type === 'faq')
+    .flatMap((block) => (block.props?.items ?? []) as Array<{ q: string; a: string }>);
+
+  const faqJsonLd =
+    faqItems.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.q,
+            acceptedAnswer: { '@type': 'Answer', text: item.a },
+          })),
+        }
+      : null;
+  const safeFaqJsonLd = faqJsonLd ? JSON.stringify(faqJsonLd).replace(/<\/script>/gi, '<\\/script>') : null;
+
   return (
     <>
+      {safeFaqJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeFaqJsonLd }} />
+      )}
       <main className="min-h-screen bg-white dark:bg-neutral-950">
         {page.blocks && page.blocks.length > 0 ? (
           <>
