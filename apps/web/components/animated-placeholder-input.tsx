@@ -110,12 +110,12 @@ export const AnimatedPlaceholderInput = forwardRef<HTMLInputElement, AnimatedPla
 
             <input
               ref={ref}
-              className={`w-full rounded-xl border-2 px-6 py-4 text-base transition-all focus:outline-none ${
+              className={`w-full rounded-xl border-2 px-6 py-4 text-base text-zinc-900 transition-all focus:outline-none ${
                 icon ? 'pl-12' : ''
               } ${
                 hasError
-                  ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 dark:border-red-900 dark:bg-red-950/20'
-                  : 'border-zinc-300 bg-zinc-50 hover:border-zinc-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-neutral-600 dark:focus:border-emerald-500'
+                  ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                  : 'border-zinc-300 bg-zinc-50 hover:border-zinc-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/20'
               } placeholder-transparent`}
               maxLength={maxLength}
               placeholder="Type something..."
