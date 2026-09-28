@@ -6,6 +6,8 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 export interface AuthSecurityConfig {
   jwtSecret: string;
@@ -74,7 +76,6 @@ export class AuthSecurityService {
     { count: number; lockedUntil?: number }
   >();
   private authEvents: AuthEvent[] = [];
-  private crypto = require('crypto');
 
   constructor(
     private jwtService: JwtService,
@@ -94,7 +95,6 @@ export class AuthSecurityService {
    * Hash password using bcrypt algorithm
    */
   async hashPassword(password: string): Promise<string> {
-    const bcrypt = require('bcrypt');
     const saltRounds = 12; // Increase cost factor
     return bcrypt.hash(password, saltRounds);
   }
@@ -103,7 +103,6 @@ export class AuthSecurityService {
    * Compare password with hash
    */
   async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const bcrypt = require('bcrypt');
     return bcrypt.compare(password, hash);
   }
 
@@ -377,7 +376,7 @@ export class AuthSecurityService {
    * Generate session ID for tracking
    */
   generateSessionId(): string {
-    return this.crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString('hex');
   }
 
   /**
@@ -418,14 +417,14 @@ export class AuthSecurityService {
    * Generate secure random token (for password reset, email verification, etc.)
    */
   generateSecureToken(length: number = 32): string {
-    return this.crypto.randomBytes(length).toString('hex');
+    return crypto.randomBytes(length).toString('hex');
   }
 
   /**
    * Hash token for storage
    */
   hashSecureToken(token: string): string {
-    return this.crypto.createHash('sha256').update(token).digest('hex');
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   /**
