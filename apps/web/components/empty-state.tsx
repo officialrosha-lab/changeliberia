@@ -70,8 +70,8 @@ export function EmptyStatePetitions() {
   return (
     <EmptyState
       icon="📝"
-      title="No petitions found"
-      description="Try adjusting your search filters or browse all petitions to find causes you care about."
+      title="Nothing here yet"
+      description="No petitions match right now. Try a different filter, or see everything that's currently active."
       action={{
         label: 'Browse all petitions',
         href: '/petitions',
@@ -84,10 +84,10 @@ export function EmptyStateUserPetitions() {
   return (
     <EmptyState
       icon="✍️"
-      title="No Petitions Yet"
-      description="You haven't created any petitions. Start your first petition to raise awareness about issues that matter to you."
+      title="You haven't started one yet"
+      description="Got something that needs fixing in your community? Put it into words — it takes about three minutes."
       action={{
-        label: 'Create Your First Petition',
+        label: 'Start your first petition',
         href: '/create',
       }}
     />
@@ -98,10 +98,10 @@ export function EmptyStateSignatures() {
   return (
     <EmptyState
       icon="✓"
-      title="No Signatures Yet"
-      description="Be the first to sign! Help bring awareness to important causes in Liberia."
+      title="No one's signed yet"
+      description="Be the first — your signature is what gets this one moving."
       action={{
-        label: 'Browse Petitions',
+        label: 'Browse petitions',
         href: '/petitions',
       }}
     />
@@ -112,10 +112,10 @@ export function EmptyStateDashboard() {
   return (
     <EmptyState
       icon="📊"
-      title="Welcome to Your Dashboard"
-      description="Create your first petition or sign petitions you care about to get started."
+      title="Your dashboard is empty for now"
+      description="Start a petition on something you care about, or sign one that's already gathering support."
       action={{
-        label: 'Create a Petition',
+        label: 'Start a petition',
         href: '/create',
       }}
     />
@@ -126,10 +126,10 @@ export function EmptyStateSearch({ query }: { query: string }) {
   return (
     <EmptyState
       icon="🔍"
-      title="No Results Found"
-      description={`We couldn't find any petitions matching "${query}". Try different keywords or browse popular petitions.`}
+      title="Nothing matched that search"
+      description={`We couldn't find any petitions matching "${query}". Try different words, or browse what's popular right now.`}
       action={{
-        label: 'Clear Search',
+        label: 'Clear search',
         href: '/petitions',
       }}
     />

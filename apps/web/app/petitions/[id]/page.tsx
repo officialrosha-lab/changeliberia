@@ -196,6 +196,8 @@ export default async function PetitionPage({
     description: petition.summary || petition.description.slice(0, 160).replace(/\n/g, ' '),
     url: `${siteUrl}/petitions/${id}`,
     ...(petition.imageUrl && { image: petition.imageUrl }),
+    ...(petition.creator?.fullName &&
+      !petition.isAnonymous && { author: { '@type': 'Person', name: petition.creator.fullName } }),
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: 'https://schema.org/InformAction',
