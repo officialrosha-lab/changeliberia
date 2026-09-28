@@ -40,13 +40,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Human Rights':   'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
 };
 
+// Fixed categorical order, validated for adjacent-pair colorblind-safety and
+// contrast (dataviz skill: scripts/validate_palette.js) — do not reorder or
+// swap hues without re-validating both light and dark mode.
 const BAR_GRADIENTS = [
-  'from-emerald-500 to-teal-400',
-  'from-blue-500 to-cyan-400',
-  'from-violet-500 to-purple-400',
-  'from-orange-500 to-amber-400',
-  'from-pink-500 to-rose-400',
-  'from-indigo-500 to-blue-400',
+  'from-[#2a78d6] to-[#7faee6] dark:from-[#3987e5] dark:to-[#7eb1ee]', // blue
+  'from-[#eb6834] to-[#f3a485] dark:from-[#d95926] dark:to-[#e69372]', // orange
+  'from-[#1baf7a] to-[#76cfaf] dark:from-[#199e70] dark:to-[#6ac0a2]', // aqua
+  'from-[#eda100] to-[#f4c766] dark:from-[#c98500] dark:to-[#dcb059]', // yellow
+  'from-[#e87ba4] to-[#f1b0c8] dark:from-[#d55181] dark:to-[#e48ead]', // magenta
+  'from-[#008300] to-[#66b566] dark:from-[#008300] dark:to-[#59ae59]', // green
 ];
 
 function closesIn(expiresAt: string): { text: string; urgent: boolean } {
@@ -219,7 +222,10 @@ function VerticalBar({
       </span>
 
       {/* Bar column */}
-      <div className="relative flex w-full flex-1 items-end overflow-hidden rounded-t-2xl bg-zinc-100 dark:bg-neutral-800">
+      <div
+        className="relative flex w-full flex-1 items-end overflow-hidden rounded-t-2xl bg-zinc-100 dark:bg-neutral-800"
+        title={`${label}: ${percentage}% (${votes} vote${votes === 1 ? '' : 's'})`}
+      >
         <div
           className={`w-full rounded-t-2xl bg-gradient-to-t ${gradient} transition-all duration-700 ease-out`}
           style={{ height: `${height}%` }}
@@ -734,7 +740,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
         {poll.totalVotes > 0 && (
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
             <p className="mb-6 text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Results breakdown</p>
-            <div className="flex h-48 items-end gap-3">
+            <div className="flex h-48 items-stretch gap-3">
               {poll.options.map((option: PollOption, idx: number) => {
                 const pct = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0;
                 const gradient = BAR_GRADIENTS[idx % BAR_GRADIENTS.length];
