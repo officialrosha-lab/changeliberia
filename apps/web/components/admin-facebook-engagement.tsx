@@ -80,7 +80,7 @@ export function AdminFacebookEngagement() {
         toast.show(err instanceof Error ? err.message : 'Error loading challenge details', 'error');
       }
     },
-    [token],
+    [token, toast],
   );
 
   useEffect(() => {

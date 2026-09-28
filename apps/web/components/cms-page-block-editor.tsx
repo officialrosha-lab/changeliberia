@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { CMSBlock, CMSPage } from '../lib/cms';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
@@ -39,12 +39,7 @@ export function CMSPageBlockEditor() {
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [copiedBlock, setCopiedBlock] = useState<CMSBlock | null>(null);
 
-  useEffect(() => {
-    if (!token) return;
-    loadPages();
-  }, [token]);
-
-  async function loadPages() {
+  const loadPages = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<PageWithBlocks[]>('/cms/pages', token!);
@@ -55,7 +50,12 @@ export function CMSPageBlockEditor() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadPages();
+  }, [token, loadPages]);
 
   async function loadPageWithBlocks(pageId: string) {
     try {

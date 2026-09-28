@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { apiPost } from '../../../lib/api';
@@ -273,11 +274,12 @@ function PollSharePanel({ slug, title }: { slug: string; title: string }) {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
         {/* QR Code */}
         <div className="flex-shrink-0">
-          <img
+          <Image
             src={qrSrc}
             alt="QR code for this poll"
             width={110}
             height={110}
+            unoptimized
             className="rounded-2xl border border-zinc-100 dark:border-neutral-800"
           />
         </div>
@@ -575,10 +577,12 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 dark:bg-neutral-800">
                     {option.imageUrl ? (
-                      <img
+                      <Image
                         src={option.imageUrl}
                         alt={option.text}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                        fill
+                        sizes="(min-width: 768px) 33vw, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-zinc-300 dark:text-neutral-600">

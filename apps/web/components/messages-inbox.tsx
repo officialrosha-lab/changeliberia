@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../lib/store';
 import { apiGet, apiPut, apiDelete } from '../lib/api';
 import {
@@ -63,25 +63,7 @@ export function MessagesInbox() {
 
   const pageSize = 20;
 
-  // Load messages
-  useEffect(() => {
-    loadMessages();
-    loadUnreadCount();
-  }, [page, filters]);
-
-  // Auto-refresh effect
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(() => {
-      loadMessages();
-      loadUnreadCount();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -102,16 +84,34 @@ export function MessagesInbox() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, page, pageSize, filters]);
 
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     try {
       const data = await apiGet<{ unreadCount: number }>('/messages/unread-count', token!);
       setUnreadCount(data.unreadCount);
     } catch (err) {
       console.error('Failed to load unread count:', err);
     }
-  };
+  }, [token]);
+
+  // Load messages
+  useEffect(() => {
+    loadMessages();
+    loadUnreadCount();
+  }, [page, filters, loadMessages, loadUnreadCount]);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      loadMessages();
+      loadUnreadCount();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadMessages, loadUnreadCount]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {

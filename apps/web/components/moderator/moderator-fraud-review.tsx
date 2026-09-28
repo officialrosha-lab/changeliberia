@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -33,12 +33,7 @@ export function ModeratorFraudReview() {
   const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState(false);
 
-  useEffect(() => {
-    if (!token) return;
-    loadFlags();
-  }, [token, statusFilter]);
-
-  async function loadFlags() {
+  const loadFlags = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<FraudFlag[]>(
@@ -52,7 +47,12 @@ export function ModeratorFraudReview() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, statusFilter]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadFlags();
+  }, [token, statusFilter, loadFlags]);
 
   async function handleResolveFlag(flagId: string, action: 'approve' | 'ban' | 'dismiss', notes?: string) {
     if (!token) return;

@@ -112,7 +112,7 @@ export function AdminActivityLog() {
     };
     
     fetchLogs();
-  }, [token, activeTab, pagination.page, filters]);
+  }, [token, activeTab, pagination.page, pagination.limit, filters, authToken]);
 
   // Fetch stats
   useEffect(() => {
@@ -131,7 +131,7 @@ export function AdminActivityLog() {
     };
     
     fetchStats();
-  }, [token, activeTab]);
+  }, [token, activeTab, authToken]);
 
   // Search user activities
   const handleUserSearch = async (e: React.FormEvent) => {

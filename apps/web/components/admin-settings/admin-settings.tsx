@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { Card } from '../ui/card';
@@ -43,12 +43,7 @@ export function AdminSettings() {
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplatePerms, setNewTemplatePerms] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!token) return;
-    loadData();
-  }, [token]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [s, t, st] = await Promise.all([
@@ -65,7 +60,12 @@ export function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadData();
+  }, [token, loadData]);
 
   async function handleSaveScope(scope: ModeratorScope) {
     if (!token) return;

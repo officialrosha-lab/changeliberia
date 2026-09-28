@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -40,12 +40,7 @@ export function CMSEditor() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [versions, setVersions] = useState<PageVersion[]>([]);
 
-  useEffect(() => {
-    if (!token || !pageId) return;
-    loadPage();
-  }, [token, pageId]);
-
-  async function loadPage() {
+  const loadPage = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<CMSPage>(`/cms/pages/${pageId}`, token!);
@@ -56,7 +51,12 @@ export function CMSEditor() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, pageId]);
+
+  useEffect(() => {
+    if (!token || !pageId) return;
+    loadPage();
+  }, [token, pageId, loadPage]);
 
   async function handleSave() {
     if (!token || !page) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { Card } from '../ui/card';
@@ -27,12 +27,7 @@ export function CMSPageManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
 
-  useEffect(() => {
-    if (!token) return;
-    loadPages();
-  }, [token]);
-
-  async function loadPages() {
+  const loadPages = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<CMSPage[]>('/cms/pages', token!);
@@ -43,7 +38,12 @@ export function CMSPageManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadPages();
+  }, [token, loadPages]);
 
   async function handleCreatePage() {
     if (!token || !newPageTitle.trim() || !newPageSlug.trim()) {

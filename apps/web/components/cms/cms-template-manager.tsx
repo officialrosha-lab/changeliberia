@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -37,12 +37,7 @@ export function CMSTemplateManager() {
     suggestedCategory: '',
   });
 
-  useEffect(() => {
-    if (!token) return;
-    loadTemplates();
-  }, [token]);
-
-  async function loadTemplates() {
+  const loadTemplates = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<CMSTemplate[]>('/cms/templates', token!);
@@ -53,7 +48,12 @@ export function CMSTemplateManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadTemplates();
+  }, [token, loadTemplates]);
 
   async function handleSave() {
     if (!token || !formData.name.trim() || !formData.category.trim()) {

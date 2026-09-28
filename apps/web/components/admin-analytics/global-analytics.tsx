@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -44,12 +44,7 @@ export function GlobalAnalytics() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState(30);
 
-  useEffect(() => {
-    if (!token) return;
-    loadAnalytics();
-  }, [token, period]);
-
-  async function loadAnalytics() {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const [s, d, c, f] = await Promise.all([
@@ -68,7 +63,12 @@ export function GlobalAnalytics() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [period, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadAnalytics();
+  }, [token, period, loadAnalytics]);
 
   if (loading) {
     return <div className="text-center py-8 text-zinc-500 dark:text-neutral-400">Loading analytics...</div>;

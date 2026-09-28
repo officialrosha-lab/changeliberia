@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -21,12 +21,7 @@ export function ModeratorStats() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState(30);
 
-  useEffect(() => {
-    if (!token) return;
-    loadStats();
-  }, [token, period]);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<ModeratorStats>(
@@ -40,7 +35,12 @@ export function ModeratorStats() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, period]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadStats();
+  }, [token, period, loadStats]);
 
   if (loading) {
     return <div className="text-center py-8">Loading stats...</div>;

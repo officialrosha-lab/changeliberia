@@ -74,7 +74,7 @@ export function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, [filter, page, token, hydrated]);
+  }, [filter, page, token, hydrated, showToast]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     setNotifications((prev) =>

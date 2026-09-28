@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -32,12 +32,7 @@ export function RoutingAnalytics() {
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
 
-  useEffect(() => {
-    if (!token) return;
-    loadAnalytics();
-  }, [token, days]);
-
-  async function loadAnalytics() {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const [s, e] = await Promise.all([
@@ -52,7 +47,12 @@ export function RoutingAnalytics() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [days, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadAnalytics();
+  }, [token, days, loadAnalytics]);
 
   if (loading) {
     return <div className="text-center py-8">Loading analytics...</div>;

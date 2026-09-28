@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
@@ -54,14 +54,7 @@ export function AdminEmailSettings() {
   const [verifying, setVerifying] = useState(false);
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('7d');
 
-  useEffect(() => {
-    if (!token) return;
-    loadData();
-    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [token, dateRange]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const endDate = new Date();
@@ -87,7 +80,14 @@ export function AdminEmailSettings() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, dateRange]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadData();
+    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [token, dateRange, loadData]);
 
   async function handleVerifyDomain(domain: string) {
     if (!token) return;
