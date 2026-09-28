@@ -12,7 +12,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
+import { PaymentStatus, SubscriptionStatus, Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -22,6 +22,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentService } from '../payments/payment.service';
 import { UserRole } from '@prisma/client';
+import {
+  getStripeApiVersion,
+  StripePaymentIntent,
+  StripeSubscription,
+} from '../config/stripe.config';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -38,7 +43,7 @@ export class StripeAdminController {
     const apiKey = process.env.STRIPE_API_KEY;
     if (apiKey) {
       this.stripe = new Stripe(apiKey, {
-        apiVersion: '2024-11-20' as any,
+        apiVersion: getStripeApiVersion(),
       });
     }
   }
@@ -124,7 +129,7 @@ export class StripeAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.PaymentWhereInput = {};
       if (status) filters.status = status;
       if (startDate || endDate) {
         filters.completedAt = {};
@@ -166,7 +171,7 @@ export class StripeAdminController {
       if (!payment) throw new NotFoundException('Payment not found');
 
       // Fetch Stripe details if available
-      let stripeDetails: any = null;
+      let stripeDetails: StripePaymentIntent | null = null;
       if (payment.stripePaymentIntentId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().paymentIntents.retrieve(
@@ -230,7 +235,7 @@ export class StripeAdminController {
       if (!subscription) throw new NotFoundException('Subscription not found');
 
       // Fetch Stripe subscription if available
-      let stripeDetails: any = null;
+      let stripeDetails: StripeSubscription | null = null;
       if (subscription.stripeSubscriptionId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().subscriptions.retrieve(
@@ -315,7 +320,7 @@ export class StripeAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.RefundWhereInput = {};
       if (startDate || endDate) {
         filters.createdAt = {};
         if (startDate) filters.createdAt.gte = new Date(startDate);
@@ -375,10 +380,20 @@ export class StripeAdminController {
 
       if (payment.stripePaymentIntentId && this.stripe) {
         try {
+          const stripeReasons = [
+            'duplicate',
+            'fraudulent',
+            'requested_by_customer',
+          ] as const;
+          const stripeReason = stripeReasons.includes(
+            dto.reason as (typeof stripeReasons)[number],
+          )
+            ? (dto.reason as (typeof stripeReasons)[number])
+            : 'requested_by_customer';
           const stripeRefund = await this.getStripe().refunds.create({
             payment_intent: payment.stripePaymentIntentId,
             amount: Math.round(refundAmount * 100),
-            reason: dto.reason as any,
+            reason: stripeReason,
           });
           stripeRefundId = stripeRefund.id;
         } catch (e) {
