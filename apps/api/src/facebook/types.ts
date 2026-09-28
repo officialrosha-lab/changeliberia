@@ -51,7 +51,7 @@ export interface ConversionEvent {
     | 'Share'
     | 'Purchase'
     | 'CustomEvent'
-    | string;
+    | (string & {});
   eventName?: string;
   eventTime?: number;
   contentType?: string;
@@ -246,7 +246,7 @@ export interface CreateAudienceResponse {
 export interface CustomAudienceCreateDto {
   name: string;
   petitionId: string;
-  eventType: 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | string;
+  eventType: 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | (string & {});
   maxSize?: number;
 }
 
@@ -459,7 +459,12 @@ export class ShareDialogError extends Error {
    Utility Types
    ============================================ */
 
-export type EventType = 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | string;
+export type EventType =
+  | 'ViewContent'
+  | 'Lead'
+  | 'Share'
+  | 'Purchase'
+  | (string & {});
 
 export type CurrencyCode =
   | 'USD'
@@ -472,7 +477,7 @@ export type CurrencyCode =
   | 'CNY'
   | 'SEK'
   | 'NZD'
-  | string;
+  | (string & {});
 
 export type GenderType = 'M' | 'F' | 'U';
 
