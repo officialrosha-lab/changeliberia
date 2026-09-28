@@ -113,9 +113,9 @@ export class EmailTemplateService {
       case EmailType.VERIFY_EMAIL:
         content = `
           <p>Please verify your email address to complete your registration.</p>
-          <p>Your verification code is: <strong>${props?.verificationCode || 'XXXXXX'}</strong></p>
+          ${props?.verificationCode ? `<p>Your verification code is: <strong>${props.verificationCode}</strong></p>` : ''}
           <p><a href="${props?.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Verify Email</a></p>
-          <p style="font-size: 12px; color: #6b7280;">This code expires in 24 hours.</p>
+          <p style="font-size: 12px; color: #6b7280;">This link expires in 24 hours.</p>
         `;
         break;
 
@@ -243,7 +243,7 @@ export class EmailTemplateService {
         break;
 
       case EmailType.VERIFY_EMAIL:
-        text += `Please verify your email address to complete your registration.\n\nYour verification code is: ${props?.verificationCode || 'XXXXXX'}\n\nThis code expires in 24 hours.`;
+        text += `Please verify your email address to complete your registration.\n\n${props?.verificationCode ? `Your verification code is: ${props.verificationCode}\n\n` : ''}Verify your email: ${props?.verifyUrl || appUrl}\n\nThis link expires in 24 hours.`;
         break;
 
       case EmailType.PASSWORD_RESET:
