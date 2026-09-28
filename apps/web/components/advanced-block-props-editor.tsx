@@ -1,15 +1,29 @@
 'use client';
 
 import { RichTextEditor } from './rich-text-editor';
-import { ImageUploader } from './image-uploader';
+import { ImageUploader, UploadedFile } from './image-uploader';
 import { useState } from 'react';
 
 type BlockType = 'hero' | 'text' | 'image' | 'grid' | 'cta' | 'testimonial' | 'divider' | 'faq' | 'features';
 
+type BlockItem = Record<string, string>;
+
+function propStr(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function propNum(value: unknown, fallback: number): number {
+  return typeof value === 'number' ? value : fallback;
+}
+
+function propItems(value: unknown): BlockItem[] {
+  return Array.isArray(value) ? (value as BlockItem[]) : [];
+}
+
 interface AdvancedBlockPropsEditorProps {
   type: BlockType;
-  props: Record<string, any>;
-  onChange: (props: Record<string, any>) => void;
+  props: Record<string, unknown>;
+  onChange: (props: Record<string, unknown>) => void;
 }
 
 export function AdvancedBlockPropsEditor({
@@ -20,11 +34,11 @@ export function AdvancedBlockPropsEditor({
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [selectedImageField, setSelectedImageField] = useState<string | null>(null);
 
-  const updateProp = (key: string, value: any) => {
+  const updateProp = (key: string, value: unknown) => {
     onChange({ ...props, [key]: value });
   };
 
-  const handleImageSelect = (file: any) => {
+  const handleImageSelect = (file: UploadedFile) => {
     if (selectedImageField) {
       updateProp(selectedImageField, file.url);
       setShowImageUpload(false);
@@ -62,7 +76,7 @@ export function AdvancedBlockPropsEditor({
             <input
               type="text"
               placeholder="Main title"
-              value={props.title || ''}
+              value={propStr(props.title)}
               onChange={(e) => updateProp('title', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -73,7 +87,7 @@ export function AdvancedBlockPropsEditor({
             <input
               type="text"
               placeholder="Subtitle"
-              value={props.subtitle || ''}
+              value={propStr(props.subtitle)}
               onChange={(e) => updateProp('subtitle', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -82,7 +96,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
             <RichTextEditor
-              value={props.description || ''}
+              value={propStr(props.description)}
               onChange={(val) => updateProp('description', val)}
               placeholder="Enter description with markdown support"
               compact
@@ -95,7 +109,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="Image URL"
-                value={props.bgImage || ''}
+                value={propStr(props.bgImage)}
                 onChange={(e) => updateProp('bgImage', e.target.value)}
                 className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -117,7 +131,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="e.g., Get Started"
-                value={props.ctaText || ''}
+                value={propStr(props.ctaText)}
                 onChange={(e) => updateProp('ctaText', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -127,7 +141,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="url"
                 placeholder="https://..."
-                value={props.ctaUrl || ''}
+                value={propStr(props.ctaUrl)}
                 onChange={(e) => updateProp('ctaUrl', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -143,7 +157,7 @@ export function AdvancedBlockPropsEditor({
             <input
               type="text"
               placeholder="Section title"
-              value={props.title || ''}
+              value={propStr(props.title)}
               onChange={(e) => updateProp('title', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -152,7 +166,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Body Text</label>
             <RichTextEditor
-              value={props.body || ''}
+              value={propStr(props.body)}
               onChange={(val) => updateProp('body', val)}
               placeholder="Enter body text with markdown support"
             />
@@ -161,7 +175,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Alignment</label>
             <select
-              value={props.alignment || 'left'}
+              value={propStr(props.alignment, 'left')}
               onChange={(e) => updateProp('alignment', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -181,7 +195,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="Image URL or upload"
-                value={props.url || ''}
+                value={propStr(props.url)}
                 onChange={(e) => updateProp('url', e.target.value)}
                 className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -197,9 +211,9 @@ export function AdvancedBlockPropsEditor({
             </div>
           </div>
 
-          {props.url && (
+          {propStr(props.url) && (
             <img
-              src={props.url}
+              src={propStr(props.url)}
               alt="preview"
               className="w-full h-32 object-cover rounded border border-gray-200"
             />
@@ -210,7 +224,7 @@ export function AdvancedBlockPropsEditor({
             <input
               type="text"
               placeholder="For accessibility"
-              value={props.alt || ''}
+              value={propStr(props.alt)}
               onChange={(e) => updateProp('alt', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -220,7 +234,7 @@ export function AdvancedBlockPropsEditor({
             <label className="block text-sm font-semibold text-gray-700 mb-1">Caption (optional)</label>
             <textarea
               placeholder="Image caption"
-              value={props.caption || ''}
+              value={propStr(props.caption)}
               onChange={(e) => updateProp('caption', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={2}
@@ -230,7 +244,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Size</label>
             <select
-              value={props.size || 'full'}
+              value={propStr(props.size, 'full')}
               onChange={(e) => updateProp('size', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -249,7 +263,7 @@ export function AdvancedBlockPropsEditor({
             <input
               type="text"
               placeholder="Call to action heading"
-              value={props.heading || ''}
+              value={propStr(props.heading)}
               onChange={(e) => updateProp('heading', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -258,7 +272,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
             <RichTextEditor
-              value={props.description || ''}
+              value={propStr(props.description)}
               onChange={(val) => updateProp('description', val)}
               placeholder="CTA description"
               compact
@@ -271,7 +285,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="e.g., Sign Up"
-                value={props.primaryText || ''}
+                value={propStr(props.primaryText)}
                 onChange={(e) => updateProp('primaryText', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -281,7 +295,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="url"
                 placeholder="https://..."
-                value={props.primaryUrl || ''}
+                value={propStr(props.primaryUrl)}
                 onChange={(e) => updateProp('primaryUrl', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -291,7 +305,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Button Color</label>
             <select
-              value={props.buttonColor || 'blue'}
+              value={propStr(props.buttonColor, 'blue')}
               onChange={(e) => updateProp('buttonColor', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -309,7 +323,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Quote</label>
             <RichTextEditor
-              value={props.quote || ''}
+              value={propStr(props.quote)}
               onChange={(val) => updateProp('quote', val)}
               placeholder="Testimonial quote"
               compact
@@ -322,7 +336,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="Full name"
-                value={props.author || ''}
+                value={propStr(props.author)}
                 onChange={(e) => updateProp('author', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -332,7 +346,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="e.g., CEO at Company"
-                value={props.role || ''}
+                value={propStr(props.role)}
                 onChange={(e) => updateProp('role', e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -345,7 +359,7 @@ export function AdvancedBlockPropsEditor({
               <input
                 type="text"
                 placeholder="Avatar URL"
-                value={props.avatar || ''}
+                value={propStr(props.avatar)}
                 onChange={(e) => updateProp('avatar', e.target.value)}
                 className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -364,7 +378,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Rating</label>
             <select
-              value={props.rating || 5}
+              value={propNum(props.rating, 5)}
               onChange={(e) => updateProp('rating', parseInt(e.target.value))}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -381,13 +395,13 @@ export function AdvancedBlockPropsEditor({
       {type === 'faq' && (
         <>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-gray-300 bg-gray-50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-600">Item {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700 font-semibold"
@@ -400,7 +414,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Question"
                   value={item.question || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, question: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -410,7 +424,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Answer"
                   value={item.answer || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, answer: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -422,7 +436,7 @@ export function AdvancedBlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { question: '', answer: '' }]);
+              updateProp('items', [...propItems(props.items), { question: '', answer: '' }]);
             }}
             className="w-full rounded border-2 border-dashed border-gray-400 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
@@ -436,7 +450,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Columns</label>
             <select
-              value={props.columns || 3}
+              value={propNum(props.columns, 3)}
               onChange={(e) => updateProp('columns', parseInt(e.target.value))}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -446,13 +460,13 @@ export function AdvancedBlockPropsEditor({
             </select>
           </div>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-gray-300 bg-gray-50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-600">Item {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700 font-semibold"
@@ -465,7 +479,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Title"
                   value={item.title || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, title: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -475,7 +489,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Description"
                   value={item.description || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, description: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -487,7 +501,7 @@ export function AdvancedBlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { title: '', description: '' }]);
+              updateProp('items', [...propItems(props.items), { title: '', description: '' }]);
             }}
             className="w-full rounded border-2 border-dashed border-gray-400 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
@@ -499,13 +513,13 @@ export function AdvancedBlockPropsEditor({
       {type === 'features' && (
         <>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-gray-300 bg-gray-50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-600">Feature {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700 font-semibold"
@@ -518,7 +532,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Feature title"
                   value={item.title || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, title: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -528,7 +542,7 @@ export function AdvancedBlockPropsEditor({
                   placeholder="Description"
                   value={item.description || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, description: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -540,7 +554,7 @@ export function AdvancedBlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { title: '', description: '' }]);
+              updateProp('items', [...propItems(props.items), { title: '', description: '' }]);
             }}
             className="w-full rounded border-2 border-dashed border-gray-400 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
@@ -554,7 +568,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Style</label>
             <select
-              value={props.style || 'solid'}
+              value={propStr(props.style, 'solid')}
               onChange={(e) => updateProp('style', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -566,7 +580,7 @@ export function AdvancedBlockPropsEditor({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Spacing</label>
             <select
-              value={props.size || 'md'}
+              value={propStr(props.size, 'md')}
               onChange={(e) => updateProp('size', e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >

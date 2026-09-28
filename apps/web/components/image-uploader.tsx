@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Loader, AlertCircle } from 'lucide-react';
 import { apiPost, apiDelete } from '../lib/api';
 
-interface UploadedFile {
+export interface UploadedFile {
   id: string;
   filename: string;
   originalName: string;
