@@ -6,7 +6,7 @@ import { apiPatch } from '../../lib/api';
 
 type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-interface Ambassador {
+export interface Ambassador {
   id: string;
   fullName: string;
   email: string;
@@ -48,8 +48,7 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
     setError(null);
 
     try {
-      const app = applications.find((a) => a.id === id);
-      const result = await apiPatch(`/ambassadors/admin/${id}`, {
+      await apiPatch(`/ambassadors/admin/${id}`, {
         status: newStatus,
         notes: updateNotes || undefined,
       }, token as string | undefined);
@@ -63,8 +62,8 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
       setUpdateNotes('');
 
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update application');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update application');
     } finally {
       setUpdatingId(null);
     }

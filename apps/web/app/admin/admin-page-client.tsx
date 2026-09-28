@@ -69,7 +69,8 @@ export function AdminPageClient() {
   const token = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
-  const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
+  const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
+  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creatorName: string; creatorEmail: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -81,18 +82,14 @@ export function AdminPageClient() {
   });
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!token) {
-      setPhase('denied');
-      return;
-    }
+    if (!hydrated || !token) return;
     let cancelled = false;
     void (async () => {
       try {
         const me = await apiGet<Me>('/users/me', token);
         if (cancelled) return;
         if (me.role !== 'ADMIN') {
-          setPhase('denied');
+          setAsyncPhase('denied');
           return;
         }
         const [p, polls, ids, f, r, a] = await Promise.all([
@@ -114,9 +111,9 @@ export function AdminPageClient() {
         setFlags(f);
         setRules(r);
         setAnalytics(a);
-        setPhase('ok');
+        setAsyncPhase('ok');
       } catch {
-        if (!cancelled) setPhase('denied');
+        if (!cancelled) setAsyncPhase('denied');
       }
     })();
     return () => {

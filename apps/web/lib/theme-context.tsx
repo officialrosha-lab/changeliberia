@@ -18,11 +18,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
+  const applyTheme = (resolvedTheme: 'light' | 'dark') => {
+    const html = document.documentElement;
+    if (resolvedTheme === 'dark') {
+      html.classList.add('dark');
+      html.style.colorScheme = 'dark';
+    } else {
+      html.classList.remove('dark');
+      html.style.colorScheme = 'light';
+    }
+  };
+
   // Initialize theme from localStorage and system preference
   useEffect(() => {
     // Get saved theme or default to system
     const saved = localStorage.getItem('theme') as Theme | null;
     const initialTheme = saved || 'system';
+    // Intentional: reads the persisted theme from localStorage, which is
+    // unavailable during SSR, so it can only be resolved client-side on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(initialTheme);
 
     // Resolve theme
@@ -54,17 +68,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
-
-  const applyTheme = (resolvedTheme: 'light' | 'dark') => {
-    const html = document.documentElement;
-    if (resolvedTheme === 'dark') {
-      html.classList.add('dark');
-      html.style.colorScheme = 'dark';
-    } else {
-      html.classList.remove('dark');
-      html.style.colorScheme = 'light';
-    }
-  };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

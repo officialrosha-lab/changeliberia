@@ -20,6 +20,8 @@ const PERMISSION_FLAGS = [
   { key: 'canGenerateReports', label: 'Generate reports' },
 ] as const;
 
+type PermissionKey = typeof PERMISSION_FLAGS[number]['key'];
+
 interface StaffMember {
   id: string;
   role: string;
@@ -85,11 +87,11 @@ export function OfficialStaffPanel() {
     }
   }
 
-  async function togglePermission(member: StaffMember, key: string) {
+  async function togglePermission(member: StaffMember, key: PermissionKey) {
     if (!token) return;
     setBusyId(member.id);
     try {
-      await apiPatch(`/officials/staff/${member.id}`, { [key]: !(member as any)[key] }, token);
+      await apiPatch(`/officials/staff/${member.id}`, { [key]: !member[key] }, token);
       await load();
     } finally {
       setBusyId(null);
@@ -203,7 +205,7 @@ export function OfficialStaffPanel() {
                     <input
                       type="checkbox"
                       disabled={busyId === member.id}
-                      checked={(member as any)[p.key]}
+                      checked={member[p.key]}
                       onChange={() => void togglePermission(member, p.key)}
                       className="h-4 w-4 rounded accent-emerald-600"
                     />

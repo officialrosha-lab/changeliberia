@@ -3,13 +3,7 @@ import {
   fillInput,
   clickElement,
   expectTextContent,
-  generateTestEmail,
-  generateTestPassword,
-  waitForNavigation,
-  getText,
   fillForm,
-  isVisible,
-  uploadFile,
 } from './test-helpers';
 
 /**

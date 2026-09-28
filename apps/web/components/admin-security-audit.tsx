@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, TooltipValueType } from 'recharts';
 
 interface SecurityAuditResult {
   category: string;
@@ -27,48 +27,6 @@ interface AuthThreat {
   count?: number;
 }
 
-const SECURITY_CHECKS = [
-  {
-    id: 'csp',
-    name: 'Content Security Policy',
-    description: 'Prevents XSS and injection attacks',
-  },
-  {
-    id: 'hsts',
-    name: 'HSTS Header',
-    description: 'Forces HTTPS connections',
-  },
-  {
-    id: 'csrf',
-    name: 'CSRF Protection',
-    description: 'Validates form submissions',
-  },
-  {
-    id: 'cors',
-    name: 'CORS Configuration',
-    description: 'Restricts cross-origin requests',
-  },
-  {
-    id: 'rate_limit',
-    name: 'Rate Limiting',
-    description: 'Prevents DDoS and brute force',
-  },
-  {
-    id: 'password_policy',
-    name: 'Password Policy',
-    description: 'Enforces strong passwords',
-  },
-  {
-    id: 'ssl_tls',
-    name: 'SSL/TLS',
-    description: 'Secure data transmission',
-  },
-  {
-    id: 'dependencies',
-    name: 'Dependency Audit',
-    description: 'Checks for vulnerable packages',
-  },
-];
 
 export function AdminSecurityAudit() {
   const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);
@@ -535,7 +493,7 @@ export function AdminSecurityAudit() {
                     borderRadius: '8px',
                     color: '#fff',
                   }}
-                  formatter={(value: any) => `${value}/100`}
+                  formatter={(value: TooltipValueType | undefined) => `${value}/100`}
                 />
                 <Line
                   type="monotone"

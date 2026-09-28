@@ -11,14 +11,8 @@ type Sponsor = {
   type: string;
 };
 
-export function SponsorsMarquee({ sponsors }: { sponsors: Sponsor[] }) {
-  const [paused, setPaused] = useState(false);
-
-  if (!sponsors.length) return null;
-
-  const duration = `${Math.max(sponsors.length * 3, 20)}s`;
-
-  const LogoList = () => (
+function LogoList({ sponsors }: { sponsors: Sponsor[] }) {
+  return (
     <>
       {sponsors.map((s) => (
         <a
@@ -41,6 +35,14 @@ export function SponsorsMarquee({ sponsors }: { sponsors: Sponsor[] }) {
       ))}
     </>
   );
+}
+
+export function SponsorsMarquee({ sponsors }: { sponsors: Sponsor[] }) {
+  const [paused, setPaused] = useState(false);
+
+  if (!sponsors.length) return null;
+
+  const duration = `${Math.max(sponsors.length * 3, 20)}s`;
 
   return (
     <>
@@ -62,8 +64,8 @@ export function SponsorsMarquee({ sponsors }: { sponsors: Sponsor[] }) {
             animationPlayState: paused ? 'paused' : 'running',
           }}
         >
-          <LogoList />
-          <LogoList />
+          <LogoList sponsors={sponsors} />
+          <LogoList sponsors={sponsors} />
         </div>
       </div>
     </>

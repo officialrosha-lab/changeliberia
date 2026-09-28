@@ -4,6 +4,8 @@
  * Protects against Cross-Site Request Forgery attacks
  */
 
+import nodeCrypto from 'crypto';
+
 export interface CSRFToken {
   token: string;
   secret: string;
@@ -46,8 +48,7 @@ export const DEFAULT_CSRF_CONFIG: CSRFConfig = {
 export function generateToken(length: number = 32): string {
   if (typeof window === 'undefined') {
     // Server-side: use Node.js crypto
-    const crypto = require('crypto');
-    return crypto.randomBytes(length).toString('hex');
+    return nodeCrypto.randomBytes(length).toString('hex');
   }
 
   // Client-side: use Web Crypto API
@@ -62,8 +63,7 @@ export function generateToken(length: number = 32): string {
 export async function hashToken(token: string): Promise<string> {
   if (typeof window === 'undefined') {
     // Server-side
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(token).digest('hex');
+    return nodeCrypto.createHash('sha256').update(token).digest('hex');
   }
 
   // Client-side: use SubtleCrypto
@@ -334,7 +334,7 @@ export function createCSRFHookFactory(config: Partial<CSRFConfig> = {}) {
   };
 }
 
-export default {
+const csrfProtection = {
   CSRFTokenManager,
   generateToken,
   hashToken,
@@ -346,3 +346,5 @@ export default {
   CSRFError,
   DEFAULT_CSRF_CONFIG,
 };
+
+export default csrfProtection;

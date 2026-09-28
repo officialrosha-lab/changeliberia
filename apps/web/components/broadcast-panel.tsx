@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../lib/store';
 import { apiGet, apiPost } from '../lib/api';
 import { Send, Users, AlertCircle, CheckCircle } from 'lucide-react';
@@ -31,12 +31,7 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('broadcast');
 
-  // Load stakeholder groups
-  useEffect(() => {
-    loadGroups();
-  }, [petitionId]);
-
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -47,12 +42,17 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
       );
 
       setGroups(data.groups || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load stakeholder groups');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load stakeholder groups');
     } finally {
       setLoading(false);
     }
-  };
+  }, [petitionId, token]);
+
+  // Load stakeholder groups
+  useEffect(() => {
+    loadGroups();
+  }, [petitionId, loadGroups]);
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,8 +98,8 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
       } else {
         setError('Failed to send broadcast message');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send broadcast');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send broadcast');
     } finally {
       setSending(false);
     }

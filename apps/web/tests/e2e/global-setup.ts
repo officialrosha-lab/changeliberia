@@ -1,10 +1,10 @@
-import { chromium, FullConfig } from '@playwright/test';
+import { chromium } from '@playwright/test';
 
 /**
  * Global test setup
  * Runs once before all tests
  */
-async function globalSetup(config: FullConfig) {
+async function globalSetup() {
   // Optional: Seed test data, setup test database, etc.
   console.log('🔧 Playwright global setup...');
   

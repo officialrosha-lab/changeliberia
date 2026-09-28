@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Grid3x3, List, ChevronDown } from 'lucide-react';
 import { SearchBar, type SearchFilters } from './search-bar';
 import { PetitionGridCard } from './petition-grid-card';

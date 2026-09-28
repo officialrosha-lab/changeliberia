@@ -51,7 +51,7 @@ export default async function SponsorsPage() {
         <div className="mx-auto max-w-5xl px-4 py-12">
           {sponsors.length === 0 ? (
             <p className="text-center text-zinc-500 dark:text-neutral-500">
-              We're building our list of sponsors and partners — reach out below if you'd like to be one of the first.
+              We&apos;re building our list of sponsors and partners — reach out below if you&apos;d like to be one of the first.
             </p>
           ) : (
             <>
@@ -98,7 +98,7 @@ export default async function SponsorsPage() {
               Want your organization listed here?
             </h2>
             <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-neutral-300">
-              We work with businesses, NGOs, and civic organizations that want to support independent, citizen-driven accountability in Liberia. Tell us about your organization and how you'd like to help.
+              We work with businesses, NGOs, and civic organizations that want to support independent, citizen-driven accountability in Liberia. Tell us about your organization and how you&apos;d like to help.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <a

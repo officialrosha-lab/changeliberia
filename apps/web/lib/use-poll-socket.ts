@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 type PollUpdate = {
@@ -16,6 +16,7 @@ interface UsePollSocketOptions {
 
 export function usePollSocket({ pollId, url }: UsePollSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const namespaceUrl = useMemo(() => {
     const base = url || process.env.NEXT_PUBLIC_API_URL || '';
@@ -41,9 +42,14 @@ export function usePollSocket({ pollId, url }: UsePollSocketOptions) {
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      setIsConnected(true);
       if (pollId) {
         socket.emit('subscribe_poll', { pollId });
       }
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
     return () => {
@@ -78,6 +84,6 @@ export function usePollSocket({ pollId, url }: UsePollSocketOptions) {
   return {
     onPollUpdate,
     onConnected,
-    isConnected: socketRef.current?.connected ?? false,
+    isConnected,
   };
 }

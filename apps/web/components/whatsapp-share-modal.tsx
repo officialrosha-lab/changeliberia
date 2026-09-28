@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Copy, MessageCircle, Share2, X } from 'lucide-react';
 
 interface WhatsAppShareModalProps {
@@ -11,7 +11,6 @@ interface WhatsAppShareModalProps {
 
 export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   petitionId,
-  petitionTitle,
   onClose,
   isOpen,
   signerName,
@@ -22,14 +21,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string>('');
 
-  // Generate message when modal opens
-  useEffect(() => {
-    if (isOpen && petitionId) {
-      generateMessage();
-    }
-  }, [isOpen, petitionId]);
-
-  const generateMessage = async () => {
+  const generateMessage = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/whatsapp/generate-message', {
@@ -63,7 +55,14 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [petitionId, signerName]);
+
+  // Generate message when modal opens
+  useEffect(() => {
+    if (isOpen && petitionId) {
+      generateMessage();
+    }
+  }, [isOpen, petitionId, generateMessage]);
 
   const copyToClipboard = async () => {
     try {

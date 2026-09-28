@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, CheckCircle2, Phone, Zap } from 'lucide-react';
+import { Shield, Zap } from 'lucide-react';
 
 interface VerificationBadgeProps {
   trustScore?: number;

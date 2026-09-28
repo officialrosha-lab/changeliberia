@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationItem } from './notification-item';
 import { useToast } from '../lib/toast-context';
@@ -29,7 +29,7 @@ export function NotificationDropdown() {
   const token = useAuthStore((s) => s.token);
 
   // Fetch notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!token) return;
     try {
       setIsLoading(true);
@@ -49,10 +49,10 @@ export function NotificationDropdown() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
 
   // Fetch unread count
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!token) return;
     try {
       const data = await apiGet<{ unreadCount: number }>('/notifications/unread-count', token);
@@ -62,10 +62,10 @@ export function NotificationDropdown() {
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
-  };
+  }, [token]);
 
   // Handle new notification via WebSocket
-  const handleNewNotification = (notification: any) => {
+  const handleNewNotification = (notification: Notification) => {
     setNotifications((prev) => [notification, ...prev].slice(0, 10));
     setUnreadCount((prev) => prev + 1);
     
@@ -117,7 +117,7 @@ export function NotificationDropdown() {
         ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
+    } catch {
       showToast('Failed to update notification', 'error');
     }
   };
@@ -129,7 +129,7 @@ export function NotificationDropdown() {
       await apiPatch(`/notifications/${notificationId}/archive`, {}, token);
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       showToast('Notification archived', 'info');
-    } catch (error) {
+    } catch {
       showToast('Failed to archive notification', 'error');
     }
   };
@@ -144,7 +144,7 @@ export function NotificationDropdown() {
       );
       setUnreadCount(0);
       showToast('All marked as read', 'success');
-    } catch (error) {
+    } catch {
       showToast('Failed to mark all as read', 'error');
     }
   };
@@ -154,12 +154,12 @@ export function NotificationDropdown() {
     if (isOpen) {
       fetchNotifications();
     }
-  }, [isOpen, token]);
+  }, [isOpen, token, fetchNotifications]);
 
   // Fetch unread count on mount and set up polling as fallback
   useEffect(() => {
     fetchUnreadCount();
-    
+
     // Set up polling every 30 seconds as fallback when WebSocket not connected
     pollingIntervalRef.current = setInterval(() => {
       if (!isConnected) {
@@ -172,7 +172,7 @@ export function NotificationDropdown() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [isConnected, token]);
+  }, [isConnected, token, fetchUnreadCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

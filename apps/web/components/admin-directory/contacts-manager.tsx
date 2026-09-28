@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
@@ -51,12 +51,7 @@ export function ContactsManager() {
     departmentId: '',
   });
 
-  useEffect(() => {
-    if (!token) return;
-    void loadInstitutions();
-  }, [token]);
-
-  async function loadInstitutions() {
+  const loadInstitutions = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<Institution[]>('/admin/directory/institutions', token!);
@@ -67,7 +62,12 @@ export function ContactsManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    void loadInstitutions();
+  }, [token, loadInstitutions]);
 
   async function loadContacts(institutionId: string) {
     try {

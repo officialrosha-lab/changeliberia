@@ -14,7 +14,6 @@ interface PetitionDonationWidgetProps {
 }
 
 export function PetitionDonationWidget({
-  petitionTitle,
   fundingGoal,
   amountRaised,
   donorCount,

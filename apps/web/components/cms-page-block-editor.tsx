@@ -1,12 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { CMSBlock, CMSPage } from '../lib/cms';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { CMSBlockRenderer } from './cms-block-renderer';
 
 type BlockType = 'hero' | 'text' | 'image' | 'grid' | 'cta' | 'testimonial' | 'divider' | 'faq' | 'features';
+
+type BlockItem = Record<string, string>;
+
+function propStr(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function propNum(value: unknown, fallback: number): number {
+  return typeof value === 'number' ? value : fallback;
+}
+
+function propItems(value: unknown): BlockItem[] {
+  return Array.isArray(value) ? (value as BlockItem[]) : [];
+}
 
 interface PageWithBlocks extends CMSPage {
   blocks?: CMSBlock[];
@@ -20,17 +34,12 @@ export function CMSPageBlockEditor() {
   const [error, setError] = useState<string | null>(null);
   const [editingBlock, setEditingBlock] = useState<CMSBlock | null>(null);
   const [blockType, setBlockType] = useState<BlockType>('text');
-  const [blockProps, setBlockProps] = useState<Record<string, any>>({});
+  const [blockProps, setBlockProps] = useState<Record<string, unknown>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [copiedBlock, setCopiedBlock] = useState<CMSBlock | null>(null);
 
-  useEffect(() => {
-    if (!token) return;
-    loadPages();
-  }, [token]);
-
-  async function loadPages() {
+  const loadPages = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiGet<PageWithBlocks[]>('/cms/pages', token!);
@@ -41,7 +50,12 @@ export function CMSPageBlockEditor() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadPages();
+  }, [token, loadPages]);
 
   async function loadPageWithBlocks(pageId: string) {
     try {
@@ -324,8 +338,8 @@ export function CMSPageBlockEditor() {
                         <p className="text-sm font-medium text-zinc-900 dark:text-neutral-50">
                           Block {idx + 1}: {block.type.toUpperCase()}
                         </p>
-                        {block.props?.title && (
-                          <p className="text-xs text-zinc-500 dark:text-neutral-400">{block.props.title}</p>
+                        {propStr(block.props?.title) && (
+                          <p className="text-xs text-zinc-500 dark:text-neutral-400">{propStr(block.props?.title)}</p>
                         )}
                       </div>
                       <div className="ml-2 flex gap-1">
@@ -444,10 +458,10 @@ function BlockPropsEditor({
   onChange,
 }: {
   type: BlockType;
-  props: Record<string, any>;
-  onChange: (props: Record<string, any>) => void;
+  props: Record<string, unknown>;
+  onChange: (props: Record<string, unknown>) => void;
 }) {
-  const updateProp = (key: string, value: any) => {
+  const updateProp = (key: string, value: unknown) => {
     onChange({ ...props, [key]: value });
   };
 
@@ -458,20 +472,20 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="Title"
-            value={props.title || ''}
+            value={propStr(props.title)}
             onChange={(e) => updateProp('title', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="text"
             placeholder="Subtitle (optional)"
-            value={props.subtitle || ''}
+            value={propStr(props.subtitle)}
             onChange={(e) => updateProp('subtitle', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <textarea
             placeholder="Description"
-            value={props.description || ''}
+            value={propStr(props.description)}
             onChange={(e) => updateProp('description', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             rows={3}
@@ -479,14 +493,14 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="CTA Text (optional)"
-            value={props.ctaText || ''}
+            value={propStr(props.ctaText)}
             onChange={(e) => updateProp('ctaText', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="url"
             placeholder="CTA URL (optional)"
-            value={props.ctaUrl || ''}
+            value={propStr(props.ctaUrl)}
             onChange={(e) => updateProp('ctaUrl', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
@@ -497,19 +511,19 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="Title (optional)"
-            value={props.title || ''}
+            value={propStr(props.title)}
             onChange={(e) => updateProp('title', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <textarea
             placeholder="Body text"
-            value={props.body || ''}
+            value={propStr(props.body)}
             onChange={(e) => updateProp('body', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             rows={4}
           />
           <select
-            value={props.alignment || 'left'}
+            value={propStr(props.alignment, 'left')}
             onChange={(e) => updateProp('alignment', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >
@@ -524,26 +538,26 @@ function BlockPropsEditor({
           <input
             type="url"
             placeholder="Image URL"
-            value={props.url || ''}
+            value={propStr(props.url)}
             onChange={(e) => updateProp('url', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="text"
             placeholder="Alt text (for accessibility)"
-            value={props.alt || ''}
+            value={propStr(props.alt)}
             onChange={(e) => updateProp('alt', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <textarea
             placeholder="Caption (optional)"
-            value={props.caption || ''}
+            value={propStr(props.caption)}
             onChange={(e) => updateProp('caption', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             rows={2}
           />
           <select
-            value={props.size || 'full'}
+            value={propStr(props.size, 'full')}
             onChange={(e) => updateProp('size', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >
@@ -558,13 +572,13 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="Heading"
-            value={props.heading || ''}
+            value={propStr(props.heading)}
             onChange={(e) => updateProp('heading', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <textarea
             placeholder="Description"
-            value={props.description || ''}
+            value={propStr(props.description)}
             onChange={(e) => updateProp('description', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             rows={2}
@@ -572,14 +586,14 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="Primary button text"
-            value={props.primaryText || ''}
+            value={propStr(props.primaryText)}
             onChange={(e) => updateProp('primaryText', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="url"
             placeholder="Primary button URL"
-            value={props.primaryUrl || ''}
+            value={propStr(props.primaryUrl)}
             onChange={(e) => updateProp('primaryUrl', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
@@ -589,7 +603,7 @@ function BlockPropsEditor({
         <>
           <textarea
             placeholder="Quote text"
-            value={props.quote || ''}
+            value={propStr(props.quote)}
             onChange={(e) => updateProp('quote', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             rows={3}
@@ -597,26 +611,26 @@ function BlockPropsEditor({
           <input
             type="text"
             placeholder="Author name"
-            value={props.author || ''}
+            value={propStr(props.author)}
             onChange={(e) => updateProp('author', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="text"
             placeholder="Author role/title"
-            value={props.role || ''}
+            value={propStr(props.role)}
             onChange={(e) => updateProp('role', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <input
             type="url"
             placeholder="Avatar image URL (optional)"
-            value={props.avatar || ''}
+            value={propStr(props.avatar)}
             onChange={(e) => updateProp('avatar', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
           <select
-            value={props.rating || 5}
+            value={propNum(props.rating, 5)}
             onChange={(e) => updateProp('rating', parseInt(e.target.value))}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >
@@ -631,13 +645,13 @@ function BlockPropsEditor({
       {type === 'faq' && (
         <>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Question {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700"
@@ -650,7 +664,7 @@ function BlockPropsEditor({
                   placeholder="Question"
                   value={item.question || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, question: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -660,7 +674,7 @@ function BlockPropsEditor({
                   placeholder="Answer"
                   value={item.answer || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, answer: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -672,7 +686,7 @@ function BlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { question: '', answer: '' }]);
+              updateProp('items', [...propItems(props.items), { question: '', answer: '' }]);
             }}
             className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
           >
@@ -683,7 +697,7 @@ function BlockPropsEditor({
       {type === 'grid' && (
         <>
           <select
-            value={props.columns || 3}
+            value={propNum(props.columns, 3)}
             onChange={(e) => updateProp('columns', parseInt(e.target.value))}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >
@@ -692,13 +706,13 @@ function BlockPropsEditor({
             <option value={4}>4 columns</option>
           </select>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Grid Item {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700"
@@ -711,7 +725,7 @@ function BlockPropsEditor({
                   placeholder="Title"
                   value={item.title || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, title: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -721,7 +735,7 @@ function BlockPropsEditor({
                   placeholder="Description"
                   value={item.description || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, description: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -733,7 +747,7 @@ function BlockPropsEditor({
                   placeholder="Icon (emoji or icon name, e.g. 📱 or 'download')"
                   value={item.icon || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, icon: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -744,7 +758,7 @@ function BlockPropsEditor({
                   placeholder="Link URL (optional)"
                   value={item.link || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, link: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -755,7 +769,7 @@ function BlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { title: '', description: '', icon: '', link: '' }]);
+              updateProp('items', [...propItems(props.items), { title: '', description: '', icon: '', link: '' }]);
             }}
             className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
           >
@@ -766,13 +780,13 @@ function BlockPropsEditor({
       {type === 'features' && (
         <>
           <div className="space-y-3">
-            {(props.items || []).map((item: any, idx: number) => (
+            {propItems(props.items).map((item, idx) => (
               <div key={idx} className="space-y-2 rounded border border-zinc-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-zinc-500 dark:text-neutral-400">Feature {idx + 1}</span>
                   <button
                     onClick={() => {
-                      const newItems = props.items?.filter((_: any, i: number) => i !== idx) || [];
+                      const newItems = propItems(props.items).filter((_, i) => i !== idx);
                       updateProp('items', newItems);
                     }}
                     className="text-xs text-red-600 hover:text-red-700"
@@ -785,7 +799,7 @@ function BlockPropsEditor({
                   placeholder="Feature title"
                   value={item.title || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, title: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -795,7 +809,7 @@ function BlockPropsEditor({
                   placeholder="Feature description"
                   value={item.description || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, description: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -807,7 +821,7 @@ function BlockPropsEditor({
                   placeholder="Icon (emoji or icon name, e.g. ✅ or 'check')"
                   value={item.icon || ''}
                   onChange={(e) => {
-                    const newItems = [...(props.items || [])];
+                    const newItems = [...propItems(props.items)];
                     newItems[idx] = { ...item, icon: e.target.value };
                     updateProp('items', newItems);
                   }}
@@ -818,7 +832,7 @@ function BlockPropsEditor({
           </div>
           <button
             onClick={() => {
-              updateProp('items', [...(props.items || []), { title: '', description: '', icon: '' }]);
+              updateProp('items', [...propItems(props.items), { title: '', description: '', icon: '' }]);
             }}
             className="w-full rounded border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-400"
           >
@@ -829,7 +843,7 @@ function BlockPropsEditor({
       {type === 'divider' && (
         <>
           <select
-            value={props.style || 'solid'}
+            value={propStr(props.style, 'solid')}
             onChange={(e) => updateProp('style', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >
@@ -838,7 +852,7 @@ function BlockPropsEditor({
             <option value="dotted">Dotted line</option>
           </select>
           <select
-            value={props.size || 'md'}
+            value={propStr(props.size, 'md')}
             onChange={(e) => updateProp('size', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           >

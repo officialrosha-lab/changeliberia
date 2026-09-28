@@ -12,7 +12,7 @@ interface NotificationEvent {
   message: string;
   status: 'UNREAD' | 'READ' | 'ARCHIVED';
   createdAt: string;
-  metadata?: any;
+  metadata?: string;
 }
 
 interface UseNotificationSocketProps {
@@ -60,12 +60,14 @@ export function useNotificationSocket({
     onAllNotificationsRead,
     onNotificationArchived,
   });
-  callbacksRef.current = {
-    onNewNotification,
-    onNotificationRead,
-    onAllNotificationsRead,
-    onNotificationArchived,
-  };
+  useEffect(() => {
+    callbacksRef.current = {
+      onNewNotification,
+      onNotificationRead,
+      onAllNotificationsRead,
+      onNotificationArchived,
+    };
+  });
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -77,6 +79,10 @@ export function useNotificationSocket({
 
   useEffect(() => {
     if (!token) {
+      // Intentional: tears down the live socket connection synchronously
+      // when the auth token disappears (e.g. logout) rather than leaving
+      // a stale connection open until some later render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       disconnect();
       return;
     }

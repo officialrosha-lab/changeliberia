@@ -68,7 +68,7 @@ const STATIC_PAGES: PageRoute[] = [
 ];
 
 /** Best-effort recursive search for the first object with an `id`/`slug` field. */
-function findFirstIdLike(value: any, key: 'id' | 'slug', depth = 0): string | undefined {
+function findFirstIdLike(value: unknown, key: 'id' | 'slug', depth = 0): string | undefined {
   if (!value || depth > 4) return undefined;
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -78,8 +78,9 @@ function findFirstIdLike(value: any, key: 'id' | 'slug', depth = 0): string | un
     return undefined;
   }
   if (typeof value === 'object') {
-    if (typeof value[key] === 'string') return value[key];
-    for (const v of Object.values(value)) {
+    const record = value as Record<string, unknown>;
+    if (typeof record[key] === 'string') return record[key] as string;
+    for (const v of Object.values(record)) {
       const found = findFirstIdLike(v, key, depth + 1);
       if (found) return found;
     }
@@ -87,7 +88,7 @@ function findFirstIdLike(value: any, key: 'id' | 'slug', depth = 0): string | un
   return undefined;
 }
 
-async function fetchJson(path: string): Promise<any> {
+async function fetchJson(path: string): Promise<unknown> {
   try {
     const res = await fetch(`${API_BASE_URL}${path}`);
     return res.ok ? await res.json() : null;
@@ -100,7 +101,7 @@ test.describe('Full frontend route inventory smoke test', () => {
   let petitionId: string | undefined;
   let pollSlug: string | undefined;
   let officialSlug: string | undefined;
-  let cmsSlug = 'about';
+  const cmsSlug = 'about';
 
   test.beforeAll(async () => {
     const petitions = await fetchJson('/api/v1/petitions/browse/all');

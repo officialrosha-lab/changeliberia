@@ -1,7 +1,22 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { RootLayoutClient } from './root-layout-client';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '700'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-playfair',
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -63,11 +78,8 @@ const websiteJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfairDisplay.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -119,6 +131,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }}
             />
             <noscript>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 height="1"
                 width="1"

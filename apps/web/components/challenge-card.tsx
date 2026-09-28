@@ -13,6 +13,15 @@ type ChallengeData = {
   earnedBonus: number;
 };
 
+type AvailableChallenge = {
+  challengeId: string;
+  title: string;
+  goalValue: number;
+  goalType: string;
+  rewardMultiplier: number;
+  participantCount: number;
+};
+
 type Props = {
   challenge?: ChallengeData;
   petitionId?: string;
@@ -25,7 +34,7 @@ export function ChallengeCard({
   displayMode = 'card'
 }: Props) {
   const [userChallenges, setUserChallenges] = useState<ChallengeData[]>([]);
-  const [activeChallenges, setActiveChallenges] = useState<any[]>([]);
+  const [activeChallenges, setActiveChallenges] = useState<AvailableChallenge[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

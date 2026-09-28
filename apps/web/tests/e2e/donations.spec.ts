@@ -4,11 +4,6 @@ import {
   clickElement,
   expectTextContent,
   generateTestEmail,
-  generateTestPassword,
-  waitForNavigation,
-  getText,
-  fillForm,
-  isVisible,
   waitForAPIResponse,
 } from './test-helpers';
 
@@ -167,8 +162,6 @@ test.describe('Donations & Stripe Integration', () => {
       }
 
       // Submit payment
-      const submitButton = page.locator('button:has-text("Donate")|button:has-text("Pay")|button[type="submit"]').last();
-      
       // Wait for API response
       const paymentPromise = waitForAPIResponse(page, /payment|charge|donation/i, async () => {
         await clickElement(page, 'button:has-text("Donate")|button:has-text("Pay")|button[type="submit"]:last-child');
@@ -237,7 +230,6 @@ test.describe('Donations & Stripe Integration', () => {
       }
 
       // Submit
-      const submitButton = page.locator('button:has-text("Donate")|button:has-text("Pay")|button[type="submit"]').last();
       await clickElement(page, 'button:has-text("Donate")|button:has-text("Pay")|button[type="submit"]:last-child');
 
       // Should show error
@@ -295,15 +287,6 @@ test.describe('Donations & Stripe Integration', () => {
   test('should track donation analytics', async ({ page }) => {
     // Navigate and interact
     await page.goto('/');
-
-    // Listen for analytics events
-    let analyticsEvent = false;
-
-    page.on('console', (msg) => {
-      if (msg.text().includes('donation') || msg.text().includes('analytics')) {
-        analyticsEvent = true;
-      }
-    });
 
     // Trigger donation interaction
     const donationButton = page.locator('[data-testid="donation-widget"] button').first();

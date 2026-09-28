@@ -1,17 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import type { CMSBlock } from '../lib/cms';
 import { CMSPageBlockEditor } from './cms-page-block-editor';
 import {
   Clock,
   History,
   FileText,
   Eye,
-  EyeOff,
-  Save,
-  MoreVertical,
   AlertCircle,
 } from 'lucide-react';
 
@@ -22,7 +20,7 @@ interface CMSPage {
   content: string;
   published: boolean;
   publishedAt?: string;
-  blocks?: any[];
+  blocks?: CMSBlock[];
 }
 
 interface PageVersion {
@@ -47,7 +45,7 @@ interface CMSPageEnhanced extends CMSPage {
 }
 
 export function CMSPageEditorEnhanced() {
-  const token = useAuthStore((s: any) => s.token);
+  const token = useAuthStore((s) => s.token);
   const [selectedPage, setSelectedPage] = useState<CMSPageEnhanced | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showScheduling, setShowScheduling] = useState(false);
@@ -255,7 +253,12 @@ export function CMSPageEditorEnhanced() {
 
               {/* Schedule Button */}
               <button
-                onClick={() => setShowScheduling(!showScheduling)}
+                onClick={() => {
+                  setShowScheduling(!showScheduling);
+                  if (!showScheduling) {
+                    loadSchedules(selectedPage.id);
+                  }
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
               >
                 <Clock className="w-4 h-4" />
@@ -285,7 +288,7 @@ export function CMSPageEditorEnhanced() {
               <div className="flex gap-3">
                 <select
                   value={scheduleAction}
-                  onChange={(e) => setScheduleAction(e.target.value as any)}
+                  onChange={(e) => setScheduleAction(e.target.value as 'publish' | 'unpublish' | 'update')}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
                   <option value="publish">Publish</option>

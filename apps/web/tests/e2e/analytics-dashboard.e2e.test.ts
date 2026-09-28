@@ -27,9 +27,7 @@ test.describe('Analytics Dashboard', () => {
 
   test('TC-ANALYTICS-002: Real-time update on new message', async ({ adminPage, adminToken }) => {
     // Get initial message count
-    const initialCount = await adminPage
-      .locator('[data-testid="total-messages"]')
-      .textContent();
+    await adminPage.locator('[data-testid="total-messages"]').textContent();
 
     // Create message via API
     const response = await adminPage.request.post('/api/messages', {
@@ -99,9 +97,7 @@ test.describe('Analytics Dashboard', () => {
 
   test('TC-ANALYTICS-005: Period filter changes data', async ({ adminPage }) => {
     // Get initial data
-    const initialCount = await adminPage
-      .locator('[data-testid="total-messages"]')
-      .textContent();
+    await adminPage.locator('[data-testid="total-messages"]').textContent();
 
     // Click period dropdown
     await adminPage.click('[data-testid="period-select"]');
@@ -296,9 +292,7 @@ test.describe('Analytics Dashboard', () => {
     adminToken,
   }) => {
     // Get initial broadcast count
-    const initialCount = await adminPage
-      .locator('[data-testid="total-broadcasts"]')
-      .textContent();
+    await adminPage.locator('[data-testid="total-broadcasts"]').textContent();
 
     // Create broadcast via API
     await adminPage.request.post('/api/broadcasts', {
