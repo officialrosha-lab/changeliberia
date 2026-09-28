@@ -512,7 +512,7 @@ export class MoMoService {
   /**
    * Generate webhook signature for verification
    */
-  generateWebhookSignature(payload: any, secret: string): string {
+  generateWebhookSignature(payload: unknown, secret: string): string {
     return crypto
       .createHmac('sha256', secret)
       .update(JSON.stringify(payload))
