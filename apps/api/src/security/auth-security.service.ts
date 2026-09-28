@@ -36,7 +36,12 @@ export interface SessionSecurityInfo {
 }
 
 export interface AuthEvent {
-  type: 'login' | 'logout' | 'password_change' | 'failed_attempt' | 'token_refresh';
+  type:
+    | 'login'
+    | 'logout'
+    | 'password_change'
+    | 'failed_attempt'
+    | 'token_refresh';
   userId: string;
   timestamp: number;
   ipAddress: string;
@@ -49,7 +54,8 @@ export interface AuthEvent {
  * Default auth security configuration
  */
 export const DEFAULT_AUTH_CONFIG: AuthSecurityConfig = {
-  jwtSecret: process.env.JWT_SECRET || 'change-liberia-secret-key-change-in-production',
+  jwtSecret:
+    process.env.JWT_SECRET || 'change-liberia-secret-key-change-in-production',
   jwtExpiresIn: '1h',
   refreshTokenExpiresIn: '7d',
   maxLoginAttempts: 5,
@@ -63,17 +69,21 @@ export const DEFAULT_AUTH_CONFIG: AuthSecurityConfig = {
 @Injectable()
 export class AuthSecurityService {
   private config: AuthSecurityConfig;
-  private loginAttempts = new Map<string, { count: number; lockedUntil?: number }>();
+  private loginAttempts = new Map<
+    string,
+    { count: number; lockedUntil?: number }
+  >();
   private authEvents: AuthEvent[] = [];
   private crypto = require('crypto');
 
   constructor(
     private jwtService: JwtService,
-    configService: ConfigService
+    configService: ConfigService,
   ) {
     this.config = {
       ...DEFAULT_AUTH_CONFIG,
-      jwtSecret: configService.get('JWT_SECRET') || DEFAULT_AUTH_CONFIG.jwtSecret,
+      jwtSecret:
+        configService.get('JWT_SECRET') || DEFAULT_AUTH_CONFIG.jwtSecret,
     };
 
     // Cleanup old events every hour
@@ -107,7 +117,7 @@ export class AuthSecurityService {
     // Length check
     if (password.length < this.config.passwordMinLength) {
       feedback.push(
-        `Password must be at least ${this.config.passwordMinLength} characters`
+        `Password must be at least ${this.config.passwordMinLength} characters`,
       );
     } else {
       score += 1;
@@ -132,7 +142,10 @@ export class AuthSecurityService {
     }
 
     // Special characters check
-    if (this.config.passwordRequireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (
+      this.config.passwordRequireSpecialChars &&
+      !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    ) {
       feedback.push('Include special characters');
     } else if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
       score += 1;
@@ -155,9 +168,11 @@ export class AuthSecurityService {
     }
 
     // Check for sequential characters
-    if (/(?:012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(
-      password
-    )) {
+    if (
+      /(?:012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(
+        password,
+      )
+    ) {
       feedback.push('Avoid sequential characters');
       score = Math.max(0, score - 1);
     }
@@ -173,18 +188,24 @@ export class AuthSecurityService {
    * Generate refresh token
    */
   generateRefreshToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(payload as any, {
-      expiresIn: this.config.refreshTokenExpiresIn,
-    } as any);
+    return this.jwtService.sign(
+      payload as any,
+      {
+        expiresIn: this.config.refreshTokenExpiresIn,
+      } as any,
+    );
   }
 
   /**
    * Generate access token
    */
   generateAccessToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(payload as any, {
-      expiresIn: this.config.jwtExpiresIn,
-    } as any);
+    return this.jwtService.sign(
+      payload as any,
+      {
+        expiresIn: this.config.jwtExpiresIn,
+      } as any,
+    );
   }
 
   /**
@@ -192,7 +213,7 @@ export class AuthSecurityService {
    */
   verifyToken(token: string): Record<string, unknown> | null {
     try {
-      return this.jwtService.verify(token) as any;
+      return this.jwtService.verify(token) as Record<string, unknown>;
     } catch (error) {
       console.error('Token verification failed:', error);
       return null;
@@ -273,7 +294,7 @@ export class AuthSecurityService {
     // Log to console for alerts
     if (!event.success) {
       console.warn(
-        `[AUTH] ${event.type} failed for user ${event.userId}: ${event.reason}`
+        `[AUTH] ${event.type} failed for user ${event.userId}: ${event.reason}`,
       );
     }
   }
@@ -284,7 +305,7 @@ export class AuthSecurityService {
   getAuthEvents(userId: string, hours: number = 24): AuthEvent[] {
     const since = Date.now() - hours * 60 * 60 * 1000;
     return this.authEvents.filter(
-      (e) => e.userId === userId && e.timestamp > since
+      (e) => e.userId === userId && e.timestamp > since,
     );
   }
 
@@ -333,7 +354,7 @@ export class AuthSecurityService {
     if (passwordChanges.length > 0) {
       const lastPasswordChange = passwordChanges[passwordChanges.length - 1];
       const loginsAfter = events.filter(
-        (e) => e.type === 'login' && e.timestamp > lastPasswordChange.timestamp
+        (e) => e.type === 'login' && e.timestamp > lastPasswordChange.timestamp,
       );
       if (loginsAfter.length >= 2) {
         reasons.push('Multiple logins after password change');
@@ -367,7 +388,7 @@ export class AuthSecurityService {
     ipAddress: string,
     userAgent: string,
     sessionId: string,
-    deviceId?: string
+    deviceId?: string,
   ): SessionSecurityInfo {
     const now = Date.now();
     const expiresIn = 3600 * 1000; // 1 hour

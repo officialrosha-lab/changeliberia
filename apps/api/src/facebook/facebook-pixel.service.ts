@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class FacebookPixelService {
   private readonly logger = new Logger(FacebookPixelService.name);
-  private readonly PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || 'placeholder_pixel_id';
+  private readonly PIXEL_ID =
+    process.env.FACEBOOK_PIXEL_ID || 'placeholder_pixel_id';
   private readonly ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || '';
 
   constructor(private prisma: PrismaService) {}
@@ -202,9 +203,7 @@ export class FacebookPixelService {
   /**
    * Get pixel report/analytics
    */
-  async getPixelReport(
-    petitionId?: string,
-  ): Promise<{
+  async getPixelReport(petitionId?: string): Promise<{
     totalEvents: number;
     eventsByType: Record<string, number>;
     totalConversions: number;

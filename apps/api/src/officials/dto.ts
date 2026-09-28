@@ -7,7 +7,11 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { InstitutionCategory, GovernmentResponseStage, OfficialStaffRole } from '@prisma/client';
+import {
+  InstitutionCategory,
+  GovernmentResponseStage,
+  OfficialStaffRole,
+} from '@prisma/client';
 
 const INDIVIDUAL_OFFICE_CATEGORIES = [
   InstitutionCategory.SENATOR,

@@ -1,6 +1,10 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Notification, NotificationType, NotificationStatus } from '@prisma/client';
+import {
+  Notification,
+  NotificationType,
+  NotificationStatus,
+} from '@prisma/client';
 import { NotificationsGateway } from '../events/notifications.gateway';
 
 export interface CreateNotificationDto {

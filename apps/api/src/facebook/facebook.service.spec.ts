@@ -81,8 +81,8 @@ describe('FacebookService', () => {
     }).compile();
 
     service = module.get<FacebookService>(FacebookService);
-    prismaService = module.get(PrismaService) as any;
-    eventBusService = module.get(EventBusService) as jest.Mocked<EventBusService>;
+    prismaService = module.get(PrismaService);
+    eventBusService = module.get(EventBusService);
   });
 
   describe('generateOpenGraphMeta', () => {
@@ -127,7 +127,10 @@ describe('FacebookService', () => {
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
       prismaService.shareLink.create.mockResolvedValue(mockShareLink as any);
 
-      const result = await service.createFacebookShareLink('petition-1', 'user-1');
+      const result = await service.createFacebookShareLink(
+        'petition-1',
+        'user-1',
+      );
 
       expect(result).toEqual({
         shareUrl: expect.stringContaining('/r/'),
@@ -169,7 +172,10 @@ describe('FacebookService', () => {
       prismaService.user.findUnique.mockResolvedValue(highTrustUser as any);
       prismaService.shareLink.create.mockResolvedValue(mockShareLink as any);
 
-      const result = await service.createFacebookShareLink('petition-1', 'user-1');
+      const result = await service.createFacebookShareLink(
+        'petition-1',
+        'user-1',
+      );
 
       expect(result.reachEstimate).toBeGreaterThan(250);
     });
@@ -198,7 +204,9 @@ describe('FacebookService', () => {
 
   describe('trackFacebookClick', () => {
     it('should track a Facebook click and return target URL', async () => {
-      prismaService.shareLink.findUnique.mockResolvedValue(mockShareLink as any);
+      prismaService.shareLink.findUnique.mockResolvedValue(
+        mockShareLink as any,
+      );
       prismaService.shareLink.update.mockResolvedValue(mockShareLink as any);
 
       const result = await service.trackFacebookClick('abc12345');
@@ -234,7 +242,9 @@ describe('FacebookService', () => {
 
     it('should update share count when shortCode is provided', async () => {
       prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareLink.findUnique.mockResolvedValue(mockShareLink as any);
+      prismaService.shareLink.findUnique.mockResolvedValue(
+        mockShareLink as any,
+      );
 
       await service.recordFacebookShare('petition-1', 'user-1', 'abc12345');
 
@@ -351,7 +361,10 @@ describe('FacebookService', () => {
     it('should get custom audience for converters', async () => {
       prismaService.shareLink.findMany.mockResolvedValue([] as any);
 
-      const result = await service.getCustomAudience('petition-1', 'CONVERTERS');
+      const result = await service.getCustomAudience(
+        'petition-1',
+        'CONVERTERS',
+      );
 
       expect(result.description).toContain('shares resulted in');
     });
@@ -359,7 +372,10 @@ describe('FacebookService', () => {
     it('should get custom audience for influencers', async () => {
       prismaService.shareLink.findMany.mockResolvedValue([] as any);
 
-      const result = await service.getCustomAudience('petition-1', 'INFLUENCERS');
+      const result = await service.getCustomAudience(
+        'petition-1',
+        'INFLUENCERS',
+      );
 
       expect(result.description).toContain('Influencers');
     });

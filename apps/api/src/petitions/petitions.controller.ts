@@ -79,17 +79,20 @@ export class PetitionsController {
   }
 
   @Get('media/:filename')
-  async serveMedia(
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ) {
+  async serveMedia(@Param('filename') filename: string, @Res() res: Response) {
     const abs = this.mediaStorage.resolveSafe(filename);
-    if (!abs || !existsSync(abs)) throw new NotFoundException('Media not found');
+    if (!abs || !existsSync(abs))
+      throw new NotFoundException('Media not found');
     const ext = extname(filename).toLowerCase();
     const ct: Record<string, string> = {
-      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-      '.webp': 'image/webp', '.gif': 'image/gif',
-      '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.mov': 'video/quicktime',
     };
     res.setHeader('Content-Type', ct[ext] ?? 'application/octet-stream');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -121,15 +124,24 @@ export class PetitionsController {
   async reportCsv(@Param('id') id: string, @Res() res: Response) {
     const csv = await this.impactAreaReport.generateCsv(id);
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="petition-${id}-impact-report.csv"`,
+    );
     res.send(csv);
   }
 
   @Get(':id/report/excel')
   async reportExcel(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.impactAreaReport.generateExcel(id);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.xlsx"`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="petition-${id}-impact-report.xlsx"`,
+    );
     res.send(buffer);
   }
 
@@ -137,7 +149,10 @@ export class PetitionsController {
   async reportPdf(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.impactAreaReport.generatePdf(id);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="petition-${id}-impact-report.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="petition-${id}-impact-report.pdf"`,
+    );
     res.send(buffer);
   }
 
@@ -171,7 +186,7 @@ export class PetitionsController {
     @Body() dto: CreatePetitionDto,
   ) {
     const result = await this.service.create(req.user.userId, dto);
-    
+
     // Log the petition creation
     this.activityLogger.logAsync({
       userId: req.user.userId,
@@ -181,7 +196,7 @@ export class PetitionsController {
       description: `User created petition: "${result.title}"`,
       changes: { status: 'PENDING', category: result.category },
     });
-    
+
     return result;
   }
 
@@ -218,7 +233,10 @@ export class PetitionsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/follow')
-  checkFollow(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
+  checkFollow(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+  ) {
     return this.service.isFollowing(req.user.userId, id);
   }
 
@@ -241,8 +259,13 @@ export class PetitionsController {
       limits: { fileSize: 50 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowed = [
-          'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-          'video/mp4', 'video/webm', 'video/quicktime',
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'video/mp4',
+          'video/webm',
+          'video/quicktime',
         ];
         cb(null, allowed.includes(file.mimetype));
       },
@@ -255,14 +278,22 @@ export class PetitionsController {
     @UploadedFile() file: MemoryUploadedFile | undefined,
     @Body('type') type?: string,
   ) {
-    if (!file) throw new BadRequestException('No file provided or unsupported file type');
+    if (!file)
+      throw new BadRequestException(
+        'No file provided or unsupported file type',
+      );
     const url = await this.mediaStorage.save(file);
     const mediaType = file.mimetype.startsWith('video/')
       ? PetitionMediaType.VIDEO
       : type === 'VIDEO'
         ? PetitionMediaType.VIDEO
         : PetitionMediaType.IMAGE;
-    const media = await this.service.addMedia(id, req.user.userId, mediaType, url);
+    const media = await this.service.addMedia(
+      id,
+      req.user.userId,
+      mediaType,
+      url,
+    );
     return media;
   }
 
@@ -293,9 +324,9 @@ export class PetitionsController {
   ) {
     const petition = await this.service.getById(id);
     if (!petition) throw new NotFoundException('Petition not found');
-    
+
     const result = await this.service.approve(id, body.category);
-    
+
     // Log the approval action
     this.activityLogger.logAsync({
       userId: petition.creatorId,
@@ -304,9 +335,13 @@ export class PetitionsController {
       entityType: 'PETITION',
       entityId: id,
       description: `Admin approved petition: "${petition.title}"`,
-      changes: { previousStatus: 'PENDING', newStatus: 'APPROVED', category: body.category },
+      changes: {
+        previousStatus: 'PENDING',
+        newStatus: 'APPROVED',
+        category: body.category,
+      },
     });
-    
+
     return result;
   }
 
@@ -323,7 +358,7 @@ export class PetitionsController {
     if (!petition) throw new NotFoundException('Petition not found');
 
     const result = await this.service.reject(id, body.reason);
-    
+
     // Log the rejection action
     this.activityLogger.logAsync({
       userId: petition.creatorId,
@@ -334,7 +369,7 @@ export class PetitionsController {
       description: `Admin rejected petition: "${petition.title}"`,
       changes: { previousStatus: 'PENDING', newStatus: 'REJECTED' },
     });
-    
+
     return result;
   }
 

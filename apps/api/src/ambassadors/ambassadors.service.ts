@@ -1,6 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateAmbassadorApplicationDto, UpdateAmbassadorApplicationDto } from './ambassadors.dto';
+import {
+  CreateAmbassadorApplicationDto,
+  UpdateAmbassadorApplicationDto,
+} from './ambassadors.dto';
 import { ApplicationStatus } from '@prisma/client';
 
 @Injectable()
@@ -50,7 +57,9 @@ export class AmbassadorsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Ambassador application with ID ${id} not found`);
+      throw new NotFoundException(
+        `Ambassador application with ID ${id} not found`,
+      );
     }
 
     return application;
@@ -62,7 +71,9 @@ export class AmbassadorsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Ambassador application with ID ${id} not found`);
+      throw new NotFoundException(
+        `Ambassador application with ID ${id} not found`,
+      );
     }
 
     const updated = await this.prisma.ambassadorApplication.update({
@@ -82,7 +93,9 @@ export class AmbassadorsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Ambassador application with ID ${id} not found`);
+      throw new NotFoundException(
+        `Ambassador application with ID ${id} not found`,
+      );
     }
 
     await this.prisma.ambassadorApplication.delete({

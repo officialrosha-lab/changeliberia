@@ -86,7 +86,9 @@ export class PetitionsService {
       }),
     ]);
 
-    const campaignsWon = goalData.filter((p) => p.signaturesCount >= p.goal).length;
+    const campaignsWon = goalData.filter(
+      (p) => p.signaturesCount >= p.goal,
+    ).length;
 
     return {
       totalPetitions: totals._count._all,
@@ -106,11 +108,21 @@ export class PetitionsService {
     return petition;
   }
 
-  async updatePetition(petitionId: string, userId: string, dto: UpdatePetitionDto) {
-    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+  async updatePetition(
+    petitionId: string,
+    userId: string,
+    dto: UpdatePetitionDto,
+  ) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
-    if (petition.creatorId !== userId) throw new ForbiddenException('Not your petition');
-    return this.prisma.petition.update({ where: { id: petitionId }, data: { ...dto } });
+    if (petition.creatorId !== userId)
+      throw new ForbiddenException('Not your petition');
+    return this.prisma.petition.update({
+      where: { id: petitionId },
+      data: { ...dto },
+    });
   }
 
   async list() {
@@ -155,11 +167,16 @@ export class PetitionsService {
     type: PetitionMediaType,
     url: string,
   ) {
-    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
-    if (petition.creatorId !== userId) throw new ForbiddenException('Not your petition');
+    if (petition.creatorId !== userId)
+      throw new ForbiddenException('Not your petition');
 
-    const count = await this.prisma.petitionMedia.count({ where: { petitionId } });
+    const count = await this.prisma.petitionMedia.count({
+      where: { petitionId },
+    });
     if (count >= PetitionsService.MAX_MEDIA_PER_PETITION) {
       throw new BadRequestException(
         `A petition can have at most ${PetitionsService.MAX_MEDIA_PER_PETITION} additional media items.`,
@@ -215,37 +232,50 @@ export class PetitionsService {
    * back to a specific person from this response alone.
    */
   async getCommunityInsights(petitionId: string, limit = 8) {
-    const [byCounty, byDistrict, byCommunity, diasporaTotal] = await Promise.all([
-      this.prisma.signatureLocation.groupBy({
-        by: ['county'],
-        where: { signature: { petitionId }, county: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { county: 'desc' } },
-        take: limit,
-      }),
-      this.prisma.signatureLocation.groupBy({
-        by: ['district'],
-        where: { signature: { petitionId }, district: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { district: 'desc' } },
-        take: limit,
-      }),
-      this.prisma.signatureLocation.groupBy({
-        by: ['community'],
-        where: { signature: { petitionId }, community: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { community: 'desc' } },
-        take: limit,
-      }),
-      this.prisma.signatureLocation.count({
-        where: { signature: { petitionId }, classification: 'DIASPORA_SUPPORTER' },
-      }),
-    ]);
+    const [byCounty, byDistrict, byCommunity, diasporaTotal] =
+      await Promise.all([
+        this.prisma.signatureLocation.groupBy({
+          by: ['county'],
+          where: { signature: { petitionId }, county: { not: null } },
+          _count: { _all: true },
+          orderBy: { _count: { county: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.groupBy({
+          by: ['district'],
+          where: { signature: { petitionId }, district: { not: null } },
+          _count: { _all: true },
+          orderBy: { _count: { district: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.groupBy({
+          by: ['community'],
+          where: { signature: { petitionId }, community: { not: null } },
+          _count: { _all: true },
+          orderBy: { _count: { community: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.count({
+          where: {
+            signature: { petitionId },
+            classification: 'DIASPORA_SUPPORTER',
+          },
+        }),
+      ]);
 
     return {
-      byCounty: byCounty.map((r) => ({ label: r.county as string, count: r._count._all })),
-      byDistrict: byDistrict.map((r) => ({ label: r.district as string, count: r._count._all })),
-      byCommunity: byCommunity.map((r) => ({ label: r.community as string, count: r._count._all })),
+      byCounty: byCounty.map((r) => ({
+        label: r.county as string,
+        count: r._count._all,
+      })),
+      byDistrict: byDistrict.map((r) => ({
+        label: r.district as string,
+        count: r._count._all,
+      })),
+      byCommunity: byCommunity.map((r) => ({
+        label: r.community as string,
+        count: r._count._all,
+      })),
       diasporaTotal,
     };
   }
@@ -253,7 +283,9 @@ export class PetitionsService {
   async approve(id: string, category?: string) {
     const petition = await this.prisma.petition.findUnique({
       where: { id },
-      include: { creator: { select: { id: true, email: true, fullName: true } } },
+      include: {
+        creator: { select: { id: true, email: true, fullName: true } },
+      },
     });
     if (!petition) throw new NotFoundException('Petition not found');
     if (petition.status !== PetitionStatus.PENDING) {
@@ -269,7 +301,11 @@ export class PetitionsService {
       },
     });
     await this.prisma.petitionStatusLog.create({
-      data: { petitionId: id, status: 'approved', note: 'Petition approved by admin' },
+      data: {
+        petitionId: id,
+        status: 'approved',
+        note: 'Petition approved by admin',
+      },
     });
     await this.prisma.petitionStatusLog.create({
       data: { petitionId: id, status: 'gathering_signatures' },
@@ -290,7 +326,10 @@ export class PetitionsService {
       await this.stakeholderGroupService.createGroupsForPetition(id);
     } catch (error) {
       // Log error but don't fail petition approval
-      console.error(`Error creating stakeholder groups for petition ${id}:`, error);
+      console.error(
+        `Error creating stakeholder groups for petition ${id}:`,
+        error,
+      );
     }
 
     // Auto-route petition to institution
@@ -329,7 +368,10 @@ export class PetitionsService {
           petition.county,
           null,
         );
-        await this.responseWorkflow.assignToInstitution(id, match.institutionId);
+        await this.responseWorkflow.assignToInstitution(
+          id,
+          match.institutionId,
+        );
       }
     } catch (error) {
       console.error(`Error routing petition ${id} to officials:`, error);
@@ -341,7 +383,9 @@ export class PetitionsService {
   async reject(id: string, reason?: string) {
     const petition = await this.prisma.petition.findUnique({
       where: { id },
-      include: { creator: { select: { id: true, email: true, fullName: true } } },
+      include: {
+        creator: { select: { id: true, email: true, fullName: true } },
+      },
     });
     if (!petition) throw new NotFoundException('Petition not found');
     if (petition.status !== PetitionStatus.PENDING) {
@@ -359,7 +403,8 @@ export class PetitionsService {
       creatorId: petition.creator.id,
       creatorEmail: petition.creator.email,
       creatorName: petition.creator.fullName,
-      reason: reason || 'Your petition did not meet our guidelines at this time.',
+      reason:
+        reason || 'Your petition did not meet our guidelines at this time.',
     });
 
     return rejected;
@@ -408,7 +453,12 @@ export class PetitionsService {
 
     this.eventEmitter.emit(
       'PETITION_UPDATE_PUBLISHED',
-      new PetitionUpdatePublishedEvent(update.id, petitionId, petition.title, dto.title),
+      new PetitionUpdatePublishedEvent(
+        update.id,
+        petitionId,
+        petition.title,
+        dto.title,
+      ),
     );
 
     return update;
@@ -424,7 +474,9 @@ export class PetitionsService {
   }
 
   async unfollowPetition(userId: string, petitionId: string) {
-    await this.prisma.petitionFollower.deleteMany({ where: { userId, petitionId } });
+    await this.prisma.petitionFollower.deleteMany({
+      where: { userId, petitionId },
+    });
     return { following: false };
   }
 
@@ -501,8 +553,12 @@ export class PetitionsService {
     });
   }
 
-  async getOrCreateShareLink(petitionId: string): Promise<{ shortCode: string; shortUrl: string }> {
-    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+  async getOrCreateShareLink(
+    petitionId: string,
+  ): Promise<{ shortCode: string; shortUrl: string }> {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
 
     const existing = await this.prisma.shareLink.findFirst({
@@ -510,12 +566,16 @@ export class PetitionsService {
       orderBy: { createdAt: 'asc' },
     });
     if (existing) {
-      return { shortCode: existing.shortCode, shortUrl: `https://changeliberia.org/r/${existing.shortCode}` };
+      return {
+        shortCode: existing.shortCode,
+        shortUrl: `https://changeliberia.org/r/${existing.shortCode}`,
+      };
     }
 
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let shortCode = '';
-    for (let i = 0; i < 8; i++) shortCode += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 8; i++)
+      shortCode += chars[Math.floor(Math.random() * chars.length)];
 
     const link = await this.prisma.shareLink.create({
       data: {
@@ -526,6 +586,9 @@ export class PetitionsService {
         medium: 'organic',
       },
     });
-    return { shortCode: link.shortCode, shortUrl: `https://changeliberia.org/r/${link.shortCode}` };
+    return {
+      shortCode: link.shortCode,
+      shortUrl: `https://changeliberia.org/r/${link.shortCode}`,
+    };
   }
 }

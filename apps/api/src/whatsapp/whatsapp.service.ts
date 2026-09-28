@@ -198,7 +198,8 @@ export class WhatsAppService {
           },
         ]),
       ),
-      conversionRate: referrals.find((r) => r.status === 'CONVERTED')?._count || 0,
+      conversionRate:
+        referrals.find((r) => r.status === 'CONVERTED')?._count || 0,
     };
   }
 

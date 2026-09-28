@@ -58,7 +58,7 @@ export class EncryptionService {
         'change-liberia-salt', // Use a static salt for consistency, ideally store per-user
         100000,
         32,
-        'sha256'
+        'sha256',
       );
     }
 
@@ -78,7 +78,7 @@ export class EncryptionService {
       const cipher = this.cipher.createCipheriv(
         this.config.algorithm,
         this.encryptionKey,
-        iv
+        iv,
       );
 
       // Add additional authenticated data if provided
@@ -116,7 +116,7 @@ export class EncryptionService {
       const decipher = this.cipher.createDecipheriv(
         encryptedData.algorithm,
         this.encryptionKey,
-        iv
+        iv,
       );
 
       // Set authentication tag
@@ -142,7 +142,7 @@ export class EncryptionService {
    */
   encryptObject<T extends Record<string, unknown>>(
     obj: T,
-    additionalData?: string
+    additionalData?: string,
   ): EncryptedData {
     const json = JSON.stringify(obj);
     return this.encrypt(json, additionalData);
@@ -153,7 +153,7 @@ export class EncryptionService {
    */
   decryptObject<T extends Record<string, unknown>>(
     encryptedData: EncryptedData,
-    additionalData?: string
+    additionalData?: string,
   ): T {
     const plaintext = this.decrypt(encryptedData, additionalData);
     return JSON.parse(plaintext) as T;
@@ -186,7 +186,11 @@ export class EncryptionService {
   /**
    * Hash with PBKDF2 and specific salt
    */
-  hashWithSalt(value: string, salt: string, iterations: number = 100000): string {
+  hashWithSalt(
+    value: string,
+    salt: string,
+    iterations: number = 100000,
+  ): string {
     const crypto = require('crypto');
     return crypto
       .pbkdf2Sync(value, salt, iterations, 32, 'sha256')
@@ -197,10 +201,7 @@ export class EncryptionService {
    * Encrypt PII (Personally Identifiable Information)
    * Common fields: SSN, passport number, driver license, etc.
    */
-  encryptPII(
-    field: string,
-    value: string
-  ): EncryptedData {
+  encryptPII(field: string, value: string): EncryptedData {
     // Use field name as additional authenticated data
     return this.encrypt(value, field);
   }
@@ -216,20 +217,14 @@ export class EncryptionService {
    * Encrypt payment data
    * Stripe tokens should be encrypted before storing
    */
-  encryptPaymentData(
-    paymentToken: string,
-    userId: string
-  ): EncryptedData {
+  encryptPaymentData(paymentToken: string, userId: string): EncryptedData {
     return this.encrypt(paymentToken, `payment:${userId}`);
   }
 
   /**
    * Decrypt payment data
    */
-  decryptPaymentData(
-    encryptedData: EncryptedData,
-    userId: string
-  ): string {
+  decryptPaymentData(encryptedData: EncryptedData, userId: string): string {
     return this.decrypt(encryptedData, `payment:${userId}`);
   }
 
@@ -238,7 +233,11 @@ export class EncryptionService {
    * Useful for logging/monitoring without exposing actual values
    */
   tokenizeSensitiveData(data: string): string {
-    const hash = this.cipher.createHash('sha256').update(data).digest().toString('hex');
+    const hash = this.cipher
+      .createHash('sha256')
+      .update(data)
+      .digest()
+      .toString('hex');
     return `tok_${hash.slice(0, 20)}`;
   }
 
@@ -289,7 +288,7 @@ export class EncryptionService {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      buffer
+      buffer,
     );
 
     return encrypted.toString('base64');
@@ -308,7 +307,7 @@ export class EncryptionService {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      buffer
+      buffer,
     );
 
     return decrypted.toString('utf8');

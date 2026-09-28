@@ -29,7 +29,9 @@ export class ChallengeService {
       const daysToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
 
       const startDate = new Date(now);
-      startDate.setDate(now.getDate() + (1 - dayOfWeek === 1 ? 0 : daysToMonday));
+      startDate.setDate(
+        now.getDate() + (1 - dayOfWeek === 1 ? 0 : daysToMonday),
+      );
       startDate.setHours(0, 0, 0, 0);
 
       const endDate = new Date(startDate);
@@ -121,9 +123,7 @@ export class ChallengeService {
         },
       });
 
-      this.logger.log(
-        `Created campaign challenge ${challenge.id}: ${title}`,
-      );
+      this.logger.log(`Created campaign challenge ${challenge.id}: ${title}`);
 
       return {
         id: challenge.id,
@@ -222,9 +222,7 @@ export class ChallengeService {
           },
         });
 
-        this.logger.log(
-          `User ${userId} completed challenge ${challengeId}`,
-        );
+        this.logger.log(`User ${userId} completed challenge ${challengeId}`);
       }
 
       const percentComplete = Math.min(
@@ -249,9 +247,7 @@ export class ChallengeService {
   /**
    * Get active challenges for a petition
    */
-  async getActiveChallenges(
-    petitionId: string,
-  ): Promise<
+  async getActiveChallenges(petitionId: string): Promise<
     Array<{
       id: string;
       title: string;
@@ -343,7 +339,8 @@ export class ChallengeService {
         ),
         completed: m.completed,
         daysRemaining: Math.ceil(
-          (m.challenge.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+          (m.challenge.endDate.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24),
         ),
         earnedBonus: m.earnedBonus,
       }));

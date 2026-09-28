@@ -13,7 +13,10 @@ export class SupportersService implements OnModuleInit {
       this.cachedCount = await this.prisma.supporter.count();
       this.logger.log(`Initialized supporter count: ${this.cachedCount}`);
     } catch (error) {
-      this.logger.error('Failed to initialize supporter count from database:', error);
+      this.logger.error(
+        'Failed to initialize supporter count from database:',
+        error,
+      );
       // Start with 0 if database is unavailable during startup
       this.cachedCount = 0;
     }
@@ -38,10 +41,17 @@ export class SupportersService implements OnModuleInit {
     }
   }
 
-  async join(sessionId: string, ipAddress: string, userId?: string, source = 'navbar') {
+  async join(
+    sessionId: string,
+    ipAddress: string,
+    userId?: string,
+    source = 'navbar',
+  ) {
     try {
       // Layer 1: sessionId deduplication (fast — unique index)
-      const bySession = await this.prisma.supporter.findUnique({ where: { sessionId } });
+      const bySession = await this.prisma.supporter.findUnique({
+        where: { sessionId },
+      });
       if (bySession) {
         this.logger.debug(`Duplicate join attempt by sessionId: ${sessionId}`);
         return { count: this.cachedCount, alreadyJoined: true };
@@ -50,7 +60,9 @@ export class SupportersService implements OnModuleInit {
       // Layer 2: IP deduplication — prevents re-join after clearing localStorage,
       // incognito windows, or different browsers on the same device/network.
       if (ipAddress && ipAddress !== 'unknown') {
-        const byIp = await this.prisma.supporter.findFirst({ where: { ipAddress } });
+        const byIp = await this.prisma.supporter.findFirst({
+          where: { ipAddress },
+        });
         if (byIp) {
           this.logger.debug(`Duplicate join attempt by IP: ${ipAddress}`);
           return { count: this.cachedCount, alreadyJoined: true };
@@ -61,7 +73,9 @@ export class SupportersService implements OnModuleInit {
         data: { sessionId, userId: userId ?? null, source, ipAddress },
       });
       this.cachedCount++;
-      this.logger.log(`New supporter joined via ${source}. Total count: ${this.cachedCount}`);
+      this.logger.log(
+        `New supporter joined via ${source}. Total count: ${this.cachedCount}`,
+      );
       return { count: this.cachedCount, alreadyJoined: false };
     } catch (error) {
       this.logger.error('Error creating supporter record:', error);
@@ -71,7 +85,9 @@ export class SupportersService implements OnModuleInit {
 
   async updateContact(sessionId: string, email?: string, phone?: string) {
     try {
-      const supporter = await this.prisma.supporter.findUnique({ where: { sessionId } });
+      const supporter = await this.prisma.supporter.findUnique({
+        where: { sessionId },
+      });
       if (!supporter) {
         this.logger.warn(`Supporter not found for sessionId: ${sessionId}`);
         return null;

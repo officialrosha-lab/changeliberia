@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from '../events/notifications.gateway';
@@ -74,13 +79,17 @@ export class NotificationsService {
       try {
         this.gateway?.broadcastNotificationToUser(userId, result);
       } catch (gatewayErr) {
-        this.logger.warn(`Gateway broadcast failed for user ${userId}: ${(gatewayErr as Error)?.message}`);
+        this.logger.warn(
+          `Gateway broadcast failed for user ${userId}: ${(gatewayErr as Error)?.message}`,
+        );
       }
 
       return result;
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
+      this.logger.error(
+        `Failed to create notification: ${err?.message || 'Unknown error'}`,
+      );
       throw error;
     }
   }
@@ -142,7 +151,10 @@ export class NotificationsService {
   /**
    * Delete notification
    */
-  async deleteNotification(notificationId: string, userId: string): Promise<void> {
+  async deleteNotification(
+    notificationId: string,
+    userId: string,
+  ): Promise<void> {
     const result = await this.prisma.notification.deleteMany({
       where: { id: notificationId, userId },
     });
@@ -432,7 +444,11 @@ export class NotificationsService {
   }
 
   @OnEvent('poll.submitted')
-  async handlePollSubmitted(event: { pollId: string; pollTitle: string; submittedBy: string }) {
+  async handlePollSubmitted(event: {
+    pollId: string;
+    pollTitle: string;
+    submittedBy: string;
+  }) {
     const admins = await this.prisma.user.findMany({
       where: { role: 'ADMIN' },
       select: { id: true },

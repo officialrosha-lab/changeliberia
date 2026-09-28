@@ -62,7 +62,11 @@ describe('CMSAnalyticsService', () => {
         updatedAt: now,
       });
 
-      const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType);
+      const result = await service.trackBlockView(
+        data.pageId,
+        data.blockId,
+        data.blockType,
+      );
 
       expect(prisma.cMSBlockAnalytics.upsert).toHaveBeenCalled();
       expect(result.views).toBe(1);
@@ -92,7 +96,11 @@ describe('CMSAnalyticsService', () => {
         updatedAt: now,
       });
 
-      const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType);
+      const result = await service.trackBlockView(
+        data.pageId,
+        data.blockId,
+        data.blockType,
+      );
 
       expect(result.views).toBe(5);
     });
@@ -121,7 +129,12 @@ describe('CMSAnalyticsService', () => {
         updatedAt: now,
       });
 
-      const result = await service.trackBlockView(data.pageId, data.blockId, data.blockType, data.variantId);
+      const result = await service.trackBlockView(
+        data.pageId,
+        data.blockId,
+        data.blockType,
+        data.variantId,
+      );
 
       expect(result.variantId).toBe('variant-a');
     });
@@ -165,7 +178,11 @@ describe('CMSAnalyticsService', () => {
         updatedAt: now,
       });
 
-      const result = await service.trackBlockClick(data.pageId, data.blockId, data.blockType);
+      const result = await service.trackBlockClick(
+        data.pageId,
+        data.blockId,
+        data.blockType,
+      );
 
       expect(prisma.cMSBlockAnalytics.upsert).toHaveBeenCalled();
       expect(result.clicks).toBe(1);
@@ -208,7 +225,11 @@ describe('CMSAnalyticsService', () => {
         updatedAt: now,
       });
 
-      const result = await service.trackBlockClick(data.pageId, data.blockId, data.blockType);
+      const result = await service.trackBlockClick(
+        data.pageId,
+        data.blockId,
+        data.blockType,
+      );
 
       expect(result.clicks).toBe(3);
       expect(prisma.cMSBlockAnalytics.update).toHaveBeenCalled();
@@ -316,7 +337,12 @@ describe('CMSAnalyticsService', () => {
         },
       ]);
 
-      const result = await service.compareVariants(blockId, [variantA, variantB], startDate, now);
+      const result = await service.compareVariants(
+        blockId,
+        [variantA, variantB],
+        startDate,
+        now,
+      );
 
       expect(result.blockId).toBe(blockId);
       expect(result.winner).toBe(variantA);

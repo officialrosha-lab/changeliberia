@@ -8,16 +8,8 @@ import { ActivityModule } from '../activity/activity.module';
 
 @Module({
   imports: [PrismaModule, ActivityModule],
-  providers: [
-    ContactDirectoryService,
-    SmartRoutingService,
-    BulkImportService,
-  ],
+  providers: [ContactDirectoryService, SmartRoutingService, BulkImportService],
   controllers: [AdminDirectoryController],
-  exports: [
-    ContactDirectoryService,
-    SmartRoutingService,
-    BulkImportService,
-  ],
+  exports: [ContactDirectoryService, SmartRoutingService, BulkImportService],
 })
 export class ContactDirectoryModule {}

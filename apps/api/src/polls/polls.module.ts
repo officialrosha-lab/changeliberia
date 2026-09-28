@@ -22,6 +22,11 @@ import { PollsGateway } from './polls.gateway';
     PollsGateway,
     PrismaService,
   ],
-  exports: [PollsService, VotingService, SessionFingerprintService, PollsGateway],
+  exports: [
+    PollsService,
+    VotingService,
+    SessionFingerprintService,
+    PollsGateway,
+  ],
 })
 export class PollsModule {}

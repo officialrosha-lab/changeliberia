@@ -54,11 +54,15 @@ export class OfficialsService {
       where: { holderUserId: userId },
     });
     if (existing) {
-      throw new ConflictException('You already have an official account application');
+      throw new ConflictException(
+        'You already have an official account application',
+      );
     }
 
     let slug = slugify(dto.name, dto.county);
-    const slugTaken = await this.prisma.institution.findUnique({ where: { slug } });
+    const slugTaken = await this.prisma.institution.findUnique({
+      where: { slug },
+    });
     if (slugTaken) slug = `${slug}-${Date.now().toString(36)}`;
 
     const institution = await this.prisma.institution.create({
@@ -139,7 +143,10 @@ export class OfficialsService {
       take: 20,
     });
 
-    return rows.map((row) => ({ ...row, officialEmail: maskEmail(row.officialEmail) }));
+    return rows.map((row) => ({
+      ...row,
+      officialEmail: maskEmail(row.officialEmail),
+    }));
   }
 
   /**
@@ -152,7 +159,9 @@ export class OfficialsService {
       where: { holderUserId: userId },
     });
     if (existing) {
-      throw new ConflictException('You already have an official account application');
+      throw new ConflictException(
+        'You already have an official account application',
+      );
     }
 
     const institution = await this.prisma.institution.findUnique({
@@ -171,7 +180,9 @@ export class OfficialsService {
     let slug: string | undefined;
     if (!institution.slug) {
       slug = slugify(institution.name, institution.county);
-      const slugTaken = await this.prisma.institution.findUnique({ where: { slug } });
+      const slugTaken = await this.prisma.institution.findUnique({
+        where: { slug },
+      });
       if (slugTaken) slug = `${slug}-${Date.now().toString(36)}`;
     }
 
@@ -209,7 +220,9 @@ export class OfficialsService {
           },
         });
         if (result.count === 0) {
-          throw new ConflictException('This institution has already been claimed');
+          throw new ConflictException(
+            'This institution has already been claimed',
+          );
         }
 
         // Upsert, not create: a re-claim after rejection finds an existing
@@ -255,7 +268,9 @@ export class OfficialsService {
       // Same user double-submitting across institutions violates the
       // holderUserId unique constraint.
       if (error?.code === 'P2002') {
-        throw new ConflictException('You already have an official account application');
+        throw new ConflictException(
+          'You already have an official account application',
+        );
       }
       throw error;
     }
@@ -309,22 +324,38 @@ export class OfficialsService {
   async listPending() {
     const rows = await this.prisma.institution.findMany({
       where: { officialStatus: 'PENDING_REVIEW' },
-      include: { officialProfile: true, holderUser: { select: { id: true, fullName: true, email: true, phone: true } } },
+      include: {
+        officialProfile: true,
+        holderUser: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+      },
       orderBy: { createdAt: 'asc' },
     });
-    return rows.map((row) => ({ ...row, isClaim: isClaimApplication(row.metadata) }));
+    return rows.map((row) => ({
+      ...row,
+      isClaim: isClaimApplication(row.metadata),
+    }));
   }
 
   async approve(institutionId: string, adminUserId: string) {
-    const institution = await this.prisma.institution.findUnique({ where: { id: institutionId } });
+    const institution = await this.prisma.institution.findUnique({
+      where: { id: institutionId },
+    });
     if (!institution) throw new NotFoundException('Institution not found');
     if (institution.officialStatus !== 'PENDING_REVIEW') {
-      throw new BadRequestException('Only pending applications can be approved');
+      throw new BadRequestException(
+        'Only pending applications can be approved',
+      );
     }
 
     const updated = await this.prisma.institution.update({
       where: { id: institutionId },
-      data: { officialStatus: 'VERIFIED', verified: true, lastVerifiedAt: new Date() },
+      data: {
+        officialStatus: 'VERIFIED',
+        verified: true,
+        lastVerifiedAt: new Date(),
+      },
     });
 
     await this.prisma.institutionStatusLog.create({
@@ -344,9 +375,14 @@ export class OfficialsService {
     });
 
     if (updated.holderUserId) {
-      const officialRole = await this.prisma.role.findUnique({ where: { name: 'OFFICIAL' } });
+      const officialRole = await this.prisma.role.findUnique({
+        where: { name: 'OFFICIAL' },
+      });
       if (officialRole) {
-        await this.rolePermissionService.assignRoleToUser(updated.holderUserId, officialRole.id);
+        await this.rolePermissionService.assignRoleToUser(
+          updated.holderUserId,
+          officialRole.id,
+        );
       }
 
       const holder = await this.prisma.user.findUnique({
@@ -364,11 +400,19 @@ export class OfficialsService {
     return updated;
   }
 
-  async reject(institutionId: string, adminUserId: string, dto: RejectOfficialDto) {
-    const institution = await this.prisma.institution.findUnique({ where: { id: institutionId } });
+  async reject(
+    institutionId: string,
+    adminUserId: string,
+    dto: RejectOfficialDto,
+  ) {
+    const institution = await this.prisma.institution.findUnique({
+      where: { id: institutionId },
+    });
     if (!institution) throw new NotFoundException('Institution not found');
     if (institution.officialStatus !== 'PENDING_REVIEW') {
-      throw new BadRequestException('Only pending applications can be rejected');
+      throw new BadRequestException(
+        'Only pending applications can be rejected',
+      );
     }
 
     const updated = await this.prisma.institution.update({
@@ -377,11 +421,20 @@ export class OfficialsService {
     });
 
     await this.prisma.institutionStatusLog.create({
-      data: { institutionId, status: 'REJECTED', note: dto.notes, actorUserId: adminUserId },
+      data: {
+        institutionId,
+        status: 'REJECTED',
+        note: dto.notes,
+        actorUserId: adminUserId,
+      },
     });
     await this.prisma.institutionOfficialProfile.update({
       where: { institutionId },
-      data: { reviewedBy: adminUserId, reviewedAt: new Date(), reviewNotes: dto.notes },
+      data: {
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+        reviewNotes: dto.notes,
+      },
     });
 
     this.activityLogger.logAsync({
@@ -438,10 +491,16 @@ export class OfficialsService {
 
     const [activePetitions, resolvedCount] = await Promise.all([
       this.prisma.petitionGovernmentResponse.count({
-        where: { institutionId: institution.id, currentStage: { notIn: ['RESOLVED', 'CLOSED'] } },
+        where: {
+          institutionId: institution.id,
+          currentStage: { notIn: ['RESOLVED', 'CLOSED'] },
+        },
       }),
       this.prisma.petitionGovernmentResponse.count({
-        where: { institutionId: institution.id, currentStage: { in: ['RESOLVED', 'CLOSED'] } },
+        where: {
+          institutionId: institution.id,
+          currentStage: { in: ['RESOLVED', 'CLOSED'] },
+        },
       }),
     ]);
 

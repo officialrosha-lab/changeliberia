@@ -73,8 +73,14 @@ export class BroadcastAnalyticsService {
       recentBroadcasts,
     ] = await Promise.all([
       this.prisma.broadcast.count(),
-      this.countBroadcastsInPeriod(new Date(endDate.getTime() - 24 * 60 * 60 * 1000), endDate),
-      this.countBroadcastsInPeriod(new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000), endDate),
+      this.countBroadcastsInPeriod(
+        new Date(endDate.getTime() - 24 * 60 * 60 * 1000),
+        endDate,
+      ),
+      this.countBroadcastsInPeriod(
+        new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000),
+        endDate,
+      ),
       this.countBroadcastsInPeriod(
         new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000),
         endDate,
@@ -86,9 +92,14 @@ export class BroadcastAnalyticsService {
       this.getRecentBroadcasts(startDate, endDate, 10),
     ]);
 
-    const totalRecipients = await this.getTotalBroadcastRecipients(startDate, endDate);
+    const totalRecipients = await this.getTotalBroadcastRecipients(
+      startDate,
+      endDate,
+    );
     const avgRecipientsPerBroadcast =
-      totalBroadcasts > 0 ? Math.round((totalRecipients / totalBroadcasts) * 100) / 100 : 0;
+      totalBroadcasts > 0
+        ? Math.round((totalRecipients / totalBroadcasts) * 100) / 100
+        : 0;
 
     return {
       period: periodType,
@@ -111,7 +122,10 @@ export class BroadcastAnalyticsService {
   /**
    * Get broadcast count in a specific time period
    */
-  private async countBroadcastsInPeriod(startDate: Date, endDate: Date): Promise<number> {
+  private async countBroadcastsInPeriod(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     return this.prisma.broadcast.count({
       where: {
         createdAt: {
@@ -125,7 +139,10 @@ export class BroadcastAnalyticsService {
   /**
    * Get total recipients of broadcasts in a period
    */
-  private async getTotalBroadcastRecipients(startDate: Date, endDate: Date): Promise<number> {
+  private async getTotalBroadcastRecipients(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     const broadcasts = await this.prisma.broadcast.findMany({
       where: {
         createdAt: {
@@ -162,7 +179,8 @@ export class BroadcastAnalyticsService {
     });
 
     // Group by date (ISO string YYYY-MM-DD)
-    const grouped: Record<string, { count: number; totalRecipients: number }> = {};
+    const grouped: Record<string, { count: number; totalRecipients: number }> =
+      {};
 
     for (const b of broadcasts) {
       const dateKey = b.createdAt.toISOString().split('T')[0];
@@ -202,7 +220,8 @@ export class BroadcastAnalyticsService {
       },
     });
 
-    const grouped: Record<string, { count: number; totalRecipients: number }> = {};
+    const grouped: Record<string, { count: number; totalRecipients: number }> =
+      {};
     for (const b of broadcasts) {
       const cat = b.category || 'Uncategorized';
       if (!grouped[cat]) {
@@ -219,7 +238,8 @@ export class BroadcastAnalyticsService {
       .map(([category, data]) => ({
         category,
         count: data.count,
-        percentage: total > 0 ? Math.round((data.count / total) * 10000) / 100 : 0,
+        percentage:
+          total > 0 ? Math.round((data.count / total) * 10000) / 100 : 0,
         totalRecipients: data.totalRecipients,
       }));
   }
@@ -248,7 +268,9 @@ export class BroadcastAnalyticsService {
     const successful = broadcasts.filter((b) => b.status === 'SENT').length;
     const failed = broadcasts.filter((b) => b.status === 'FAILED').length;
     const deliveryRate =
-      totalBroadcasts > 0 ? Math.round((successful / totalBroadcasts) * 10000) / 100 : 0;
+      totalBroadcasts > 0
+        ? Math.round((successful / totalBroadcasts) * 10000) / 100
+        : 0;
 
     return {
       totalBroadcasts,
@@ -266,7 +288,9 @@ export class BroadcastAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ category: string; count: number }>> {
-    const results = await this.prisma.$queryRaw<Array<{ category: string; count: bigint }>>`
+    const results = await this.prisma.$queryRaw<
+      Array<{ category: string; count: bigint }>
+    >`
       SELECT category, COUNT(*) as count
       FROM "Broadcast"
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
@@ -327,7 +351,10 @@ export class BroadcastAnalyticsService {
   /**
    * Calculate start date based on period type
    */
-  private getStartDate(endDate: Date, periodType: 'day' | 'week' | 'month'): Date {
+  private getStartDate(
+    endDate: Date,
+    periodType: 'day' | 'week' | 'month',
+  ): Date {
     const start = new Date(endDate);
     if (periodType === 'day') {
       start.setDate(start.getDate() - 1);

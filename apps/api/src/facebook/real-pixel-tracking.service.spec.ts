@@ -59,15 +59,13 @@ describe('RealPixelTrackingService', () => {
     service = moduleFixture.get<RealPixelTrackingService>(
       RealPixelTrackingService,
     );
-    facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
-    prismaService = moduleFixture.get(PrismaService) as any;
+    facebookSdk = moduleFixture.get(FacebookSDKService);
+    prismaService = moduleFixture.get(PrismaService);
   });
 
   describe('Track View Content', () => {
     it('should track view content event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
@@ -89,9 +87,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should include user metadata in view content', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
@@ -125,9 +121,7 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Share', () => {
     it('should track share event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
@@ -135,11 +129,7 @@ describe('RealPixelTrackingService', () => {
       });
       prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
 
-      const result = await service.trackShare(
-        'petition-1',
-        'user-1',
-        'dialog',
-      );
+      const result = await service.trackShare('petition-1', 'user-1', 'dialog');
 
       expect(result.success).toBe(true);
       expect(facebookSdk.trackConversion).toHaveBeenCalledWith(
@@ -150,9 +140,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should track different share methods', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
@@ -171,12 +159,8 @@ describe('RealPixelTrackingService', () => {
         ...mockUser,
         fullName: 'John Michael Doe',
       };
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(
-        userWithFullName as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
+      prismaService.user.findUnique.mockResolvedValue(userWithFullName as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
@@ -196,9 +180,7 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Lead', () => {
     it('should track lead event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
@@ -219,9 +201,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should include metadata in lead event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
@@ -245,9 +225,7 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Purchase', () => {
     it('should track purchase event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
@@ -274,9 +252,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should support different currencies', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
@@ -422,9 +398,7 @@ describe('RealPixelTrackingService', () => {
       const users = Array.from({ length: 15000 }, (_, i) => ({
         userId: `user-${i}`,
       }));
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue(
-        users as any,
-      );
+      prismaService.facebookPixelEvent.findMany.mockResolvedValue(users as any);
       prismaService.customAudience.create.mockResolvedValue({
         id: 'audience-1',
       } as any);
@@ -454,7 +428,10 @@ describe('RealPixelTrackingService', () => {
 
     it('should indicate when not configured', () => {
       facebookSdk.getPixelId.mockReturnValue('');
-      const newService = new RealPixelTrackingService(prismaService, facebookSdk);
+      const newService = new RealPixelTrackingService(
+        prismaService,
+        facebookSdk,
+      );
 
       const config = newService.getPixelConfig();
 
@@ -464,9 +441,7 @@ describe('RealPixelTrackingService', () => {
 
   describe('Pixel Event Logging', () => {
     it('should log pixel events to database', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
@@ -485,9 +460,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should handle logging errors gracefully', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });

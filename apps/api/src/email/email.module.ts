@@ -7,13 +7,14 @@ import { EmailPreferenceService } from './services/email-preference.service';
 import { EmailEventService } from './services/email-event.service';
 import { EmailScheduleService } from './services/email-schedule.service';
 import { MailerooProvider } from './providers/maileroo.provider';
-import { EmailController, AdminEmailController } from './controllers/email.controller';
+import {
+  EmailController,
+  AdminEmailController,
+} from './controllers/email.controller';
 import { MailerooWebhookController } from './webhooks/maileroo-webhook.controller';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-  ],
+  imports: [ScheduleModule.forRoot()],
   providers: [
     EmailService,
     EmailTemplateService,
@@ -23,7 +24,11 @@ import { MailerooWebhookController } from './webhooks/maileroo-webhook.controlle
     EmailScheduleService,
     MailerooProvider,
   ],
-  controllers: [EmailController, AdminEmailController, MailerooWebhookController],
+  controllers: [
+    EmailController,
+    AdminEmailController,
+    MailerooWebhookController,
+  ],
   exports: [
     EmailService,
     EmailTemplateService,

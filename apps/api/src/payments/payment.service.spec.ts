@@ -124,7 +124,7 @@ describe('PaymentService', () => {
     }).compile();
 
     service = moduleFixture.get<PaymentService>(PaymentService);
-    prisma = moduleFixture.get(PrismaService) as any;
+    prisma = moduleFixture.get(PrismaService);
 
     // Mock Stripe
     stripe = {
@@ -625,9 +625,7 @@ describe('PaymentService', () => {
     });
 
     it('should handle database errors', async () => {
-      prisma.petition.findUnique.mockRejectedValue(
-        new Error('Database error'),
-      );
+      prisma.petition.findUnique.mockRejectedValue(new Error('Database error'));
 
       await expect(
         service.createPaymentIntent({

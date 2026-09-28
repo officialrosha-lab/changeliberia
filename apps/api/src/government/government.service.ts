@@ -1,4 +1,11 @@
-import { ForbiddenException, Injectable, Logger, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmissionStatus } from '@prisma/client';
@@ -38,14 +45,20 @@ export class GovernmentService {
 
     if (enforceCreator) {
       if (!requestorId) {
-        throw new ForbiddenException('Authentication is required to download this petition report');
+        throw new ForbiddenException(
+          'Authentication is required to download this petition report',
+        );
       }
       if (petition.creatorId !== requestorId) {
-        throw new ForbiddenException('Only the petition creator may download this petition report');
+        throw new ForbiddenException(
+          'Only the petition creator may download this petition report',
+        );
       }
     }
 
-    const progressPercent = Math.round((petition.signaturesCount / petition.goal) * 100);
+    const progressPercent = Math.round(
+      (petition.signaturesCount / petition.goal) * 100,
+    );
     const governmentReady = petition.signaturesCount >= 1000;
     const dailyBreakdown = this.aggregateSignaturesByDay(petition.signatures);
     const breakdownEntries = Object.entries(dailyBreakdown).slice(-14);
@@ -54,37 +67,64 @@ export class GovernmentService {
     const chunks: Buffer[] = [];
     doc.on('data', (chunk) => chunks.push(chunk));
 
-    doc.fillColor('#0f172a').fontSize(20).text('CHANGE LIBERIA', { align: 'center' });
+    doc
+      .fillColor('#0f172a')
+      .fontSize(20)
+      .text('CHANGE LIBERIA', { align: 'center' });
     doc.moveDown(0.3);
-    doc.fontSize(12).fillColor('#475569').text(`Report generated: ${this.formatDate(new Date())}`, {
-      align: 'center',
-    });
+    doc
+      .fontSize(12)
+      .fillColor('#475569')
+      .text(`Report generated: ${this.formatDate(new Date())}`, {
+        align: 'center',
+      });
     doc.moveDown(1);
 
     doc.fontSize(16).fillColor('#111827').text(petition.title);
     doc.moveDown(0.5);
 
-    doc.fontSize(11).fillColor('#334155').text(petition.summary, { width: 500, lineGap: 3 });
+    doc
+      .fontSize(11)
+      .fillColor('#334155')
+      .text(petition.summary, { width: 500, lineGap: 3 });
     doc.moveDown(0.5);
     doc.text(petition.description, { width: 500, lineGap: 3 });
     doc.moveDown(1);
 
     const leftColWidth = 260;
 
-    doc.fontSize(12).fillColor('#0f172a').text('Petition details', { underline: true });
+    doc
+      .fontSize(12)
+      .fillColor('#0f172a')
+      .text('Petition details', { underline: true });
     doc.moveDown(0.5);
     doc.fontSize(10).fillColor('#334155');
-    doc.text(`Type: ${this.textOrEmpty(petition.petitionType || 'General')}`, { width: leftColWidth });
-    doc.text(`Category: ${this.textOrEmpty(petition.category)}`, { width: leftColWidth });
-    doc.text(`County: ${this.textOrEmpty(petition.county)}`, { width: leftColWidth });
-    doc.text(`Goal: ${petition.goal.toLocaleString()}`, { width: leftColWidth });
-    doc.text(`Signatures: ${petition.signaturesCount.toLocaleString()}`, { width: leftColWidth });
+    doc.text(`Type: ${this.textOrEmpty(petition.petitionType || 'General')}`, {
+      width: leftColWidth,
+    });
+    doc.text(`Category: ${this.textOrEmpty(petition.category)}`, {
+      width: leftColWidth,
+    });
+    doc.text(`County: ${this.textOrEmpty(petition.county)}`, {
+      width: leftColWidth,
+    });
+    doc.text(`Goal: ${petition.goal.toLocaleString()}`, {
+      width: leftColWidth,
+    });
+    doc.text(`Signatures: ${petition.signaturesCount.toLocaleString()}`, {
+      width: leftColWidth,
+    });
     doc.text(`Progress: ${progressPercent}%`, { width: leftColWidth });
-    doc.text(`Government-ready: ${governmentReady ? 'Yes' : 'No'}`, { width: leftColWidth });
+    doc.text(`Government-ready: ${governmentReady ? 'Yes' : 'No'}`, {
+      width: leftColWidth,
+    });
     if (!governmentReady) {
-      doc.text(`Signatures needed: ${(1000 - petition.signaturesCount).toLocaleString()}`, {
-        width: leftColWidth,
-      });
+      doc.text(
+        `Signatures needed: ${(1000 - petition.signaturesCount).toLocaleString()}`,
+        {
+          width: leftColWidth,
+        },
+      );
     }
     doc.moveDown(0.5);
 
@@ -98,42 +138,66 @@ export class GovernmentService {
       width: leftColWidth,
     });
     doc.moveDown(0.5);
-    doc.text(`Prior actions: ${this.textOrEmpty(petition.priorActions, 'None recorded')}`, {
-      width: 500,
-      lineGap: 3,
-    });
+    doc.text(
+      `Prior actions: ${this.textOrEmpty(petition.priorActions, 'None recorded')}`,
+      {
+        width: 500,
+        lineGap: 3,
+      },
+    );
     doc.moveDown(1);
 
-    doc.fontSize(12).fillColor('#0f172a').text('Milestones', { underline: true });
+    doc
+      .fontSize(12)
+      .fillColor('#0f172a')
+      .text('Milestones', { underline: true });
     doc.moveDown(0.5);
     if (petition.milestones.length === 0) {
-      doc.fontSize(10).fillColor('#334155').text('No milestones defined for this petition.');
+      doc
+        .fontSize(10)
+        .fillColor('#334155')
+        .text('No milestones defined for this petition.');
     } else {
       petition.milestones.forEach((milestone, index) => {
-        doc.fontSize(10).fillColor('#334155').text(
-          `${index + 1}. ${milestone.targetValue.toLocaleString()} signatures — ${milestone.achieved ? 'ACHIEVED' : 'PENDING'}${milestone.achievedAt ? ` (${this.formatDate(milestone.achievedAt)})` : ''}`,
-          { width: 500, lineGap: 2 },
-        );
+        doc
+          .fontSize(10)
+          .fillColor('#334155')
+          .text(
+            `${index + 1}. ${milestone.targetValue.toLocaleString()} signatures — ${milestone.achieved ? 'ACHIEVED' : 'PENDING'}${milestone.achievedAt ? ` (${this.formatDate(milestone.achievedAt)})` : ''}`,
+            { width: 500, lineGap: 2 },
+          );
       });
     }
     doc.moveDown(1);
 
-    doc.fontSize(12).fillColor('#0f172a').text('Recent signature activity', { underline: true });
+    doc
+      .fontSize(12)
+      .fillColor('#0f172a')
+      .text('Recent signature activity', { underline: true });
     doc.moveDown(0.5);
     if (breakdownEntries.length === 0) {
-      doc.fontSize(10).fillColor('#334155').text('No signature activity recorded yet.');
+      doc
+        .fontSize(10)
+        .fillColor('#334155')
+        .text('No signature activity recorded yet.');
     } else {
       breakdownEntries.forEach(([date, count]) => {
-        doc.fontSize(10).fillColor('#334155').text(`${date}: ${count.toLocaleString()} signatures`, {
-          width: 500,
-          lineGap: 2,
-        });
+        doc
+          .fontSize(10)
+          .fillColor('#334155')
+          .text(`${date}: ${count.toLocaleString()} signatures`, {
+            width: 500,
+            lineGap: 2,
+          });
       });
     }
     doc.moveDown(1);
 
     doc.addPage();
-    doc.fontSize(16).fillColor('#111827').text('Signature ledger', { underline: true });
+    doc
+      .fontSize(16)
+      .fillColor('#111827')
+      .text('Signature ledger', { underline: true });
     doc.moveDown(0.5);
     doc.fontSize(10).fillColor('#334155');
     doc.text(
@@ -144,7 +208,9 @@ export class GovernmentService {
 
     petition.signatures.forEach((signature, index) => {
       if (doc.y > 720) doc.addPage();
-      const signerName = signature.anonymous ? 'Anonymous' : this.textOrEmpty(signature.name);
+      const signerName = signature.anonymous
+        ? 'Anonymous'
+        : this.textOrEmpty(signature.name);
       doc.fontSize(10).text(`${index + 1}. ${signerName}`, 50, doc.y, {
         width: 260,
         continued: true,
@@ -156,10 +222,13 @@ export class GovernmentService {
     });
 
     doc.addPage();
-    doc.fontSize(10).fillColor('#64748b').text(
-      'This report was automatically generated by Change Liberia. For questions or corrections, contact support or review the petition details in the administrator dashboard.',
-      { width: 500, align: 'center' },
-    );
+    doc
+      .fontSize(10)
+      .fillColor('#64748b')
+      .text(
+        'This report was automatically generated by Change Liberia. For questions or corrections, contact support or review the petition details in the administrator dashboard.',
+        { width: 500, align: 'center' },
+      );
 
     // Add title to PDF metadata so tests can reliably assert presence
     doc.info.Title = petition.title;
@@ -171,7 +240,10 @@ export class GovernmentService {
     });
   }
 
-  private textOrEmpty(value: string | null | undefined, fallback = 'Not specified'): string {
+  private textOrEmpty(
+    value: string | null | undefined,
+    fallback = 'Not specified',
+  ): string {
     return value?.trim() ? value : fallback;
   }
 
@@ -188,13 +260,18 @@ export class GovernmentService {
   /**
    * Generate a CSV export of all signatures for a petition (creator-only)
    */
-  async generateSignaturesCsv(petitionId: string, requestorId: string): Promise<string> {
+  async generateSignaturesCsv(
+    petitionId: string,
+    requestorId: string,
+  ): Promise<string> {
     const petition = await this.prisma.petition.findUnique({
       where: { id: petitionId },
       include: {
         signatures: {
           orderBy: { createdAt: 'asc' },
-          include: { user: { select: { county: true, verificationStatus: true } } },
+          include: {
+            user: { select: { county: true, verificationStatus: true } },
+          },
         },
       },
     });
@@ -203,13 +280,23 @@ export class GovernmentService {
       throw new NotFoundException(`Petition with ID ${petitionId} not found`);
     }
     if (petition.creatorId !== requestorId) {
-      throw new ForbiddenException('Only the petition creator may export signatures');
+      throw new ForbiddenException(
+        'Only the petition creator may export signatures',
+      );
     }
 
     const csvEscape = (val: string | null | undefined) =>
       `"${String(val ?? '').replace(/"/g, '""')}"`;
 
-    const header = ['#', 'Name', 'Anonymous', 'Date Signed', 'County', 'Verification', 'Trust Score'].join(',');
+    const header = [
+      '#',
+      'Name',
+      'Anonymous',
+      'Date Signed',
+      'County',
+      'Verification',
+      'Trust Score',
+    ].join(',');
     const rows = petition.signatures.map((sig, i) =>
       [
         i + 1,
@@ -295,14 +382,19 @@ export class GovernmentService {
   /**
    * Track petition submission status
    */
-  async trackPetitionStatus(petitionId: string, status: SubmissionStatus): Promise<any> {
+  async trackPetitionStatus(
+    petitionId: string,
+    status: SubmissionStatus,
+  ): Promise<any> {
     const submission = await this.prisma.petitionSubmission.findFirst({
       where: { petitionId },
       orderBy: { createdAt: 'desc' },
     });
 
     if (!submission) {
-      throw new NotFoundException(`No active submission found for petition ${petitionId}`);
+      throw new NotFoundException(
+        `No active submission found for petition ${petitionId}`,
+      );
     }
 
     // Valid statuses from the enum
@@ -448,7 +540,9 @@ export class GovernmentService {
     const textContent = `Petition: ${petition.title}\nSignatures: ${petition.signaturesCount}\nCreator: ${petition.creator?.fullName || 'Unknown'} (${petition.creator?.email || 'No email'})\nNotes: ${notes || 'No additional notes provided.'}`;
 
     if (!this.emailService) {
-      this.logger.error('EmailService not available - cannot send petition submission email');
+      this.logger.error(
+        'EmailService not available - cannot send petition submission email',
+      );
       return false;
     }
 
@@ -492,7 +586,9 @@ export class GovernmentService {
     } catch (error: any) {
       // Unique constraint on email — return existing contact without overwriting its fields
       if (error?.code === 'P2002') {
-        return this.prisma.governmentContact.findUnique({ where: { email: data.email } });
+        return this.prisma.governmentContact.findUnique({
+          where: { email: data.email },
+        });
       }
       throw error;
     }
@@ -570,7 +666,9 @@ export class GovernmentService {
   /**
    * Helper: Aggregate signatures by day
    */
-  private aggregateSignaturesByDay(signatures: { createdAt: Date }[]): Record<string, number> {
+  private aggregateSignaturesByDay(
+    signatures: { createdAt: Date }[],
+  ): Record<string, number> {
     const breakdown: Record<string, number> = {};
 
     signatures.forEach((sig) => {

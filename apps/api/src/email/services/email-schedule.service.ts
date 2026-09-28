@@ -176,7 +176,7 @@ export class EmailScheduleService {
           // Mark as archived or just log deletion
         },
       });
-      
+
       this.logger.log(`Archived ${archivedCount.count} completed email jobs`);
     } catch (error) {
       this.logger.error(`Failed to archive jobs: ${error}`);

@@ -44,11 +44,19 @@ export class SignaturesService {
    * Auto-registers a minimal phone-only account if the sender isn't already
    * a platform user, mirroring the existing phone-first signup convention.
    */
-  async createFromSms(phone: string, petitionId: string): Promise<{ success: boolean; message: string }> {
-    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+  async createFromSms(
+    phone: string,
+    petitionId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
     if (!petition) return { success: false, message: 'Petition not found.' };
     if (petition.status !== 'APPROVED') {
-      return { success: false, message: 'This petition is not currently open for signatures.' };
+      return {
+        success: false,
+        message: 'This petition is not currently open for signatures.',
+      };
     }
 
     let user = await this.prisma.user.findUnique({ where: { phone } });
@@ -58,8 +66,11 @@ export class SignaturesService {
       });
     }
 
-    const duplicate = await this.prisma.signature.findFirst({ where: { petitionId, userId: user.id } });
-    if (duplicate) return { success: false, message: 'You already signed this petition.' };
+    const duplicate = await this.prisma.signature.findFirst({
+      where: { petitionId, userId: user.id },
+    });
+    if (duplicate)
+      return { success: false, message: 'You already signed this petition.' };
 
     let txResult: { signature: any; updatedPetition: any };
     try {
@@ -67,8 +78,8 @@ export class SignaturesService {
         const signature = await tx.signature.create({
           data: {
             petitionId,
-            userId: user!.id,
-            name: user!.fullName,
+            userId: user.id,
+            name: user.fullName,
             anonymous: false,
             trustScoreSnapshot: 30, // lower baseline: SMS channel has no device/fraud signal
           },
@@ -77,8 +88,11 @@ export class SignaturesService {
         const classificationInput = await this.buildClassificationInput(
           tx,
           petition,
-          user!.id,
-          { personallyAffected: undefined, relationshipType: undefined } as unknown as CreateSignatureDto,
+          user.id,
+          {
+            personallyAffected: undefined,
+            relationshipType: undefined,
+          } as unknown as CreateSignatureDto,
           null, // SMS channel has no IP to derive a region hint from
         );
         const { classification, confidenceScore, unknownReason } =
@@ -98,12 +112,18 @@ export class SignaturesService {
 
         const updatedPetition = await tx.petition.update({
           where: { id: petitionId },
-          data: { signaturesCount: { increment: 1 }, todaySignatures: { increment: 1 } },
+          data: {
+            signaturesCount: { increment: 1 },
+            todaySignatures: { increment: 1 },
+          },
         });
         return { signature, updatedPetition };
       });
     } catch (err) {
-      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
         return { success: false, message: 'You already signed this petition.' };
       }
       throw err;
@@ -124,7 +144,10 @@ export class SignaturesService {
       anonymous: false,
     });
 
-    return { success: true, message: `Thank you! You've signed "${updatedPetition.title}". Total signatures: ${updatedPetition.signaturesCount}.` };
+    return {
+      success: true,
+      message: `Thank you! You've signed "${updatedPetition.title}". Total signatures: ${updatedPetition.signaturesCount}.`,
+    };
   }
 
   async create(
@@ -251,7 +274,10 @@ export class SignaturesService {
         return { signature, updatedPetition };
       });
     } catch (err) {
-      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
         throw new BadRequestException('You already signed this petition');
       }
       throw err;
@@ -291,7 +317,9 @@ export class SignaturesService {
             currentSignatures: count,
           });
         })
-        .catch(() => { /* milestone notification is non-critical */ });
+        .catch(() => {
+          /* milestone notification is non-critical */
+        });
     }
 
     // Broadcast signature count update to all connected WebSocket clients
@@ -306,7 +334,9 @@ export class SignaturesService {
       this.petitionsRealtime.notifyNewSignatureWithLocation({
         petitionId: dto.petitionId,
         timestamp: new Date().toISOString(),
-        signerName: signature.anonymous ? undefined : (signature.name || undefined),
+        signerName: signature.anonymous
+          ? undefined
+          : signature.name || undefined,
         anonymous: signature.anonymous,
       });
     }
@@ -339,7 +369,13 @@ export class SignaturesService {
    */
   private async buildClassificationInput(
     tx: Prisma.TransactionClient,
-    petition: { impactScope: any; county: string | null; district: string | null; community: string | null; counties: string[] },
+    petition: {
+      impactScope: any;
+      county: string | null;
+      district: string | null;
+      community: string | null;
+      counties: string[];
+    },
     userId: string | undefined,
     dto: CreateSignatureDto,
     ipRegionHint: string | null,
@@ -347,13 +383,19 @@ export class SignaturesService {
     let declaredCounty = dto.confirmedCounty ?? null;
     let declaredDistrict = dto.confirmedDistrict ?? null;
     let declaredCommunity = dto.confirmedCommunity ?? null;
-    let locationSource: LocationSource = (dto.locationSource as LocationSource) ?? 'unconfirmed';
+    let locationSource: LocationSource =
+      (dto.locationSource as LocationSource) ?? 'unconfirmed';
     let userVerificationStatus: any = null;
 
     if (userId) {
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { county: true, district: true, community: true, verificationStatus: true },
+        select: {
+          county: true,
+          district: true,
+          community: true,
+          verificationStatus: true,
+        },
       });
       userVerificationStatus = user?.verificationStatus ?? null;
 

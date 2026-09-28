@@ -61,7 +61,8 @@ export class AdminDirectoryController {
     @Body() dto: CreateInstitutionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.createInstitution(dto);
+    const institution =
+      await this.contactDirectoryService.createInstitution(dto);
 
     this.logActivity(user, {
       action: 'CREATE_INSTITUTION',
@@ -105,7 +106,10 @@ export class AdminDirectoryController {
     @Body() dto: UpdateInstitutionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.updateInstitution(id, dto);
+    const institution = await this.contactDirectoryService.updateInstitution(
+      id,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'UPDATE_INSTITUTION',
@@ -124,7 +128,8 @@ export class AdminDirectoryController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.verifyInstitution(id);
+    const institution =
+      await this.contactDirectoryService.verifyInstitution(id);
 
     this.logActivity(user, {
       action: 'VERIFY_INSTITUTION',
@@ -198,7 +203,10 @@ export class AdminDirectoryController {
     @Body() dto: UpdateDepartmentDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const department = await this.contactDirectoryService.updateDepartment(id, dto);
+    const department = await this.contactDirectoryService.updateDepartment(
+      id,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'UPDATE_DEPARTMENT',
@@ -238,7 +246,10 @@ export class AdminDirectoryController {
     @Body() dto: CreateContactDirectoryDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const contact = await this.contactDirectoryService.createContact(institutionId, dto);
+    const contact = await this.contactDirectoryService.createContact(
+      institutionId,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'CREATE_CONTACT',
@@ -285,10 +296,7 @@ export class AdminDirectoryController {
 
   @Delete('contacts/:id')
   @Permission(PermissionResource.DIRECTORY, PermissionAction.DELETE)
-  async deleteContact(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
-  ) {
+  async deleteContact(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     await this.contactDirectoryService.deleteContact(id);
 
     this.logActivity(user, {
@@ -310,7 +318,7 @@ export class AdminDirectoryController {
       throw new BadRequestException('tags query parameter required');
     }
 
-    const tagArray = tags.split(',').map(t => t.trim());
+    const tagArray = tags.split(',').map((t) => t.trim());
     return this.contactDirectoryService.searchByTags(tagArray);
   }
 
