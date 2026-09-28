@@ -146,7 +146,9 @@ export class EmailEventService {
       );
       this.logger.log(`Welcome email sent to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send welcome email: ${error}`);
+      this.logger.error(
+        `Failed to send welcome email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -165,7 +167,9 @@ export class EmailEventService {
       );
       this.logger.log(`Email verification sent to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send verification email: ${error}`);
+      this.logger.error(
+        `Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -184,7 +188,9 @@ export class EmailEventService {
       );
       this.logger.log(`Password reset email sent to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send password reset email: ${error}`);
+      this.logger.error(
+        `Failed to send password reset email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -202,7 +208,9 @@ export class EmailEventService {
       );
       this.logger.log(`Password change confirmation sent to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send password confirmation email: ${error}`);
+      this.logger.error(
+        `Failed to send password confirmation email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -213,7 +221,9 @@ export class EmailEventService {
       // Could send confirmation to creator that petition was created
       this.logger.debug(`Petition created: ${event.petitionId}`);
     } catch (error) {
-      this.logger.error(`Error handling petition.created event: ${error}`);
+      this.logger.error(
+        `Error handling petition.created event: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -238,7 +248,9 @@ export class EmailEventService {
       );
       this.logger.log(`Petition approved email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send petition approved email: ${error}`);
+      this.logger.error(
+        `Failed to send petition approved email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -258,7 +270,9 @@ export class EmailEventService {
       );
       this.logger.log(`Petition rejected email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send petition rejected email: ${error}`);
+      this.logger.error(
+        `Failed to send petition rejected email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -274,7 +288,9 @@ export class EmailEventService {
       );
       this.logger.log(`Official verified email sent to ${userEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send official verified email: ${error}`);
+      this.logger.error(
+        `Failed to send official verified email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -290,7 +306,9 @@ export class EmailEventService {
       );
       this.logger.log(`Official rejected email sent to ${userEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send official rejected email: ${error}`);
+      this.logger.error(
+        `Failed to send official rejected email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -322,7 +340,9 @@ export class EmailEventService {
         `Milestone email sent to ${creatorEmail} for ${milestone} signatures`,
       );
     } catch (error) {
-      this.logger.error(`Failed to send milestone email: ${error}`);
+      this.logger.error(
+        `Failed to send milestone email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -352,7 +372,9 @@ export class EmailEventService {
       );
       this.logger.log(`Government submission email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send government submission email: ${error}`);
+      this.logger.error(
+        `Failed to send government submission email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -384,7 +406,9 @@ export class EmailEventService {
       );
       this.logger.log(`Government response email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send government response email: ${error}`);
+      this.logger.error(
+        `Failed to send government response email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -413,7 +437,9 @@ export class EmailEventService {
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to send signature received email: ${error}`);
+      this.logger.error(
+        `Failed to send signature received email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -422,7 +448,9 @@ export class EmailEventService {
       // This event might trigger digest emails instead of individual notifications
       this.logger.debug(`Comment received on petition: ${event.petitionId}`);
     } catch (error) {
-      this.logger.error(`Error handling comment.received event: ${error}`);
+      this.logger.error(
+        `Error handling comment.received event: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -447,7 +475,9 @@ export class EmailEventService {
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to send comment reply email: ${error}`);
+      this.logger.error(
+        `Failed to send comment reply email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -467,7 +497,9 @@ export class EmailEventService {
       );
       this.logger.log(`Ambassador welcome email sent to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send ambassador welcome email: ${error}`);
+      this.logger.error(
+        `Failed to send ambassador welcome email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -477,7 +509,9 @@ export class EmailEventService {
       this.logger.debug(`Community update event: ${updateTitle}`);
       // Could trigger bulk email sending to ambassadors
     } catch (error) {
-      this.logger.error(`Error handling community.update event: ${error}`);
+      this.logger.error(
+        `Error handling community.update event: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -499,7 +533,9 @@ export class EmailEventService {
       );
       this.logger.log(`Poll approved email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send poll approved email: ${error}`);
+      this.logger.error(
+        `Failed to send poll approved email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -518,7 +554,9 @@ export class EmailEventService {
       );
       this.logger.log(`Poll rejected email sent to ${creatorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send poll rejected email: ${error}`);
+      this.logger.error(
+        `Failed to send poll rejected email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -541,7 +579,9 @@ export class EmailEventService {
       );
       this.logger.log(`Message notification email sent to ${recipientEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send message notification email: ${error}`);
+      this.logger.error(
+        `Failed to send message notification email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -578,7 +618,9 @@ export class EmailEventService {
       );
       this.logger.log(`Broadcast summary email sent to ${senderEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send broadcast summary email: ${error}`);
+      this.logger.error(
+        `Failed to send broadcast summary email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -600,7 +642,9 @@ export class EmailEventService {
       );
       this.logger.log(`Donation receipt email sent to ${donorEmail}`);
     } catch (error) {
-      this.logger.error(`Failed to send donation receipt email: ${error}`);
+      this.logger.error(
+        `Failed to send donation receipt email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

@@ -275,7 +275,7 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('validate-phone')
-  async validatePhoneNumber(@Body('phoneNumber') phoneNumber: string) {
+  validatePhoneNumber(@Body('phoneNumber') phoneNumber: string) {
     const isValid = this.paymentService.validatePhoneNumber(phoneNumber);
 
     return {

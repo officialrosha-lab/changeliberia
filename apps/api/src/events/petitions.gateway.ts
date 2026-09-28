@@ -165,7 +165,7 @@ export class PetitionsGateway
    * Get pulse map data - petition hotspots with intensity
    */
   @SubscribeMessage('get_pulse_map')
-  async handleGetPulseMap(@ConnectedSocket() client: Socket) {
+  handleGetPulseMap(@ConnectedSocket() client: Socket) {
     try {
       const hotspots = this.getPulseMapData();
       client.emit('pulse_map_data', {

@@ -301,7 +301,9 @@ export class EmailService {
           results.push(result);
         }
       } catch (error) {
-        this.logger.error(`Failed to send email for user ${userId}: ${error}`);
+        this.logger.error(
+          `Failed to send email for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
 
