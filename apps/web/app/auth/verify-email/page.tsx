@@ -27,10 +27,7 @@ export default function VerifyEmailPage() {
 
     const verifyEmail = async () => {
       try {
-        const response = await apiPost('/auth/verify-email', {
-          email,
-          token,
-        });
+        await apiPost('/auth/verify-email', { email, token });
 
         setStatus('success');
         setMessage('Email verified successfully! Redirecting to login...');
@@ -48,13 +45,13 @@ export default function VerifyEmailPage() {
   }, [email, token, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-neutral-950">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Verify Email</h1>
-            <p className="text-gray-600 mt-2">Change Liberia</p>
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-neutral-50">Verify email</h1>
+            <p className="mt-2 text-sm text-zinc-500 dark:text-neutral-400">Change Liberia</p>
           </div>
 
           {/* Status Content */}
@@ -62,54 +59,40 @@ export default function VerifyEmailPage() {
             {status === 'verifying' && (
               <>
                 <div className="mb-4">
-                  <div className="inline-block">
-                    <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin mx-auto"></div>
-                  </div>
+                  <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-900/40 dark:border-t-emerald-500" />
                 </div>
-                <p className="text-gray-600">{message}</p>
+                <p className="text-sm text-zinc-500 dark:text-neutral-400">{message}</p>
               </>
             )}
 
             {status === 'success' && (
               <>
                 <div className="mb-4">
-                  <div className="inline-block">
-                    <svg
-                      className="w-12 h-12 text-green-600"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
+                  <svg className="mx-auto h-12 w-12 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
-                <p className="text-green-600 font-medium">{message}</p>
+                <p className="font-medium text-emerald-600 dark:text-emerald-400">{message}</p>
               </>
             )}
 
             {status === 'error' && (
               <>
                 <div className="mb-4">
-                  <div className="inline-block">
-                    <svg
-                      className="w-12 h-12 text-red-600"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
+                  <svg className="mx-auto h-12 w-12 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
-                <p className="text-red-600 font-medium mb-2">{message}</p>
-                <p className="text-gray-600 text-sm mb-6">{error}</p>
+                <p className="mb-2 font-medium text-red-600 dark:text-red-400">{message}</p>
+                <p className="mb-6 text-sm text-zinc-500 dark:text-neutral-400">{error}</p>
 
                 <div className="space-y-3">
                   {email && (
@@ -118,16 +101,16 @@ export default function VerifyEmailPage() {
                         navigator.clipboard.writeText(email);
                         toast.show('Email copied to clipboard', 'success');
                       }}
-                      className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+                      className="w-full rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                     >
-                      Copy Email Address
+                      Copy email address
                     </button>
                   )}
                   <Link
                     href="/auth/signup"
-                    className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                    className="block w-full rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
                   >
-                    Back to Signup
+                    Back to signup
                   </Link>
                 </div>
               </>
@@ -135,10 +118,10 @@ export default function VerifyEmailPage() {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <p className="text-gray-600 text-sm">
+          <div className="mt-8 border-t border-zinc-200 pt-6 text-center dark:border-neutral-700">
+            <p className="text-sm text-zinc-500 dark:text-neutral-400">
               Need help? Contact{' '}
-              <a href="mailto:support@changeliberia.org" className="text-blue-600 hover:underline">
+              <a href="mailto:support@changeliberia.org" className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400">
                 support@changeliberia.org
               </a>
             </p>
