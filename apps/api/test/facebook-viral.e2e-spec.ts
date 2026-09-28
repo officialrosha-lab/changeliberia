@@ -167,7 +167,7 @@ describe('Facebook Viral Growth System (e2e)', () => {
       prismaService.shareLink.create.mockResolvedValue({
         id: 'share-1',
         shortCode: 'abc12345',
-        targetUrl: 'https://changelib.org/petitions/petition-1',
+        targetUrl: 'https://changeliberia.org/petitions/petition-1',
         petitionId: 'petition-1',
         source: 'facebook',
         medium: 'social',
@@ -208,7 +208,7 @@ describe('Facebook Viral Growth System (e2e)', () => {
       prismaService.shareLink.findUnique.mockResolvedValue({
         id: 'share-1',
         shortCode: 'abc12345',
-        targetUrl: 'https://changelib.org/petitions/petition-1',
+        targetUrl: 'https://changeliberia.org/petitions/petition-1',
       } as any);
       prismaService.shareLink.update.mockResolvedValue({} as any);
 

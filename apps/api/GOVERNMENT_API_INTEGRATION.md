@@ -75,7 +75,7 @@ Endpoints marked as **ADMIN ONLY** require:
     "submittedAt": "2026-04-17T10:30:00Z",
     "updatedAt": "2026-04-17T10:30:00Z",
     "notes": "Optional notes",
-    "documentUrl": "https://changelib.org/documents/petition-abc123.pdf"
+    "documentUrl": "https://changeliberia.org/documents/petition-abc123.pdf"
   }
 }
 ```
