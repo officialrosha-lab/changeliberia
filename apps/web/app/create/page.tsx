@@ -1,6 +1,13 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { CreatePetitionForm } from './create-form';
 import { Card } from '../../components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'Start a Petition — Change Liberia',
+  description: 'Write and publish a petition on the issue that matters to your community, and start gathering verified support.',
+  alternates: { canonical: '/create' },
+};
 
 export default function CreatePetitionPage() {
   return (

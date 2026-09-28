@@ -146,7 +146,7 @@ export async function generateMetadata({
   const description =
     petition.summary || petition.description.slice(0, 160).replace(/\n/g, ' ');
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia-web.vercel.app';
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia.org';
   const pageUrl = `${siteUrl}/petitions/${id}`;
   const image = petition.imageUrl
     ? { url: petition.imageUrl, width: 1200, height: 630, alt: title }
@@ -188,7 +188,7 @@ export default async function PetitionPage({
   // SSR couldn't reach the API — fall back to client-side rendering
   if (!petition) return <PetitionClientPage id={id} />;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia-web.vercel.app';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia.org';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
@@ -369,12 +369,12 @@ export default async function PetitionPage({
                   </h2>
                   {images.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {images.map((img) => (
+                      {images.map((img, idx) => (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           key={img.id}
                           src={img.url}
-                          alt=""
+                          alt={`${petition.title} — photo ${idx + 1}`}
                           className="aspect-square w-full rounded-xl object-cover"
                         />
                       ))}

@@ -121,7 +121,7 @@ export function ImageUploadPreview({
           <div className="relative w-full aspect-video bg-zinc-200 dark:bg-neutral-700 rounded-lg overflow-hidden">
             <Image
               src={preview}
-              alt="Preview"
+              alt={label ? `${label} preview` : 'Selected image preview'}
               fill
               className="object-cover"
               sizes="100vw"

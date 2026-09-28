@@ -5,6 +5,7 @@ import { SiteFooter } from '../../components/site-footer';
 export const metadata: Metadata = {
   title: 'Collect Signatures — Change Liberia',
   description: 'Learn how to grow your petition, reach your signature goal, and turn citizen support into real government action on Change Liberia.',
+  alternates: { canonical: '/collect-signatures' },
 };
 
 const STEPS = [

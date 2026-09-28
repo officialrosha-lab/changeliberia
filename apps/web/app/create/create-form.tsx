@@ -865,7 +865,7 @@ export function CreatePetitionForm() {
                   {imagePreviewSrc && (
                     <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imagePreviewSrc} alt="Preview" className="h-40 w-full object-cover"
+                      <img src={imagePreviewSrc} alt="Cover photo preview" className="h-40 w-full object-cover"
                         onError={() => setImagePreviewSrc('')} />
                       <button type="button" onClick={() => { setImagePreviewSrc(''); setImageUrlValue(''); setUploadedImageFile(null); setUploadStatus(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                         className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70">
@@ -896,7 +896,7 @@ export function CreatePetitionForm() {
                     {additionalImages.map((img, i) => (
                       <div key={i} className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img.preview} alt="" className="h-20 w-full object-cover" />
+                        <img src={img.preview} alt={`Additional photo ${i + 1} preview`} className="h-20 w-full object-cover" />
                         <button type="button" onClick={() => removeAdditionalImage(i)}
                           className="absolute right-1 top-1 rounded-full bg-black/50 px-1.5 py-0.5 text-[10px] text-white hover:bg-black/70">
                           ✕

@@ -6,6 +6,7 @@ import { fetchCmsPageWithBlocks } from '../../lib/cms';
 export const metadata: Metadata = {
   title: 'Help Center — Change Liberia',
   description: 'Find answers to common questions about creating petitions, signing, verification, and using the Change Liberia platform.',
+  alternates: { canonical: '/help-center' },
 };
 
 export default async function HelpCenterPage() {
@@ -39,9 +40,14 @@ export default async function HelpCenterPage() {
     <>
       <main className="min-h-screen bg-white dark:bg-neutral-950">
         {page.blocks && page.blocks.length > 0 ? (
-          page.blocks.map((block) => (
-            <CMSBlockRenderer key={block.id} block={block} />
-          ))
+          <>
+            {!page.blocks.some((block) => block.type === 'hero') && (
+              <h1 className="sr-only">{page.title}</h1>
+            )}
+            {page.blocks.map((block) => (
+              <CMSBlockRenderer key={block.id} block={block} />
+            ))}
+          </>
         ) : (
           <section className="border-b border-zinc-200 bg-gradient-to-br from-emerald-50 to-white px-4 py-16 dark:border-neutral-800 dark:from-emerald-950/20 dark:to-neutral-900 sm:py-20 md:py-24">
             <div className="mx-auto max-w-3xl text-center">

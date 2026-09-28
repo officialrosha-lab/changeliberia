@@ -41,6 +41,7 @@ export async function generateMetadata({
   return {
     title: `${profile.name} — Change Liberia`,
     description: profile.bio ?? `Official profile for ${profile.name} on Change Liberia.`,
+    alternates: { canonical: `https://changeliberia.org/official/${slug}` },
   };
 }
 

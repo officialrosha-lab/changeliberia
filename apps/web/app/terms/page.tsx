@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Terms of Service — Change Liberia',
   description: 'The terms and conditions governing your use of Change Liberia.',
+  alternates: { canonical: '/terms' },
 };
 
 const LAST_UPDATED = 'April 27, 2026';
