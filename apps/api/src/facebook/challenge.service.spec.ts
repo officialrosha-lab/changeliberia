@@ -6,7 +6,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('ChallengeService', () => {
   let service: ChallengeService;
-  let prismaService: any;
 
   const mockChallenge = {
     id: 'challenge-1',
@@ -44,43 +43,46 @@ describe('ChallengeService', () => {
     description: 'Test Description',
   };
 
+  const mockPrismaService = {
+    shareChallenge: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(null),
+    },
+    challengeMembership: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(null),
+    },
+    petition: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChallengeService,
         {
           provide: PrismaService,
-          useValue: {
-            shareChallenge: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-            },
-            challengeMembership: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              create: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-            },
-            petition: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-          },
+          useValue: mockPrismaService,
         },
       ],
     }).compile();
 
     service = module.get<ChallengeService>(ChallengeService);
-    prismaService = module.get(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('createWeeklyChallenge', () => {
     it('should create a weekly challenge', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareChallenge.create.mockResolvedValue(
-        mockChallenge as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.shareChallenge.create.mockResolvedValue(mockChallenge);
 
       const result = await service.createWeeklyChallenge('petition-1', 10);
 
@@ -91,18 +93,18 @@ describe('ChallengeService', () => {
         endDate: mockChallenge.endDate,
         goalValue: mockChallenge.goalValue,
       });
-      expect(prismaService.shareChallenge.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.shareChallenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             petitionId: 'petition-1',
             period: ChallengePeriod.WEEKLY,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should throw NotFoundException when petition does not exist', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(null);
+      mockPrismaService.petition.findUnique.mockResolvedValue(null);
 
       await expect(
         service.createWeeklyChallenge('invalid', 10),
@@ -110,19 +112,17 @@ describe('ChallengeService', () => {
     });
 
     it('should set period to WEEKLY', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareChallenge.create.mockResolvedValue(
-        mockChallenge as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.shareChallenge.create.mockResolvedValue(mockChallenge);
 
       await service.createWeeklyChallenge('petition-1', 10);
 
-      expect(prismaService.shareChallenge.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.shareChallenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             period: ChallengePeriod.WEEKLY,
             rewardMultiplier: 2.0,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
@@ -130,7 +130,7 @@ describe('ChallengeService', () => {
 
   describe('createCampaignChallenge', () => {
     it('should create a campaign challenge', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
 
       const startDate = new Date('2026-04-13');
       const endDate = new Date('2026-04-20');
@@ -144,8 +144,8 @@ describe('ChallengeService', () => {
         rewardMultiplier: 3.0,
       };
 
-      prismaService.shareChallenge.create.mockResolvedValue(
-        campaignChallenge as any,
+      mockPrismaService.shareChallenge.create.mockResolvedValue(
+        campaignChallenge,
       );
 
       const result = await service.createCampaignChallenge(
@@ -159,14 +159,14 @@ describe('ChallengeService', () => {
       );
 
       expect(result).toEqual({
-        id: expect.any(String),
+        id: expect.any(String) as string,
         title: 'Campaign Challenge',
         goalValue: 15,
       });
     });
 
     it('should throw NotFoundException when petition does not exist', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(null);
+      mockPrismaService.petition.findUnique.mockResolvedValue(null);
 
       await expect(
         service.createCampaignChallenge(
@@ -183,75 +183,75 @@ describe('ChallengeService', () => {
 
   describe('trackProgress', () => {
     it('should track user progress in a challenge', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
-        mockChallenge as any,
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(
+        mockChallenge,
       );
-      prismaService.challengeMembership.findUnique.mockResolvedValue(
-        mockMembership as any,
+      mockPrismaService.challengeMembership.findUnique.mockResolvedValue(
+        mockMembership,
       );
-      prismaService.challengeMembership.update.mockResolvedValue({
+      mockPrismaService.challengeMembership.update.mockResolvedValue({
         ...mockMembership,
         progress: 8,
-      } as any);
+      });
 
       const result = await service.trackProgress('user-1', 'challenge-1', 1);
 
       expect(result).toEqual({
-        progress: expect.any(Number),
+        progress: expect.any(Number) as number,
         goalValue: mockChallenge.goalValue,
         completed: false,
-        percentComplete: expect.any(Number),
+        percentComplete: expect.any(Number) as number,
       });
     });
 
     it('should create membership if not exists', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
-        mockChallenge as any,
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(
+        mockChallenge,
       );
-      prismaService.challengeMembership.findUnique.mockResolvedValue(null);
-      prismaService.challengeMembership.create.mockResolvedValue(
-        mockMembership as any,
+      mockPrismaService.challengeMembership.findUnique.mockResolvedValue(null);
+      mockPrismaService.challengeMembership.create.mockResolvedValue(
+        mockMembership,
       );
 
       await service.trackProgress('user-1', 'challenge-1', 5);
 
-      expect(prismaService.challengeMembership.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.challengeMembership.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userId: 'user-1',
             challengeId: 'challenge-1',
             progress: 5,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should mark challenge as completed when goal is reached', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
-        mockChallenge as any,
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(
+        mockChallenge,
       );
-      prismaService.challengeMembership.findUnique.mockResolvedValueOnce(
-        mockMembership as any,
+      mockPrismaService.challengeMembership.findUnique.mockResolvedValueOnce(
+        mockMembership,
       );
-      prismaService.challengeMembership.findUnique.mockResolvedValueOnce({
+      mockPrismaService.challengeMembership.findUnique.mockResolvedValueOnce({
         ...mockMembership,
         progress: 10,
-      } as any);
-      prismaService.challengeMembership.update.mockResolvedValue({
+      });
+      mockPrismaService.challengeMembership.update.mockResolvedValue({
         ...mockMembership,
         progress: 10,
         completed: true,
-      } as any);
+      });
 
       await service.trackProgress('user-1', 'challenge-1', 3);
 
-      expect(prismaService.challengeMembership.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.challengeMembership.update).toHaveBeenCalledWith(
         expect.any(Object),
       );
     });
 
     it('should throw NotFoundException when challenge does not exist', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(null);
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(null);
 
       await expect(
         service.trackProgress('user-1', 'invalid', 1),
@@ -261,9 +261,9 @@ describe('ChallengeService', () => {
 
   describe('getActiveChallenges', () => {
     it('should return active challenges for a petition', async () => {
-      prismaService.shareChallenge.findMany.mockResolvedValue([
+      mockPrismaService.shareChallenge.findMany.mockResolvedValue([
         { ...mockChallenge, memberships: [] },
-      ] as any);
+      ]);
 
       const result = await service.getActiveChallenges('petition-1');
 
@@ -277,21 +277,21 @@ describe('ChallengeService', () => {
     });
 
     it('should only return ACTIVE challenges', async () => {
-      prismaService.shareChallenge.findMany.mockResolvedValue([]);
+      mockPrismaService.shareChallenge.findMany.mockResolvedValue([]);
 
       await service.getActiveChallenges('petition-1');
 
-      expect(prismaService.shareChallenge.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaService.shareChallenge.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             status: ChallengeStatus.ACTIVE,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should return empty array on error', async () => {
-      prismaService.shareChallenge.findMany.mockRejectedValue(
+      mockPrismaService.shareChallenge.findMany.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -303,12 +303,12 @@ describe('ChallengeService', () => {
 
   describe('getUserChallenges', () => {
     it('should return user challenges with progress', async () => {
-      prismaService.challengeMembership.findMany.mockResolvedValue([
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([
         {
           ...mockMembership,
           challenge: mockChallenge,
         },
-      ] as any);
+      ]);
 
       const result = await service.getUserChallenges('user-1');
 
@@ -323,7 +323,7 @@ describe('ChallengeService', () => {
     });
 
     it('should return empty array on error', async () => {
-      prismaService.challengeMembership.findMany.mockRejectedValue(
+      mockPrismaService.challengeMembership.findMany.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -335,12 +335,12 @@ describe('ChallengeService', () => {
 
   describe('getChallengeLeaderboard', () => {
     it('should return challenge leaderboard', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
-        mockChallenge as any,
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(
+        mockChallenge,
       );
-      prismaService.challengeMembership.findMany.mockResolvedValue([
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([
         mockMembership,
-      ] as any);
+      ]);
 
       const result = await service.getChallengeLeaderboard('challenge-1', 10);
 
@@ -354,7 +354,7 @@ describe('ChallengeService', () => {
     });
 
     it('should throw NotFoundException when challenge does not exist', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(null);
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(null);
 
       await expect(
         service.getChallengeLeaderboard('invalid', 10),
@@ -362,14 +362,16 @@ describe('ChallengeService', () => {
     });
 
     it('should respect limit parameter', async () => {
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
-        mockChallenge as any,
+      mockPrismaService.shareChallenge.findUnique.mockResolvedValue(
+        mockChallenge,
       );
-      prismaService.challengeMembership.findMany.mockResolvedValue([]);
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([]);
 
       await service.getChallengeLeaderboard('challenge-1', 5);
 
-      expect(prismaService.challengeMembership.findMany).toHaveBeenCalledWith(
+      expect(
+        mockPrismaService.challengeMembership.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 5,
         }),
@@ -379,12 +381,12 @@ describe('ChallengeService', () => {
 
   describe('applyChallengeMultiplier', () => {
     it('should apply challenge multiplier', async () => {
-      prismaService.challengeMembership.findMany.mockResolvedValue([
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([
         {
           ...mockMembership,
           challenge: { ...mockChallenge, rewardMultiplier: 2.0 },
         },
-      ] as any);
+      ]);
 
       const result = await service.applyChallengeMultiplier('user-1', 100);
 
@@ -392,7 +394,7 @@ describe('ChallengeService', () => {
     });
 
     it('should cap multiplier at 5x', async () => {
-      prismaService.challengeMembership.findMany.mockResolvedValue([
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([
         {
           ...mockMembership,
           challenge: { ...mockChallenge, rewardMultiplier: 3.0 },
@@ -401,7 +403,7 @@ describe('ChallengeService', () => {
           ...mockMembership,
           challenge: { ...mockChallenge, rewardMultiplier: 3.0 },
         },
-      ] as any);
+      ]);
 
       const result = await service.applyChallengeMultiplier('user-1', 100);
 
@@ -409,7 +411,7 @@ describe('ChallengeService', () => {
     });
 
     it('should return base bonus when no completed challenges', async () => {
-      prismaService.challengeMembership.findMany.mockResolvedValue([]);
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([]);
 
       const result = await service.applyChallengeMultiplier('user-1', 100);
 
@@ -417,7 +419,7 @@ describe('ChallengeService', () => {
     });
 
     it('should return base bonus on error', async () => {
-      prismaService.challengeMembership.findMany.mockRejectedValue(
+      mockPrismaService.challengeMembership.findMany.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -429,13 +431,13 @@ describe('ChallengeService', () => {
 
   describe('autoCompleteReachedGoals', () => {
     it('should auto-complete challenges with reached goals', async () => {
-      prismaService.challengeMembership.findMany.mockResolvedValue([
+      mockPrismaService.challengeMembership.findMany.mockResolvedValue([
         {
           ...mockMembership,
           progress: 10,
           challenge: mockChallenge,
         },
-      ] as any);
+      ]);
 
       const result = await service.autoCompleteReachedGoals('user-1');
 

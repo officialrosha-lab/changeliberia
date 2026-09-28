@@ -4,7 +4,6 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('BadgeService', () => {
   let service: BadgeService;
-  let prismaService: any;
 
   const mockUser = {
     id: 'user-1',
@@ -42,68 +41,77 @@ describe('BadgeService', () => {
     updatedAt: new Date(),
   };
 
+  const mockPrismaService = {
+    shareLink: {
+      count: jest.fn().mockResolvedValue(0),
+      aggregate: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    socialEngagementBadge: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue(null),
+    },
+    referral: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BadgeService,
         {
           provide: PrismaService,
-          useValue: {
-            shareLink: {
-              count: jest.fn().mockResolvedValue(0) as any,
-              aggregate: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-            socialEngagementBadge: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-            referral: {
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-            user: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-          },
+          useValue: mockPrismaService,
         },
       ],
     }).compile();
 
     service = module.get<BadgeService>(BadgeService);
-    prismaService = module.get(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('checkAndAwardBadges', () => {
     it('should award new badges to user', async () => {
-      prismaService.socialEngagementBadge.findUnique.mockResolvedValue(null);
-      prismaService.shareLink.count.mockResolvedValue(10);
-      prismaService.shareLink.aggregate.mockResolvedValue({
+      mockPrismaService.socialEngagementBadge.findUnique.mockResolvedValue(
+        null,
+      );
+      mockPrismaService.shareLink.count.mockResolvedValue(10);
+      mockPrismaService.shareLink.aggregate.mockResolvedValue({
         _sum: { conversions: 50 },
-      } as any);
-      prismaService.socialEngagementBadge.create.mockResolvedValue(
-        mockBadge as any,
+      });
+      mockPrismaService.socialEngagementBadge.create.mockResolvedValue(
+        mockBadge,
       );
 
       const result = await service.checkAndAwardBadges('user-1', 'petition-1');
 
       expect(Array.isArray(result)).toBe(true);
-      expect(prismaService.socialEngagementBadge.create).toHaveBeenCalled();
+      expect(mockPrismaService.socialEngagementBadge.create).toHaveBeenCalled();
     });
 
     it('should not re-award already earned badges', async () => {
-      prismaService.socialEngagementBadge.findUnique.mockResolvedValue(
-        mockBadge as any,
+      mockPrismaService.socialEngagementBadge.findUnique.mockResolvedValue(
+        mockBadge,
       );
 
       await service.checkAndAwardBadges('user-1', 'petition-1');
 
-      expect(prismaService.socialEngagementBadge.create).not.toHaveBeenCalled();
+      expect(
+        mockPrismaService.socialEngagementBadge.create,
+      ).not.toHaveBeenCalled();
     });
 
     it('should return empty array on error', async () => {
-      prismaService.socialEngagementBadge.findUnique.mockRejectedValue(
+      mockPrismaService.socialEngagementBadge.findUnique.mockRejectedValue(
         new Error('Database error'),
       );
 
@@ -115,10 +123,10 @@ describe('BadgeService', () => {
 
   describe('applyBadgeMultiplier', () => {
     it('should apply multiplicative badge multiplier', async () => {
-      prismaService.socialEngagementBadge.findMany.mockResolvedValue([
+      mockPrismaService.socialEngagementBadge.findMany.mockResolvedValue([
         { ...mockBadge, multiplierBonus: 2.0 },
         { ...mockBadge, multiplierBonus: 1.5 },
-      ] as any);
+      ]);
 
       const result = await service.applyBadgeMultiplier(
         'user-1',
@@ -130,10 +138,10 @@ describe('BadgeService', () => {
     });
 
     it('should cap multiplier at 5x', async () => {
-      prismaService.socialEngagementBadge.findMany.mockResolvedValue([
+      mockPrismaService.socialEngagementBadge.findMany.mockResolvedValue([
         { ...mockBadge, multiplierBonus: 3.0 },
         { ...mockBadge, multiplierBonus: 3.0 },
-      ] as any);
+      ]);
 
       const result = await service.applyBadgeMultiplier(
         'user-1',
@@ -145,7 +153,7 @@ describe('BadgeService', () => {
     });
 
     it('should return base bonus on error', async () => {
-      prismaService.socialEngagementBadge.findMany.mockRejectedValue(
+      mockPrismaService.socialEngagementBadge.findMany.mockRejectedValue(
         new Error('Database error'),
       );
 
@@ -161,36 +169,40 @@ describe('BadgeService', () => {
 
   describe('getUserBadges', () => {
     it('should return user badges for a petition', async () => {
-      prismaService.socialEngagementBadge.findMany.mockResolvedValue([
+      mockPrismaService.socialEngagementBadge.findMany.mockResolvedValue([
         mockBadge,
-      ] as any);
+      ]);
 
       const result = await service.getUserBadges('user-1', 'petition-1');
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(0);
-      expect(prismaService.socialEngagementBadge.findMany).toHaveBeenCalledWith(
+      expect(
+        mockPrismaService.socialEngagementBadge.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             userId: 'user-1',
             petitionId: 'petition-1',
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should return all user badges when no petition specified', async () => {
-      prismaService.socialEngagementBadge.findMany.mockResolvedValue([
+      mockPrismaService.socialEngagementBadge.findMany.mockResolvedValue([
         mockBadge,
-      ] as any);
+      ]);
 
       await service.getUserBadges('user-1');
 
-      expect(prismaService.socialEngagementBadge.findMany).toHaveBeenCalledWith(
+      expect(
+        mockPrismaService.socialEngagementBadge.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             userId: 'user-1',
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
@@ -198,7 +210,7 @@ describe('BadgeService', () => {
 
   describe('getBadgeProgress', () => {
     it('should return progress for SHARE_WIZARD badge', async () => {
-      prismaService.shareLink.count.mockResolvedValue(7);
+      mockPrismaService.shareLink.count.mockResolvedValue(7);
 
       const result = await service.getBadgeProgress(
         'user-1',
@@ -215,9 +227,9 @@ describe('BadgeService', () => {
     });
 
     it('should return progress for VIRAL_HERO badge', async () => {
-      prismaService.shareLink.aggregate.mockResolvedValue({
+      mockPrismaService.shareLink.aggregate.mockResolvedValue({
         _sum: { conversions: 30 },
-      } as any);
+      });
 
       const result = await service.getBadgeProgress(
         'user-1',
@@ -231,7 +243,7 @@ describe('BadgeService', () => {
     });
 
     it('should return progress for NETWORK_BUILDER badge', async () => {
-      prismaService.referral.findMany.mockResolvedValue(
+      mockPrismaService.referral.findMany.mockResolvedValue(
         Array(75)
           .fill(null)
           .map((_, i) => ({
@@ -239,7 +251,7 @@ describe('BadgeService', () => {
             referrerId: 'user-1',
             refereeEmail: `user${i}@example.com`,
             petitionId: 'petition-1',
-          })) as any,
+          })),
       );
 
       const result = await service.getBadgeProgress(
@@ -254,10 +266,10 @@ describe('BadgeService', () => {
     });
 
     it('should return progress for INFLUENCER badge', async () => {
-      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
-      prismaService.shareLink.aggregate.mockResolvedValue({
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.shareLink.aggregate.mockResolvedValue({
         _sum: { conversions: 15 },
-      } as any);
+      });
 
       const result = await service.getBadgeProgress(
         'user-1',
@@ -270,13 +282,13 @@ describe('BadgeService', () => {
     });
 
     it('should return progress for STREAK_MASTER badge', async () => {
-      prismaService.shareLink.findMany.mockResolvedValue([
+      mockPrismaService.shareLink.findMany.mockResolvedValue([
         { ...mockShareLink, createdAt: new Date('2026-04-13') },
         { ...mockShareLink, createdAt: new Date('2026-04-14') },
         { ...mockShareLink, createdAt: new Date('2026-04-15') },
         { ...mockShareLink, createdAt: new Date('2026-04-16') },
         { ...mockShareLink, createdAt: new Date('2026-04-17') },
-      ] as any);
+      ]);
 
       const result = await service.getBadgeProgress(
         'user-1',
@@ -290,7 +302,9 @@ describe('BadgeService', () => {
     });
 
     it('should return zero progress on error', async () => {
-      prismaService.shareLink.count.mockRejectedValue(new Error('DB error'));
+      mockPrismaService.shareLink.count.mockRejectedValue(
+        new Error('DB error'),
+      );
 
       const result = await service.getBadgeProgress(
         'user-1',
@@ -305,7 +319,7 @@ describe('BadgeService', () => {
 
   describe('getBadgeLeaderboard', () => {
     it('should return badge leaderboard', async () => {
-      prismaService.user.findMany.mockResolvedValue([
+      mockPrismaService.user.findMany.mockResolvedValue([
         {
           ...mockUser,
           badges: [
@@ -313,7 +327,7 @@ describe('BadgeService', () => {
             { ...mockBadge, multiplierBonus: 1.5 },
           ],
         },
-      ] as any);
+      ]);
 
       const result = await service.getBadgeLeaderboard(10);
 
@@ -326,11 +340,11 @@ describe('BadgeService', () => {
     });
 
     it('should respect limit parameter', async () => {
-      prismaService.user.findMany.mockResolvedValue([]);
+      mockPrismaService.user.findMany.mockResolvedValue([]);
 
       await service.getBadgeLeaderboard(5);
 
-      expect(prismaService.user.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 5,
         }),
@@ -338,7 +352,7 @@ describe('BadgeService', () => {
     });
 
     it('should return empty array on error', async () => {
-      prismaService.user.findMany.mockRejectedValue(new Error('DB error'));
+      mockPrismaService.user.findMany.mockRejectedValue(new Error('DB error'));
 
       const result = await service.getBadgeLeaderboard();
 
