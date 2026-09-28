@@ -14,6 +14,7 @@ import {
   LocationClassificationService,
   LocationSource,
 } from './location-classification.service';
+import { IpRegionHintService } from './ip-region-hint.service';
 
 @Injectable()
 export class SignaturesService {
@@ -26,6 +27,7 @@ export class SignaturesService {
     @Inject(PetitionsRealtimeService)
     private readonly petitionsRealtime: PetitionsRealtimeService,
     private readonly locationClassification: LocationClassificationService,
+    private readonly ipRegionHint: IpRegionHintService,
   ) {}
 
   findByUserAndPetition(userId: string, petitionId: string) {
@@ -77,6 +79,7 @@ export class SignaturesService {
           petition,
           user!.id,
           { personallyAffected: undefined, relationshipType: undefined } as unknown as CreateSignatureDto,
+          null, // SMS channel has no IP to derive a region hint from
         );
         const { classification, confidenceScore } = this.locationClassification.classify(classificationInput);
         await tx.signatureLocation.create({
@@ -190,6 +193,10 @@ export class SignaturesService {
       }
     }
 
+    // Resolved outside the transaction — it's a best-effort external HTTP
+    // call and must never hold a DB connection open while it runs.
+    const ipRegionHint = await this.ipRegionHint.lookup(ipAddress);
+
     let txResult: { signature: any; updatedPetition: any };
     try {
       txResult = await this.prisma.$transaction(async (tx) => {
@@ -207,7 +214,13 @@ export class SignaturesService {
 
         // Petition Location Verification & Impact Area System (Phase 1) —
         // additive: never blocks or alters signature creation above/below.
-        const classificationInput = await this.buildClassificationInput(tx, petition, userId, dto);
+        const classificationInput = await this.buildClassificationInput(
+          tx,
+          petition,
+          userId,
+          dto,
+          ipRegionHint,
+        );
         const { classification, confidenceScore } = this.locationClassification.classify(classificationInput);
         await tx.signatureLocation.create({
           data: {
@@ -324,6 +337,7 @@ export class SignaturesService {
     petition: { impactScope: any; county: string | null; district: string | null; community: string | null; counties: string[] },
     userId: string | undefined,
     dto: CreateSignatureDto,
+    ipRegionHint: string | null,
   ) {
     let declaredCounty = dto.confirmedCounty ?? null;
     let declaredDistrict = dto.confirmedDistrict ?? null;
@@ -361,6 +375,7 @@ export class SignaturesService {
       declaredCommunity,
       locationSource,
       userVerificationStatus,
+      ipRegionHint,
     };
   }
 }
