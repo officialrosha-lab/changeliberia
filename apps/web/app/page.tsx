@@ -51,8 +51,8 @@ export default async function Home() {
       <HomeSocialProof stats={stats} />
       <HomePollsSection />
       {featured ? <HomeFeaturedStory petition={featured} /> : null}
-      <HomeHowItWorks />
       <HomeDiscoverGrid petitions={petitions} />
+      <HomeHowItWorks />
       <HomeDonationSection />
       <HomeDraftCta />
       <HomeContributeBanner />
