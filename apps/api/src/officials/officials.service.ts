@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { InstitutionType } from '@prisma/client';
+import { InstitutionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { RolePermissionService } from '../rbac/role-permission.service';
@@ -34,7 +34,8 @@ function maskEmail(email: string): string {
 
 function isClaimApplication(metadata: string | null): boolean {
   try {
-    return JSON.parse(metadata ?? '{}')?.claimApplication === true;
+    const parsed = JSON.parse(metadata ?? '{}') as Record<string, unknown>;
+    return parsed?.claimApplication === true;
   } catch {
     return false;
   }
@@ -188,8 +189,9 @@ export class OfficialsService {
 
     let parsedMetadata: Record<string, unknown> = {};
     try {
-      const parsed = JSON.parse(institution.metadata ?? '{}');
-      if (parsed && typeof parsed === 'object') parsedMetadata = parsed;
+      const parsed = JSON.parse(institution.metadata ?? '{}') as unknown;
+      if (parsed && typeof parsed === 'object')
+        parsedMetadata = parsed as Record<string, unknown>;
     } catch {
       /* malformed metadata — start fresh, don't block the claim */
     }
@@ -199,7 +201,9 @@ export class OfficialsService {
       claimedAt: new Date().toISOString(),
     });
 
-    let claimed;
+    let claimed: Prisma.InstitutionGetPayload<{
+      include: { officialProfile: true };
+    }> | null;
     try {
       claimed = await this.prisma.$transaction(async (tx) => {
         // Guarded updateMany makes the claim race-safe: a concurrent claim on
@@ -264,10 +268,13 @@ export class OfficialsService {
           include: { officialProfile: true },
         });
       });
-    } catch (error: any) {
+    } catch (error) {
       // Same user double-submitting across institutions violates the
       // holderUserId unique constraint.
-      if (error?.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException(
           'You already have an official account application',
         );
