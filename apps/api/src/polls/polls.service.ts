@@ -5,12 +5,38 @@ import {
   Logger,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, PollStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { PollResponse, PollListResponse } from './dto/poll-response.dto';
 import { slugify } from '../common/utils/slugify';
+
+interface PollWithRelations {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  category: string;
+  county: string | null;
+  status: string;
+  visibility: string;
+  expiresAt: Date;
+  totalVotes: number;
+  relatedPetitionIds: string;
+  options: {
+    id: string;
+    text: string;
+    imageUrl: string | null;
+    voteCount: number;
+  }[];
+  createdAt: Date;
+  creator: {
+    id: string;
+    fullName: string;
+    email?: string | null;
+  };
+}
 
 @Injectable()
 export class PollsService {
@@ -119,7 +145,7 @@ export class PollsService {
           district: createPollDto.district || null,
           community: createPollDto.community || null,
           createdBy: submittedBy,
-          status: 'PENDING' as any,
+          status: PollStatus.PENDING,
           expiresAt: new Date(createPollDto.expiresAt),
           relatedPetitionIds: JSON.stringify(
             createPollDto.relatedPetitionIds || [],
@@ -315,17 +341,17 @@ export class PollsService {
     search?: string,
   ): Promise<PollListResponse[]> {
     // Validate status is a valid PollStatus
-    const validStatuses = [
-      'PENDING',
-      'APPROVED',
-      'REJECTED',
-      'ACTIVE',
-      'EXPIRED',
-      'CLOSED',
+    const validStatuses: PollStatus[] = [
+      PollStatus.PENDING,
+      PollStatus.APPROVED,
+      PollStatus.REJECTED,
+      PollStatus.ACTIVE,
+      PollStatus.EXPIRED,
+      PollStatus.CLOSED,
     ];
-    const finalStatus = validStatuses.includes(status)
-      ? (status as any)
-      : 'APPROVED';
+    const finalStatus = validStatuses.includes(status as PollStatus)
+      ? (status as PollStatus)
+      : PollStatus.APPROVED;
 
     const orderBy =
       sort === 'popular'
@@ -617,16 +643,16 @@ export class PollsService {
   /**
    * Format poll response with calculated percentages
    */
-  private formatPollResponse(poll: any): PollResponse {
-    const relatedPetitionIds = Array.isArray(poll.relatedPetitionIds)
-      ? poll.relatedPetitionIds
-      : JSON.parse(poll.relatedPetitionIds || '[]');
+  private formatPollResponse(poll: PollWithRelations): PollResponse {
+    const relatedPetitionIds = JSON.parse(
+      poll.relatedPetitionIds || '[]',
+    ) as string[];
 
     return {
       id: poll.id,
       slug: poll.slug,
       title: poll.title,
-      description: poll.description,
+      description: poll.description ?? undefined,
       category: poll.category,
       county: poll.county,
       status: poll.status,
