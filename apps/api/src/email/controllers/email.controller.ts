@@ -264,7 +264,7 @@ export class AdminEmailController {
   @Get('queue-stats')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
-  async getQueueStats(): Promise<any> {
+  getQueueStats(): any {
     // This would require injecting the queue and calling queue.getJobCounts()
     // Placeholder for now
     return {

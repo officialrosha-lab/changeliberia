@@ -23,7 +23,7 @@ export class PollsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('subscribe_poll')
   handleSubscribePoll(client: Socket, payload: { pollId: string }) {
     if (payload?.pollId) {
-      client.join(`poll:${payload.pollId}`);
+      void client.join(`poll:${payload.pollId}`);
       client.emit('polls:subscribed', { pollId: payload.pollId });
     }
     return { success: true, pollId: payload?.pollId };
@@ -32,7 +32,7 @@ export class PollsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('unsubscribe_poll')
   handleUnsubscribePoll(client: Socket, payload: { pollId: string }) {
     if (payload?.pollId) {
-      client.leave(`poll:${payload.pollId}`);
+      void client.leave(`poll:${payload.pollId}`);
       client.emit('polls:unsubscribed', { pollId: payload.pollId });
     }
     return { success: true, pollId: payload?.pollId };

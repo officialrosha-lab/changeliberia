@@ -61,7 +61,7 @@ export class NotificationsGateway
    * Should be called after user logs in
    */
   @SubscribeMessage('subscribe_notifications')
-  async handleSubscribeNotifications(
+  handleSubscribeNotifications(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userId: string },
   ) {
@@ -73,7 +73,7 @@ export class NotificationsGateway
     }
 
     // Join user-specific room
-    client.join(`user:${userId}`);
+    void client.join(`user:${userId}`);
 
     // Track connection
     if (!this.userConnections.has(userId)) {
@@ -101,7 +101,7 @@ export class NotificationsGateway
     @MessageBody() data: { userId: string },
   ) {
     const { userId } = data;
-    client.leave(`user:${userId}`);
+    void client.leave(`user:${userId}`);
 
     // Remove from tracking
     const socketIds = this.userConnections.get(userId);

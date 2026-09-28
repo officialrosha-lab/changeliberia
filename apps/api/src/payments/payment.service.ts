@@ -1007,14 +1007,14 @@ export class PaymentService {
   /**
    * Validate phone number format
    */
-  async validatePhoneNumber(phoneNumber: string): Promise<boolean> {
+  validatePhoneNumber(phoneNumber: string): boolean {
     return this.momoService.validatePhoneNumber(phoneNumber);
   }
 
   /**
    * Format phone number for display
    */
-  async formatPhoneNumber(phoneNumber: string): Promise<string> {
+  formatPhoneNumber(phoneNumber: string): string {
     const normalized = this.momoService.normalizePhoneNumber(phoneNumber);
     return this.momoService.formatPhoneForDisplay(normalized);
   }

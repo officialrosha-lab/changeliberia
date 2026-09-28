@@ -650,7 +650,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.succeeded event
    */
-  private async handleChargeSucceeded(charge: any): Promise<void> {
+  private handleChargeSucceeded(charge: any): void {
     this.logger.debug(`Charge succeeded: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -658,7 +658,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle charge.failed event
    */
-  private async handleChargeFailed(charge: any): Promise<void> {
+  private handleChargeFailed(charge: any): void {
     this.logger.debug(`Charge failed: ${charge.id}`);
     // Most charge handling is done via payment_intent and invoice events
   }
@@ -724,7 +724,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.created event
    */
-  private async handleCustomerCreated(customer: any): Promise<void> {
+  private handleCustomerCreated(customer: any): void {
     this.logger.debug(`Customer created: ${customer.id}`);
     // Customer creation is typically initiated by the application
   }
@@ -732,7 +732,7 @@ export class WebhookEventHandlerService {
   /**
    * Handle customer.deleted event
    */
-  private async handleCustomerDeleted(customer: any): Promise<void> {
+  private handleCustomerDeleted(customer: any): void {
     this.logger.debug(`Customer deleted: ${customer.id}`);
     // Clean up user Stripe customer reference if needed
   }
@@ -1140,10 +1140,10 @@ export class WebhookEventHandlerService {
   /**
    * Log analytics event
    */
-  private async logAnalyticsEvent(
+  private logAnalyticsEvent(
     eventName: string,
     properties: Record<string, any>,
-  ): Promise<void> {
+  ): void {
     // TODO: Implement analytics integration
     this.logger.debug(`Analytics event: ${eventName}`, properties);
   }
@@ -1151,9 +1151,7 @@ export class WebhookEventHandlerService {
   /**
    * Update petition signature count
    */
-  private async updatePetitionSignatureCount(
-    petitionId: string,
-  ): Promise<void> {
+  private updatePetitionSignatureCount(petitionId: string): void {
     // TODO: Implement petition signature count update
     this.logger.debug(`Updated signature count for petition ${petitionId}`);
   }
