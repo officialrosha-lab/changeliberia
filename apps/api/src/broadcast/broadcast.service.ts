@@ -3,6 +3,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MessagesService } from '../messages/messages.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+interface RecipientError extends Error {
+  recipientId?: string;
+}
+
 @Injectable()
 export class BroadcastService {
   constructor(
@@ -83,12 +87,12 @@ export class BroadcastService {
       try {
         await promise;
         successCount++;
-      } catch (error: any) {
+      } catch (error) {
         failedCount++;
-        const recipientId = error.recipientId || 'unknown';
+        const recipientError = error as RecipientError;
         errors.push({
-          recipientId,
-          error: error.message,
+          recipientId: recipientError.recipientId || 'unknown',
+          error: recipientError.message,
         });
       }
     }
@@ -262,8 +266,8 @@ export class BroadcastService {
         },
         senderUserId,
       );
-    } catch (error: any) {
-      error.recipientId = recipientId;
+    } catch (error) {
+      (error as RecipientError).recipientId = recipientId;
       throw error;
     }
   }
