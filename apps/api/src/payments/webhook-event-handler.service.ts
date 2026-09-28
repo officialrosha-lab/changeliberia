@@ -66,11 +66,11 @@ export class WebhookEventHandlerService {
 
       // Charge Events
       case StripeEventType.CHARGE_SUCCEEDED:
-        await this.handleChargeSucceeded(event.data.object);
+        this.handleChargeSucceeded(event.data.object);
         break;
 
       case StripeEventType.CHARGE_FAILED:
-        await this.handleChargeFailed(event.data.object);
+        this.handleChargeFailed(event.data.object);
         break;
 
       case StripeEventType.CHARGE_REFUNDED:
@@ -79,11 +79,11 @@ export class WebhookEventHandlerService {
 
       // Customer Events
       case StripeEventType.CUSTOMER_CREATED:
-        await this.handleCustomerCreated(event.data.object);
+        this.handleCustomerCreated(event.data.object);
         break;
 
       case StripeEventType.CUSTOMER_DELETED:
-        await this.handleCustomerDeleted(event.data.object);
+        this.handleCustomerDeleted(event.data.object);
         break;
 
       default:
@@ -146,7 +146,7 @@ export class WebhookEventHandlerService {
 
       // If associated with a petition, update signature count
       if (payment.petitionId) {
-        await this.updatePetitionSignatureCount(payment.petitionId);
+        this.updatePetitionSignatureCount(payment.petitionId);
       }
 
       // Queue confirmation email
@@ -155,7 +155,7 @@ export class WebhookEventHandlerService {
       }
 
       // Log analytics event
-      await this.logAnalyticsEvent('payment_completed', {
+      this.logAnalyticsEvent('payment_completed', {
         paymentId: payment.id,
         amount,
         currency,
@@ -225,7 +225,7 @@ export class WebhookEventHandlerService {
       }
 
       // Log analytics event
-      await this.logAnalyticsEvent('payment_failed', {
+      this.logAnalyticsEvent('payment_failed', {
         paymentId: payment.id,
         reason: lastPaymentError?.message,
       });
@@ -359,7 +359,7 @@ export class WebhookEventHandlerService {
       await this.queueSubscriptionWelcomeEmail(user.id);
 
       // Log analytics event
-      await this.logAnalyticsEvent('subscription_created', {
+      this.logAnalyticsEvent('subscription_created', {
         userId: user.id,
         subscriptionId,
       });
@@ -423,7 +423,7 @@ export class WebhookEventHandlerService {
       });
 
       // Log analytics event
-      await this.logAnalyticsEvent('subscription_updated', {
+      this.logAnalyticsEvent('subscription_updated', {
         subscriptionId,
       });
     } catch (error) {
@@ -486,7 +486,7 @@ export class WebhookEventHandlerService {
       await this.queueSubscriptionCancellationEmail(dbSubscription.userId);
 
       // Log analytics event
-      await this.logAnalyticsEvent('subscription_cancelled', {
+      this.logAnalyticsEvent('subscription_cancelled', {
         subscriptionId,
       });
     } catch (error) {
@@ -559,7 +559,7 @@ export class WebhookEventHandlerService {
       await this.queueInvoiceReceiptEmail(subscription.userId, invoiceId);
 
       // Log analytics event
-      await this.logAnalyticsEvent('subscription_payment_succeeded', {
+      this.logAnalyticsEvent('subscription_payment_succeeded', {
         subscriptionId,
         invoiceId,
       });
@@ -634,7 +634,7 @@ export class WebhookEventHandlerService {
       await this.queuePaymentFailureEmail(subscription.userId, invoiceId);
 
       // Log analytics event
-      await this.logAnalyticsEvent('subscription_payment_failed', {
+      this.logAnalyticsEvent('subscription_payment_failed', {
         subscriptionId,
         invoiceId,
       });
@@ -709,7 +709,7 @@ export class WebhookEventHandlerService {
       await this.queueRefundEmail(payment.userId || '');
 
       // Log analytics event
-      await this.logAnalyticsEvent('payment_refunded', {
+      this.logAnalyticsEvent('payment_refunded', {
         paymentId: payment.id,
       });
     } catch (error) {

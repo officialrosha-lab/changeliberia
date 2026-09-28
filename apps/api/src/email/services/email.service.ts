@@ -119,7 +119,7 @@ export class EmailService {
     }
 
     // Render template
-    const { html, text, subject } = await this.templateService.renderTemplate(
+    const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
       templateProps,
     );
@@ -195,7 +195,7 @@ export class EmailService {
     }
 
     // Render template
-    const { html, text, subject } = await this.templateService.renderTemplate(
+    const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
       templateProps,
     );

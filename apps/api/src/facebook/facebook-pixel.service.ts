@@ -83,7 +83,7 @@ export class FacebookPixelService {
 
       // In production, would send to Facebook Conversions API
       if (this.ACCESS_TOKEN) {
-        await this.sendToFacebookAPI(eventId, {
+        this.sendToFacebookAPI(eventId, {
           eventName: 'Purchase',
           eventData: {
             content_ids: [petitionId],
