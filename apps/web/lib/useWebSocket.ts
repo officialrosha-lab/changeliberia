@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getApiBase } from './api';
 
@@ -46,6 +46,7 @@ interface PulseMapData {
  */
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const url = options.url || getSocketOrigin();
   const autoConnect = options.autoConnect !== false;
 
@@ -63,6 +64,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     socket.on('error', (error) => {
       console.error('WebSocket error:', error);
+    });
+
+    socket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
     socketRef.current = socket;
@@ -166,6 +175,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onPulseMapData,
     onTrendingPetitions,
     onPetitionUpdate,
-    isConnected: socketRef.current?.connected ?? false,
+    isConnected,
   };
 }

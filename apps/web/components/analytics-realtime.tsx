@@ -28,8 +28,11 @@ export function AnalyticsNotificationBadge({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Intentional: accumulates a running notification count/history each
+    // time the external WebSocket subscription pushes a new update.
     const hasUpdate = Object.values(updates).some((u) => u !== null);
     if (hasUpdate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUpdateCount((c) => c + 1);
       setLastUpdateTime(new Date());
       setIsVisible(true);
@@ -132,6 +135,8 @@ export function AnalyticsLiveUpdateFeed() {
 
   const [feed, setFeed] = useState<RecentUpdate[]>([]);
 
+  // Intentional: appends to a running feed of recent updates each time the
+  // external WebSocket subscription pushes a new message/broadcast event.
   useEffect(() => {
     if (updates.message_created) {
       const data = updates.message_created.data as {
@@ -144,6 +149,7 @@ export function AnalyticsLiveUpdateFeed() {
         message: `New message: ${data.subject || 'Untitled'}`,
         timestamp: new Date(),
       };
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFeed((prev) => [newUpdate, ...prev.slice(0, 9)]);
     }
   }, [updates.message_created]);
@@ -160,6 +166,7 @@ export function AnalyticsLiveUpdateFeed() {
         message: `Broadcast sent: ${data.title || 'Untitled'} (${data.recipientCount || 0} recipients)`,
         timestamp: new Date(),
       };
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFeed((prev) => [newUpdate, ...prev.slice(0, 9)]);
     }
   }, [updates.broadcast_sent]);

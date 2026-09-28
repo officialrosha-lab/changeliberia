@@ -110,6 +110,10 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
   // Auto-connect on mount if enabled and token available
   useEffect(() => {
     if (autoConnect && token && !socketRef.current?.connected) {
+      // Intentional: `connect` synchronously resets the error state and
+      // opens the socket as part of establishing the external connection
+      // when auth/auto-connect settings change.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       connect();
     }
 
@@ -150,8 +154,11 @@ export function useAnalyticsUpdate<T extends AnalyticsUpdate['type']>(
     types: [type, ...(options.types || [])],
   });
 
+  // Intentional: mirrors the latest matching update from the external
+  // WebSocket subscription into local state.
   useEffect(() => {
     if (update?.type === type) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTypedUpdate(update);
     }
   }, [update, type]);
@@ -182,8 +189,11 @@ export function useAnalyticsMultiple(
     types,
   });
 
+  // Intentional: accumulates the latest update per type from the external
+  // WebSocket subscription into local state.
   useEffect(() => {
     if (update) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUpdates((prev) => ({
         ...prev,
         [update.type]: update,

@@ -83,6 +83,9 @@ function LoginPageClient() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('emailVerificationSent')) {
+      // Intentional: reflects a one-time URL param into state on mount,
+      // which requires client-side window access unavailable during SSR.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowVerificationMessage(true);
       window.history.replaceState({}, '', '/auth/login');
     }

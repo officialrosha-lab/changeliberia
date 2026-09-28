@@ -15,23 +15,20 @@ type Props = { children: React.ReactNode };
 export function OfficialGuard({ children }: Props) {
   const token = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s.hydrated);
-  const [phase, setPhase] = useState<'loading' | 'denied' | 'pending' | 'ok'>('loading');
+  const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'pending' | 'ok'>('loading');
+  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!token) {
-      setPhase('denied');
-      return;
-    }
+    if (!hydrated || !token) return;
     let cancelled = false;
     void (async () => {
       try {
         const me = await apiGet<{ officialStatus: string }>('/officials/me', token);
         if (cancelled) return;
-        if (me.officialStatus === 'VERIFIED') setPhase('ok');
-        else setPhase('pending');
+        if (me.officialStatus === 'VERIFIED') setAsyncPhase('ok');
+        else setAsyncPhase('pending');
       } catch {
-        if (!cancelled) setPhase('denied');
+        if (!cancelled) setAsyncPhase('denied');
       }
     })();
     return () => {

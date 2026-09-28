@@ -28,6 +28,9 @@ export default function PollsPage() {
   }, [search]);
 
   useEffect(() => {
+    // Intentional: flips the loading indicator back on synchronously so the
+    // list doesn't show stale results while the new sort/search fetch runs.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const params = new URLSearchParams({ status: 'ACTIVE', sort });
     if (debouncedSearch) params.set('search', debouncedSearch);

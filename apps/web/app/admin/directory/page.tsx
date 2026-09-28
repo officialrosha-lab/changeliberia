@@ -10,22 +10,20 @@ type Phase = 'loading' | 'denied' | 'ok';
 
 export default function AdminDirectoryPage() {
   const token = useAuthStore((s) => s.token);
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [asyncPhase, setAsyncPhase] = useState<Phase>('loading');
+  const phase: Phase = !token ? 'denied' : asyncPhase;
   const [activeTab, setActiveTab] = useState<'institutions' | 'contacts' | 'import' | 'analytics'>('institutions');
 
   useEffect(() => {
-    if (!token) {
-      setPhase('denied');
-      return;
-    }
+    if (!token) return;
     let cancelled = false;
     void (async () => {
       try {
         const me = await apiGet<{ role: string }>('/users/me', token);
         if (cancelled) return;
-        setPhase(me.role === 'ADMIN' ? 'ok' : 'denied');
+        setAsyncPhase(me.role === 'ADMIN' ? 'ok' : 'denied');
       } catch {
-        if (!cancelled) setPhase('denied');
+        if (!cancelled) setAsyncPhase('denied');
       }
     })();
     return () => { cancelled = true; };

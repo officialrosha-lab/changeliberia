@@ -40,6 +40,7 @@ export function AdminDonationRevenue({
   campaigns,
 }: AdminDonationRevenueProps) {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [nextPayoutDate] = useState(() => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
   const statCards = [
     {
@@ -387,7 +388,7 @@ export function AdminDonationRevenue({
           <div>
             <p className="text-sm text-orange-800 dark:text-orange-200">Next Payout</p>
             <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
-              {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+              {nextPayoutDate.toLocaleDateString()}
             </p>
           </div>
 

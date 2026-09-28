@@ -21,7 +21,8 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
   const [errorMsg, setErrorMsg] = useState('');
   const widgetRef = useRef<HTMLDivElement>(null);
 
-  // Mount effect - runs once on client side only
+  // Mount effect - runs once on client side only, since the portal target
+  // (document.body) doesn't exist during server rendering.
   useEffect(() => {
     if (typeof document === 'undefined') return;
     let root = document.body;
@@ -29,6 +30,7 @@ export function FloatingFeedbackWidget({ enabled = true }: FloatingFeedbackWidge
       root = document.createElement('div');
       document.documentElement.appendChild(root);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPortalRoot(root);
   }, []);
 

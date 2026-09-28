@@ -178,12 +178,6 @@ export function CreatePetitionForm() {
 
   const prefillTitle = searchParams.get('title') ?? '';
 
-  // Block render only until hydrated — guests can draft a petition here too
-  // (autosaved locally); they're only asked to log in at submit time, via
-  // the auth modal in submit() below, which resumes the same submission
-  // with whatever they've already typed instead of losing it to a redirect.
-  if (!hydrated) return null;
-
   // Restore the uncontrolled text fields (title/summary/description/tags/
   // priorActions/goal/displayName) from a saved draft on mount — these use
   // defaultValue rather than React state, so restoring them means setting
@@ -266,6 +260,12 @@ export function CreatePetitionForm() {
     imageUrlValue,
     currentStep,
   ]);
+
+  // Block render only until hydrated — guests can draft a petition here too
+  // (autosaved locally); they're only asked to log in at submit time, via
+  // the auth modal in submit() below, which resumes the same submission
+  // with whatever they've already typed instead of losing it to a redirect.
+  if (!hydrated) return null;
 
   function dismissDraftBanner() {
     setDraftRestored(false);

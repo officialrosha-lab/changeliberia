@@ -55,13 +55,13 @@ export function RichTextEditor({
   };
 
   const toolbar = [
-    { label: 'H1', onClick: () => insertMarkdown('# '), title: 'Heading 1' },
-    { label: 'H2', onClick: () => insertMarkdown('## '), title: 'Heading 2' },
-    { label: 'H3', onClick: () => insertMarkdown('### '), title: 'Heading 3' },
-    { label: 'B', onClick: () => insertMarkdown('**', '**'), title: 'Bold' },
-    { label: 'I', onClick: () => insertMarkdown('*', '*'), title: 'Italic' },
-    { label: 'Link', onClick: () => insertMarkdown('[', '](url)'), title: 'Link' },
-    { label: 'List', onClick: () => insertMarkdown('- '), title: 'Bullet List' },
+    { label: 'H1', before: '# ', after: '', title: 'Heading 1' },
+    { label: 'H2', before: '## ', after: '', title: 'Heading 2' },
+    { label: 'H3', before: '### ', after: '', title: 'Heading 3' },
+    { label: 'B', before: '**', after: '**', title: 'Bold' },
+    { label: 'I', before: '*', after: '*', title: 'Italic' },
+    { label: 'Link', before: '[', after: '](url)', title: 'Link' },
+    { label: 'List', before: '- ', after: '', title: 'Bullet List' },
   ];
 
   return (
@@ -71,7 +71,7 @@ export function RichTextEditor({
         {toolbar.map((btn) => (
           <button
             key={btn.label}
-            onClick={btn.onClick}
+            onClick={() => insertMarkdown(btn.before, btn.after)}
             title={btn.title}
             className="px-3 py-1 text-sm font-semibold bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >

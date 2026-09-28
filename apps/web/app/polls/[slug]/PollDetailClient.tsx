@@ -148,8 +148,8 @@ function AnimatedBar({
 
   useEffect(() => {
     if (mounted.current) {
-      setWidth(percentage);
-      return;
+      const t = setTimeout(() => setWidth(percentage), 0);
+      return () => clearTimeout(t);
     }
     mounted.current = true;
     const t = setTimeout(() => setWidth(percentage), delay + 80);

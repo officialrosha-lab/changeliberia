@@ -15,18 +15,6 @@ export function AdminPerformanceDashboard({}: AdminPerformanceDashboardProps) {
   const [activeTab, setActiveTab] = useState<'vitals' | 'resources' | 'custom'>('vitals');
   const [performanceScore, setPerformanceScore] = useState<number>(0);
 
-  useEffect(() => {
-    // Wait for metrics to be collected
-    const timer = setTimeout(() => {
-      const data = performanceMonitor.getMetrics();
-      setMetrics(data);
-      setPerformanceScore(calculateScore(data.vitals));
-      setLoading(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   const calculateScore = (vitals: WebVitals): number => {
     let score = 100;
 
@@ -62,6 +50,18 @@ export function AdminPerformanceDashboard({}: AdminPerformanceDashboardProps) {
 
     return Math.max(0, Math.round(score));
   };
+
+  useEffect(() => {
+    // Wait for metrics to be collected
+    const timer = setTimeout(() => {
+      const data = performanceMonitor.getMetrics();
+      setMetrics(data);
+      setPerformanceScore(calculateScore(data.vitals));
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const getMetricColor = (rating: string): string => {
     switch (rating) {
