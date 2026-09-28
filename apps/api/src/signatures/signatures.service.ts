@@ -171,6 +171,7 @@ export class SignaturesService {
       userId,
       ipAddress,
       deviceId,
+      declaredCounty: dto.confirmedCounty ?? null,
     });
     if (risk.captchaRequired && !dto.captchaToken) {
       return {
