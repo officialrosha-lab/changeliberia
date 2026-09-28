@@ -1,5 +1,5 @@
 // ============================================================================
-// Email System (Plunk + React Email) - Schema Additions
+// Email System (Maileroo + React Email) - Schema Additions
 // ============================================================================
 
 enum EmailType {
