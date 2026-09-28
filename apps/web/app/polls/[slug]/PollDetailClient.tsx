@@ -416,8 +416,9 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
       setVotedOptionId(optionId);
       // Analytics is best-effort — must not surface as "Vote failed"
       try {
-        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-          (window as any).fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
+        const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
+        if (typeof window !== 'undefined' && typeof fbq === 'function') {
+          fbq('trackCustom', 'PollVote', { poll_id: poll.id, poll_title: poll.title });
         }
       } catch { /* ignore */ }
     } catch (e) {

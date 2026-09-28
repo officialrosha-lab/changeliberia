@@ -72,7 +72,7 @@ export function AdminDonationSettings({
 
     setSaving(true);
     try {
-      await onCreateCampaign?.(formData as any);
+      await onCreateCampaign?.(formData as Omit<DonationCampaign, 'id' | 'createdAt' | 'currentAmount' | 'donorCount'>);
       setFormData({
         title: '',
         description: '',

@@ -338,8 +338,8 @@ export function CMSPageBlockEditor() {
                         <p className="text-sm font-medium text-zinc-900 dark:text-neutral-50">
                           Block {idx + 1}: {block.type.toUpperCase()}
                         </p>
-                        {block.props?.title && (
-                          <p className="text-xs text-zinc-500 dark:text-neutral-400">{block.props.title}</p>
+                        {propStr(block.props?.title) && (
+                          <p className="text-xs text-zinc-500 dark:text-neutral-400">{propStr(block.props?.title)}</p>
                         )}
                       </div>
                       <div className="ml-2 flex gap-1">

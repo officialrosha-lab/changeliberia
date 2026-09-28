@@ -97,8 +97,8 @@ export function MessagesInbox() {
 
       const data = await apiGet<InboxResponse>(`/messages/inbox?${params}`, token!);
       setMessages(data.messages);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load messages');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load messages');
     } finally {
       setLoading(false);
     }
@@ -132,8 +132,8 @@ export function MessagesInbox() {
       const data = await apiGet<InboxResponse>(`/messages/search/query?${params}`, token!);
       setMessages(data.messages);
       setPage(1);
-    } catch (err: any) {
-      setError(err.message || 'Search failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed');
     } finally {
       setLoading(false);
     }

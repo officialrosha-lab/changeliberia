@@ -34,10 +34,10 @@ export default function VerifyEmailPage() {
         setTimeout(() => {
           router.push('/auth/login');
         }, 2000);
-      } catch (err: any) {
+      } catch (err) {
         setStatus('error');
         setMessage('Email verification failed');
-        setError(err.message || 'An error occurred during verification');
+        setError(err instanceof Error ? err.message : 'An error occurred during verification');
       }
     };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, TooltipValueType } from 'recharts';
 
 interface SecurityAuditResult {
   category: string;
@@ -493,7 +493,7 @@ export function AdminSecurityAudit() {
                     borderRadius: '8px',
                     color: '#fff',
                   }}
-                  formatter={(value: any) => `${value}/100`}
+                  formatter={(value: TooltipValueType | undefined) => `${value}/100`}
                 />
                 <Line
                   type="monotone"

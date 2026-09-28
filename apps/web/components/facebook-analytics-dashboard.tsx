@@ -15,6 +15,12 @@ type Analytics = {
   }>;
 };
 
+type PixelAnalytics = {
+  totalEvents: number;
+  totalConversions: number;
+  totalConversionValue: number;
+};
+
 type Props = {
   petitionId: string;
   isOwner?: boolean;
@@ -22,7 +28,7 @@ type Props = {
 
 export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Props) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [pixelAnalytics, setPixelAnalytics] = useState<any>(null);
+  const [pixelAnalytics, setPixelAnalytics] = useState<PixelAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

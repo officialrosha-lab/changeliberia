@@ -65,7 +65,7 @@ export function NotificationDropdown() {
   };
 
   // Handle new notification via WebSocket
-  const handleNewNotification = (notification: any) => {
+  const handleNewNotification = (notification: Notification) => {
     setNotifications((prev) => [notification, ...prev].slice(0, 10));
     setUnreadCount((prev) => prev + 1);
     

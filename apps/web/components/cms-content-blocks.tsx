@@ -11,7 +11,7 @@ import { ReactNode } from 'react';
 export interface ContentBlock {
   id: string;
   type: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
 }
 
 interface HeroBlockProps {

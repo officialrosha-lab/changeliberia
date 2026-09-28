@@ -127,8 +127,8 @@ export function AmbassadorApplicationForm() {
       setTimeout(() => {
         setSubmitted(false);
       }, 5000);
-    } catch (error: any) {
-      const message = error?.message || 'Failed to submit application. Please try again.';
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to submit application. Please try again.';
       setGeneralError(message);
     } finally {
       setLoading(false);

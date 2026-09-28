@@ -11,7 +11,7 @@ export interface CMSBlock {
   pageId: string;
   type: string;
   order: number;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -77,10 +77,10 @@ export function EmailSignupForm() {
       
       setMessage('Account created! Check your email to verify your account.');
       window.setTimeout(() => router.push('/auth/login?emailVerificationSent=true'), 1500);
-    } catch (error: any) {
+    } catch (error) {
       setIsError(true);
       setMessage(
-        error?.message || 'We could not create your account. Please try again.'
+        error instanceof Error ? error.message : 'We could not create your account. Please try again.'
       );
     } finally {
       setSubmitting(false);

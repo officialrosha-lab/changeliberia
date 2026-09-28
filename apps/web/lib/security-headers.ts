@@ -171,21 +171,21 @@ export interface CSPViolation {
  */
 export function parseCSPViolation(body: unknown): CSPViolation | null {
   try {
-    const data = body as Record<string, any>;
+    const data = body as Record<string, Record<string, unknown>>;
     const violation = data['csp-report'];
 
     if (!violation) return null;
 
     return {
-      'document-uri': violation['document-uri'] || '',
-      'violated-directive': violation['violated-directive'] || '',
-      'effective-directive': violation['effective-directive'] || '',
-      'original-policy': violation['original-policy'] || '',
-      'blocked-uri': violation['blocked-uri'] || '',
-      'source-file': violation['source-file'] || '',
-      'line-number': violation['line-number'] || 0,
-      'column-number': violation['column-number'] || 0,
-      disposition: violation['disposition'] || 'enforce',
+      'document-uri': String(violation['document-uri'] || ''),
+      'violated-directive': String(violation['violated-directive'] || ''),
+      'effective-directive': String(violation['effective-directive'] || ''),
+      'original-policy': String(violation['original-policy'] || ''),
+      'blocked-uri': String(violation['blocked-uri'] || ''),
+      'source-file': String(violation['source-file'] || ''),
+      'line-number': Number(violation['line-number'] || 0),
+      'column-number': Number(violation['column-number'] || 0),
+      disposition: (violation['disposition'] as 'enforce' | 'report') || 'enforce',
     };
   } catch (error) {
     console.error('Failed to parse CSP violation:', error);

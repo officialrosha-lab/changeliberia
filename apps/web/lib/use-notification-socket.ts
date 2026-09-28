@@ -12,7 +12,7 @@ interface NotificationEvent {
   message: string;
   status: 'UNREAD' | 'READ' | 'ARCHIVED';
   createdAt: string;
-  metadata?: any;
+  metadata?: string;
 }
 
 interface UseNotificationSocketProps {

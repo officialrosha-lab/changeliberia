@@ -53,23 +53,23 @@ export function CMSBlockRenderer({ block, pageId }: CMSBlockRendererProps) {
 
   switch (type) {
     case 'hero':
-      return <HeroBlock {...(props as HeroBlockProps)} blockId={id} pageId={pageId} />;
+      return <HeroBlock {...(props as unknown as HeroBlockProps)} blockId={id} pageId={pageId} />;
     case 'text':
-      return <TextBlock {...(props as TextBlockProps)} blockId={id} pageId={pageId} />;
+      return <TextBlock {...(props as unknown as TextBlockProps)} blockId={id} pageId={pageId} />;
     case 'image':
-      return <ImageBlock {...(props as ImageBlockProps)} blockId={id} pageId={pageId} />;
+      return <ImageBlock {...(props as unknown as ImageBlockProps)} blockId={id} pageId={pageId} />;
     case 'grid':
-      return <GridBlock {...(props as GridBlockProps)} blockId={id} pageId={pageId} />;
+      return <GridBlock {...(props as unknown as GridBlockProps)} blockId={id} pageId={pageId} />;
     case 'cta':
-      return <CTABlock {...(props as CTABlockProps)} blockId={id} pageId={pageId} />;
+      return <CTABlock {...(props as unknown as CTABlockProps)} blockId={id} pageId={pageId} />;
     case 'testimonial':
-      return <TestimonialBlock {...(props as TestimonialBlockProps)} blockId={id} pageId={pageId} />;
+      return <TestimonialBlock {...(props as unknown as TestimonialBlockProps)} blockId={id} pageId={pageId} />;
     case 'divider':
-      return <DividerBlock {...(props as DividerBlockProps)} blockId={id} pageId={pageId} />;
+      return <DividerBlock {...(props as unknown as DividerBlockProps)} blockId={id} pageId={pageId} />;
     case 'faq':
-      return <FAQBlock {...(props as FAQBlockProps)} blockId={id} pageId={pageId} />;
+      return <FAQBlock {...(props as unknown as FAQBlockProps)} blockId={id} pageId={pageId} />;
     case 'features':
-      return <FeaturesBlock {...(props as FeaturesBlockProps)} blockId={id} pageId={pageId} />;
+      return <FeaturesBlock {...(props as unknown as FeaturesBlockProps)} blockId={id} pageId={pageId} />;
     default:
       return null;
   }

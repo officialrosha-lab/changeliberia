@@ -300,8 +300,9 @@ export function SignForm({
 
       // Track petition signature as a Lead conversion — best-effort
       try {
-        if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-          (window as any).fbq('track', 'Lead', { content_name: title, content_category: 'Petition' });
+        const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
+        if (typeof window !== 'undefined' && typeof fbq === 'function') {
+          fbq('track', 'Lead', { content_name: title, content_category: 'Petition' });
         }
       } catch { /* analytics must not break the sign flow */ }
 

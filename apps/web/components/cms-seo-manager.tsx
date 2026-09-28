@@ -19,7 +19,7 @@ interface SEOMetadata {
   twitterImage?: string;
   keywords?: string[];
   schemaType?: 'Article' | 'BlogPosting' | 'NewsArticle' | 'CreativeWork' | 'LocalBusiness' | 'Organization';
-  schemaData?: Record<string, any>;
+  schemaData?: Record<string, unknown>;
   robotsMeta?: string;
   language?: string;
 }
@@ -52,7 +52,7 @@ export function CMSSEOManager({
   const selectedPage = pages.find(p => p.id === selectedPageId);
   const fullUrl = `https://${defaultMetadata.domain}/${metadata.slug || selectedPage?.slug || ''}`;
 
-  const handleMetadataChange = (key: string, value: any) => {
+  const handleMetadataChange = <K extends keyof SEOMetadata>(key: K, value: SEOMetadata[K]) => {
     setMetadata(prev => ({ ...prev, [key]: value }));
   };
 
@@ -367,7 +367,7 @@ export function CMSSEOManager({
               </label>
               <select
                 value={metadata.schemaType || ''}
-                onChange={e => handleMetadataChange('schemaType', e.target.value || undefined)}
+                onChange={e => handleMetadataChange('schemaType', (e.target.value || undefined) as SEOMetadata['schemaType'])}
                 className="w-full px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               >
                 <option value="">None</option>

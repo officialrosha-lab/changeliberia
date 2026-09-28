@@ -47,8 +47,8 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
       );
 
       setGroups(data.groups || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load stakeholder groups');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load stakeholder groups');
     } finally {
       setLoading(false);
     }
@@ -98,8 +98,8 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
       } else {
         setError('Failed to send broadcast message');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send broadcast');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send broadcast');
     } finally {
       setSending(false);
     }
