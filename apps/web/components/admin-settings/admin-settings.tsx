@@ -29,7 +29,6 @@ interface SystemSettings {
   donationsEnabled: boolean;
   platformDonationsEnabled: boolean;
   petitionDonationsEnabled: boolean;
-  phoneVerificationRequired: boolean;
 }
 
 export function AdminSettings() {
@@ -466,28 +465,6 @@ export function AdminSettings() {
                     checked={settings.petitionDonationsEnabled}
                     onChange={(e) =>
                       setSettings({ ...settings, petitionDonationsEnabled: e.target.checked })
-                    }
-                    className="w-4 h-4 rounded"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Phone Verification Settings */}
-            <div className="border-t border-zinc-200 dark:border-neutral-700 pt-4 mt-4">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-neutral-50 mb-4">Verification Requirements</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
-                  <div>
-                    <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Phone Verification Required</label>
-                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Require phone verification before creating petitions</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.phoneVerificationRequired}
-                    onChange={(e) =>
-                      setSettings({ ...settings, phoneVerificationRequired: e.target.checked })
                     }
                     className="w-4 h-4 rounded"
                   />
