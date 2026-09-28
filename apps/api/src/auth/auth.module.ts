@@ -10,13 +10,11 @@ import { PasswordProvider } from './password.provider';
 import { RolesGuard } from './roles.guard';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetService } from './password-reset.service';
-import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({ secret: process.env.JWT_SECRET ?? 'super-secret' }),
-    EmailModule,
   ],
   providers: [
     AuthService,

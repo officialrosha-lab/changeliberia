@@ -6,9 +6,9 @@ import { EmailTrackingService } from './services/email-tracking.service';
 import { EmailPreferenceService } from './services/email-preference.service';
 import { EmailEventService } from './services/email-event.service';
 import { EmailScheduleService } from './services/email-schedule.service';
-import { MailerSendProvider } from './providers/mailersend.provider';
+import { PlunkProvider } from './providers/plunk.provider';
 import { EmailController, AdminEmailController } from './controllers/email.controller';
-import { MailerSendWebhookController } from './webhooks/mailersend-webhook.controller';
+import { PlunkWebhookController } from './webhooks/plunk-webhook.controller';
 
 @Module({
   imports: [
@@ -21,9 +21,9 @@ import { MailerSendWebhookController } from './webhooks/mailersend-webhook.contr
     EmailPreferenceService,
     EmailEventService,
     EmailScheduleService,
-    MailerSendProvider,
+    PlunkProvider,
   ],
-  controllers: [EmailController, AdminEmailController, MailerSendWebhookController],
+  controllers: [EmailController, AdminEmailController, PlunkWebhookController],
   exports: [
     EmailService,
     EmailTemplateService,
@@ -31,7 +31,7 @@ import { MailerSendWebhookController } from './webhooks/mailersend-webhook.contr
     EmailPreferenceService,
     EmailEventService,
     EmailScheduleService,
-    MailerSendProvider,
+    PlunkProvider,
   ],
 })
 export class EmailModule {}
