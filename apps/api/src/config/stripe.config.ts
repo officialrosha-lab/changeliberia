@@ -37,6 +37,12 @@ export type StripeInvoice = Awaited<
 export type StripeSubscription = Awaited<
   ReturnType<StripeInstance['subscriptions']['retrieve']>
 >;
+export type StripeCharge = Awaited<
+  ReturnType<StripeInstance['charges']['retrieve']>
+>;
+export type StripeCustomer = Awaited<
+  ReturnType<StripeInstance['customers']['retrieve']>
+>;
 
 export const stripeConfig = {
   // API Configuration
