@@ -70,9 +70,8 @@ export function Header() {
             <Link href="/civic-pulse" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
               Civic Pulse
             </Link>
-            <Link href="/petitions" className="inline-flex items-center gap-1 font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
-              <span aria-hidden>🔍</span>
-              <span className="hidden lg:inline">Search</span>
+            <Link href="/petitions" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
+              Browse petitions
             </Link>
             {donationsEnabled && (
               <Link href="/#donate" className="font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500 rounded px-2 py-1">
