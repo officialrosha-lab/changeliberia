@@ -1,7 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
+import { FeatureToggle } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-function mapSystemSettings(toggles: any[]) {
+function mapSystemSettings(toggles: FeatureToggle[]) {
   const byName = Object.fromEntries(toggles.map((t) => [t.name, t]));
 
   return {
