@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { OtpProvider } from './otp.provider';
@@ -83,22 +84,30 @@ export class AuthService {
       throw new BadRequestException('Email already registered');
     }
 
-    // Check if phone already exists
-    const existingPhone = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-    });
-    if (existingPhone) {
-      throw new BadRequestException('Phone number already registered');
+    // Check if phone already exists (email signup doesn't collect one, but
+    // still honor it if a caller passes one explicitly)
+    if (dto.phone) {
+      const existingPhone = await this.prisma.user.findUnique({
+        where: { phone: dto.phone },
+      });
+      if (existingPhone) {
+        throw new BadRequestException('Phone number already registered');
+      }
     }
 
     // Hash password
     const passwordHash = await this.passwordProvider.hashPassword(dto.password);
 
+    // Email signups don't collect a phone number, so — same as the Google
+    // signup path — fall back to a unique placeholder for the required,
+    // unique `phone` column.
+    const phone = dto.phone || `email_${randomBytes(8).toString('hex')}`;
+
     // Create user with isEmailConfirmed = false
     const user = await this.prisma.user.create({
       data: {
         fullName: dto.fullName,
-        phone: dto.phone,
+        phone,
         email: dto.email,
         passwordHash,
         authProvider: 'EMAIL',
