@@ -30,7 +30,6 @@ export function mapSystemSettings(toggles: FeatureToggle[]) {
     donationsEnabled: byName['donationsEnabled']?.enabled ?? true,
     platformDonationsEnabled: byName['platformDonationsEnabled']?.enabled ?? true,
     petitionDonationsEnabled: byName['petitionDonationsEnabled']?.enabled ?? true,
-    phoneVerificationRequired: byName['phoneVerificationRequired']?.enabled ?? true,
   };
 }
 

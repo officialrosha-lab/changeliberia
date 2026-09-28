@@ -31,7 +31,7 @@ export default function TwoFactorPage() {
         </div>
 
         <p className="mt-5 text-sm text-zinc-500 dark:text-neutral-400">
-          In the meantime, your account is protected by your password and phone verification.
+          In the meantime, your account is protected by your password.
         </p>
 
         <Link

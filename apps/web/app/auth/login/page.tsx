@@ -54,7 +54,7 @@ export default function LoginPage() {
                 {[
                   { icon: '📋', text: 'Manage your petitions and track which ones are pending review.' },
                   { icon: '📢', text: 'Publish updates to supporters as your campaign grows.' },
-                  { icon: '✅', text: 'Build trust with phone, location, and ID verification.' },
+                  { icon: '✅', text: 'Build trust with location and ID verification.' },
                 ].map((item) => (
                   <li key={item.text} className="flex items-start gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-base backdrop-blur-sm">

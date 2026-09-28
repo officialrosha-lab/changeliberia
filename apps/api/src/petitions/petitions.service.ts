@@ -97,23 +97,6 @@ export class PetitionsService {
   }
 
   async create(userId: string, dto: CreatePetitionDto) {
-    // Check if phone verification is required
-    const phoneVerificationToggle = await this.prisma.featureToggle.findUnique({
-      where: { name: 'phoneVerificationRequired' },
-    });
-    const phoneVerificationRequired = phoneVerificationToggle?.enabled ?? true;
-
-    if (phoneVerificationRequired) {
-      const phoneLog = await this.prisma.verificationLog.findFirst({
-        where: { userId, type: 'OTP' },
-      });
-      if (!phoneLog) {
-        throw new ForbiddenException(
-          'Please verify your phone number before creating a petition.',
-        );
-      }
-    }
-
     const petition = await this.prisma.petition.create({
       data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
     });

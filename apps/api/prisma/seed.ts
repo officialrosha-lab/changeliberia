@@ -365,7 +365,7 @@ async function main() {
             {
               icon: '🛡️',
               title: 'Trust & Integrity',
-              description: 'We verify identities through phone, email, and national ID to ensure that every signature carries real weight.',
+              description: 'We verify identities through email and national ID to ensure that every signature carries real weight.',
             },
             {
               icon: '⚖️',
@@ -476,7 +476,7 @@ async function main() {
               title: 'People Sign & Support',
               description: 'Once approved, your petition is published. Share it on WhatsApp, Facebook, and in your community. Verified Liberian signatures carry weight with decision-makers.',
               details: [
-                'Phone and email verification increases credibility',
+                'Email and ID verification increases credibility',
                 'Verified diaspora signatures count too',
                 'Real-time signature counter',
                 'Share via WhatsApp & social media',
@@ -503,7 +503,7 @@ async function main() {
         order: 2,
         props: JSON.stringify({
           title: 'Why Verified Signatures Matter',
-          body: 'On Change Liberia, every signature is verified through phone OTP, email confirmation, and optional national ID verification. This means your petition carries real credibility with government decision-makers — not just volume, but proven support from real Liberians.',
+          body: 'On Change Liberia, every signature is verified through email confirmation and optional national ID verification. This means your petition carries real credibility with government decision-makers — not just volume, but proven support from real Liberians.',
           alignment: 'center',
           emphasize: true,
         }),
@@ -584,7 +584,7 @@ async function main() {
             { icon: '🚀', title: 'Getting Started', description: 'Create your first petition, understand the process, and set up your account.' },
             { icon: '✍️', title: 'Creating Petitions', description: 'Best practices for writing your petition, adding media, and choosing the right category.' },
             { icon: '🖊️', title: 'Signing Petitions', description: 'How to sign, what verification means, and why your signature counts.' },
-            { icon: '🔐', title: 'Account & Verification', description: 'Phone and ID verification, trust scores, and managing your profile.' },
+            { icon: '🔐', title: 'Account & Verification', description: 'ID verification, trust scores, and managing your profile.' },
             { icon: '📢', title: 'Sharing & Growth', description: 'How to promote your petition, reach your signature goal, and engage supporters.' },
             { icon: '⚙️', title: 'Technical Help', description: 'Troubleshooting login issues, page errors, and platform problems.' },
           ],
@@ -659,10 +659,6 @@ async function main() {
           title: 'Verification & Signing',
           items: [
             {
-              q: 'Why do I need to verify my phone?',
-              a: 'Phone verification confirms you are a real person and helps prevent fraud. Verified signatures carry more weight with government decision-makers.',
-            },
-            {
               q: 'Can I sign anonymously?',
               a: "You can display as \"Anonymous Citizen\" or use a pseudonym, but we verify your identity behind the scenes for security.",
             },
@@ -676,7 +672,7 @@ async function main() {
             },
             {
               q: 'Can diaspora Liberians sign?',
-              a: "Yes! Anyone with Liberian heritage or connection can verify and sign. You'll need a Liberian phone number, email, or national ID.",
+              a: "Yes! Anyone with Liberian heritage or connection can verify and sign. You'll need an email address or a national ID.",
             },
           ],
         }),
