@@ -479,6 +479,7 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'POST', path: '/petitions/:id/follow', controller: 'PetitionsController', category: 'guard-only-write', paramFallback: 'fake' },
   { method: 'DELETE', path: '/petitions/:id/follow', controller: 'PetitionsController', category: 'guard-only-write', paramFallback: 'fake' },
   { method: 'POST', path: '/petitions/:id/media', controller: 'PetitionsController', category: 'guard-only-write', paramFallback: 'fake' },
+  { method: 'POST', path: '/petitions/:id/media/link', controller: 'PetitionsController', category: 'guard-only-write', paramFallback: 'fake' },
   { method: 'PATCH', path: '/petitions/:id/approve', controller: 'PetitionsController', category: 'admin-read', paramFallback: 'fake' },
   { method: 'PATCH', path: '/petitions/:id/reject', controller: 'PetitionsController', category: 'admin-read', paramFallback: 'fake' },
   { method: 'GET', path: '/petitions/:id/status-log', controller: 'PetitionsController', category: 'public-read', note: 'id from petitions list' },

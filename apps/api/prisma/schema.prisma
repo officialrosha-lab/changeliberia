@@ -21,6 +21,11 @@ enum PetitionStatus {
   REJECTED
 }
 
+enum PetitionMediaType {
+  IMAGE
+  VIDEO
+}
+
 enum VerificationType {
   OTP
   IP_GEO
@@ -205,8 +210,22 @@ model Petition {
   // Phase 1: Stakeholder Groups
   stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
 
+  media PetitionMedia[]
+
   @@index([status, createdAt])
   @@index([impactScope, county, district])
+}
+
+model PetitionMedia {
+  id         String            @id @default(cuid())
+  petitionId String
+  petition   Petition          @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  type       PetitionMediaType
+  url        String
+  order      Int               @default(0)
+  createdAt  DateTime          @default(now())
+
+  @@index([petitionId, order])
 }
 
 model PetitionUpdate {
