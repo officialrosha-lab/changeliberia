@@ -321,6 +321,13 @@ export class AdminDirectoryController {
     return this.smartRoutingService.getRoutingStats(daysNum);
   }
 
+  @Get('routing/events')
+  @Permission(PermissionResource.ROUTING, PermissionAction.READ)
+  async getRoutingEvents(@Query('limit') limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.smartRoutingService.getRoutingEvents(limitNum);
+  }
+
   // ==================== BULK IMPORT ====================
 
   @Post('import/upload')
