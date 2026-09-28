@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomBytes } from 'crypto';
@@ -14,7 +18,9 @@ export class EmailVerificationService {
   /**
    * Generate a verification token and send email to user
    */
-  async sendVerificationEmail(email: string): Promise<{ success: boolean; message: string }> {
+  async sendVerificationEmail(
+    email: string,
+  ): Promise<{ success: boolean; message: string }> {
     // Check if email is already verified (has active user account). A user
     // row existing but not yet confirmed is the normal post-signup state —
     // signupWithEmail creates the row and immediately calls this method to
@@ -68,13 +74,17 @@ export class EmailVerificationService {
   /**
    * Verify the email token
    */
-  async verifyEmail(email: string, token: string): Promise<{ success: boolean; message: string }> {
+  async verifyEmail(
+    email: string,
+    token: string,
+  ): Promise<{ success: boolean; message: string }> {
     const tokenHash = this.hashToken(token);
 
     // Find the verification token
-    const verificationToken = await this.prisma.emailVerificationToken.findUnique({
-      where: { token: tokenHash },
-    });
+    const verificationToken =
+      await this.prisma.emailVerificationToken.findUnique({
+        where: { token: tokenHash },
+      });
 
     if (!verificationToken) {
       throw new UnauthorizedException('Invalid verification token');
@@ -123,9 +133,10 @@ export class EmailVerificationService {
    * Check if an email is verified
    */
   async isEmailVerified(email: string): Promise<boolean> {
-    const verificationToken = await this.prisma.emailVerificationToken.findFirst({
-      where: { email, verified: true },
-    });
+    const verificationToken =
+      await this.prisma.emailVerificationToken.findFirst({
+        where: { email, verified: true },
+      });
 
     return !!verificationToken;
   }
@@ -140,7 +151,9 @@ export class EmailVerificationService {
   /**
    * Resend verification email
    */
-  async resendVerificationEmail(email: string): Promise<{ success: boolean; message: string }> {
+  async resendVerificationEmail(
+    email: string,
+  ): Promise<{ success: boolean; message: string }> {
     // Check if there's an existing unverified token for this email
     const existingToken = await this.prisma.emailVerificationToken.findFirst({
       where: { email, verified: false },

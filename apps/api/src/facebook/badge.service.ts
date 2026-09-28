@@ -48,7 +48,10 @@ export class BadgeService {
    * Check and award badges for a user on a petition
    * Called when signatures occur from referrals
    */
-  async checkAndAwardBadges(userId: string, petitionId: string): Promise<BadgeType[]> {
+  async checkAndAwardBadges(
+    userId: string,
+    petitionId: string,
+  ): Promise<BadgeType[]> {
     const newBadges: BadgeType[] = [];
 
     try {
@@ -153,7 +156,10 @@ export class BadgeService {
   /**
    * SHARE_WIZARD: 10+ shares on a single petition
    */
-  private async checkShareWizard(userId: string, petitionId: string): Promise<boolean> {
+  private async checkShareWizard(
+    userId: string,
+    petitionId: string,
+  ): Promise<boolean> {
     const shareCount = await this.prisma.shareLink.count({
       where: {
         petitionId,
@@ -169,7 +175,10 @@ export class BadgeService {
   /**
    * VIRAL_HERO: 50+ conversions from shares
    */
-  private async checkViralHero(userId: string, petitionId: string): Promise<boolean> {
+  private async checkViralHero(
+    userId: string,
+    petitionId: string,
+  ): Promise<boolean> {
     const totalConversions = await this.prisma.shareLink.aggregate({
       where: {
         petitionId,
@@ -189,7 +198,10 @@ export class BadgeService {
   /**
    * NETWORK_BUILDER: 100+ unique friends who received shares
    */
-  private async checkNetworkBuilder(userId: string, petitionId: string): Promise<boolean> {
+  private async checkNetworkBuilder(
+    userId: string,
+    petitionId: string,
+  ): Promise<boolean> {
     const uniqueRecipients = await this.prisma.referral.findMany({
       where: {
         petitionId,
@@ -206,7 +218,10 @@ export class BadgeService {
   /**
    * INFLUENCER: 5%+ of network converted
    */
-  private async checkInfluencer(userId: string, petitionId: string): Promise<boolean> {
+  private async checkInfluencer(
+    userId: string,
+    petitionId: string,
+  ): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -214,10 +229,7 @@ export class BadgeService {
     if (!user) return false;
 
     // Estimate network size based on trust score (proxy)
-    const estimatedNetworkSize = Math.max(
-      50,
-      150 + user.trustScore * 2,
-    );
+    const estimatedNetworkSize = Math.max(50, 150 + user.trustScore * 2);
 
     // Get conversion count
     const conversions = await this.prisma.shareLink.aggregate({
@@ -241,7 +253,10 @@ export class BadgeService {
   /**
    * STREAK_MASTER: Shares on 5+ consecutive days
    */
-  private async checkStreakMaster(userId: string, petitionId: string): Promise<boolean> {
+  private async checkStreakMaster(
+    userId: string,
+    petitionId: string,
+  ): Promise<boolean> {
     const shares = await this.prisma.shareLink.findMany({
       where: {
         petitionId,
@@ -384,7 +399,10 @@ export class BadgeService {
             where: { id: userId },
           });
           if (user) {
-            const estimatedNetworkSize = Math.max(50, 150 + user.trustScore * 2);
+            const estimatedNetworkSize = Math.max(
+              50,
+              150 + user.trustScore * 2,
+            );
             const conversions = await this.prisma.shareLink.aggregate({
               where: {
                 petitionId,
@@ -393,7 +411,8 @@ export class BadgeService {
               _sum: { conversions: true },
             });
             progress = Math.round(
-              ((conversions._sum.conversions || 0) / estimatedNetworkSize) * 100,
+              ((conversions._sum.conversions || 0) / estimatedNetworkSize) *
+                100,
             );
           }
           break;
@@ -424,7 +443,7 @@ export class BadgeService {
       return {
         badgeType,
         progress: 0,
-        target: this.BADGE_CONDITIONS[badgeType].target as number,
+        target: this.BADGE_CONDITIONS[badgeType].target,
         percentComplete: 0,
       };
     }
@@ -461,9 +480,16 @@ export class BadgeService {
             (sum, b) => sum * b.multiplierBonus,
             1,
           ),
-          topBadges: [...new Set(user.badges.map((b) => b.badgeType))].slice(0, 5),
+          topBadges: [...new Set(user.badges.map((b) => b.badgeType))].slice(
+            0,
+            5,
+          ),
         }))
-        .sort((a, b) => b.badgeCount - a.badgeCount || b.totalMultiplier - a.totalMultiplier)
+        .sort(
+          (a, b) =>
+            b.badgeCount - a.badgeCount ||
+            b.totalMultiplier - a.totalMultiplier,
+        )
         .slice(0, limit);
     } catch (error) {
       this.logger.error(
@@ -476,7 +502,10 @@ export class BadgeService {
   /**
    * Get all badge descriptions
    */
-  getBadgeDescriptions(): Record<BadgeType, { description: string; multiplier: number }> {
+  getBadgeDescriptions(): Record<
+    BadgeType,
+    { description: string; multiplier: number }
+  > {
     const result: any = {};
     Object.entries(this.BADGE_CONDITIONS).forEach(([key, value]) => {
       result[key] = {

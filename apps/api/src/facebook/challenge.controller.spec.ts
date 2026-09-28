@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  INestApplication,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChallengeController } from './challenge.controller';
 import { ChallengeService } from './challenge.service';
 
@@ -90,7 +94,7 @@ describe('ChallengeController', () => {
     await app.init();
 
     controller = module.get<ChallengeController>(ChallengeController);
-    challengeService = module.get(ChallengeService) as jest.Mocked<ChallengeService>;
+    challengeService = module.get(ChallengeService);
   });
 
   afterEach(async () => {
@@ -159,9 +163,7 @@ describe('ChallengeController', () => {
           completedCount: 0,
         },
       });
-      expect(challengeService.getUserChallenges).toHaveBeenCalledWith(
-        'user-1',
-      );
+      expect(challengeService.getUserChallenges).toHaveBeenCalledWith('user-1');
     });
 
     it('should count completed challenges', async () => {

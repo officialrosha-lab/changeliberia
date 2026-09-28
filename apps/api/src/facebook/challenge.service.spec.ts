@@ -72,13 +72,15 @@ describe('ChallengeService', () => {
     }).compile();
 
     service = module.get<ChallengeService>(ChallengeService);
-    prismaService = module.get(PrismaService) as any;
+    prismaService = module.get(PrismaService);
   });
 
   describe('createWeeklyChallenge', () => {
     it('should create a weekly challenge', async () => {
       prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareChallenge.create.mockResolvedValue(mockChallenge as any);
+      prismaService.shareChallenge.create.mockResolvedValue(
+        mockChallenge as any,
+      );
 
       const result = await service.createWeeklyChallenge('petition-1', 10);
 
@@ -102,14 +104,16 @@ describe('ChallengeService', () => {
     it('should throw NotFoundException when petition does not exist', async () => {
       prismaService.petition.findUnique.mockResolvedValue(null);
 
-      await expect(service.createWeeklyChallenge('invalid', 10)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createWeeklyChallenge('invalid', 10),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should set period to WEEKLY', async () => {
       prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      prismaService.shareChallenge.create.mockResolvedValue(mockChallenge as any);
+      prismaService.shareChallenge.create.mockResolvedValue(
+        mockChallenge as any,
+      );
 
       await service.createWeeklyChallenge('petition-1', 10);
 
@@ -127,7 +131,7 @@ describe('ChallengeService', () => {
   describe('createCampaignChallenge', () => {
     it('should create a campaign challenge', async () => {
       prismaService.petition.findUnique.mockResolvedValue(mockPetition as any);
-      
+
       const startDate = new Date('2026-04-13');
       const endDate = new Date('2026-04-20');
       const campaignChallenge = {
@@ -139,7 +143,7 @@ describe('ChallengeService', () => {
         endDate,
         rewardMultiplier: 3.0,
       };
-      
+
       prismaService.shareChallenge.create.mockResolvedValue(
         campaignChallenge as any,
       );
@@ -229,9 +233,10 @@ describe('ChallengeService', () => {
       prismaService.challengeMembership.findUnique.mockResolvedValueOnce(
         mockMembership as any,
       );
-      prismaService.challengeMembership.findUnique.mockResolvedValueOnce(
-        { ...mockMembership, progress: 10 } as any,
-      );
+      prismaService.challengeMembership.findUnique.mockResolvedValueOnce({
+        ...mockMembership,
+        progress: 10,
+      } as any);
       prismaService.challengeMembership.update.mockResolvedValue({
         ...mockMembership,
         progress: 10,

@@ -28,7 +28,15 @@ export class OfficialInboxService {
           ...(filters.stage ? { currentStage: filters.stage as any } : {}),
         },
         include: {
-          petition: { select: { id: true, title: true, summary: true, county: true, signaturesCount: true } },
+          petition: {
+            select: {
+              id: true,
+              title: true,
+              summary: true,
+              county: true,
+              signaturesCount: true,
+            },
+          },
         },
         orderBy: { updatedAt: 'desc' },
         take: window,
@@ -76,6 +84,8 @@ export class OfficialInboxService {
 
   /** Shared unread-count so the dashboard and inbox tab never disagree. */
   async getUnreadCount(holderUserId: string): Promise<number> {
-    return this.prisma.message.count({ where: { recipientId: holderUserId, isRead: false } });
+    return this.prisma.message.count({
+      where: { recipientId: holderUserId, isRead: false },
+    });
   }
 }

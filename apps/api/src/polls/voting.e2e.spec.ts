@@ -30,7 +30,9 @@ describe('Voting API integration', () => {
 
     console.log('voting.e2e.spec.ts beforeAll: module fixture created');
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     console.log('voting.e2e.spec.ts beforeAll: initializing app');
     await app.init();
     console.log('voting.e2e.spec.ts beforeAll: app initialized');
@@ -120,7 +122,8 @@ describe('Voting API integration', () => {
 
     expect(firstPollAfter?.totalVotes).toBe(1);
     expect(
-      firstPollAfter?.options.find((opt) => opt.id === firstPoll.optionIds[0])?.voteCount,
+      firstPollAfter?.options.find((opt) => opt.id === firstPoll.optionIds[0])
+        ?.voteCount,
     ).toBe(1);
 
     await request(app!.getHttpServer())

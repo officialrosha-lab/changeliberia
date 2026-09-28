@@ -104,7 +104,9 @@ export class PetitionEmailService {
       for (const recipientEmail of recipientEmails) {
         try {
           if (!this.emailService) {
-            this.logger.warn('EmailService not available - cannot send petition email');
+            this.logger.warn(
+              'EmailService not available - cannot send petition email',
+            );
             continue;
           }
 

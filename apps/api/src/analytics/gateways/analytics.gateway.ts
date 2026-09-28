@@ -1,10 +1,23 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket, MessageBody } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  ConnectedSocket,
+  MessageBody,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface AnalyticsUpdate {
-  type: 'message_count' | 'broadcast_count' | 'message_created' | 'broadcast_sent' | 'metrics_updated';
+  type:
+    | 'message_count'
+    | 'broadcast_count'
+    | 'message_created'
+    | 'broadcast_sent'
+    | 'metrics_updated';
   timestamp: Date;
   data: Record<string, unknown>;
 }
@@ -23,7 +36,9 @@ interface AnalyticsSubscription {
     credentials: true,
   },
 })
-export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class AnalyticsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server!: Server;
 
   private readonly logger = new Logger(AnalyticsGateway.name);
@@ -84,7 +99,10 @@ export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnec
    */
   broadcastAnalyticsUpdate(update: AnalyticsUpdate) {
     this.subscriptions.forEach((subscription, socketId) => {
-      if (subscription.types.has(update.type) && subscription.roles.includes('ADMIN')) {
+      if (
+        subscription.types.has(update.type) &&
+        subscription.roles.includes('ADMIN')
+      ) {
         this.server.to(socketId).emit('analytics_update', update);
       }
     });
@@ -190,11 +208,13 @@ export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnec
    * Get subscription details
    */
   getSubscriptions() {
-    return Array.from(this.subscriptions.entries()).map(([socketId, subscription]) => ({
-      socketId,
-      userId: subscription.userId,
-      types: Array.from(subscription.types),
-      roles: subscription.roles,
-    }));
+    return Array.from(this.subscriptions.entries()).map(
+      ([socketId, subscription]) => ({
+        socketId,
+        userId: subscription.userId,
+        types: Array.from(subscription.types),
+        roles: subscription.roles,
+      }),
+    );
   }
 }

@@ -31,10 +31,8 @@ describe('VotingController (unit)', () => {
     app = module.createNestApplication();
     await app.init();
 
-    votingService = module.get(VotingService) as jest.Mocked<VotingService>;
-    fingerprintService = module.get(
-      SessionFingerprintService,
-    ) as jest.Mocked<SessionFingerprintService>;
+    votingService = module.get(VotingService);
+    fingerprintService = module.get(SessionFingerprintService);
   });
 
   afterAll(async () => {
@@ -49,7 +47,11 @@ describe('VotingController (unit)', () => {
   });
 
   it('calls VotingService.castVote and returns result', () => {
-    votingService.castVote.mockResolvedValueOnce({ success: true, message: 'OK', voteId: 'v1' });
+    votingService.castVote.mockResolvedValueOnce({
+      success: true,
+      message: 'OK',
+      voteId: 'v1',
+    });
 
     return request(app.getHttpServer())
       .post('/polls/poll-1/vote')

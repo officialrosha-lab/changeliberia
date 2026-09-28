@@ -19,9 +19,7 @@ export class EmailPreferenceService {
    * Get email preferences for a user
    * Creates default preferences if they don't exist
    */
-  async getPreferences(
-    userId: string,
-  ): Promise<NotificationPreference> {
+  async getPreferences(userId: string): Promise<NotificationPreference> {
     let prefs = await this.prisma.notificationPreference.findUnique({
       where: { userId },
     });

@@ -1,10 +1,22 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
 import { Permission } from '../rbac/decorators/permission.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { PermissionResource, PermissionAction } from '@prisma/client';
-import { OfficialOwnershipGuard, OfficialAccess } from './guards/official-ownership.guard';
+import {
+  OfficialOwnershipGuard,
+  OfficialAccess,
+} from './guards/official-ownership.guard';
 import { OfficialsService } from './officials.service';
 import { OfficialStaffService } from './official-staff.service';
 import { InviteStaffDto, UpdateStaffPermissionsDto } from './dto';
@@ -36,8 +48,16 @@ export class OfficialStaffController {
   @Post('invite')
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.UPDATE)
-  async invite(@CurrentUser() user: AuthUser, @Req() req: OfficialRequest, @Body() dto: InviteStaffDto) {
-    return this.staffService.invite(req.officialInstitution!.id, user.userId, dto);
+  async invite(
+    @CurrentUser() user: AuthUser,
+    @Req() req: OfficialRequest,
+    @Body() dto: InviteStaffDto,
+  ) {
+    return this.staffService.invite(
+      req.officialInstitution!.id,
+      user.userId,
+      dto,
+    );
   }
 
   @Get()
@@ -56,14 +76,27 @@ export class OfficialStaffController {
     @Param('staffId') staffId: string,
     @Body() dto: UpdateStaffPermissionsDto,
   ) {
-    return this.staffService.updatePermissions(req.officialInstitution!.id, user.userId, staffId, dto);
+    return this.staffService.updatePermissions(
+      req.officialInstitution!.id,
+      user.userId,
+      staffId,
+      dto,
+    );
   }
 
   @Post(':staffId/revoke')
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.UPDATE)
-  async revoke(@CurrentUser() user: AuthUser, @Req() req: OfficialRequest, @Param('staffId') staffId: string) {
-    return this.staffService.revoke(req.officialInstitution!.id, user.userId, staffId);
+  async revoke(
+    @CurrentUser() user: AuthUser,
+    @Req() req: OfficialRequest,
+    @Param('staffId') staffId: string,
+  ) {
+    return this.staffService.revoke(
+      req.officialInstitution!.id,
+      user.userId,
+      staffId,
+    );
   }
 
   @Get('invites/mine')
@@ -74,7 +107,10 @@ export class OfficialStaffController {
 
   @Post('invites/:staffId/accept')
   @UseGuards(JwtAuthGuard)
-  async acceptInvite(@CurrentUser() user: AuthUser, @Param('staffId') staffId: string) {
+  async acceptInvite(
+    @CurrentUser() user: AuthUser,
+    @Param('staffId') staffId: string,
+  ) {
     return this.staffService.acceptInvite(user.userId, staffId);
   }
 }

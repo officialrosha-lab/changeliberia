@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, INestApplication, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  NotFoundException,
+} from '@nestjs/common';
 import { FacebookController } from './facebook.controller';
 import { FacebookService } from './facebook.service';
 import { FacebookPixelService } from './facebook-pixel.service';
@@ -65,8 +69,8 @@ describe('FacebookController', () => {
     await app.init();
 
     controller = module.get<FacebookController>(FacebookController);
-    facebookService = module.get(FacebookService) as jest.Mocked<FacebookService>;
-    pixelService = module.get(FacebookPixelService) as jest.Mocked<FacebookPixelService>;
+    facebookService = module.get(FacebookService);
+    pixelService = module.get(FacebookPixelService);
   });
 
   afterEach(async () => {
@@ -83,13 +87,19 @@ describe('FacebookController', () => {
         success: true,
         data: mockOgMeta,
       });
-      expect(facebookService.generateOpenGraphMeta).toHaveBeenCalledWith('petition-1');
+      expect(facebookService.generateOpenGraphMeta).toHaveBeenCalledWith(
+        'petition-1',
+      );
     });
 
     it('should throw NotFoundException when petition not found', async () => {
-      facebookService.generateOpenGraphMeta.mockRejectedValue(new NotFoundException('Not found'));
+      facebookService.generateOpenGraphMeta.mockRejectedValue(
+        new NotFoundException('Not found'),
+      );
 
-      await expect(controller.getOpenGraphMeta('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.getOpenGraphMeta('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -97,7 +107,10 @@ describe('FacebookController', () => {
     it('should create a Facebook share link', async () => {
       facebookService.createFacebookShareLink.mockResolvedValue(mockShareLink);
 
-      const result = await controller.createShare({ petitionId: 'petition-1' }, { sub: 'user-1' } as any);
+      const result = await controller.createShare(
+        { petitionId: 'petition-1' },
+        { sub: 'user-1' } as any,
+      );
 
       expect(result).toEqual({
         success: true,
@@ -107,17 +120,28 @@ describe('FacebookController', () => {
           reachEstimate: mockShareLink.reachEstimate,
         },
       });
-      expect(facebookService.createFacebookShareLink).toHaveBeenCalledWith('petition-1', 'user-1');
+      expect(facebookService.createFacebookShareLink).toHaveBeenCalledWith(
+        'petition-1',
+        'user-1',
+      );
     });
 
     it('should throw BadRequestException when petitionId missing', async () => {
-      await expect(controller.createShare({ petitionId: '' }, { sub: 'user-1' } as any)).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.createShare({ petitionId: '' }, { sub: 'user-1' } as any),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when petition not found', async () => {
-      facebookService.createFacebookShareLink.mockRejectedValue(new NotFoundException('Petition not found'));
+      facebookService.createFacebookShareLink.mockRejectedValue(
+        new NotFoundException('Petition not found'),
+      );
 
-      await expect(controller.createShare({ petitionId: 'invalid' }, { sub: 'user-1' } as any)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.createShare({ petitionId: 'invalid' }, {
+          sub: 'user-1',
+        } as any),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -137,7 +161,10 @@ describe('FacebookController', () => {
         success: true,
         data: dialogConfig,
       });
-      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith('petition-1', 250);
+      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith(
+        'petition-1',
+        250,
+      );
     });
 
     it('should use custom network size when provided', async () => {
@@ -151,13 +178,18 @@ describe('FacebookController', () => {
 
       await controller.getShareDialog('petition-1', '500');
 
-      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith('petition-1', 500);
+      expect(facebookService.buildFacebookShareDialog).toHaveBeenCalledWith(
+        'petition-1',
+        500,
+      );
     });
   });
 
   describe('trackShortCode', () => {
     it('should track a share short code click', async () => {
-      facebookService.trackFacebookClick.mockResolvedValue('https://changeliberia.org/petitions/petition-1');
+      facebookService.trackFacebookClick.mockResolvedValue(
+        'https://changeliberia.org/petitions/petition-1',
+      );
 
       const result = await controller.trackShortCode('abc12345');
 
@@ -165,13 +197,19 @@ describe('FacebookController', () => {
         success: true,
         data: { redirectUrl: 'https://changeliberia.org/petitions/petition-1' },
       });
-      expect(facebookService.trackFacebookClick).toHaveBeenCalledWith('abc12345');
+      expect(facebookService.trackFacebookClick).toHaveBeenCalledWith(
+        'abc12345',
+      );
     });
 
     it('should throw NotFoundException when short code not found', async () => {
-      facebookService.trackFacebookClick.mockRejectedValue(new NotFoundException('Not found'));
+      facebookService.trackFacebookClick.mockRejectedValue(
+        new NotFoundException('Not found'),
+      );
 
-      await expect(controller.trackShortCode('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.trackShortCode('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -179,14 +217,28 @@ describe('FacebookController', () => {
     it('should record a share event correctly', async () => {
       facebookService.recordFacebookShare.mockResolvedValue(undefined);
 
-      const result = await controller.recordShareEvent({ petitionId: 'petition-1', shortCode: 'abc12345' }, { sub: 'user-1' } as any);
+      const result = await controller.recordShareEvent(
+        { petitionId: 'petition-1', shortCode: 'abc12345' },
+        { sub: 'user-1' } as any,
+      );
 
-      expect(result).toEqual({ success: true, message: 'Share event recorded' });
-      expect(facebookService.recordFacebookShare).toHaveBeenCalledWith('petition-1', 'user-1', 'abc12345');
+      expect(result).toEqual({
+        success: true,
+        message: 'Share event recorded',
+      });
+      expect(facebookService.recordFacebookShare).toHaveBeenCalledWith(
+        'petition-1',
+        'user-1',
+        'abc12345',
+      );
     });
 
     it('should throw BadRequestException when required fields are missing', async () => {
-      await expect(controller.recordShareEvent({ petitionId: '', shortCode: 'abc12345' }, { sub: 'user-1' } as any)).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.recordShareEvent({ petitionId: '', shortCode: 'abc12345' }, {
+          sub: 'user-1',
+        } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -199,12 +251,17 @@ describe('FacebookController', () => {
 
       expect(result).toEqual({
         success: true,
-        data: { pixelId: 'placeholder_pixel_id', initCode: '<!-- Pixel code -->' },
+        data: {
+          pixelId: 'placeholder_pixel_id',
+          initCode: '<!-- Pixel code -->',
+        },
       });
     });
 
     it('should return an error when pixel code generation fails', () => {
-      pixelService.getPixelId.mockImplementation(() => { throw new Error('Error'); });
+      pixelService.getPixelId.mockImplementation(() => {
+        throw new Error('Error');
+      });
 
       const result = controller.getPixelCode();
 
@@ -243,7 +300,9 @@ describe('FacebookController', () => {
 
   describe('validateUrl', () => {
     it('should throw BadRequestException when Facebook SDK is unavailable', async () => {
-      await expect(controller.validateUrl({ url: 'https://example.com' })).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.validateUrl({ url: 'https://example.com' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

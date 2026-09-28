@@ -60,7 +60,12 @@ describe('ContentSchedulingService', () => {
         createdBy: data.createdBy,
       });
 
-      const result = await service.scheduleAction(data.pageId, data.action, data.scheduledFor, data.createdBy);
+      const result = await service.scheduleAction(
+        data.pageId,
+        data.action,
+        data.scheduledFor,
+        data.createdBy,
+      );
 
       expect(prisma.cMSSchedule.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -69,7 +74,7 @@ describe('ContentSchedulingService', () => {
             action: data.action,
             scheduledFor: data.scheduledFor,
           }),
-        })
+        }),
       );
 
       expect(result.action).toBe('publish');
@@ -94,7 +99,12 @@ describe('ContentSchedulingService', () => {
         createdBy: data.createdBy,
       });
 
-      const result = await service.scheduleAction(data.pageId, data.action, data.scheduledFor, data.createdBy);
+      const result = await service.scheduleAction(
+        data.pageId,
+        data.action,
+        data.scheduledFor,
+        data.createdBy,
+      );
 
       expect(result.action).toBe('unpublish');
     });
@@ -132,14 +142,14 @@ describe('ContentSchedulingService', () => {
           where: expect.objectContaining({
             executed: false,
           }),
-        })
+        }),
       );
 
       expect(prisma.cMSPage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'page-1' },
           data: expect.objectContaining({ published: true }),
-        })
+        }),
       );
 
       expect(prisma.cMSSchedule.update).toHaveBeenCalled();
@@ -175,7 +185,7 @@ describe('ContentSchedulingService', () => {
         expect.objectContaining({
           where: { id: 'page-2' },
           data: expect.objectContaining({ published: false }),
-        })
+        }),
       );
     });
 
@@ -232,7 +242,9 @@ describe('ContentSchedulingService', () => {
         },
       ]);
 
-      mockPrisma.cMSPage.update.mockRejectedValueOnce(new Error('Page not found'));
+      mockPrisma.cMSPage.update.mockRejectedValueOnce(
+        new Error('Page not found'),
+      );
 
       // Should not throw - errors are caught and logged
       await expect(service.executeScheduledActions()).resolves.not.toThrow();
@@ -277,7 +289,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { pageId },
-        })
+        }),
       );
 
       expect(result).toHaveLength(2);
@@ -308,7 +320,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSSchedule.delete).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: scheduleId },
-        })
+        }),
       );
 
       expect(result.id).toBe(scheduleId);

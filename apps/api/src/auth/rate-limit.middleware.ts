@@ -17,7 +17,8 @@ export class RateLimitMiddleware implements NestMiddleware {
   constructor(config: RateLimitConfig) {
     this.config = {
       skipSuccessfulRequests: false,
-      keyGenerator: (req: Request) => req.ip || req.socket.remoteAddress || 'unknown',
+      keyGenerator: (req: Request) =>
+        req.ip || req.socket.remoteAddress || 'unknown',
       ...config,
     };
 
@@ -32,7 +33,10 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     // Initialize or reset if window expired
     if (!entry || entry.resetTime < now) {
-      this.requests.set(key, { count: 1, resetTime: now + this.config.windowMs });
+      this.requests.set(key, {
+        count: 1,
+        resetTime: now + this.config.windowMs,
+      });
       return next();
     }
 

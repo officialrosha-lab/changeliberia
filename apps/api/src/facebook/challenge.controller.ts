@@ -40,9 +40,8 @@ export class ChallengeController {
     }
 
     try {
-      const challenges = await this.challengeService.getActiveChallenges(
-        petitionId,
-      );
+      const challenges =
+        await this.challengeService.getActiveChallenges(petitionId);
 
       return {
         success: true,
@@ -76,9 +75,7 @@ export class ChallengeController {
   @UseGuards(JwtAuthGuard)
   async getUserChallenges(@CurrentUser() user: any) {
     try {
-      const challenges = await this.challengeService.getUserChallenges(
-        user.id,
-      );
+      const challenges = await this.challengeService.getUserChallenges(user.id);
 
       return {
         success: true,
@@ -200,9 +197,7 @@ export class ChallengeController {
   @UseGuards(JwtAuthGuard)
   async getChallengeHistory(@CurrentUser() user: any) {
     try {
-      const challenges = await this.challengeService.getUserChallenges(
-        user.id,
-      );
+      const challenges = await this.challengeService.getUserChallenges(user.id);
 
       const completedChallenges = challenges
         .filter((c) => c.completed)
@@ -332,17 +327,14 @@ export class ChallengeController {
    */
   @Get('petition/:petitionId/summary')
   @UseGuards(OptionalJwtAuthGuard)
-  async getPetitionChallengeSummary(
-    @Param('petitionId') petitionId: string,
-  ) {
+  async getPetitionChallengeSummary(@Param('petitionId') petitionId: string) {
     if (!petitionId) {
       throw new BadRequestException('petitionId is required');
     }
 
     try {
-      const challenges = await this.challengeService.getActiveChallenges(
-        petitionId,
-      );
+      const challenges =
+        await this.challengeService.getActiveChallenges(petitionId);
 
       const totalRewards = challenges.reduce(
         (sum, c) => sum + c.rewardMultiplier,

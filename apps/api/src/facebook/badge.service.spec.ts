@@ -72,7 +72,7 @@ describe('BadgeService', () => {
     }).compile();
 
     service = module.get<BadgeService>(BadgeService);
-    prismaService = module.get(PrismaService) as any;
+    prismaService = module.get(PrismaService);
   });
 
   describe('checkAndAwardBadges', () => {
@@ -120,7 +120,11 @@ describe('BadgeService', () => {
         { ...mockBadge, multiplierBonus: 1.5 },
       ] as any);
 
-      const result = await service.applyBadgeMultiplier('user-1', 'petition-1', 100);
+      const result = await service.applyBadgeMultiplier(
+        'user-1',
+        'petition-1',
+        100,
+      );
 
       expect(result).toBe(Math.floor(100 * 2.0 * 1.5));
     });
@@ -131,7 +135,11 @@ describe('BadgeService', () => {
         { ...mockBadge, multiplierBonus: 3.0 },
       ] as any);
 
-      const result = await service.applyBadgeMultiplier('user-1', 'petition-1', 100);
+      const result = await service.applyBadgeMultiplier(
+        'user-1',
+        'petition-1',
+        100,
+      );
 
       expect(result).toBeLessThanOrEqual(500);
     });
@@ -141,7 +149,11 @@ describe('BadgeService', () => {
         new Error('Database error'),
       );
 
-      const result = await service.applyBadgeMultiplier('user-1', 'petition-1', 100);
+      const result = await service.applyBadgeMultiplier(
+        'user-1',
+        'petition-1',
+        100,
+      );
 
       expect(result).toBe(100);
     });

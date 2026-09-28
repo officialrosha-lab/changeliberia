@@ -77,7 +77,7 @@ describe('AnalyticsService', () => {
     }).compile();
 
     service = moduleFixture.get<AnalyticsService>(AnalyticsService);
-    prisma = moduleFixture.get(PrismaService) as any;
+    prisma = moduleFixture.get(PrismaService);
   });
 
   describe('Conversion Funnel Analysis', () => {
@@ -221,7 +221,9 @@ describe('AnalyticsService', () => {
     it('should throw error for non-existent user', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getUserEngagementMetrics('invalid')).rejects.toThrow();
+      await expect(
+        service.getUserEngagementMetrics('invalid'),
+      ).rejects.toThrow();
     });
   });
 
@@ -476,21 +478,17 @@ describe('AnalyticsService', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      prisma.petition.findUnique.mockRejectedValue(
-        new Error('Database error'),
-      );
+      prisma.petition.findUnique.mockRejectedValue(new Error('Database error'));
 
-      await expect(
-        service.getPetitionMetrics('petition-1'),
-      ).rejects.toThrow();
+      await expect(service.getPetitionMetrics('petition-1')).rejects.toThrow();
     });
 
     it('should handle missing required data', async () => {
       prisma.petition.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.getPetitionMetrics('invalid'),
-      ).rejects.toThrow('not found');
+      await expect(service.getPetitionMetrics('invalid')).rejects.toThrow(
+        'not found',
+      );
     });
   });
 

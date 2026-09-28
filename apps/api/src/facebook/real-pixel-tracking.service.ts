@@ -62,7 +62,12 @@ export class RealPixelTrackingService {
       );
 
       if (result.success) {
-        await this.logPixelEvent('ViewContent', petitionId, userId, result.eventId);
+        await this.logPixelEvent(
+          'ViewContent',
+          petitionId,
+          userId,
+          result.eventId,
+        );
       }
 
       return result;
@@ -216,14 +221,17 @@ export class RealPixelTrackingService {
       );
 
       if (result.success) {
-        await this.logPixelEvent('Purchase', petitionId, userId, result.eventId);
+        await this.logPixelEvent(
+          'Purchase',
+          petitionId,
+          userId,
+          result.eventId,
+        );
       }
 
       return result;
     } catch (error) {
-      this.logger.error(
-        `Failed to track purchase: ${(error as any)?.message}`,
-      );
+      this.logger.error(`Failed to track purchase: ${(error as any)?.message}`);
       return { success: false };
     }
   }
@@ -275,7 +283,9 @@ export class RealPixelTrackingService {
     try {
       await this.prisma.facebookPixelEvent.create({
         data: {
-          eventId: eventId || `pixel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          eventId:
+            eventId ||
+            `pixel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           petitionId,
           userId: userId || null,
           eventType,
@@ -286,9 +296,7 @@ export class RealPixelTrackingService {
         },
       });
     } catch (error) {
-      this.logger.warn(
-        `Failed to log pixel event: ${(error as any)?.message}`,
-      );
+      this.logger.warn(`Failed to log pixel event: ${(error as any)?.message}`);
     }
   }
 
@@ -321,7 +329,8 @@ export class RealPixelTrackingService {
       totalEvents: events.length,
       eventsByType,
       conversionRate: viewCount > 0 ? (conversionCount / viewCount) * 100 : 0,
-      lastEventAt: events.length > 0 ? events[events.length - 1].createdAt : null,
+      lastEventAt:
+        events.length > 0 ? events[events.length - 1].createdAt : null,
     };
   }
 

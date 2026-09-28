@@ -22,14 +22,18 @@ import { PrismaService } from '../prisma/prisma.service';
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean);
-      return parsed.length > 0 ? parsed : [process.env.WEB_URL || 'http://localhost:3000'];
+      return parsed.length > 0
+        ? parsed
+        : [process.env.WEB_URL || 'http://localhost:3000'];
     })(),
     credentials: true,
   },
   namespace: 'petitions',
   transports: ['websocket', 'polling'],
 })
-export class PetitionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PetitionsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(PetitionsGateway.name);
   private connectedClients = new Map<string, { petitionId?: string }>();

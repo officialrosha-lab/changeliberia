@@ -75,7 +75,10 @@ export class PollsController {
   @Post(':id/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async rejectPoll(@Param('id') pollId: string, @Body('reason') reason?: string) {
+  async rejectPoll(
+    @Param('id') pollId: string,
+    @Body('reason') reason?: string,
+  ) {
     return this.pollsService.rejectPoll(pollId, reason);
   }
 
@@ -93,7 +96,15 @@ export class PollsController {
     @Query('sort') sort?: string,
     @Query('search') search?: string,
   ) {
-    return this.pollsService.listPolls(category, county, status, limit, offset, sort, search);
+    return this.pollsService.listPolls(
+      category,
+      county,
+      status,
+      limit,
+      offset,
+      sort,
+      search,
+    );
   }
 
   /**

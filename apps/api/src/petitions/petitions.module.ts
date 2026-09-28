@@ -22,7 +22,13 @@ import { ImpactAreaReportService } from './impact-area-report.service';
     OfficialsModule,
   ],
   controllers: [PetitionsController],
-  providers: [PetitionsService, PetitionEmailService, PetitionMediaStorageService, PetitionsScheduler, ImpactAreaReportService],
+  providers: [
+    PetitionsService,
+    PetitionEmailService,
+    PetitionMediaStorageService,
+    PetitionsScheduler,
+    ImpactAreaReportService,
+  ],
   exports: [PetitionsService, PetitionEmailService],
 })
 export class PetitionsModule {}

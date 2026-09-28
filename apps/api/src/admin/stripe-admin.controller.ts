@@ -237,7 +237,10 @@ export class StripeAdminController {
             subscription.stripeSubscriptionId,
           );
         } catch (e) {
-          this.logger.warn('Could not fetch Stripe details for subscription', e);
+          this.logger.warn(
+            'Could not fetch Stripe details for subscription',
+            e,
+          );
         }
       }
 
@@ -457,10 +460,12 @@ export class StripeAdminController {
       });
 
       // Convert to revenueTrend array
-      const revenueTrend = Object.entries(revenueByDay).map(([date, amount]) => ({
-        date,
-        amount,
-      }));
+      const revenueTrend = Object.entries(revenueByDay).map(
+        ([date, amount]) => ({
+          date,
+          amount,
+        }),
+      );
 
       const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
       const avgDailyRevenue = totalRevenue / numDays;
@@ -468,15 +473,17 @@ export class StripeAdminController {
 
       // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
       const activeSubscriptions = subscriptions.filter(
-        s => s.status === 'ACTIVE'
+        (s) => s.status === 'ACTIVE',
       );
       const mrrFromSubscriptions = activeSubscriptions.reduce(
         (sum, s) => sum + (s.amount || 0),
-        0
+        0,
       );
       const mrr = mrrFromSubscriptions;
       const mrrTrend =
-        activeSubscriptions.length > 0 ? (mrr / activeSubscriptions.length) * 100 : 0;
+        activeSubscriptions.length > 0
+          ? (mrr / activeSubscriptions.length) * 100
+          : 0;
 
       return {
         revenueTrend,

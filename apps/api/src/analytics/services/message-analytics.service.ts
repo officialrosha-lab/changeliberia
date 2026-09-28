@@ -65,9 +65,18 @@ export class MessageAnalyticsService {
       topReceivers,
     ] = await Promise.all([
       this.prisma.message.count(),
-      this.countMessagesInPeriod(new Date(endDate.getTime() - 24 * 60 * 60 * 1000), endDate),
-      this.countMessagesInPeriod(new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000), endDate),
-      this.countMessagesInPeriod(new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000), endDate),
+      this.countMessagesInPeriod(
+        new Date(endDate.getTime() - 24 * 60 * 60 * 1000),
+        endDate,
+      ),
+      this.countMessagesInPeriod(
+        new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000),
+        endDate,
+      ),
+      this.countMessagesInPeriod(
+        new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000),
+        endDate,
+      ),
       this.getVolumeByDate(startDate, endDate),
       this.getMessagesByCategory(startDate, endDate),
       this.getThreadMetrics(startDate, endDate),
@@ -98,7 +107,10 @@ export class MessageAnalyticsService {
   /**
    * Get message count in a specific time period
    */
-  private async countMessagesInPeriod(startDate: Date, endDate: Date): Promise<number> {
+  private async countMessagesInPeriod(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     return this.prisma.message.count({
       where: {
         createdAt: {
@@ -223,7 +235,8 @@ export class MessageAnalyticsService {
 
     const avgReplyCount =
       threadReplyCounts.length > 0
-        ? threadReplyCounts.reduce((a, b) => a + b, 0) / threadReplyCounts.length
+        ? threadReplyCounts.reduce((a, b) => a + b, 0) /
+          threadReplyCounts.length
         : 0;
 
     const avgDepth =
@@ -250,7 +263,9 @@ export class MessageAnalyticsService {
     if (replies.length === 0) {
       return 1;
     }
-    const maxReplyDepth = Math.max(...replies.map((r) => this.calculateThreadDepth(r.id, allMessages)));
+    const maxReplyDepth = Math.max(
+      ...replies.map((r) => this.calculateThreadDepth(r.id, allMessages)),
+    );
     return 1 + maxReplyDepth;
   }
 
@@ -262,7 +277,9 @@ export class MessageAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ userId: string; userEmail: string; count: number }>> {
-    const results = await this.prisma.$queryRaw<Array<{ senderId: string; count: bigint }>>`
+    const results = await this.prisma.$queryRaw<
+      Array<{ senderId: string; count: bigint }>
+    >`
       SELECT "senderId", COUNT(*) as count
       FROM "Message"
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
@@ -297,7 +314,9 @@ export class MessageAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ userId: string; userEmail: string; count: number }>> {
-    const results = await this.prisma.$queryRaw<Array<{ recipientId: string; count: bigint }>>`
+    const results = await this.prisma.$queryRaw<
+      Array<{ recipientId: string; count: bigint }>
+    >`
       SELECT "recipientId", COUNT(*) as count
       FROM "Message"
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
@@ -346,7 +365,10 @@ export class MessageAnalyticsService {
   /**
    * Calculate start date based on period type
    */
-  private getStartDate(endDate: Date, periodType: 'day' | 'week' | 'month'): Date {
+  private getStartDate(
+    endDate: Date,
+    periodType: 'day' | 'week' | 'month',
+  ): Date {
     const start = new Date(endDate);
     if (periodType === 'day') {
       start.setDate(start.getDate() - 1);

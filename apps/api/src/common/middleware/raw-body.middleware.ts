@@ -85,10 +85,8 @@ export function rawBodyMiddleware() {
 export async function enableRawBodyForWebhooks(app: any) {
   // Option 1: Configure at bootstrap time (preferred)
   // This is handled in main.ts during NestFactory.create()
-
   // Option 2: Apply middleware to specific routes
   // Can be done using app.use() before other middleware
-
   // Option 3: Use bodyParser with custom configuration
   // const bodyParser = require('body-parser');
   // app.use('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }));
