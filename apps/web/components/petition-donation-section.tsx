@@ -143,7 +143,7 @@ export function PetitionDonationSection({
     return (
       <section className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center dark:border-neutral-700 dark:bg-neutral-900">
         <p className="text-sm text-zinc-500 dark:text-neutral-400">
-          Couldn't load donation options right now.
+          Couldn&apos;t load donation options right now.
         </p>
         <button
           type="button"

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { InstitutionsManager, ContactsManager, CSVImporter, RoutingAnalytics } from '../../../components/admin-directory';
-import { AdminGuard } from '../../../components/admin-guard';
 import { apiGet } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 

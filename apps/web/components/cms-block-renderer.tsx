@@ -140,7 +140,7 @@ interface TextBlockProps {
   pageId?: string;
 }
 
-function TextBlock({ title, body, alignment = 'left', emphasize = false, blockId, pageId }: TextBlockProps) {
+function TextBlock({ title, body, alignment = 'left', emphasize = false }: TextBlockProps) {
   const alignmentClass = {
     left: 'text-left',
     center: 'text-center',
@@ -173,7 +173,7 @@ interface ImageBlockProps {
   pageId?: string;
 }
 
-function ImageBlock({ src, alt = '', caption, width, height, blockId, pageId }: ImageBlockProps) {
+function ImageBlock({ src, alt = '', caption, width, height }: ImageBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
@@ -205,7 +205,7 @@ interface GridBlockProps {
   pageId?: string;
 }
 
-function GridBlock({ title, items, columns = 2, blockId, pageId }: GridBlockProps) {
+function GridBlock({ title, items, columns = 2 }: GridBlockProps) {
   const gridClass = {
     1: 'sm:grid-cols-1',
     2: 'sm:grid-cols-2',
@@ -303,12 +303,12 @@ interface TestimonialBlockProps {
   pageId?: string;
 }
 
-function TestimonialBlock({ quote, author, title, image, blockId, pageId }: TestimonialBlockProps) {
+function TestimonialBlock({ quote, author, title, image }: TestimonialBlockProps) {
   return (
     <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-16 dark:border-neutral-800 dark:bg-neutral-800/30 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
         <div className="rounded-lg bg-white p-8 dark:bg-neutral-800">
-          <p className="text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">"{quote}"</p>
+          <p className="text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">&quot;{quote}&quot;</p>
           <div className="mt-6 flex items-center gap-4">
             {image && <img src={image} alt={author} className="h-12 w-12 rounded-full" />}
             <div>
@@ -328,7 +328,7 @@ interface DividerBlockProps {
   pageId?: string;
 }
 
-function DividerBlock({ style = 'line', blockId, pageId }: DividerBlockProps) {
+function DividerBlock({ style = 'line' }: DividerBlockProps) {
   return (
     <section className="border-b border-zinc-200 dark:border-neutral-800">
       {style === 'line' && <div className="h-px bg-zinc-200 dark:bg-neutral-800" />}
@@ -347,7 +347,7 @@ interface FAQBlockProps {
   pageId?: string;
 }
 
-function FAQBlock({ title, items, blockId, pageId }: FAQBlockProps) {
+function FAQBlock({ title, items }: FAQBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
@@ -380,7 +380,7 @@ interface FeaturesBlockProps {
   pageId?: string;
 }
 
-function FeaturesBlock({ title, features, blockId, pageId }: FeaturesBlockProps) {
+function FeaturesBlock({ title, features }: FeaturesBlockProps) {
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">

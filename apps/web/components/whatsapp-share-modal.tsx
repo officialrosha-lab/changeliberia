@@ -11,7 +11,6 @@ interface WhatsAppShareModalProps {
 
 export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   petitionId,
-  petitionTitle,
   onClose,
   isOpen,
   signerName,

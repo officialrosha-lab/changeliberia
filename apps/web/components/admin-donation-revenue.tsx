@@ -38,7 +38,6 @@ export function AdminDonationRevenue({
   metrics,
   trends,
   campaigns,
-  isLoading = false,
 }: AdminDonationRevenueProps) {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 

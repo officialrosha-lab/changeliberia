@@ -459,7 +459,7 @@ export async function getCacheSizeReport(): Promise<Record<string, { size: numbe
   return report;
 }
 
-export default {
+const cacheStrategy = {
   CACHE_CONFIG,
   VERSIONED_ASSETS,
   NO_CACHE_PATTERNS,
@@ -473,3 +473,5 @@ export default {
   clearAllCaches,
   getCacheSizeReport,
 };
+
+export default cacheStrategy;

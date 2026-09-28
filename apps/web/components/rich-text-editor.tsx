@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,7 +14,6 @@ export function RichTextEditor({
   compact = false,
 }: RichTextEditorProps) {
   const [isPreview, setIsPreview] = useState(false);
-  const [caretPosition, setCaretPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const insertMarkdown = (before: string, after: string = '') => {
@@ -42,7 +40,7 @@ export function RichTextEditor({
   };
 
   const markdownToHtml = (md: string) => {
-    let html = md
+    const html = md
       .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-bold">$1</h3>')
       .replace(/^## (.*?)$/gm, '<h2 class="text-xl font-bold">$1</h2>')
       .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold">$1</h1>')

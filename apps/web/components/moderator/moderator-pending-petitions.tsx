@@ -247,7 +247,6 @@ interface PetitionApprovalPanelProps {
 }
 
 function PetitionApprovalPanel({
-  petition,
   onApprove,
   onReject,
   isLoading,

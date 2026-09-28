@@ -66,7 +66,7 @@ export function NotificationsPage() {
           setNotifications(data.notifications);
           setTotal(data.total);
         }
-      } catch (error) {
+      } catch {
         showToast('Failed to load notifications', 'error');
       } finally {
         setIsLoading(false);

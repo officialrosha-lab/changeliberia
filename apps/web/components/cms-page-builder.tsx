@@ -49,7 +49,6 @@ export function PageBuilder({
 }: PageBuilderProps) {
   const [pageState, setPageState] = useState<PageEditorState>(initialState);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [showBlockLibrary, setShowBlockLibrary] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 

@@ -40,7 +40,6 @@ export function CMSAdminDashboard({
   onEditPage,
   onDeletePage,
   onCreateContentType,
-  isLoading = false,
 }: CMSAdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'pages' | 'content-types' | 'analytics'>('pages');
   const [showCreatePageModal, setShowCreatePageModal] = useState(false);

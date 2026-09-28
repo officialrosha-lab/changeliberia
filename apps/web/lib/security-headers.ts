@@ -4,6 +4,8 @@
  * Protects against common web vulnerabilities: XSS, Clickjacking, MIME-sniffing, etc.
  */
 
+import nodeCrypto from 'crypto';
+
 export interface SecurityHeadersConfig {
   cspEnabled: boolean;
   hsts: string;
@@ -213,8 +215,7 @@ export function applySecurityHeaders(
 export function generateNonce(): string {
   if (typeof window === 'undefined') {
     // Server-side: use Node.js crypto
-    const crypto = require('crypto');
-    return crypto.randomBytes(16).toString('base64');
+    return nodeCrypto.randomBytes(16).toString('base64');
   }
 
   // Client-side: use Web Crypto API
@@ -321,7 +322,7 @@ export function initializeSecurityMonitoring(): void {
   });
 }
 
-export default {
+const securityHeaders = {
   CSP_DIRECTIVES,
   SECURITY_HEADERS,
   generateCSPHeader,
@@ -334,3 +335,5 @@ export default {
   logSecurityEvent,
   initializeSecurityMonitoring,
 };
+
+export default securityHeaders;

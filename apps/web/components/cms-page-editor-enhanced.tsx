@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { CMSPageBlockEditor } from './cms-page-block-editor';
@@ -9,9 +9,6 @@ import {
   History,
   FileText,
   Eye,
-  EyeOff,
-  Save,
-  MoreVertical,
   AlertCircle,
 } from 'lucide-react';
 
@@ -255,7 +252,12 @@ export function CMSPageEditorEnhanced() {
 
               {/* Schedule Button */}
               <button
-                onClick={() => setShowScheduling(!showScheduling)}
+                onClick={() => {
+                  setShowScheduling(!showScheduling);
+                  if (!showScheduling) {
+                    loadSchedules(selectedPage.id);
+                  }
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
               >
                 <Clock className="w-4 h-4" />

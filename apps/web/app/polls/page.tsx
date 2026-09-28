@@ -12,11 +12,6 @@ const SORT_OPTIONS = [
 
 type SortValue = typeof SORT_OPTIONS[number]['value'];
 
-function isNew(expiresAt: string, createdAt?: string): boolean {
-  // PollSummary doesn't carry createdAt so we approximate using expiresAt absence — skip badge if we can't tell
-  return false;
-}
-
 export default function PollsPage() {
   const [sort, setSort] = useState<SortValue>('recent');
   const [search, setSearch] = useState('');

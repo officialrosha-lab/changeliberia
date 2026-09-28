@@ -111,7 +111,7 @@ export function CMSEditor() {
     try {
       const data = await apiGet<any[]>(`/cms/pages/${pageId}/versions`, token);
       setVersions(data || []);
-    } catch (err) {
+    } catch {
       setError('Failed to load version history');
     }
   }

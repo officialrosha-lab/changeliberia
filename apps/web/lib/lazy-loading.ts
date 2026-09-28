@@ -3,7 +3,7 @@
  * Helpers for dynamic imports and component splitting
  */
 
-import { ComponentType, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 /**
  * Configuration for lazy loading
@@ -182,8 +182,8 @@ export async function dynamicImport<T = any>(
       await new Promise((resolve) => setTimeout(resolve, config.delay));
     }
 
-    let timeoutId: NodeJS.Timeout | undefined;
     if (config?.timeout) {
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(
           () => reject(new Error(`Module loading timeout: ${modulePath}`)),
@@ -192,12 +192,16 @@ export async function dynamicImport<T = any>(
       });
 
       const modulePromise = import(modulePath);
-      return Promise.race([modulePromise, timeoutPromise]) as Promise<T>;
+      try {
+        return (await Promise.race([modulePromise, timeoutPromise])) as T;
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
 
-    const module = await import(modulePath);
+    const loadedModule = await import(modulePath);
     config?.onLoad?.();
-    return module;
+    return loadedModule;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     config?.onError?.(err);

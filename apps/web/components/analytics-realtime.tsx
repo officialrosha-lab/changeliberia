@@ -56,7 +56,9 @@ export function AnalyticsNotificationBadge({
       <div className="rounded-lg bg-emerald-500 text-white px-4 py-3 shadow-lg flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-emerald-200 rounded-full animate-pulse" />
-          <span className="font-medium text-sm">Analytics Updated</span>
+          <span className="font-medium text-sm">
+            Analytics Updated{updateCount > 1 ? ` (${updateCount})` : ''}
+          </span>
         </div>
         {showLastUpdate && lastUpdateTime && (
           <span className="text-xs text-emerald-100">

@@ -9,9 +9,7 @@ interface AdminPerformanceDashboardProps {
   isDarkMode?: boolean;
 }
 
-export function AdminPerformanceDashboard({
-  isDarkMode = false,
-}: AdminPerformanceDashboardProps) {
+export function AdminPerformanceDashboard({}: AdminPerformanceDashboardProps) {
   const [metrics, setMetrics] = useState<PerformanceReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'vitals' | 'resources' | 'custom'>('vitals');

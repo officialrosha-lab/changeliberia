@@ -71,7 +71,7 @@ class PerformanceMonitor {
 
         lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
         this.observers.set('lcp', lcpObserver);
-      } catch (e) {
+      } catch {
         console.warn('LCP observer not supported');
       }
 
@@ -94,7 +94,7 @@ class PerformanceMonitor {
 
         clsObserver.observe({ entryTypes: ['layout-shift'] });
         this.observers.set('cls', clsObserver);
-      } catch (e) {
+      } catch {
         console.warn('CLS observer not supported');
       }
 
@@ -115,7 +115,7 @@ class PerformanceMonitor {
 
         inpObserver.observe({ entryTypes: ['first-input', 'event'] });
         this.observers.set('inp', inpObserver);
-      } catch (e) {
+      } catch {
         console.warn('INP observer not supported');
       }
 
@@ -136,7 +136,7 @@ class PerformanceMonitor {
 
         fcpObserver.observe({ entryTypes: ['paint'] });
         this.observers.set('fcp', fcpObserver);
-      } catch (e) {
+      } catch {
         console.warn('FCP observer not supported');
       }
     }

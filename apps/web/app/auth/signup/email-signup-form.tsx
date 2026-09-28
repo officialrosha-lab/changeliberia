@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
@@ -8,8 +7,6 @@ import { apiPost } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 export function EmailSignupForm() {
-  const setToken = useAuthStore((s) => s.setToken);
-  const setAuthMethod = useAuthStore((s) => s.setAuthMethod);
   const setUserEmail = useAuthStore((s) => s.setUserEmail);
   const router = useRouter();
   const [message, setMessage] = useState('');
@@ -65,7 +62,7 @@ export function EmailSignupForm() {
         return;
       }
 
-      const data = await apiPost<{ success: boolean; message: string; email: string }>('/auth/signup/email', {
+      await apiPost<{ success: boolean; message: string; email: string }>('/auth/signup/email', {
         fullName: String(form.get('fullName')),
         email: email,
         password: pwd,

@@ -380,7 +380,7 @@ export function SignForm({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </motion.svg>
               <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-                You've already signed this petition
+                You&apos;ve already signed this petition
               </p>
             </div>
             <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">

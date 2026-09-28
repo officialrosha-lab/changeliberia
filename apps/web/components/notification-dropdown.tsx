@@ -117,7 +117,7 @@ export function NotificationDropdown() {
         ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
+    } catch {
       showToast('Failed to update notification', 'error');
     }
   };
@@ -129,7 +129,7 @@ export function NotificationDropdown() {
       await apiPatch(`/notifications/${notificationId}/archive`, {}, token);
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       showToast('Notification archived', 'info');
-    } catch (error) {
+    } catch {
       showToast('Failed to archive notification', 'error');
     }
   };
@@ -144,7 +144,7 @@ export function NotificationDropdown() {
       );
       setUnreadCount(0);
       showToast('All marked as read', 'success');
-    } catch (error) {
+    } catch {
       showToast('Failed to mark all as read', 'error');
     }
   };

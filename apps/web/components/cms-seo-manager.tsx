@@ -36,7 +36,6 @@ export function CMSSEOManager({
   pages,
   defaultMetadata = { domain: 'example.com', siteName: 'Change Liberia' },
   onSaveMetadata,
-  onDeleteMetadata,
 }: CMSSEOManagerProps) {
   const [selectedPageId, setSelectedPageId] = useState<string>(pages[0]?.id || '');
   const [metadata, setMetadata] = useState<SEOMetadata>({

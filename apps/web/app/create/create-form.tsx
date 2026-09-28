@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { X } from 'lucide-react';

@@ -57,7 +57,7 @@ export function SiteFooter() {
                 <span className="hidden dark:block text-lg font-extrabold text-emerald-400 tracking-tight">Change Liberia</span>
               </Link>
               <p className="text-xs leading-relaxed text-zinc-500 dark:text-neutral-400 max-w-xs break-words">
-                A place for Liberians, wherever they live, to raise what's wrong and get it in front of the people who can fix it.
+                A place for Liberians, wherever they live, to raise what&apos;s wrong and get it in front of the people who can fix it.
               </p>
             </div>
 

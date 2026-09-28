@@ -297,7 +297,7 @@ export function PollSubmissionForm({ onSuccess }: { onSuccess?: () => void }) {
       </button>
 
       <p className="text-xs text-zinc-500 dark:text-neutral-400">
-        📧 You'll be notified by email once our admin team reviews and approves your poll.
+        📧 You&apos;ll be notified by email once our admin team reviews and approves your poll.
       </p>
     </form>
   );

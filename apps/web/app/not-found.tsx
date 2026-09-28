@@ -18,7 +18,7 @@ export default function NotFound() {
           We couldn&apos;t find that page
         </h1>
         <p className="mt-2 max-w-md text-zinc-500 dark:text-zinc-400">
-          The page you're looking for may have moved or no longer exists. Try one of the links
+          The page you&apos;re looking for may have moved or no longer exists. Try one of the links
           below, or head back to the homepage.
         </p>
       </div>

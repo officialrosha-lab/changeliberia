@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from 'react';
 import { apiPost } from '../lib/api';
-import { useAuthStore } from '../lib/store';
 
 const LIBERIAN_COUNTIES = [
   'Bomi',
@@ -32,7 +31,6 @@ interface FormErrors {
 }
 
 export function AmbassadorApplicationForm() {
-  const { token } = useAuthStore();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -112,7 +110,7 @@ export function AmbassadorApplicationForm() {
     setLoading(true);
 
     try {
-      const response = await apiPost('/ambassadors/apply', formData);
+      await apiPost('/ambassadors/apply', formData);
       setSubmitted(true);
       setFormData({
         fullName: '',
@@ -146,7 +144,7 @@ export function AmbassadorApplicationForm() {
             Application Received!
           </h3>
           <p className="mt-2 text-sm text-emerald-700/80 dark:text-emerald-300/80">
-            Thank you for applying. We'll review your application and get back to you within 7-10 business days.
+            Thank you for applying. We&apos;ll review your application and get back to you within 7-10 business days.
           </p>
           <button
             onClick={() => setSubmitted(false)}
@@ -347,7 +345,7 @@ export function AmbassadorApplicationForm() {
       </button>
 
       <p className="text-center text-xs text-zinc-500 dark:text-neutral-400">
-        We'll review your application and get back to you soon.
+        We&apos;ll review your application and get back to you soon.
       </p>
     </form>
   );

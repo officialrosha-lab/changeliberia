@@ -220,7 +220,7 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
             <li>✓ Your petition has a strong conversion rate! Keep sharing.</li>
           )}
           {analytics.totalShares > 50 && (
-            <li>✓ You're a share expert! You've reached viral status.</li>
+            <li>✓ You&apos;re a share expert! You&apos;ve reached viral status.</li>
           )}
           {Math.round((analytics.clicks / Math.max(analytics.totalShares, 1)) * 100) > 20 && (
             <li>✓ High engagement! Your shares are getting noticed.</li>

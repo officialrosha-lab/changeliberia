@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ChangeEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FormStepper, FormStep } from './form-stepper';
 import { FormCard } from './form-section';
 import { FormFieldWrapper, FormSection } from './form-section';

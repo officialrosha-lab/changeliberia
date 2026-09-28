@@ -23,7 +23,6 @@ interface SignatureCollectionProps {
 }
 
 export function SignatureCollection({
-  petitionId,
   goal,
   currentCount,
   recentSignatures,
@@ -212,7 +211,7 @@ export function SignatureCollection({
                       )}
                       {signature.message && (
                         <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 italic">
-                          "{signature.message}"
+                          &quot;{signature.message}&quot;
                         </p>
                       )}
                       <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">

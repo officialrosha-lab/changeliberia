@@ -23,7 +23,7 @@ export function Header() {
           donationsEnabled: boolean;
         }>('/settings/system');
         setDonationsEnabled(settings.donationsEnabled);
-      } catch (err) {
+      } catch {
         // If error, default to enabled
         setDonationsEnabled(true);
       }

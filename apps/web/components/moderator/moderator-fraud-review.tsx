@@ -213,7 +213,7 @@ interface FlagResolutionPanelProps {
   isLoading: boolean;
 }
 
-function FlagResolutionPanel({ flag, onResolve, isLoading }: FlagResolutionPanelProps) {
+function FlagResolutionPanel({ onResolve, isLoading }: FlagResolutionPanelProps) {
   const [notes, setNotes] = useState('');
   const [selectedAction, setSelectedAction] = useState<'approve' | 'ban' | 'dismiss' | null>(null);
 

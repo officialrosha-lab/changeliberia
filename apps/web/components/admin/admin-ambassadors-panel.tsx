@@ -48,8 +48,7 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
     setError(null);
 
     try {
-      const app = applications.find((a) => a.id === id);
-      const result = await apiPatch(`/ambassadors/admin/${id}`, {
+      await apiPatch(`/ambassadors/admin/${id}`, {
         status: newStatus,
         notes: updateNotes || undefined,
       }, token as string | undefined);

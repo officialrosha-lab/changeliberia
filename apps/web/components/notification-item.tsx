@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 interface Notification {
   id: string;
@@ -26,7 +24,6 @@ export function NotificationItem({
   onArchive,
 }: NotificationItemProps) {
   const isUnread = notification.status === 'UNREAD';
-  const metadata = notification.metadata ? JSON.parse(notification.metadata) : {};
 
   const getIconColor = () => {
     switch (notification.type) {

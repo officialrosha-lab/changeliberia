@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch } from '../../lib/api';
+import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface Institution {

@@ -276,7 +276,7 @@ export function TestimonialBlock({ testimonials }: TestimonialBlockProps) {
           viewport={{ once: true }}
           className="bg-emerald-50 dark:bg-emerald-950/20 border-l-4 border-emerald-600 dark:border-emerald-500 rounded-r-lg p-6"
         >
-          <p className="text-zinc-700 dark:text-zinc-300 italic mb-4">"{testimonial.quote}"</p>
+          <p className="text-zinc-700 dark:text-zinc-300 italic mb-4">&quot;{testimonial.quote}&quot;</p>
           <div className="flex items-center gap-3">
             {testimonial.avatar && (
               <img

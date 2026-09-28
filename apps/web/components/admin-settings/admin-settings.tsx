@@ -443,7 +443,7 @@ export function AdminSettings() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
                   <div>
                     <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Platform Support Donations</label>
-                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show 'Support Change Liberia' section</p>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show &apos;Support Change Liberia&apos; section</p>
                   </div>
                   <input
                     type="checkbox"
@@ -458,7 +458,7 @@ export function AdminSettings() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
                   <div>
                     <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Petition Support Donations</label>
-                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show 'Support this Petition' sections</p>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Show &apos;Support this Petition&apos; sections</p>
                   </div>
                   <input
                     type="checkbox"
