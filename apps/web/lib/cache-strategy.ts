@@ -405,10 +405,9 @@ export async function initializeServiceWorker(): Promise<boolean> {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/service-worker.js', {
+    await navigator.serviceWorker.register('/service-worker.js', {
       scope: '/',
     });
-    console.log('ServiceWorker registered:', registration);
     return true;
   } catch (error) {
     console.error('ServiceWorker registration failed:', error);
@@ -440,7 +439,6 @@ export async function clearAllCaches(): Promise<void> {
   try {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map((name) => caches.delete(name)));
-    console.log('All caches cleared');
   } catch (error) {
     console.error('Failed to clear caches:', error);
   }

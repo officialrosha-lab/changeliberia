@@ -48,7 +48,7 @@ export function ShareModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5 dark:bg-neutral-900">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-5 dark:bg-neutral-900">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Share this petition now</h3>
         <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-400">Your share brings more verified voices.</p>
         

@@ -15,6 +15,7 @@ type Sponsor = {
 export const metadata = {
   title: 'Sponsors & Partners | Change Liberia',
   description: 'Organizations and partners supporting Change Liberia — and how your organization can join them.',
+  alternates: { canonical: '/sponsors' },
 };
 
 export default async function SponsorsPage() {

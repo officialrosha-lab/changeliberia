@@ -52,7 +52,6 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
       });
 
       socket.on('connect', () => {
-        console.log('[Analytics] Connected to real-time updates');
         setConnected(true);
 
         // Send subscription message
@@ -67,18 +66,15 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
         });
       });
 
-      socket.on('subscribed', (data) => {
-        console.log('[Analytics] Subscribed:', data);
+      socket.on('subscribed', () => {
         setSubscribed(true);
       });
 
       socket.on('analytics_update', (data: AnalyticsUpdate) => {
-        console.log('[Analytics] Received update:', data.type);
         setUpdate(data);
       });
 
       socket.on('disconnect', () => {
-        console.log('[Analytics] Disconnected from real-time updates');
         setConnected(false);
         setSubscribed(false);
       });

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { apiGet } from '../../../lib/api';
 import PollDetailClient from './PollDetailClient';
 
@@ -13,6 +14,33 @@ type PollDetails = {
   expiresAt: string;
   options: Array<{ id: string; text: string; imageUrl?: string; voteCount: number }>;
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const poll = await apiGet<PollDetails>(`/polls/slug/${slug}`).catch(() => null);
+  if (!poll) return {};
+
+  const title = `${poll.title} — Change Liberia`;
+  const description = poll.description.slice(0, 160).replace(/\n/g, ' ');
+  const pageUrl = `https://changeliberia.org/polls/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      type: 'website',
+      url: pageUrl,
+      siteName: 'Change Liberia',
+      title,
+      description,
+    },
+  };
+}
 
 export default async function PollDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
