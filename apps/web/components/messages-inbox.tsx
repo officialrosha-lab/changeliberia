@@ -336,12 +336,12 @@ export function MessagesInbox() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700"
+              className="w-full pl-10 pr-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-neutral-800 dark:border-neutral-700"
             />
           </div>
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
           >
             Search
           </button>
@@ -426,7 +426,7 @@ export function MessagesInbox() {
           </span>
           <button
             onClick={markMultipleAsRead}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition flex items-center gap-2"
+            className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700 transition flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
             Mark as Read

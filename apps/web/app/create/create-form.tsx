@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
@@ -1023,9 +1024,7 @@ export function CreatePetitionForm() {
               <h2 className="text-base font-bold text-zinc-900 dark:text-white">Sign in to submit your petition</h2>
               <button type="button" onClick={() => setShowAuthModal(false)}
                 className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-neutral-800">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="flex border-b border-zinc-100 dark:border-neutral-800">

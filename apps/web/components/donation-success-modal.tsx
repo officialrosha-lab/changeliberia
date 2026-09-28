@@ -61,7 +61,7 @@ export function DonationSuccessModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-8 border border-zinc-200 dark:border-zinc-800"
+            className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-200 dark:border-zinc-800"
           >
             {/* Success Animation */}
             <motion.div
@@ -195,7 +195,7 @@ export function DonationSuccessModal({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleShare}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-all"
+                className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-all"
               >
                 📢 Share This Campaign
               </motion.button>
