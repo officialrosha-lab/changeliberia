@@ -128,8 +128,8 @@ export default function ForgotPasswordPage() {
           <div className="mt-8 pt-6 border-t border-gray-200 text-center">
             <p className="text-gray-600 text-sm">
               Need help? Contact{' '}
-              <a href="mailto:support@changelib.org" className="text-blue-600 hover:underline">
-                support@changelib.org
+              <a href="mailto:support@changeliberia.org" className="text-blue-600 hover:underline">
+                support@changeliberia.org
               </a>
             </p>
           </div>
