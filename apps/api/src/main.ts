@@ -232,7 +232,7 @@ async function seedCmsPages(prisma: PrismaService) {
     {
       id: 'contact',
       label: 'Contact',
-      html: '<p class="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Get in touch</p><h2 class="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">Contact us</h2><p class="mt-4 text-base text-zinc-600 dark:text-neutral-400">For platform inquiries, partnership proposals, media requests, or to report abuse, reach us at:</p><div class="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300"><p>Email: <a href="mailto:hello@changelib.org" class="text-emerald-600 underline dark:text-emerald-400">hello@changelib.org</a></p><p>Monrovia, Liberia</p></div>',
+      html: '<p class="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Get in touch</p><h2 class="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">Contact us</h2><p class="mt-4 text-base text-zinc-600 dark:text-neutral-400">For platform inquiries, partnership proposals, media requests, or to report abuse, reach us at:</p><div class="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300"><p>Email: <a href="mailto:hello@changeliberia.org" class="text-emerald-600 underline dark:text-emerald-400">hello@changeliberia.org</a></p><p>Monrovia, Liberia</p></div>',
     },
   ];
 
@@ -278,7 +278,7 @@ async function seedCmsPages(prisma: PrismaService) {
     {
       id: 'contact',
       label: 'Contact Support',
-      html: '<p class="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Still stuck?</p><h2 class="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">Contact our support team</h2><p class="mx-auto mt-4 max-w-lg text-base text-zinc-600 dark:text-neutral-400">We typically respond within one business day. For urgent matters — including abuse reports — mark your subject line URGENT.</p><div class="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300"><p>Email: <a href="mailto:hello@changelib.org" class="text-emerald-600 underline dark:text-emerald-400">hello@changelib.org</a></p></div>',
+      html: '<p class="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Still stuck?</p><h2 class="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">Contact our support team</h2><p class="mx-auto mt-4 max-w-lg text-base text-zinc-600 dark:text-neutral-400">We typically respond within one business day. For urgent matters — including abuse reports — mark your subject line URGENT.</p><div class="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300"><p>Email: <a href="mailto:hello@changeliberia.org" class="text-emerald-600 underline dark:text-emerald-400">hello@changeliberia.org</a></p></div>',
     },
   ];
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = 'April 27, 2026';
-const CONTACT_EMAIL = 'privacy@changelib.org';
+const CONTACT_EMAIL = 'privacy@changeliberia.org';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <p>
             Change Liberia (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) operates{' '}
-            <strong>changelib.org</strong>, a civic petition platform dedicated to empowering Liberians to raise
+            <strong>changeliberia.org</strong>, a civic petition platform dedicated to empowering Liberians to raise
             issues, gather trusted community support, and drive real change. This Privacy Policy explains what
             personal information we collect, why we collect it, how we use and protect it, and the rights you have
             over your information.

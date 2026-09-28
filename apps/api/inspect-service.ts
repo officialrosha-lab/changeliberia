@@ -24,7 +24,7 @@ const prismaMock: any = {
       ...data,
       id: 'share-1',
       shortCode: 'abc12345',
-      targetUrl: 'https://changelib.org/petitions/petition-1',
+      targetUrl: 'https://changeliberia.org/petitions/petition-1',
       petitionId: 'petition-1',
       source: 'facebook',
       medium: 'social',
