@@ -90,6 +90,16 @@ function LoginPageClient() {
 
   return (
     <div>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
+        Welcome back
+      </p>
+      <h1 className="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">
+        Log in to your account
+      </h1>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-neutral-400">
+        Pick up where you left off with your petitions, signatures, and updates.
+      </p>
+
       {showVerificationMessage && (
         <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 dark:bg-blue-950/40 dark:border-blue-800">
           <p className="text-sm text-blue-800 dark:text-blue-200">

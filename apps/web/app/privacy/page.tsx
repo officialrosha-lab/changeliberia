@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Privacy Policy — Change Liberia',
   description: 'How Change Liberia collects, uses, and protects your personal information.',
+  alternates: { canonical: '/privacy' },
 };
 
 const LAST_UPDATED = 'April 27, 2026';

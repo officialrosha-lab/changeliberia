@@ -538,7 +538,7 @@ export function SignForm({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(petitionUrl)}&size=96x96&margin=4`}
-              alt="QR code"
+              alt="QR code for this petition"
               className="h-24 w-24 shrink-0 rounded-xl border border-zinc-200 dark:border-neutral-700"
             />
             <div className="flex min-w-0 flex-1 flex-col gap-2">

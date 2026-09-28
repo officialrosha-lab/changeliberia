@@ -1,6 +1,10 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Two-Factor Authentication — Change Liberia' };
+export const metadata = {
+  title: 'Two-Factor Authentication — Change Liberia',
+  description: 'Add an extra layer of security to your Change Liberia account with two-factor authentication.',
+  alternates: { canonical: '/auth/two-factor' },
+};
 
 export default function TwoFactorPage() {
   return (

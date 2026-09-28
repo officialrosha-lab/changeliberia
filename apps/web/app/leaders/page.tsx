@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Lead change in your community | Change Liberia',
   description: 'Apply to become a Change Liberia ambassador — help your community raise issues, gather verified support, and get petitions in front of the people who can act on them.',
+  alternates: { canonical: '/leaders' },
 };
 
 export default function LeadersPage() {

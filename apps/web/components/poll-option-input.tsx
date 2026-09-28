@@ -59,7 +59,11 @@ export function PollOptionInput({
             onClick={() => onImageChange(index, undefined)}
             className="group relative h-12 w-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-neutral-700"
           >
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={text ? `Image for option: ${text}` : `Image for option ${index + 1}`}
+              className="h-full w-full object-cover"
+            />
             <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition group-hover:opacity-100">
               <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
