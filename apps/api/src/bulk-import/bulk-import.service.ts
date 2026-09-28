@@ -79,7 +79,7 @@ export class BulkImportService {
               result.success = result.errors.length === 0;
               resolve(result);
             } catch (error) {
-              reject(error);
+              reject(error instanceof Error ? error : new Error(String(error)));
             }
           })();
         })

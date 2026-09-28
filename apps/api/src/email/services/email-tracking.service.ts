@@ -54,7 +54,7 @@ export class EmailTrackingService {
       return emailLog;
     } catch (error) {
       this.logger.error(
-        `Failed to record email open for ${emailLogId}: ${error}`,
+        `Failed to record email open for ${emailLogId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -84,7 +84,7 @@ export class EmailTrackingService {
       return emailLog;
     } catch (error) {
       this.logger.error(
-        `Failed to record email click for ${emailLogId}: ${error}`,
+        `Failed to record email click for ${emailLogId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -113,7 +113,7 @@ export class EmailTrackingService {
       return null;
     } catch (error) {
       this.logger.error(
-        `Failed to record delivery for ${resendMessageId}: ${error}`,
+        `Failed to record delivery for ${resendMessageId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -146,7 +146,7 @@ export class EmailTrackingService {
       return null;
     } catch (error) {
       this.logger.error(
-        `Failed to record bounce for ${resendMessageId}: ${error}`,
+        `Failed to record bounce for ${resendMessageId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }

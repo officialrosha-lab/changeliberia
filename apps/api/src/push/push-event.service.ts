@@ -54,7 +54,9 @@ export class PushEventService {
         url: event.petitionUrl,
       });
     } catch (err) {
-      this.logger.warn(`Failed to send milestone push notification: ${err}`);
+      this.logger.warn(
+        `Failed to send milestone push notification: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -73,7 +75,7 @@ export class PushEventService {
       });
     } catch (err) {
       this.logger.warn(
-        `Failed to send response-update push notification: ${err}`,
+        `Failed to send response-update push notification: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }

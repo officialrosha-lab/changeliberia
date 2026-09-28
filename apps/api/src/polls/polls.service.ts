@@ -176,7 +176,9 @@ export class PollsService {
           `Validation error: ${err.message}`,
         );
       }
-      this.logger.error(`Poll submit unexpected error: ${err}`);
+      this.logger.error(
+        `Poll submit unexpected error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw new InternalServerErrorException(
         `Unexpected error: ${String(err)}`,
       );
@@ -462,7 +464,9 @@ export class PollsService {
           `Validation error: ${err.message}`,
         );
       }
-      this.logger.error(`getPollBySlug unexpected error: ${err}`);
+      this.logger.error(
+        `getPollBySlug unexpected error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw new InternalServerErrorException(
         `Unexpected error: ${String(err)}`,
       );
