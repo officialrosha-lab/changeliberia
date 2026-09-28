@@ -13,20 +13,21 @@ export interface SendEmailOptions {
   metadata?: Record<string, any>;
 }
 
-export interface PlunkEmailResponse {
+export interface MailerooEmailResponse {
   id: string;
   from?: string;
   created_at?: string;
 }
 
-interface PlunkSendResponseBody {
+interface MailerooSendResponseBody {
+  success?: boolean;
+  message?: string;
   data?: {
-    emails?: { email?: string; contact?: { id?: string; email?: string } }[];
-    timestamp?: string;
+    reference_id?: string;
   };
 }
 
-interface PlunkDomainRecord {
+interface MailerooDomainRecord {
   domain?: string;
   name?: string;
   verified?: boolean;
@@ -38,33 +39,36 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Plunk transactional email API — https://docs.useplunk.com/api-reference/public-api/sendEmail
- * Same shape as the MailerSendProvider it replaces, so EmailService/EmailController
+ * Maileroo transactional email API — https://maileroo.com/docs/email-api/send-basic-email/
+ * Same shape as the PlunkProvider it replaces, so EmailService/EmailController
  * don't need to know which provider is behind them.
  *
- * Plunk's `/v1/send` has no `text` (plain-text) field — only `body` (HTML) or
- * a `template` id — and no `tags` field, so `options.text`/`options.tags` are
- * accepted for interface compatibility but not sent.
+ * We generate our own `reference_id` (a uuid) and send it on every request
+ * instead of relying on Maileroo's auto-generated one or parsing its
+ * response body (whose exact envelope wasn't confirmed against a live
+ * account) — this id is what MailerooWebhookController later gets back
+ * as `message_reference_id` on delivery/bounce/open/click events, so it's
+ * the one thing we need to be sure of.
  */
 @Injectable()
-export class PlunkProvider {
-  private readonly logger = new Logger(PlunkProvider.name);
+export class MailerooProvider {
+  private readonly logger = new Logger(MailerooProvider.name);
   private readonly apiKey: string;
-  private readonly baseUrl = 'https://api.useplunk.com/v1';
+  private readonly baseUrl = 'https://smtp.maileroo.com/api/v2';
   private readonly maxRetries = 3;
   private readonly retryDelays = [1000, 2000, 4000]; // ms
 
   constructor() {
-    this.apiKey = process.env.PLUNK_API_KEY || '';
+    this.apiKey = process.env.MAILEROO_API_KEY || '';
     if (!this.apiKey) {
-      this.logger.warn('PLUNK_API_KEY not set. Email sending will fail.');
+      this.logger.warn('MAILEROO_API_KEY not set. Email sending will fail.');
     }
   }
 
   /**
-   * Send email via Plunk's API with retry logic
+   * Send email via Maileroo's API with retry logic
    */
-  async send(options: SendEmailOptions): Promise<PlunkEmailResponse> {
+  async send(options: SendEmailOptions): Promise<MailerooEmailResponse> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
@@ -92,10 +96,10 @@ export class PlunkProvider {
   }
 
   /**
-   * Send batch emails via Plunk's API
+   * Send batch emails via Maileroo's API
    */
-  async sendBatch(emails: SendEmailOptions[]): Promise<PlunkEmailResponse[]> {
-    const results: PlunkEmailResponse[] = [];
+  async sendBatch(emails: SendEmailOptions[]): Promise<MailerooEmailResponse[]> {
+    const results: MailerooEmailResponse[] = [];
 
     for (const email of emails) {
       try {
@@ -113,35 +117,26 @@ export class PlunkProvider {
   }
 
   /**
-   * Look up a domain's verification status.
-   * Plunk addresses domains by internal id + project id rather than by
-   * name, and the exact domain-object field names weren't confirmed against
-   * a live account — this is best-effort. If `d.domain`/`d.verified` below
-   * don't match your project's actual response shape, adjust them to fit
-   * (dashboard > project settings > Domains shows the same data).
+   * Look up a domain's verification status via Maileroo's domains list.
+   * The exact response field names weren't confirmed against a live
+   * account — this is best-effort. If `d.domain`/`d.verified` below don't
+   * match your account's actual response shape, adjust them to fit
+   * (dashboard > Domains shows the same data).
    */
   async verifyDomain(domain: string): Promise<{
     domain: string;
     status: 'verified' | 'unverified';
   }> {
-    const projectId = process.env.PLUNK_PROJECT_ID || '';
-    if (!projectId) {
-      throw new Error(
-        'PLUNK_PROJECT_ID not set; cannot look up domains for this project.',
-      );
-    }
-
     try {
-      const res = await fetch(
-        `https://api.useplunk.com/domains/project/${projectId}`,
-        { headers: { Authorization: `Bearer ${this.apiKey}` } },
-      );
+      const res = await fetch(`${this.baseUrl}/domains`, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      });
       if (!res.ok) {
         throw new Error(`Domain lookup failed: ${res.statusText}`);
       }
-      const body: PlunkDomainRecord[] | { data?: PlunkDomainRecord[] } =
+      const body: MailerooDomainRecord[] | { data?: MailerooDomainRecord[] } =
         await res.json();
-      const domains: PlunkDomainRecord[] = Array.isArray(body)
+      const domains: MailerooDomainRecord[] = Array.isArray(body)
         ? body
         : (body.data ?? []);
       const match = domains.find(
@@ -167,64 +162,66 @@ export class PlunkProvider {
   }
 
   /**
-   * Check Plunk API connectivity.
-   * Plunk has no dedicated health endpoint, so this hits `/v1/verify` (email
-   * address validation) with a throwaway address — a real authenticated
-   * call that never sends mail.
+   * Check Maileroo API connectivity.
+   * Maileroo has no dedicated health endpoint, so this hits the
+   * authenticated `/domains` list — a real call that never sends mail.
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/verify`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: 'healthcheck@changeliberia.org' }),
+      const response = await fetch(`${this.baseUrl}/domains`, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
       });
       return response.ok;
     } catch (error) {
-      this.logger.error(`Plunk health check failed: ${errorMessage(error)}`);
+      this.logger.error(`Maileroo health check failed: ${errorMessage(error)}`);
       return false;
     }
   }
 
   /**
-   * Private: Send actual Plunk API request
+   * Private: Send actual Maileroo API request
    */
   private async sendRequest(
     options: SendEmailOptions,
-  ): Promise<PlunkEmailResponse> {
+  ): Promise<MailerooEmailResponse> {
     const mailFrom =
       options.from || process.env.MAIL_FROM || 'noreply@changeliberia.org';
     const replyTo =
       options.replyTo ||
       process.env.MAIL_REPLY_TO ||
       'support@changeliberia.org';
+    const referenceId = uuid();
 
     const payload: {
-      to: string;
-      from: string;
+      from: { address: string };
+      to: { address: string }[];
+      reply_to?: { address: string };
       subject: string;
-      body: string;
-      reply?: string;
+      html: string;
+      plain?: string;
       headers?: Record<string, string>;
+      reference_id: string;
     } = {
-      to: options.to,
-      from: mailFrom,
+      from: { address: mailFrom },
+      to: [{ address: options.to }],
       subject: options.subject,
-      body: options.html,
+      html: options.html,
+      reference_id: referenceId,
     };
 
     if (replyTo) {
-      payload.reply = replyTo;
+      payload.reply_to = { address: replyTo };
+    }
+
+    if (options.text) {
+      payload.plain = options.text;
     }
 
     if (options.headers) {
       payload.headers = options.headers;
     }
 
-    const response = await fetch(`${this.baseUrl}/send`, {
+    const response = await fetch(`${this.baseUrl}/emails`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -241,18 +238,21 @@ export class PlunkProvider {
       } catch {
         // response body wasn't JSON — fall back to statusText above
       }
-      throw new Error(`Plunk API error (${response.status}): ${message}`);
+      throw new Error(`Maileroo API error (${response.status}): ${message}`);
     }
 
-    const result: PlunkSendResponseBody = await response.json();
-    // The `email` field on the returned record is Plunk's message id — the
-    // same id webhook events report back under `event.emailId`.
-    const messageId = result.data?.emails?.[0]?.email || uuid();
+    let result: MailerooSendResponseBody = {};
+    try {
+      result = await response.json();
+    } catch {
+      // some successful responses may have an empty body — the
+      // reference_id we generated above is authoritative either way
+    }
 
     return {
-      id: messageId,
+      id: result.data?.reference_id || referenceId,
       from: mailFrom,
-      created_at: result.data?.timestamp || new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
   }
 
