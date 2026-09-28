@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { v4 as uuid } from 'uuid';
+
+/** Maileroo requires reference_id to be a 24-character hex string (12 random bytes). */
+function generateReferenceId(): string {
+  return randomBytes(12).toString('hex');
+}
 
 export interface SendEmailOptions {
   to: string;
@@ -43,8 +49,9 @@ function errorMessage(error: unknown): string {
  * Same shape as the PlunkProvider it replaces, so EmailService/EmailController
  * don't need to know which provider is behind them.
  *
- * We generate our own `reference_id` (a uuid) and send it on every request
- * instead of relying on Maileroo's auto-generated one or parsing its
+ * We generate our own `reference_id` (a 24-char hex string — the format
+ * Maileroo's API requires) and send it on every request instead of relying
+ * on Maileroo's auto-generated one or parsing its
  * response body (whose exact envelope wasn't confirmed against a live
  * account) — this id is what MailerooWebhookController later gets back
  * as `message_reference_id` on delivery/bounce/open/click events, so it's
@@ -190,7 +197,7 @@ export class MailerooProvider {
       options.replyTo ||
       process.env.MAIL_REPLY_TO ||
       'support@changeliberia.org';
-    const referenceId = uuid();
+    const referenceId = generateReferenceId();
 
     const payload: {
       from: { address: string };
