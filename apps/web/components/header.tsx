@@ -56,12 +56,7 @@ export function Header() {
               Change Liberia
             </span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-zinc-600 dark:text-neutral-300 md:flex">
-            {token && (
-              <Link href="/dashboard" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
-                My petitions
-              </Link>
-            )}
+          <nav className="hidden items-center gap-6 text-sm text-zinc-600 dark:text-neutral-300 xl:flex">
             {token && (
               <Link href="/messages" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
                 Messages
@@ -84,7 +79,7 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
           <Link
             href="/create"
-            className="hidden md:inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
+            className="hidden xl:inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300 dark:focus:ring-emerald-600"
           >
             Start a petition
           </Link>
@@ -95,7 +90,7 @@ export function Header() {
 
           {token && <NotificationDropdown />}
           
-          <div className="hidden items-center gap-2 sm:flex md:gap-3">
+          <div className="hidden items-center gap-2 xl:flex xl:gap-3">
             {token ? (
               <>
                 <Link
