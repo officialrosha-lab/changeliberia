@@ -49,7 +49,7 @@ export class EmailVerificationService {
       },
     });
 
-    // Send verification email via the Plunk-backed EmailService (EmailEventService listens for this)
+    // Send verification email via the Maileroo-backed EmailService (EmailEventService listens for this)
     const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
     this.eventEmitter.emit('user.email.verification-requested', {
