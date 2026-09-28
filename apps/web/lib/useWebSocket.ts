@@ -106,7 +106,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   );
 
   const onNewSignature = useCallback(
-    (callback: (data: any) => void) => {
+    (callback: (data: { county?: string }) => void) => {
       if (socketRef.current) {
         socketRef.current.on('new_signature', callback);
         return () => {
@@ -132,7 +132,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   );
 
   const onTrendingPetitions = useCallback(
-    (callback: (data: any) => void) => {
+    (callback: (data: { petitions?: Array<{ todaySignatures?: number }> }) => void) => {
       if (socketRef.current) {
         socketRef.current.on('trending_petitions', callback);
         return () => {
@@ -145,7 +145,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   );
 
   const onPetitionUpdate = useCallback(
-    (callback: (data: any) => void) => {
+    (callback: (data: unknown) => void) => {
       if (socketRef.current) {
         socketRef.current.on('petition_update', callback);
         return () => {

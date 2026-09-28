@@ -39,10 +39,11 @@ export function PulseMap() {
   // Listen for new signatures to update intensities
   useEffect(() => {
     const unsubscribe = onNewSignature((data) => {
-      if (data.county) {
+      const county = data.county;
+      if (county) {
         setHotspots(prev =>
           prev.map(h =>
-            h.name.toLowerCase() === data.county.toLowerCase()
+            h.name.toLowerCase() === county.toLowerCase()
               ? { ...h, intensity: Math.min(1, h.intensity + 0.02), petitions: h.petitions + 1 }
               : h
           )

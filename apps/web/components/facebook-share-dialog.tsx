@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
+interface FacebookSDK {
+  ui: (
+    params: { method: string; href: string; hashtag?: string; quote?: string; display?: string },
+    callback: (response: { post_id?: string } | null) => void,
+  ) => void;
+}
+
 type Props = {
   petitionId: string;
   petitionUrl: string;
@@ -36,14 +43,15 @@ export function FacebookShareDialog({
       const quote = 'Join our petition! Together we can make change. 🇱🇷 #ChangeLiberia';
 
       // If Facebook SDK is loaded, use Share Dialog
-      if (typeof window !== 'undefined' && (window as any).FB) {
-        (window as any).FB.ui({
+      const fb = (window as unknown as { FB?: FacebookSDK }).FB;
+      if (typeof window !== 'undefined' && fb) {
+        fb.ui({
           method: 'share',
           href: petitionUrl,
           hashtag: '#ChangeLiberia',
           quote,
           display: 'popup',
-        }, function(response: any) {
+        }, function(response) {
           if (response) {
             setShared(true);
             recordShare();

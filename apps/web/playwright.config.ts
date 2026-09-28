@@ -36,7 +36,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Disable all video recording - incompatible with macOS 12 */
-    video: 'off' as any,
+    video: 'off',
 
     /* Maximum time for each action */
     actionTimeout: 15000,
@@ -52,7 +52,7 @@ export default defineConfig({
       use: { 
         ...devices['Desktop Chrome'],
         // Override all video settings from device preset
-        video: 'off' as any,
+        video: 'off',
       },
     },
 
@@ -61,7 +61,7 @@ export default defineConfig({
       use: { 
         ...devices['Desktop Firefox'],
         // Override all video settings from device preset
-        video: 'off' as any,
+        video: 'off',
       },
     },
   ],

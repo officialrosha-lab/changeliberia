@@ -21,6 +21,11 @@ interface CMSPage {
   publishedAt: string | null;
 }
 
+interface PageVersion {
+  id: string;
+  createdAt: string;
+}
+
 export function CMSEditor() {
   const router = useRouter();
   const params = useParams();
@@ -33,7 +38,7 @@ export function CMSEditor() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const [versions, setVersions] = useState<any[]>([]);
+  const [versions, setVersions] = useState<PageVersion[]>([]);
 
   useEffect(() => {
     if (!token || !pageId) return;
@@ -109,7 +114,7 @@ export function CMSEditor() {
   async function loadVersionHistory() {
     if (!token || !pageId) return;
     try {
-      const data = await apiGet<any[]>(`/cms/pages/${pageId}/versions`, token);
+      const data = await apiGet<PageVersion[]>(`/cms/pages/${pageId}/versions`, token);
       setVersions(data || []);
     } catch {
       setError('Failed to load version history');
@@ -215,7 +220,7 @@ export function CMSEditor() {
             {versions.length === 0 ? (
               <p className="text-sm text-zinc-600">No versions yet</p>
             ) : (
-              versions.map((v: any, idx: number) => (
+              versions.map((v, idx) => (
                 <div key={v.id} className="flex justify-between items-center text-sm bg-white p-2 rounded">
                   <span>{new Date(v.createdAt).toLocaleString()}</span>
                   {idx > 0 && (
