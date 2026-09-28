@@ -1,5 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PetitionMilestone } from '@prisma/client';
+
+interface PetitionWithCountySignatures {
+  id: string;
+  title: string;
+  signaturesCount: number;
+  goal: number;
+  imageUrl: string | null;
+  countySignatures: number;
+}
 
 /**
  * Growth System Service
@@ -48,7 +58,7 @@ export class GrowthService {
     }
 
     // Create new milestone records
-    const createdMilestones: any[] = [];
+    const createdMilestones: PetitionMilestone[] = [];
     for (const milestone of newMilestones) {
       const created = await this.prisma.petitionMilestone.create({
         data: {
@@ -141,7 +151,7 @@ export class GrowthService {
     });
 
     // Group by petition and sort by count
-    const petitionCounts: Record<string, any> = {};
+    const petitionCounts: Record<string, PetitionWithCountySignatures> = {};
     countySignatures.forEach((sig) => {
       if (!petitionCounts[sig.petition.id]) {
         petitionCounts[sig.petition.id] = {
@@ -337,7 +347,7 @@ export class GrowthService {
     });
 
     // Create new ones
-    const milestones: any[] = [];
+    const milestones: PetitionMilestone[] = [];
     for (const threshold of this.SIGNATURE_MILESTONES) {
       if (signatureCount >= threshold) {
         const milestone = await this.prisma.petitionMilestone.create({
