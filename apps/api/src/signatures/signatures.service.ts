@@ -148,6 +148,19 @@ export class SignaturesService {
       });
       if (duplicate)
         throw new BadRequestException('You already signed this petition');
+    } else if (deviceId) {
+      // No account to key off of — fall back to the device fingerprint so
+      // the same anonymous browser/device can't resubmit on this petition.
+      // Best-effort only (no DB constraint backs this, unlike the userId
+      // case): a device is a much weaker identity than an account, since
+      // different people can legitimately share one (a library/family
+      // computer), so this deliberately isn't escalated to a hard unique
+      // index the way (petitionId, userId) is.
+      const duplicate = await this.prisma.signature.findFirst({
+        where: { petitionId: dto.petitionId, deviceId },
+      });
+      if (duplicate)
+        throw new BadRequestException('You already signed this petition');
     }
 
     const risk = await this.fraud.evaluateSignatureRisk({
