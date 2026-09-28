@@ -5,6 +5,7 @@ import { SiteFooter } from '../../components/site-footer';
 export const metadata: Metadata = {
   title: 'Community Guidelines — Change Liberia',
   description: 'The rules and standards that keep Change Liberia a trustworthy, safe, and effective civic platform for all Liberians.',
+  alternates: { canonical: '/community-guidelines' },
 };
 
 const ALLOWED = [

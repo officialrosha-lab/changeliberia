@@ -254,7 +254,7 @@ export function initializeCSRFProtection(
   // Refresh token periodically
   setInterval(() => {
     if (manager.isExpired()) {
-      console.log('CSRF token expired, generating new one...');
+      logCSRFEvent('generation', { reason: 'expired' });
       manager.clear();
       manager.getToken();
     }

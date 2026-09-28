@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Terms of Service — Change Liberia',
   description: 'The terms and conditions governing your use of Change Liberia.',
+  alternates: { canonical: '/terms' },
 };
 
 const LAST_UPDATED = 'April 27, 2026';
@@ -17,7 +18,7 @@ export default function TermsOfServicePage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 mb-3">
           Legal
         </p>
-        <h1 className="font-serif text-4xl font-bold text-zinc-900 dark:text-neutral-50 sm:text-5xl mb-4">
+        <h1 className="text-4xl font-bold text-zinc-900 dark:text-neutral-50 sm:text-5xl mb-4">
           Terms of Service
         </h1>
         <p className="text-sm text-zinc-500 dark:text-neutral-400">
