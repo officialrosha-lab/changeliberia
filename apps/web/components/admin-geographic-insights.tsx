@@ -27,6 +27,9 @@ interface GeographicInsights {
   nearbyCommunityTotal: number;
   supporterTotal: number;
   totalClassified: number;
+  avgConfidenceScore: number;
+  lowConfidenceCount: number;
+  lowConfidenceRate: number;
 }
 
 function BarGroup({ title, rows }: { title: string; rows: InsightRow[] }) {
@@ -144,6 +147,44 @@ export function AdminGeographicInsights() {
               <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-neutral-100">{data.totalClassified.toLocaleString()}</p>
             </div>
           </div>
+
+          {data.totalClassified > 0 && (
+            <div className="rounded-3xl border border-zinc-200 p-5 dark:border-neutral-800">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">
+                Classification confidence
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-zinc-500 dark:text-neutral-400">Average confidence score</p>
+                  <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-neutral-100">
+                    {data.avgConfidenceScore}
+                    <span className="text-sm font-normal text-zinc-400 dark:text-neutral-500">/100</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 dark:text-neutral-400">Low-confidence classifications</p>
+                  <p
+                    className={`mt-1 text-2xl font-semibold ${
+                      data.lowConfidenceRate > 0.3
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-zinc-900 dark:text-neutral-100'
+                    }`}
+                  >
+                    {data.lowConfidenceCount.toLocaleString()}
+                    <span className="text-sm font-normal text-zinc-400 dark:text-neutral-500">
+                      {' '}
+                      ({Math.round(data.lowConfidenceRate * 100)}%)
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-zinc-400 dark:text-neutral-500">
+                Classifications below a confidence score of 30 rest on weak signal — no relationship
+                type, no location match, or no corroborating source. Aggregate only; no individual
+                signer is identified.
+              </p>
+            </div>
+          )}
 
           {data.topCounties.length > 0 && (
             <div className="rounded-3xl border border-zinc-200 p-5 dark:border-neutral-800">
