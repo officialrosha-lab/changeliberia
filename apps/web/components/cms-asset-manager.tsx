@@ -282,6 +282,7 @@ export function CMSAssetManager({
                 >
                   {/* Thumbnail */}
                   {asset.type === 'image' && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={asset.url}
                       alt={asset.name}
@@ -341,6 +342,7 @@ export function CMSAssetManager({
                 </h3>
 
                 {selectedAsset.type === 'image' && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={selectedAsset.url}
                     alt={selectedAsset.name}

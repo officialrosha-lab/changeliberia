@@ -212,6 +212,7 @@ export function AdvancedBlockPropsEditor({
           </div>
 
           {propStr(props.url) && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={propStr(props.url)}
               alt="preview"

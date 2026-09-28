@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { FadeInOnScroll } from './scroll-animations';
 
@@ -53,7 +54,7 @@ export function SiteFooter() {
             {/* Brand column */}
             <div className="flex flex-col gap-3">
               <Link href="/" className="block">
-                <img src="/logo.png" alt="Change Liberia" className="h-10 w-auto max-w-[180px] object-contain dark:hidden" />
+                <Image src="/logo.png" alt="Change Liberia" width={600} height={400} className="h-10 w-auto max-w-[180px] object-contain dark:hidden" />
                 <span className="hidden dark:block text-lg font-extrabold text-emerald-400 tracking-tight">Change Liberia</span>
               </Link>
               <p className="text-xs leading-relaxed text-zinc-500 dark:text-neutral-400 max-w-xs break-words">

@@ -437,6 +437,7 @@ export function CMSSEOManager({
                   exit={{ opacity: 0, y: -10 }}
                   className="mt-4 border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={metadata.ogImage}
                     alt="Twitter preview"
@@ -460,6 +461,7 @@ export function CMSSEOManager({
                   exit={{ opacity: 0, y: -10 }}
                   className="mt-4 border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={metadata.ogImage}
                     alt="Facebook preview"

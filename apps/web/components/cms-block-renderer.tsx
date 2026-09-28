@@ -177,6 +177,7 @@ function ImageBlock({ src, alt = '', caption, width, height }: ImageBlockProps) 
   return (
     <section className="border-b border-zinc-200 px-4 py-16 dark:border-neutral-800 sm:py-20 md:py-24">
       <div className="mx-auto max-w-4xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={alt}
@@ -310,6 +311,7 @@ function TestimonialBlock({ quote, author, title, image }: TestimonialBlockProps
         <div className="rounded-lg bg-white p-8 dark:bg-neutral-800">
           <p className="text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">&quot;{quote}&quot;</p>
           <div className="mt-6 flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             {image && <img src={image} alt={author} className="h-12 w-12 rounded-full" />}
             <div>
               <p className="font-semibold text-zinc-900 dark:text-white">{author}</p>

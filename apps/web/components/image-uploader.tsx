@@ -165,6 +165,7 @@ export function ImageUploader({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {uploadedFiles.map((file) => (
               <div key={file.id} className="relative group rounded-lg overflow-hidden bg-gray-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={file.url}
                   alt={file.originalName}
