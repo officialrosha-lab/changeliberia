@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 
@@ -94,11 +95,14 @@ export class SessionFingerprintService {
   /**
    * Extract real IP from request (handles proxies)
    */
-  extractRealIP(request: any): string {
+  extractRealIP(request: Request): string {
+    const forwardedFor = request.headers['x-forwarded-for'];
+    const realIp = request.headers['x-real-ip'];
     const ip =
-      (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      request.headers['x-real-ip'] ||
-      request.connection.remoteAddress ||
+      (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)?.split(
+        ',',
+      )[0] ||
+      (Array.isArray(realIp) ? realIp[0] : realIp) ||
       request.socket.remoteAddress ||
       '0.0.0.0';
 
@@ -108,7 +112,7 @@ export class SessionFingerprintService {
   /**
    * Get user agent from request
    */
-  extractUserAgent(request: any): string {
+  extractUserAgent(request: Request): string {
     return request.headers['user-agent'] || 'unknown';
   }
 }
