@@ -1,7 +1,22 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
+
+interface MoMoRequestToPayStatus {
+  status: 'PENDING' | 'SUCCESSFUL' | 'FAILED';
+  financialTransactionId?: string;
+  reason?: string;
+}
+
+interface MoMoBalanceResponse {
+  availableBalance: string;
+  currency: string;
+}
+
+interface MoMoPreApprovalStatusResponse {
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
 
 export interface MoMoPaymentResponse {
   referenceId: string;
@@ -177,7 +192,10 @@ export class MoMoService {
       );
       return {
         referenceId: existingPayment.id,
-        status: existingPayment.momoStatus as any,
+        status: existingPayment.momoStatus as
+          | 'PENDING'
+          | 'SUCCESSFUL'
+          | 'FAILED',
         expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min default
         transactionId: existingPayment.momoTransactionId || undefined,
       };
@@ -217,7 +235,7 @@ export class MoMoService {
     } catch (error) {
       this.logger.error(
         `MoMo requestToPay failed: ${(error as Error).message}`,
-        (error as any).response?.data,
+        (error as AxiosError).response?.data,
       );
       throw this.parseError(error);
     }
@@ -242,7 +260,7 @@ export class MoMoService {
 
     while (retries < maxRetries) {
       try {
-        const response = await this.apiClient.get(
+        const response = await this.apiClient.get<MoMoRequestToPayStatus>(
           `/v1_0/requesttopay/${referenceId}`,
           {
             headers: {
@@ -272,7 +290,7 @@ export class MoMoService {
         }
       } catch (error) {
         // 404 means transaction not found yet (still pending)
-        if ((error as any).response?.status === 404) {
+        if ((error as AxiosError).response?.status === 404) {
           retries++;
           if (retries < maxRetries) {
             await this.sleep(this.POLLING_INTERVAL);
@@ -301,11 +319,14 @@ export class MoMoService {
     }
 
     try {
-      const response = await this.apiClient.get('/v1_0/account/balance', {
-        headers: {
-          'X-Target-Environment': this.ENVIRONMENT,
+      const response = await this.apiClient.get<MoMoBalanceResponse>(
+        '/v1_0/account/balance',
+        {
+          headers: {
+            'X-Target-Environment': this.ENVIRONMENT,
+          },
         },
-      });
+      );
 
       return {
         balance: parseFloat(response.data.availableBalance),
@@ -379,7 +400,7 @@ export class MoMoService {
     }
 
     try {
-      const response = await this.apiClient.get(
+      const response = await this.apiClient.get<MoMoPreApprovalStatusResponse>(
         `/v2_0/preapproval/${preapprovalId}`,
       );
 
@@ -387,7 +408,7 @@ export class MoMoService {
         status: response.data.status || 'PENDING',
       };
     } catch (error) {
-      if ((error as any).response?.status === 404) {
+      if ((error as AxiosError).response?.status === 404) {
         return { status: 'PENDING' };
       }
       this.logger.error(
@@ -452,9 +473,10 @@ export class MoMoService {
   /**
    * Parse MoMo API errors to user-friendly messages
    */
-  private parseError(error: any): Error {
-    const status = error?.response?.status;
-    const data = error?.response?.data;
+  private parseError(error: unknown): Error {
+    const axiosError = axios.isAxiosError(error) ? error : undefined;
+    const status = axiosError?.response?.status;
+    const data = axiosError?.response?.data as { message?: string } | undefined;
 
     const errorMap: Record<number, string> = {
       400: 'Invalid request parameters',
@@ -468,9 +490,9 @@ export class MoMoService {
     };
 
     const message =
-      errorMap[status] ||
+      (status && errorMap[status]) ||
       data?.message ||
-      (error as Error)?.message ||
+      (error instanceof Error ? error.message : undefined) ||
       'Unknown MoMo error';
     return new BadRequestException(message);
   }
