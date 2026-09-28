@@ -220,7 +220,7 @@ export class AnalyticsService {
     });
 
     const totalDonated = user.payments.reduce(
-      (sum: number, d: any) => sum + (d.amount || 0),
+      (sum, d) => sum + (d.amount || 0),
       0,
     );
     const engagementLevel = this.calculateEngagementLevel(
@@ -262,7 +262,7 @@ export class AnalyticsService {
     });
 
     const sharesByMethod = shareLinks.reduce(
-      (acc: Record<string, number>, s: any) => {
+      (acc: Record<string, number>, s) => {
         acc[s.source] = (acc[s.source] || 0) + 1;
         return acc;
       },
