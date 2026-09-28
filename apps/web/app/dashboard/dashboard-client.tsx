@@ -15,7 +15,6 @@ type User = {
 };
 
 type CompletedSteps = {
-  phone: boolean;
   geo: boolean;
   device: boolean;
   idDocument: boolean;
@@ -52,12 +51,8 @@ export function DashboardClient() {
   const [petitions, setPetitions] = useState<MyPetition[]>([]);
   const [message, setMessage] = useState('');
   const [governmentStatuses, setGovernmentStatuses] = useState<Record<string, GovernmentStatus>>({});
-  const [completed, setCompleted] = useState<CompletedSteps>({ phone: false, geo: false, device: false, idDocument: false });
+  const [completed, setCompleted] = useState<CompletedSteps>({ geo: false, device: false, idDocument: false });
   const [verifying, setVerifying] = useState<string | null>(null);
-  const [phoneStep, setPhoneStep] = useState<'idle' | 'enter_phone' | 'enter_otp'>('idle');
-  const [phoneInput, setPhoneInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
-  const [phoneError, setPhoneError] = useState('');
   const [idType, setIdType] = useState('passport');
   const [idUrl, setIdUrl] = useState('');
   const [idFile, setIdFile] = useState<File | null>(null);
@@ -144,41 +139,6 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     ]);
     setUser(me);
     setCompleted(steps);
-  }
-
-  async function requestPhoneOtp(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token || !phoneInput.trim() || verifying) return;
-    setVerifying('phone');
-    setPhoneError('');
-    try {
-      await apiPost('/verification/phone/request-otp', { phone: phoneInput.trim() }, token);
-      setPhoneStep('enter_otp');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      setPhoneError(msg || 'Could not send code. Please check your number and try again.');
-    } finally {
-      setVerifying(null);
-    }
-  }
-
-  async function verifyPhoneOtp(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token || !otpInput.trim() || verifying) return;
-    setVerifying('phone');
-    setPhoneError('');
-    try {
-      await apiPost('/verification/phone/verify-otp', { phone: phoneInput.trim(), code: otpInput.trim() }, token);
-      await refreshTrust();
-      setPhoneStep('idle');
-      setPhoneInput('');
-      setOtpInput('');
-      setMessage('Phone verified. Your trust score has been updated.');
-    } catch {
-      setPhoneError('Invalid code. Please try again.');
-    } finally {
-      setVerifying(null);
-    }
   }
 
   async function runGeoVerification() {
@@ -356,7 +316,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     setMessage('Update published.');
   }
 
-  const allVerified = completed.phone && completed.geo && completed.device && completed.idDocument;
+  const allVerified = completed.geo && completed.device && completed.idDocument;
 
   if (!token) {
     return null;
@@ -454,14 +414,6 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
             <div className="mt-5 space-y-3">
               {([
                 {
-                  key: 'phone' as const,
-                  label: 'Confirm your phone',
-                  desc: 'Adds a strong trust signal that you are a reachable, real supporter.',
-                  btnLabel: 'Verify phone',
-                  doneLabel: 'Phone verified',
-                  filled: true,
-                },
-                {
                   key: 'geo' as const,
                   label: 'Confirm Liberia location',
                   desc: 'Verify your network is in Liberia to add stronger local credibility to your petitions.',
@@ -480,12 +432,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
               ]).map(({ key, label, desc, btnLabel, doneLabel, filled }) => {
                 const isDone = completed[key as keyof CompletedSteps];
                 const isLoading = verifying === key;
-                const handleClick =
-                  key === 'phone'
-                    ? () => setPhoneStep('enter_phone')
-                    : key === 'geo'
-                      ? runGeoVerification
-                      : runDeviceVerification;
+                const handleClick = key === 'geo' ? runGeoVerification : runDeviceVerification;
                 return (
                   <div
                     key={key}
@@ -906,99 +853,6 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {phoneStep !== 'idle' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          {phoneStep === 'enter_phone' ? (
-            <form
-              onSubmit={requestPhoneOtp}
-              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-lg"
-            >
-              <h3 className="text-lg font-semibold text-zinc-900">Verify your phone</h3>
-              <p className="mt-1 text-sm text-zinc-600">
-                Enter your phone number and we&apos;ll send a 6-digit code to confirm it.
-              </p>
-              <input
-                type="tel"
-                value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
-                placeholder="+231 77 000 0000"
-                required
-                className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
-              <p className="mt-1.5 text-xs text-zinc-400">
-                Liberian numbers: +231 77 000 0000 or 0770000000
-              </p>
-              {phoneError && (
-                <p className="mt-2 text-sm text-red-600">{phoneError}</p>
-              )}
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="submit"
-                  disabled={!!verifying}
-                  className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {verifying === 'phone' ? 'Sending…' : 'Send code'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setPhoneStep('idle'); setPhoneInput(''); setPhoneError(''); }}
-                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form
-              onSubmit={verifyPhoneOtp}
-              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-lg"
-            >
-              <h3 className="text-lg font-semibold text-zinc-900">Enter verification code</h3>
-              <p className="mt-1 text-sm text-zinc-600">
-                Enter the 6-digit code sent to <span className="font-medium text-zinc-900">{phoneInput}</span>.
-              </p>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                maxLength={6}
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="123456"
-                required
-                className="mt-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-center text-xl font-bold tracking-widest text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
-              {phoneError && (
-                <p className="mt-2 text-sm text-red-600">{phoneError}</p>
-              )}
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="submit"
-                  disabled={!!verifying || otpInput.length !== 6}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {verifying === 'phone' ? 'Verifying…' : 'Verify'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPhoneStep('enter_phone')}
-                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setPhoneStep('idle'); setPhoneInput(''); setOtpInput(''); setPhoneError(''); }}
-                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       )}
 
