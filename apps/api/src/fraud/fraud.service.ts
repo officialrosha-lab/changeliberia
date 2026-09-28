@@ -70,6 +70,13 @@ export class FraudService implements OnModuleInit {
             threshold: 25,
             penalty: 20,
           },
+          {
+            key: 'county_declaration_volatility',
+            description:
+              'Signer has self-declared this many or more different counties across signatures within 30 days',
+            threshold: 3,
+            penalty: 25,
+          },
         ],
       });
     }
@@ -293,13 +300,18 @@ export class FraudService implements OnModuleInit {
     userId?: string;
     ipAddress: string;
     deviceId?: string;
+    declaredCounty?: string | null;
   }) {
-    const [rapidResult, duplicateDeviceRule] = await Promise.all([
-      this.checkRapidSignatures(input.ipAddress),
-      this.prisma.fraudRule.findUnique({
-        where: { key: 'duplicate_device_reuse' },
-      }),
-    ]);
+    const [rapidResult, duplicateDeviceRule, countyVolatilityRule] =
+      await Promise.all([
+        this.checkRapidSignatures(input.ipAddress),
+        this.prisma.fraudRule.findUnique({
+          where: { key: 'duplicate_device_reuse' },
+        }),
+        this.prisma.fraudRule.findUnique({
+          where: { key: 'county_declaration_volatility' },
+        }),
+      ]);
 
     let riskPoints = 0;
     const reasons: string[] = [];
@@ -315,6 +327,34 @@ export class FraudService implements OnModuleInit {
       if (reuseCount >= duplicateDeviceRule.threshold) {
         riskPoints += duplicateDeviceRule.penalty;
         reasons.push('duplicate_device_reuse');
+      }
+    }
+
+    // A signer who types a different county on nearly every petition they
+    // sign is a classic pattern for inflating "Directly Affected" counts —
+    // self-reported location has no other cross-check. Deliberately not
+    // filtered to locationSource: 'user_confirmed' here — that field is
+    // client-supplied (CreateSignatureDto.locationSource) and only
+    // conditionally overridden server-side, so a spoofer could otherwise
+    // evade this check entirely by always claiming 'profile_match'. An
+    // honest profile-sourced signer's counties are consistent by
+    // construction, so including them costs nothing.
+    if (input.userId && input.declaredCounty && countyVolatilityRule?.enabled) {
+      const windowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const priorLocations = await this.prisma.signatureLocation.findMany({
+        where: {
+          signature: { userId: input.userId },
+          county: { not: null },
+          createdAt: { gte: windowStart },
+        },
+        select: { county: true },
+        distinct: ['county'],
+      });
+      const distinctCounties = new Set(priorLocations.map((l) => l.county));
+      distinctCounties.add(input.declaredCounty);
+      if (distinctCounties.size >= countyVolatilityRule.threshold) {
+        riskPoints += countyVolatilityRule.penalty;
+        reasons.push('county_declaration_volatility');
       }
     }
 

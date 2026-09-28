@@ -333,6 +333,7 @@ model SignatureLocation {
   // never used to block participation.
   classification  SignatureClassification @default(UNKNOWN)
   confidenceScore Int                     @default(0) // 0-100, internal only
+  unknownReason   String? // set only when classification = UNKNOWN; see UnknownReason in location-classification.service.ts. Internal only.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

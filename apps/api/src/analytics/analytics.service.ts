@@ -717,7 +717,20 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const whereRecent = { createdAt: { gte: since } };
 
-    const [topCounties, topDistricts, topCommunities, byClassification, totalClassified] = await Promise.all([
+    // A classification below this score rests on weak signal (no strong
+    // relationship type, no location match, no corroborating source) —
+    // surfaced only as an aggregate count/rate, never per-signature.
+    const LOW_CONFIDENCE_THRESHOLD = 30;
+
+    const [
+      topCounties,
+      topDistricts,
+      topCommunities,
+      byClassification,
+      totalClassified,
+      avgConfidence,
+      lowConfidenceCount,
+    ] = await Promise.all([
       this.prisma.signatureLocation.groupBy({
         by: ['county'],
         where: { ...whereRecent, county: { not: null } },
@@ -745,6 +758,17 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
         _count: { _all: true },
       }),
       this.prisma.signatureLocation.count({ where: whereRecent }),
+      this.prisma.signatureLocation.aggregate({
+        where: { ...whereRecent, classification: { not: 'UNKNOWN' } },
+        _avg: { confidenceScore: true },
+      }),
+      this.prisma.signatureLocation.count({
+        where: {
+          ...whereRecent,
+          classification: { not: 'UNKNOWN' },
+          confidenceScore: { lt: LOW_CONFIDENCE_THRESHOLD },
+        },
+      }),
     ]);
 
     const classificationCounts: Record<string, number> = {
@@ -755,6 +779,7 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       UNKNOWN: 0,
     };
     for (const row of byClassification) classificationCounts[row.classification] = row._count._all;
+    const classifiedExcludingUnknown = totalClassified - classificationCounts.UNKNOWN;
 
     return {
       topCounties: topCounties.map((r) => ({ label: r.county as string, count: r._count._all })),
@@ -765,6 +790,12 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       nearbyCommunityTotal: classificationCounts.NEARBY_COMMUNITY,
       supporterTotal: classificationCounts.SUPPORTER,
       totalClassified,
+      avgConfidenceScore: Math.round(avgConfidence._avg.confidenceScore ?? 0),
+      lowConfidenceCount,
+      lowConfidenceRate:
+        classifiedExcludingUnknown > 0
+          ? lowConfidenceCount / classifiedExcludingUnknown
+          : 0,
     };
   }
 
