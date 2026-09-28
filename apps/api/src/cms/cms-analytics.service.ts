@@ -1,6 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+export interface BlockStats {
+  blockId: string;
+  blockType: string;
+  views: number;
+  clicks: number;
+  engagement: number;
+}
+
+export interface VariantTotals {
+  views: number;
+  clicks: number;
+  engagement: number;
+}
+
 @Injectable()
 export class CMSAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -147,7 +161,7 @@ export class CMSAnalyticsService {
     });
 
     // Group by block and calculate stats
-    const blockStats: Record<string, any> = {};
+    const blockStats: Record<string, BlockStats> = {};
 
     for (const record of analytics) {
       if (!blockStats[record.blockId]) {
@@ -173,14 +187,8 @@ export class CMSAnalyticsService {
     }
 
     const totals = {
-      views: Object.values(blockStats).reduce(
-        (sum: number, b: any) => sum + b.views,
-        0,
-      ),
-      clicks: Object.values(blockStats).reduce(
-        (sum: number, b: any) => sum + b.clicks,
-        0,
-      ),
+      views: Object.values(blockStats).reduce((sum, b) => sum + b.views, 0),
+      clicks: Object.values(blockStats).reduce((sum, b) => sum + b.clicks, 0),
       avgEngagement: 0,
     };
 
@@ -204,7 +212,7 @@ export class CMSAnalyticsService {
     startDate: Date,
     endDate: Date,
   ) {
-    const results: Record<string, any> = {};
+    const results: Record<string, VariantTotals> = {};
 
     for (const variantId of variantIds) {
       const analytics = await this.prisma.cMSBlockAnalytics.findMany({
