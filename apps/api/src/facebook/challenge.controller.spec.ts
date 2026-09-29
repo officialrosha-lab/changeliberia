@@ -24,7 +24,15 @@ describe('ChallengeController', () => {
     role: 'admin',
   };
 
-  const mockActiveChallenges = [
+  const mockActiveChallenges: Array<{
+    id: string;
+    title: string;
+    goalValue: number;
+    goalType: string;
+    daysRemaining: number;
+    rewardMultiplier: number;
+    participantCount: number;
+  }> = [
     {
       id: 'challenge-1',
       title: 'Weekly Share Challenge',
@@ -36,7 +44,16 @@ describe('ChallengeController', () => {
     },
   ];
 
-  const mockUserChallenges = [
+  const mockUserChallenges: Array<{
+    challengeId: string;
+    title: string;
+    progress: number;
+    goalValue: number;
+    percentComplete: number;
+    completed: boolean;
+    daysRemaining: number;
+    earnedBonus: number;
+  }> = [
     {
       challengeId: 'challenge-1',
       title: 'Weekly Share Challenge',
@@ -49,14 +66,25 @@ describe('ChallengeController', () => {
     },
   ];
 
-  const mockProgress = {
+  const mockProgress: {
+    progress: number;
+    goalValue: number;
+    completed: boolean;
+    percentComplete: number;
+  } = {
     progress: 8,
     goalValue: 10,
     completed: false,
     percentComplete: 80,
   };
 
-  const mockLeaderboard = [
+  const mockLeaderboard: Array<{
+    userId: string;
+    progress: number;
+    percentComplete: number;
+    rank: number;
+    completed: boolean;
+  }> = [
     {
       userId: 'user-1',
       progress: 10,
@@ -104,7 +132,7 @@ describe('ChallengeController', () => {
   describe('getActiveChallenges', () => {
     it('should return active challenges for petition', async () => {
       challengeService.getActiveChallenges.mockResolvedValue(
-        mockActiveChallenges as any,
+        mockActiveChallenges,
       );
 
       const result = await controller.getActiveChallenges('petition-1');
@@ -148,9 +176,7 @@ describe('ChallengeController', () => {
 
   describe('getUserChallenges', () => {
     it('should return user challenges', async () => {
-      challengeService.getUserChallenges.mockResolvedValue(
-        mockUserChallenges as any,
-      );
+      challengeService.getUserChallenges.mockResolvedValue(mockUserChallenges);
 
       const result = await controller.getUserChallenges(mockUser);
 
@@ -170,9 +196,7 @@ describe('ChallengeController', () => {
       const completedChallenges = [
         { ...mockUserChallenges[0], completed: true },
       ];
-      challengeService.getUserChallenges.mockResolvedValue(
-        completedChallenges as any,
-      );
+      challengeService.getUserChallenges.mockResolvedValue(completedChallenges);
 
       const result = await controller.getUserChallenges(mockUser);
 
@@ -198,7 +222,7 @@ describe('ChallengeController', () => {
 
   describe('trackProgress', () => {
     it('should track progress in a challenge', async () => {
-      challengeService.trackProgress.mockResolvedValue(mockProgress as any);
+      challengeService.trackProgress.mockResolvedValue(mockProgress);
 
       const result = await controller.trackProgress(
         {
@@ -220,7 +244,7 @@ describe('ChallengeController', () => {
     });
 
     it('should use default increment of 1', async () => {
-      challengeService.trackProgress.mockResolvedValue(mockProgress as any);
+      challengeService.trackProgress.mockResolvedValue(mockProgress);
 
       await controller.trackProgress(
         {
@@ -288,7 +312,7 @@ describe('ChallengeController', () => {
   describe('getChallengeLeaderboard', () => {
     it('should return challenge leaderboard', async () => {
       challengeService.getChallengeLeaderboard.mockResolvedValue(
-        mockLeaderboard as any,
+        mockLeaderboard,
       );
 
       const result = await controller.getChallengeLeaderboard('challenge-1');
@@ -351,9 +375,7 @@ describe('ChallengeController', () => {
       const completedChallenges = [
         { ...mockUserChallenges[0], completed: true, earnedBonus: 2.0 },
       ];
-      challengeService.getUserChallenges.mockResolvedValue(
-        completedChallenges as any,
-      );
+      challengeService.getUserChallenges.mockResolvedValue(completedChallenges);
 
       const result = await controller.getChallengeHistory(mockUser);
 
@@ -373,9 +395,7 @@ describe('ChallengeController', () => {
         { ...mockUserChallenges[0], completed: true, earnedBonus: 2.0 },
         { ...mockUserChallenges[0], completed: true, earnedBonus: 3.0 },
       ];
-      challengeService.getUserChallenges.mockResolvedValue(
-        completedChallenges as any,
-      );
+      challengeService.getUserChallenges.mockResolvedValue(completedChallenges);
 
       const result = await controller.getChallengeHistory(mockUser);
 
@@ -417,7 +437,7 @@ describe('ChallengeController', () => {
         goalValue: 15,
       };
       challengeService.createCampaignChallenge.mockResolvedValue(
-        createdChallenge as any,
+        createdChallenge,
       );
 
       const result = await controller.createChallenge(

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { PollsModule } from './polls.module';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,7 +14,7 @@ interface TestPoll {
 describe('Voting API integration', () => {
   jest.setTimeout(300000);
 
-  let app: INestApplication | null = null;
+  let app: INestApplication<App> | null = null;
   let prisma: PrismaService | null = null;
   let authorId: string;
   const polls: TestPoll[] = [];
@@ -112,8 +113,12 @@ describe('Voting API integration', () => {
       .send({ optionId: firstPoll.optionIds[0] })
       .expect(201);
 
-    expect(firstResponse.body.success).toBe(true);
-    expect(firstResponse.body.voteId).toBeDefined();
+    const firstBody = firstResponse.body as {
+      success: boolean;
+      voteId: string;
+    };
+    expect(firstBody.success).toBe(true);
+    expect(firstBody.voteId).toBeDefined();
 
     const firstPollAfter = await prisma!.poll.findUnique({
       where: { id: firstPoll.id },
@@ -154,7 +159,8 @@ describe('Voting API integration', () => {
       .get(`/polls/slug/${poll.slug}`)
       .expect(200);
 
-    expect(response.body.id).toBe(poll.id);
-    expect(response.body.slug).toBe(poll.slug);
+    const body = response.body as { id: string; slug: string };
+    expect(body.id).toBe(poll.id);
+    expect(body.slug).toBe(poll.slug);
   });
 });

@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { VotingController } from './voting.controller';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 
 describe('VotingController (unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let votingService: jest.Mocked<VotingService>;
 
   beforeAll(async () => {
@@ -56,9 +57,10 @@ describe('VotingController (unit)', () => {
       .send({ optionId: 'opt-1' })
       .expect(201)
       .expect((res) => {
+        const body = res.body as { success: boolean; voteId: string };
         expect(votingService.castVote).toHaveBeenCalled();
-        expect(res.body.success).toBe(true);
-        expect(res.body.voteId).toBe('v1');
+        expect(body.success).toBe(true);
+        expect(body.voteId).toBe('v1');
       });
   });
 });
