@@ -13,8 +13,8 @@ export default function ImportPage() {
             <Link href="/admin/directory" className="text-emerald-600 hover:underline">
               ← Directory
             </Link>
-            <h1 className="text-3xl font-bold mt-2">Bulk CSV Import</h1>
-            <p className="mt-2 text-zinc-600">
+            <h1 className="text-3xl font-bold mt-2 dark:text-white">Bulk CSV Import</h1>
+            <p className="mt-2 text-zinc-600 dark:text-neutral-300">
               Upload institutions, departments, and contacts from a CSV file.
             </p>
           </div>

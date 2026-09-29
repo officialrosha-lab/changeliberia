@@ -34,7 +34,7 @@ export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
 
   if (phase === 'loading') {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-16 text-center text-zinc-500">
+      <main className="mx-auto max-w-6xl px-4 py-16 text-center text-zinc-500 dark:text-neutral-400">
         Checking access…
       </main>
     );
@@ -43,9 +43,9 @@ export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
   if (phase === 'denied') {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-8">
-          <h1 className="text-2xl font-bold text-red-700">Access denied</h1>
-          <p className="mt-3 text-red-600">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950">
+          <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
+          <p className="mt-3 text-red-600 dark:text-red-400">
             {!token ? (
               <>
                 You must{' '}
