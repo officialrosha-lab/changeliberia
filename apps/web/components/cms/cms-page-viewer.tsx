@@ -63,16 +63,16 @@ export function CMSPageViewer() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center text-red-700">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center text-red-700 dark:text-red-400">
         <h1 className="text-2xl font-semibold">Page not found</h1>
-        <p className="mt-3 text-zinc-600">{error}</p>
+        <p className="mt-3 text-zinc-600 dark:text-neutral-300">{error}</p>
       </div>
     );
   }
 
   if (!page) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center text-zinc-600">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center text-zinc-600 dark:text-neutral-300">
         No content is available for this page.
       </div>
     );
@@ -81,14 +81,14 @@ export function CMSPageViewer() {
   return (
     <article className="mx-auto max-w-5xl px-4 py-12 space-y-8">
       <header className="space-y-3">
-        <div className="text-sm uppercase tracking-[0.24em] text-emerald-700">CMS Page</div>
-        <h1 className="text-4xl font-bold text-zinc-900">{page.title}</h1>
+        <div className="text-sm uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">CMS Page</div>
+        <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">{page.title}</h1>
         {page.publishedAt && (
-          <p className="text-sm text-zinc-500">Published {new Date(page.publishedAt).toLocaleDateString()}</p>
+          <p className="text-sm text-zinc-500 dark:text-neutral-400">Published {new Date(page.publishedAt).toLocaleDateString()}</p>
         )}
       </header>
 
-      <section className="prose prose-zinc max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }} />
+      <section className="prose prose-zinc dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }} />
     </article>
   );
 }

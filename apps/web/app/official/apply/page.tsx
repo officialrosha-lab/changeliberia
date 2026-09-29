@@ -137,10 +137,10 @@ export default function OfficialApplyPage() {
   if (!token) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-zinc-900">Sign in required</h1>
-        <p className="mt-3 text-zinc-600">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Sign in required</h1>
+        <p className="mt-3 text-zinc-600 dark:text-neutral-300">
           You must{' '}
-          <Link href="/auth/login" className="font-semibold text-emerald-700 underline">
+          <Link href="/auth/login" className="font-semibold text-emerald-700 dark:text-emerald-400 underline">
             sign in
           </Link>{' '}
           to apply for a Public Officials Portal account.
@@ -152,9 +152,9 @@ export default function OfficialApplyPage() {
   if (success) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-8">
-          <h1 className="text-2xl font-bold text-emerald-800">Application submitted</h1>
-          <p className="mt-3 text-emerald-700">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-8">
+          <h1 className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">Application submitted</h1>
+          <p className="mt-3 text-emerald-700 dark:text-emerald-400">
             Thank you. Your official account application is now pending admin review. You&apos;ll receive
             an email once it has been verified.
           </p>
@@ -164,12 +164,12 @@ export default function OfficialApplyPage() {
   }
 
   const inputClass =
-    'mt-1 w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200';
+    'mt-1 w-full rounded-2xl border border-zinc-300 dark:border-neutral-700 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200';
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-3xl font-extrabold text-zinc-900">Apply for an Official Account</h1>
-      <p className="mt-2 text-sm text-zinc-500">
+      <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white">Apply for an Official Account</h1>
+      <p className="mt-2 text-sm text-zinc-500 dark:text-neutral-400">
         Verified officials get a dashboard to view constituency petitions and civic pulse activity,
         and to respond publicly and transparently. All applications are manually reviewed.
       </p>
@@ -184,12 +184,12 @@ export default function OfficialApplyPage() {
           }}
           className={`rounded-2xl border p-3 text-left text-sm transition ${
             mode === 'create'
-              ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-              : 'border-zinc-300 hover:border-emerald-300'
+              ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200 dark:border-emerald-600 dark:bg-emerald-950/30 dark:ring-emerald-900'
+              : 'border-zinc-300 dark:border-neutral-700 hover:border-emerald-300 dark:hover:border-emerald-700'
           }`}
         >
-          <span className="block font-semibold text-zinc-900">Create new office</span>
-          <span className="mt-0.5 block text-xs text-zinc-500">
+          <span className="block font-semibold text-zinc-900 dark:text-white">Create new office</span>
+          <span className="mt-0.5 block text-xs text-zinc-500 dark:text-neutral-400">
             For elected/appointed officials — Senator, Representative, Mayor, Superintendent…
           </span>
         </button>
@@ -201,12 +201,12 @@ export default function OfficialApplyPage() {
           }}
           className={`rounded-2xl border p-3 text-left text-sm transition ${
             mode === 'claim'
-              ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-              : 'border-zinc-300 hover:border-emerald-300'
+              ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200 dark:border-emerald-600 dark:bg-emerald-950/30 dark:ring-emerald-900'
+              : 'border-zinc-300 dark:border-neutral-700 hover:border-emerald-300 dark:hover:border-emerald-700'
           }`}
         >
-          <span className="block font-semibold text-zinc-900">Claim existing institution</span>
-          <span className="mt-0.5 block text-xs text-zinc-500">
+          <span className="block font-semibold text-zinc-900 dark:text-white">Claim existing institution</span>
+          <span className="mt-0.5 block text-xs text-zinc-500 dark:text-neutral-400">
             For ministries, agencies, and offices already listed in the public directory
           </span>
         </button>
@@ -215,7 +215,7 @@ export default function OfficialApplyPage() {
       {mode === 'create' ? (
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-700">Office / title</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Office / title</label>
             <input
               required
               value={form.name}
@@ -226,11 +226,11 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">Category</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Category</label>
             <select
               value={form.category}
               onChange={(e) => update('category', e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className="mt-1 w-full rounded-2xl border border-zinc-300 dark:border-neutral-700 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:bg-neutral-800 dark:text-white"
             >
               {CATEGORIES.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -238,14 +238,14 @@ export default function OfficialApplyPage() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-zinc-400">
+            <p className="mt-1 text-xs text-zinc-400 dark:text-neutral-500">
               Representing a ministry or agency? Use &quot;Claim existing institution&quot; above.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-zinc-700">County</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">County</label>
               <input
                 value={form.county}
                 onChange={(e) => update('county', e.target.value)}
@@ -253,7 +253,7 @@ export default function OfficialApplyPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700">District (if applicable)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">District (if applicable)</label>
               <input
                 value={form.district}
                 onChange={(e) => update('district', e.target.value)}
@@ -263,7 +263,7 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">Official government email</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Official government email</label>
             <input
               required
               type="email"
@@ -275,7 +275,7 @@ export default function OfficialApplyPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-zinc-700">Political party (optional)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Political party (optional)</label>
               <input
                 value={form.politicalParty}
                 onChange={(e) => update('politicalParty', e.target.value)}
@@ -283,7 +283,7 @@ export default function OfficialApplyPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700">Office phone</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Office phone</label>
               <input
                 value={form.phone}
                 onChange={(e) => update('phone', e.target.value)}
@@ -293,7 +293,7 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">Bio</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Bio</label>
             <textarea
               rows={4}
               value={form.bio}
@@ -303,7 +303,7 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
               Appointment / election verification document URL
             </label>
             <input
@@ -315,7 +315,7 @@ export default function OfficialApplyPage() {
           </div>
 
           {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{error}</div>
           )}
 
           <button
@@ -331,7 +331,7 @@ export default function OfficialApplyPage() {
           {!selected ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
                   Search the public directory
                 </label>
                 <input
@@ -340,15 +340,15 @@ export default function OfficialApplyPage() {
                   placeholder="e.g. Ministry of Health"
                   className={inputClass}
                 />
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs text-zinc-400 dark:text-neutral-500">
                   Type at least 2 characters to search unclaimed institutions.
                 </p>
               </div>
 
-              {searching && <p className="text-sm text-zinc-500">Searching…</p>}
+              {searching && <p className="text-sm text-zinc-500 dark:text-neutral-400">Searching…</p>}
 
               {!searching && searched && searchResults.length === 0 && (
-                <p className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600">
+                <p className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 dark:text-neutral-300 dark:border-neutral-800 dark:bg-neutral-800">
                   No matching unclaimed institutions. If your office isn&apos;t listed, switch to
                   &quot;Create new office&quot; instead.
                 </p>
@@ -360,10 +360,10 @@ export default function OfficialApplyPage() {
                     key={inst.id}
                     type="button"
                     onClick={() => setSelected(inst)}
-                    className="w-full rounded-2xl border border-zinc-300 p-3 text-left text-sm transition hover:border-emerald-400 hover:bg-emerald-50"
+                    className="w-full rounded-2xl border border-zinc-300 dark:border-neutral-700 p-3 text-left text-sm transition hover:border-emerald-400 hover:bg-emerald-50 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30"
                   >
-                    <span className="block font-semibold text-zinc-900">{inst.name}</span>
-                    <span className="mt-0.5 block text-xs text-zinc-500">
+                    <span className="block font-semibold text-zinc-900 dark:text-white">{inst.name}</span>
+                    <span className="mt-0.5 block text-xs text-zinc-500 dark:text-neutral-400">
                       {inst.category.replaceAll('_', ' ')}
                       {inst.county ? ` · ${inst.county}` : ''}
                       {inst.district ? ` · District ${inst.district}` : ''}
@@ -378,11 +378,11 @@ export default function OfficialApplyPage() {
             </>
           ) : (
             <>
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-emerald-900">{selected.name}</p>
-                    <p className="mt-0.5 text-xs text-emerald-700">
+                    <p className="font-semibold text-emerald-900 dark:text-emerald-200">{selected.name}</p>
+                    <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">
                       {selected.category.replaceAll('_', ' ')}
                       {selected.county ? ` · ${selected.county}` : ''}
                       {selected.district ? ` · District ${selected.district}` : ''}
@@ -393,7 +393,7 @@ export default function OfficialApplyPage() {
                   <button
                     type="button"
                     onClick={() => setSelected(null)}
-                    className="shrink-0 text-xs font-semibold text-emerald-700 underline"
+                    className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-400 underline"
                   >
                     Change selection
                   </button>
@@ -402,7 +402,7 @@ export default function OfficialApplyPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700">Office phone (optional)</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Office phone (optional)</label>
                   <input
                     value={claimForm.phone}
                     onChange={(e) => updateClaim('phone', e.target.value)}
@@ -410,7 +410,7 @@ export default function OfficialApplyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700">Political party (optional)</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Political party (optional)</label>
                   <input
                     value={claimForm.politicalParty}
                     onChange={(e) => updateClaim('politicalParty', e.target.value)}
@@ -420,7 +420,7 @@ export default function OfficialApplyPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700">Bio</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Bio</label>
                 <textarea
                   rows={4}
                   value={claimForm.bio}
@@ -430,7 +430,7 @@ export default function OfficialApplyPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
                   Appointment / authorization verification document URL
                 </label>
                 <input
@@ -442,7 +442,7 @@ export default function OfficialApplyPage() {
               </div>
 
               {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
                   {error}
                 </div>
               )}

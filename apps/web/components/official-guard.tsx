@@ -38,7 +38,7 @@ export function OfficialGuard({ children }: Props) {
 
   if (phase === 'loading') {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-16 text-center text-zinc-500">
+      <main className="mx-auto max-w-6xl px-4 py-16 text-center text-zinc-500 dark:text-neutral-400">
         Checking access…
       </main>
     );
@@ -47,9 +47,9 @@ export function OfficialGuard({ children }: Props) {
   if (phase === 'pending') {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12">
-        <div className="rounded-3xl border border-yellow-200 bg-yellow-50 p-8">
-          <h1 className="text-2xl font-bold text-yellow-800">Application under review</h1>
-          <p className="mt-3 text-yellow-700">
+        <div className="rounded-3xl border border-yellow-200 bg-yellow-50 p-8 dark:border-amber-800 dark:bg-amber-950/30">
+          <h1 className="text-2xl font-bold text-yellow-800 dark:text-amber-200">Application under review</h1>
+          <p className="mt-3 text-yellow-700 dark:text-amber-400">
             Your official account application has not yet been verified by an administrator.
             You&apos;ll be notified by email once it&apos;s reviewed.
           </p>
@@ -67,9 +67,9 @@ export function OfficialGuard({ children }: Props) {
   if (phase === 'denied') {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-8">
-          <h1 className="text-2xl font-bold text-red-700">Access denied</h1>
-          <p className="mt-3 text-red-600">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950/30">
+          <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
+          <p className="mt-3 text-red-600 dark:text-red-400">
             {!token ? (
               <>
                 You must{' '}

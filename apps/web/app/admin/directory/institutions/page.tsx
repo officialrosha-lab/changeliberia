@@ -13,8 +13,8 @@ export default function InstitutionsPage() {
             <Link href="/admin/directory" className="text-emerald-600 hover:underline">
               ← Directory
             </Link>
-            <h1 className="text-3xl font-bold mt-2">Institution Management</h1>
-            <p className="mt-2 text-zinc-600">
+            <h1 className="text-3xl font-bold mt-2 dark:text-white">Institution Management</h1>
+            <p className="mt-2 text-zinc-600 dark:text-neutral-300">
               Create, edit, and manage government institutions and organizations.
             </p>
           </div>

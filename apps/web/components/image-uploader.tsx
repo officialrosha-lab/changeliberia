@@ -118,8 +118,8 @@ export function ImageUploader({
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           isDragging
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100'
+            ? 'border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/30'
+            : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100 dark:border-neutral-700 dark:hover:border-neutral-600 dark:bg-neutral-900 dark:hover:bg-neutral-800'
         } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
       >
         <input
@@ -135,14 +135,14 @@ export function ImageUploader({
         {isUploading ? (
           <div className="flex flex-col items-center gap-2">
             <Loader className="w-8 h-8 text-blue-500 animate-spin" />
-            <p className="text-sm font-semibold text-gray-700">Uploading...</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-neutral-300">Uploading...</p>
           </div>
         ) : (
           <label htmlFor="file-input" className="cursor-pointer flex flex-col items-center gap-2">
-            <Upload className="w-8 h-8 text-gray-400" />
+            <Upload className="w-8 h-8 text-gray-400 dark:text-neutral-500" />
             <div>
-              <p className="font-semibold text-gray-700">Drag and drop or click to upload</p>
-              <p className="text-xs text-gray-500">
+              <p className="font-semibold text-gray-700 dark:text-neutral-300">Drag and drop or click to upload</p>
+              <p className="text-xs text-gray-500 dark:text-neutral-400">
                 Max {(maxSize / 1024 / 1024).toFixed(1)}MB • JPEG, PNG, WebP, GIF
               </p>
             </div>
@@ -152,19 +152,19 @@ export function ImageUploader({
 
       {/* Error Message */}
       {error && (
-        <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-950 dark:border-red-900">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5 dark:text-red-400" />
+          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {/* Recently Uploaded Files */}
       {uploadedFiles.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Recently Uploaded</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2">Recently Uploaded</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {uploadedFiles.map((file) => (
-              <div key={file.id} className="relative group rounded-lg overflow-hidden bg-gray-200">
+              <div key={file.id} className="relative group rounded-lg overflow-hidden bg-gray-200 dark:bg-neutral-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={file.url}

@@ -107,20 +107,20 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl max-w-md w-full animate-in fade-in zoom-in">
+      <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl max-w-md w-full animate-in fade-in zoom-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b dark:border-neutral-700">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-green-600" />
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-xl font-bold">Share on WhatsApp 🇱🇷</h2>
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Share on WhatsApp 🇱🇷</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-zinc-700 dark:text-neutral-300" />
           </button>
         </div>
 
@@ -130,17 +130,17 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
           {loading && (
             <div className="text-center py-8">
               <div className="inline-block animate-spin">
-                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full" />
+                <div className="w-8 h-8 border-4 border-green-200 dark:border-green-900 border-t-green-600 dark:border-t-green-400 rounded-full" />
               </div>
-              <p className="mt-2 text-gray-600">Generating message...</p>
+              <p className="mt-2 text-gray-600 dark:text-neutral-400">Generating message...</p>
             </div>
           )}
 
           {/* Message Preview */}
           {!loading && message && (
             <>
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-900">
+                <p className="text-sm text-gray-700 dark:text-neutral-300 whitespace-pre-wrap font-mono">
                   {message}
                 </p>
               </div>
@@ -159,7 +159,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
                 {/* Copy to Clipboard */}
                 <button
                   onClick={copyToClipboard}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200"
                 >
                   <Copy className="w-5 h-5" />
                   {copied ? 'Copied!' : 'Copy Message'}
@@ -169,7 +169,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
                 {whatsappUrl && (
                   <button
                     onClick={shareViaLink}
-                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 border border-blue-200"
+                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 border border-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-300 dark:border-blue-800"
                   >
                     <Share2 className="w-5 h-5" />
                     Get Share Link
@@ -178,17 +178,17 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
               </div>
 
               {/* Motivation */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/40 dark:border-blue-800">
+                <p className="text-sm text-blue-900 dark:text-blue-200">
                   <strong>💡 Tip:</strong> Each person you refer that signs the petition earns you <strong>+5 trust points</strong>! Help change Liberia today.
                 </p>
               </div>
 
               {/* Referral Code */}
               {referralCode && (
-                <div className="text-center pt-2 border-t">
-                  <p className="text-xs text-gray-500">Your referral code</p>
-                  <p className="text-lg font-mono font-bold text-gray-700">{referralCode}</p>
+                <div className="text-center pt-2 border-t dark:border-neutral-700">
+                  <p className="text-xs text-gray-500 dark:text-neutral-400">Your referral code</p>
+                  <p className="text-lg font-mono font-bold text-gray-700 dark:text-neutral-200">{referralCode}</p>
                 </div>
               )}
             </>
@@ -196,10 +196,10 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t bg-gray-50 flex gap-3">
+        <div className="p-6 border-t bg-gray-50 flex gap-3 dark:border-neutral-700 dark:bg-neutral-800">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-gray-700 font-semibold hover:bg-gray-200 rounded-lg transition"
+            className="flex-1 px-4 py-2 text-gray-700 font-semibold hover:bg-gray-200 rounded-lg transition dark:text-neutral-200 dark:hover:bg-neutral-700"
           >
             Close
           </button>

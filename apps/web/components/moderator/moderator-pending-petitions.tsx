@@ -107,14 +107,14 @@ export function ModeratorPendingPetitions() {
     <div className="space-y-6">
       {/* Scope Info */}
       {scope && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm font-semibold text-blue-900">Your Categories</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/40 dark:border-blue-900">
+          <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">Your Categories</p>
           <div className="flex flex-wrap gap-2 mt-2">
             {scope.allowedCategories.length === 0 ? (
-              <span className="text-sm text-blue-700">All categories</span>
+              <span className="text-sm text-blue-700 dark:text-blue-400">All categories</span>
             ) : (
               scope.allowedCategories.map((cat) => (
-                <span key={cat} className="inline-block px-2 py-1 text-xs rounded bg-blue-200 text-blue-900">
+                <span key={cat} className="inline-block px-2 py-1 text-xs rounded bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-300">
                   {cat}
                 </span>
               ))
@@ -139,7 +139,7 @@ export function ModeratorPendingPetitions() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               statusFilter === status
                 ? 'bg-emerald-600 text-white'
-                : 'bg-zinc-200 text-zinc-900 hover:bg-zinc-300'
+                : 'bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700'
             }`}
           >
             {label}
@@ -149,44 +149,44 @@ export function ModeratorPendingPetitions() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Petitions Count */}
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-zinc-600 dark:text-neutral-300">
         {filtered.length} petition{filtered.length !== 1 ? 's' : ''} found
       </div>
 
       {/* Petitions Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 bg-zinc-50 rounded-lg border border-zinc-200">
-          <p className="text-zinc-600">No petitions to review in this category</p>
+        <div className="text-center py-12 bg-zinc-50 rounded-lg border border-zinc-200 dark:bg-neutral-800 dark:border-neutral-700">
+          <p className="text-zinc-600 dark:text-neutral-300">No petitions to review in this category</p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((petition) => (
             <div
               key={petition.id}
-              className="border border-zinc-200 rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
+              className="border border-zinc-200 rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow dark:border-neutral-700"
             >
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{petition.title}</h3>
-                  <p className="text-sm text-zinc-600 mt-1">{petition.summary}</p>
+                  <p className="text-sm text-zinc-600 mt-1 dark:text-neutral-300">{petition.summary}</p>
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {petition.category && (
-                      <span className="inline-block px-2 py-1 text-xs rounded bg-purple-100 text-purple-700">
+                      <span className="inline-block px-2 py-1 text-xs rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                         {petition.category}
                       </span>
                     )}
                     <span className={`inline-block px-2 py-1 text-xs rounded ${
                       petition.status === 'PENDING'
-                        ? 'bg-yellow-100 text-yellow-700'
+                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
                         : petition.status === 'APPROVED'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
                     }`}>
                       {petition.status}
                     </span>
@@ -203,11 +203,11 @@ export function ModeratorPendingPetitions() {
 
               {/* Progress Bar */}
               <div className="space-y-1">
-                <div className="flex justify-between text-xs text-zinc-600">
+                <div className="flex justify-between text-xs text-zinc-600 dark:text-neutral-300">
                   <span>{petition.signaturesCount} signatures</span>
                   <span>Goal: {petition.goal}</span>
                 </div>
-                <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden dark:bg-neutral-800">
                   <div
                     className="h-full bg-emerald-500"
                     style={{
@@ -218,7 +218,7 @@ export function ModeratorPendingPetitions() {
               </div>
 
               {/* Creator Info */}
-              <div className="text-xs text-zinc-600">
+              <div className="text-xs text-zinc-600 dark:text-neutral-300">
                 Created by {petition.creator.name} ({petition.creator.email})
               </div>
 
@@ -256,8 +256,8 @@ function PetitionApprovalPanel({
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
 
   return (
-    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3">
-      <p className="font-semibold text-emerald-900">Review Decision</p>
+    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3 dark:bg-emerald-950/30 dark:border-emerald-800">
+      <p className="font-semibold text-emerald-900 dark:text-emerald-200">Review Decision</p>
 
       {action === null && (
         <div className="flex gap-2">
@@ -287,7 +287,7 @@ function PetitionApprovalPanel({
             value={approvalFeedback}
             onChange={(e) => setApprovalFeedback(e.target.value)}
             placeholder="Add any feedback or notes..."
-            className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-emerald-800 dark:bg-neutral-800 dark:text-white"
             rows={3}
           />
           <div className="flex gap-2">
@@ -303,7 +303,7 @@ function PetitionApprovalPanel({
                 setAction(null);
                 setApprovalFeedback('');
               }}
-              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
               disabled={isLoading}
             >
               Cancel
@@ -314,14 +314,14 @@ function PetitionApprovalPanel({
 
       {action === 'reject' && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-red-900">
+          <label className="block text-sm font-medium text-red-900 dark:text-red-400">
             Rejection Reason (Required)
           </label>
           <textarea
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Explain why this petition is being rejected..."
-            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-800 dark:bg-neutral-800 dark:text-white"
             rows={3}
             required
           />
@@ -338,7 +338,7 @@ function PetitionApprovalPanel({
                 setAction(null);
                 setRejectionReason('');
               }}
-              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
               disabled={isLoading}
             >
               Cancel

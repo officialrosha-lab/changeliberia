@@ -46,7 +46,7 @@ export function RichTextEditor({
       .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 underline">$1</a>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 underline">$1</a>')
       .replace(/^- (.*?)$/gm, '<li>$1</li>')
       .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul class="list-disc list-inside">$1</ul>')
       .replace(/\n/g, '<br/>');
@@ -67,13 +67,13 @@ export function RichTextEditor({
   return (
     <div className={`flex flex-col gap-2 ${compact ? 'max-h-96' : ''}`}>
       {/* Toolbar */}
-      <div className="flex gap-1 p-2 bg-gray-100 rounded-lg border border-gray-200 flex-wrap">
+      <div className="flex gap-1 p-2 bg-gray-100 rounded-lg border border-gray-200 flex-wrap dark:bg-neutral-800 dark:border-neutral-700">
         {toolbar.map((btn) => (
           <button
             key={btn.label}
             onClick={() => insertMarkdown(btn.before, btn.after)}
             title={btn.title}
-            className="px-3 py-1 text-sm font-semibold bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            className="px-3 py-1 text-sm font-semibold bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700"
           >
             {btn.label}
           </button>
@@ -83,8 +83,8 @@ export function RichTextEditor({
           onClick={() => setIsPreview(!isPreview)}
           className={`px-3 py-1 text-sm font-semibold rounded transition-colors ${
             isPreview
-              ? 'bg-blue-100 text-blue-700 border border-blue-300'
-              : 'bg-white border border-gray-300 hover:bg-gray-50'
+              ? 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800'
+              : 'bg-white border border-gray-300 hover:bg-gray-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700'
           }`}
         >
           {isPreview ? '✎ Edit' : '👁️ Preview'}
@@ -93,14 +93,14 @@ export function RichTextEditor({
 
       {/* Editor / Preview */}
       {isPreview ? (
-        <div className={`p-4 bg-gray-50 border border-gray-200 rounded-lg prose prose-sm max-w-none ${
+        <div className={`p-4 bg-gray-50 border border-gray-200 rounded-lg prose prose-sm dark:prose-invert max-w-none dark:bg-neutral-800 dark:border-neutral-700 ${
           compact ? 'max-h-80 overflow-y-auto' : ''
         }`}>
           <div
             dangerouslySetInnerHTML={{
-              __html: markdownToHtml(value) || '<p class="text-gray-400">No content</p>',
+              __html: markdownToHtml(value) || '<p class="text-gray-400 dark:text-neutral-500">No content</p>',
             }}
-            className="text-gray-800"
+            className="text-gray-800 dark:text-neutral-100"
           />
         </div>
       ) : (
@@ -109,30 +109,30 @@ export function RichTextEditor({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full p-4 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+          className={`w-full p-4 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white ${
             compact ? 'max-h-80' : 'min-h-64'
           }`}
         />
       )}
 
       {/* Markdown hint */}
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-gray-500 dark:text-neutral-400">
         <details>
-          <summary className="cursor-pointer font-semibold hover:text-gray-700">Markdown syntax</summary>
+          <summary className="cursor-pointer font-semibold hover:text-gray-700 dark:hover:text-white">Markdown syntax</summary>
           <div className="mt-2 space-y-1 pl-2">
             <div>
-              <code className="bg-gray-100 px-1 rounded"># Heading</code>
+              <code className="bg-gray-100 px-1 rounded dark:bg-neutral-800"># Heading</code>
             </div>
             <div>
-              <code className="bg-gray-100 px-1 rounded">**bold**</code>
+              <code className="bg-gray-100 px-1 rounded dark:bg-neutral-800">**bold**</code>
               {' '}and{' '}
-              <code className="bg-gray-100 px-1 rounded">*italic*</code>
+              <code className="bg-gray-100 px-1 rounded dark:bg-neutral-800">*italic*</code>
             </div>
             <div>
-              <code className="bg-gray-100 px-1 rounded">[link](url)</code>
+              <code className="bg-gray-100 px-1 rounded dark:bg-neutral-800">[link](url)</code>
             </div>
             <div>
-              <code className="bg-gray-100 px-1 rounded">- bullet point</code>
+              <code className="bg-gray-100 px-1 rounded dark:bg-neutral-800">- bullet point</code>
             </div>
           </div>
         </details>
