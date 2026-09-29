@@ -180,15 +180,15 @@ export function CMSPageEditorEnhanced() {
     <div className="space-y-4">
       {/* Top Action Bar */}
       {selectedPage && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 dark:bg-neutral-900 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Draft Badge */}
               <div
                 className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
                   selectedPage.isDraft
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-green-100 text-green-800'
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                    : 'bg-green-100 text-green-800 dark:bg-emerald-900 dark:text-emerald-300'
                 }`}
               >
                 {selectedPage.isDraft ? (
@@ -206,18 +206,18 @@ export function CMSPageEditorEnhanced() {
 
               {/* Status */}
               {saveStatus === 'saving' && (
-                <span className="text-sm text-gray-600 flex items-center gap-2">
+                <span className="text-sm text-gray-600 flex items-center gap-2 dark:text-neutral-300">
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                   Saving...
                 </span>
               )}
               {saveStatus === 'saved' && (
-                <span className="text-sm text-green-600 flex items-center gap-2">
+                <span className="text-sm text-green-600 flex items-center gap-2 dark:text-emerald-400">
                   ✓ Saved
                 </span>
               )}
               {saveStatus === 'error' && (
-                <span className="text-sm text-red-600 flex items-center gap-2">
+                <span className="text-sm text-red-600 flex items-center gap-2 dark:text-red-400">
                   <AlertCircle className="w-4 h-4" />
                   Error saving
                 </span>
@@ -233,7 +233,7 @@ export function CMSPageEditorEnhanced() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
                   selectedPage.isDraft
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700'
                 }`}
               >
                 {selectedPage.isDraft ? 'Mark as Ready' : 'Back to Draft'}
@@ -283,13 +283,13 @@ export function CMSPageEditorEnhanced() {
 
           {/* Scheduling Panel */}
           {showScheduling && (
-            <div className="border-t border-gray-200 pt-4 space-y-3">
+            <div className="border-t border-gray-200 pt-4 space-y-3 dark:border-neutral-700">
               <h3 className="font-semibold">Schedule Content Action</h3>
               <div className="flex gap-3">
                 <select
                   value={scheduleAction}
                   onChange={(e) => setScheduleAction(e.target.value as 'publish' | 'unpublish' | 'update')}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 >
                   <option value="publish">Publish</option>
                   <option value="unpublish">Unpublish</option>
@@ -300,7 +300,7 @@ export function CMSPageEditorEnhanced() {
                   type="datetime-local"
                   value={scheduledFor}
                   onChange={(e) => setScheduledFor(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
 
                 <button
@@ -314,11 +314,11 @@ export function CMSPageEditorEnhanced() {
 
               {/* Scheduled Actions List */}
               {schedules.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2 dark:bg-neutral-800">
                   {schedules.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="flex items-center justify-between bg-white p-2 rounded border border-gray-200"
+                      className="flex items-center justify-between bg-white p-2 rounded border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700"
                     >
                       <div className="text-sm">
                         <span className="font-semibold">{schedule.action}</span> on{' '}
@@ -326,7 +326,7 @@ export function CMSPageEditorEnhanced() {
                       </div>
                       <button
                         onClick={() => handleCancelSchedule(schedule.id)}
-                        className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                        className="text-red-600 hover:text-red-800 font-semibold text-sm dark:text-red-400 dark:hover:text-red-300"
                       >
                         Cancel
                       </button>
@@ -339,20 +339,20 @@ export function CMSPageEditorEnhanced() {
 
           {/* Version History Panel */}
           {showVersionHistory && (
-            <div className="border-t border-gray-200 pt-4 space-y-3">
+            <div className="border-t border-gray-200 pt-4 space-y-3 dark:border-neutral-700">
               <h3 className="font-semibold">Version History</h3>
               {versions.length === 0 ? (
-                <p className="text-sm text-gray-500">No versions yet</p>
+                <p className="text-sm text-gray-500 dark:text-neutral-400">No versions yet</p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {versions.map((version) => (
                     <div
                       key={version.id}
-                      className="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-200"
+                      className="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-200 dark:bg-neutral-800 dark:border-neutral-700"
                     >
                       <div className="text-sm">
                         <div className="font-semibold">{version.description}</div>
-                        <div className="text-gray-600">
+                        <div className="text-gray-600 dark:text-neutral-300">
                           {new Date(version.createdAt).toLocaleString()} by{' '}
                           {version.author?.fullName}
                         </div>
