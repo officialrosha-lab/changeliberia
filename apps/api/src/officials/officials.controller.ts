@@ -27,6 +27,11 @@ import {
 import { OfficialsService } from './officials.service';
 import { OfficialInboxService } from './official-inbox.service';
 import { ResponseWorkflowService } from './response-workflow.service';
+import { ConstituencyScopeService } from './constituency-scope.service';
+import {
+  ConstituencyFeedService,
+  ConstituencyFeedFilters,
+} from './constituency-feed.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AdvanceResponseStageDto,
@@ -66,6 +71,8 @@ export class OfficialsController {
     private readonly officialsService: OfficialsService,
     private readonly inboxService: OfficialInboxService,
     private readonly responseWorkflow: ResponseWorkflowService,
+    private readonly constituencyScope: ConstituencyScopeService,
+    private readonly constituencyFeed: ConstituencyFeedService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -179,7 +186,8 @@ export class OfficialsController {
     const institution = await this.officialsService.getMyInstitution(
       user.userId,
     );
-    if (!institution.county) {
+    const scope = this.constituencyScope.buildScopeFilter(institution);
+    if (!scope) {
       return {
         county: null,
         district: institution.district,
@@ -192,8 +200,13 @@ export class OfficialsController {
       };
     }
 
+    // Fixed: previously hardcoded to `{ county: institution.county }` only,
+    // silently ignoring `scope.district` — a Representative's "constituency"
+    // endpoint returned county-wide data instead of their own district. Every
+    // consumer below now goes through ConstituencyScopeService so this can't
+    // regress.
     const countyPetitionFilter = {
-      county: institution.county,
+      ...scope,
       status: 'APPROVED' as const,
     };
 
@@ -260,6 +273,62 @@ export class OfficialsController {
         count: a._count._all,
       })),
     };
+  }
+
+  @Get('me/constituency/petitions')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async getConstituencyPetitions(
+    @CurrentUser() user: AuthUser,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('category') category?: string,
+  ) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    const filters: ConstituencyFeedFilters = {
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      category,
+    };
+    return this.constituencyFeed.getConstituencyPetitionFeed(
+      institution,
+      filters,
+    );
+  }
+
+  @Get('me/constituency/polls')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async getConstituencyPolls(
+    @CurrentUser() user: AuthUser,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('category') category?: string,
+  ) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    const filters: ConstituencyFeedFilters = {
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      category,
+    };
+    return this.constituencyFeed.getConstituencyPollFeed(institution, filters);
+  }
+
+  @Get('me/constituency/issues')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async getConstituencyIssues(
+    @CurrentUser() user: AuthUser,
+    @Query('period') period?: 'week' | 'month' | 'quarter' | 'year',
+  ) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    return this.constituencyFeed.getIssueTrends(institution, period);
   }
 
   @Get('me/feed')
