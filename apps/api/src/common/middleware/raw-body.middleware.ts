@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 /**
  * Interface for requests with raw body access
@@ -33,7 +33,11 @@ export interface RawBodyRequest<T = any> extends Request {
  * ```
  */
 export function rawBodyMiddleware() {
-  return (req: RawBodyRequest, res: any, next: any) => {
+  return (
+    req: RawBodyRequest<Record<string, unknown>>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     if (req.is('application/json')) {
       let rawBody = Buffer.alloc(0);
 
@@ -44,7 +48,9 @@ export function rawBodyMiddleware() {
       req.on('end', () => {
         req.rawBody = rawBody;
         try {
-          req.body = rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {};
+          req.body = rawBody.length
+            ? (JSON.parse(rawBody.toString('utf8')) as Record<string, unknown>)
+            : {};
         } catch {
           req.body = {};
         }
@@ -52,7 +58,7 @@ export function rawBodyMiddleware() {
         // request's stream, which has already been fully drained above —
         // without this, body-parser throws "stream is not readable" since
         // a request stream can only be consumed once.
-        (req as any)._body = true;
+        (req as unknown as { _body: boolean })._body = true;
         next();
       });
     } else {
