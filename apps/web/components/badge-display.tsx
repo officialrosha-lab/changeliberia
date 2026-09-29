@@ -24,11 +24,11 @@ const BADGE_ICONS = {
 };
 
 const BADGE_COLORS = {
-  SHARE_WIZARD: 'bg-purple-100 text-purple-700',
-  VIRAL_HERO: 'bg-red-100 text-red-700',
-  NETWORK_BUILDER: 'bg-blue-100 text-blue-700',
-  INFLUENCER: 'bg-yellow-100 text-yellow-700',
-  STREAK_MASTER: 'bg-orange-100 text-orange-700',
+  SHARE_WIZARD: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  VIRAL_HERO: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  NETWORK_BUILDER: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  INFLUENCER: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  STREAK_MASTER: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
 };
 
 export function BadgeDisplay({ 
@@ -67,7 +67,7 @@ export function BadgeDisplay({
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-12 bg-zinc-200 rounded-lg w-full" />
+        <div className="h-12 bg-zinc-200 dark:bg-neutral-800 rounded-lg w-full" />
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function BadgeDisplay({
 
   if (badges.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-zinc-500">
+      <div className="text-center py-4 text-sm text-zinc-500 dark:text-neutral-400">
         No badges earned yet. Share to unlock!
       </div>
     );
@@ -101,7 +101,7 @@ export function BadgeDisplay({
             ))}
           </div>
           {totalMultiplier > 1 && (
-            <div className="text-xs font-semibold text-green-700 bg-green-50 rounded px-2 py-1 inline-block">
+            <div className="text-xs font-semibold text-green-700 bg-green-50 rounded px-2 py-1 inline-block dark:text-green-400 dark:bg-green-950/30">
               {totalMultiplier.toFixed(1)}x Trust Bonus Applied
             </div>
           )}
@@ -110,9 +110,9 @@ export function BadgeDisplay({
         // Detailed view: cards with descriptions
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-sm">Earned Badges ({badges.length})</h4>
+            <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Earned Badges ({badges.length})</h4>
             {totalMultiplier > 1 && (
-              <span className="text-xs font-bold text-green-600 bg-green-100 rounded-full px-2.5 py-0.5">
+              <span className="text-xs font-bold text-green-600 bg-green-100 rounded-full px-2.5 py-0.5 dark:text-green-300 dark:bg-green-900">
                 {totalMultiplier.toFixed(1)}x Bonus
               </span>
             )}
@@ -121,7 +121,7 @@ export function BadgeDisplay({
           {badges.map((badge, idx) => (
             <div 
               key={idx}
-              className={`rounded-lg p-3 ${BADGE_COLORS[badge.badgeType as keyof typeof BADGE_COLORS] || 'bg-gray-100 text-gray-700'}`}
+              className={`rounded-lg p-3 ${BADGE_COLORS[badge.badgeType as keyof typeof BADGE_COLORS] || 'bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-neutral-200'}`}
             >
               <div className="flex items-start gap-3">
                 <span className="text-3xl">
@@ -143,8 +143,8 @@ export function BadgeDisplay({
           ))}
 
           {badges.length > 0 && (
-            <div className="rounded-lg bg-blue-50 p-3 mt-4">
-              <p className="text-xs text-blue-900">
+            <div className="rounded-lg bg-blue-50 p-3 mt-4 dark:bg-blue-900/40">
+              <p className="text-xs text-blue-900 dark:text-blue-200">
                 <span className="font-semibold">Multiplier Stack:</span> All your badges combine to boost your Trust Points by {totalMultiplier > 5 ? '5x max' : `${totalMultiplier.toFixed(1)}x`}
               </p>
             </div>

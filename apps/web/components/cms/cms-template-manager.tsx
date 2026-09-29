@@ -139,7 +139,7 @@ export function CMSTemplateManager() {
     <div className="space-y-6">
       {/* Create/Edit Form */}
       {showCreateForm && (
-        <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 space-y-3">
+        <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 space-y-3 dark:border-neutral-700 dark:bg-blue-900/40">
           <p className="font-semibold">{editingId ? 'Edit Template' : 'Create New Template'}</p>
 
           <input
@@ -147,14 +147,14 @@ export function CMSTemplateManager() {
             placeholder="Template name..."
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
 
           <textarea
             placeholder="Description..."
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             rows={2}
           />
 
@@ -163,7 +163,7 @@ export function CMSTemplateManager() {
             placeholder="Category (e.g., health, infrastructure, education)..."
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
 
           <input
@@ -171,14 +171,14 @@ export function CMSTemplateManager() {
             placeholder="Title hint (e.g., 'Improve X by doing Y')..."
             value={formData.titleHint}
             onChange={(e) => setFormData({ ...formData, titleHint: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
 
           <textarea
             placeholder="Description hint..."
             value={formData.descriptionHint}
             onChange={(e) => setFormData({ ...formData, descriptionHint: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             rows={2}
           />
 
@@ -187,7 +187,7 @@ export function CMSTemplateManager() {
             placeholder="Suggested tags (comma-separated)..."
             value={formData.suggestedTags}
             onChange={(e) => setFormData({ ...formData, suggestedTags: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
 
           <input
@@ -195,7 +195,7 @@ export function CMSTemplateManager() {
             placeholder="Suggested category..."
             value={formData.suggestedCategory}
             onChange={(e) => setFormData({ ...formData, suggestedCategory: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
 
           <div className="flex gap-2">
@@ -207,7 +207,7 @@ export function CMSTemplateManager() {
             </button>
             <button
               onClick={resetForm}
-              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
             >
               Cancel
             </button>
@@ -229,7 +229,7 @@ export function CMSTemplateManager() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
@@ -241,12 +241,12 @@ export function CMSTemplateManager() {
           placeholder="Search templates..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 min-w-48 px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="flex-1 min-w-48 px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
         />
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
         >
           <option value="all">All Categories</option>
           {categories.map((cat) => (
@@ -260,17 +260,17 @@ export function CMSTemplateManager() {
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filtered.map((template) => (
-          <div key={template.id} className="border border-zinc-200 rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow">
+          <div key={template.id} className="border border-zinc-200 rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow dark:border-neutral-700">
             <div className="flex justify-between items-start gap-2">
               <div className="flex-1">
                 <h3 className="font-semibold text-lg">{template.name}</h3>
-                <p className="text-sm text-zinc-600">{template.description}</p>
+                <p className="text-sm text-zinc-600 dark:text-neutral-300">{template.description}</p>
               </div>
               <span
                 className={`inline-block px-2 py-1 text-xs rounded-full font-medium whitespace-nowrap ${
                   template.active
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
+                    ? 'bg-green-100 text-green-700 dark:bg-emerald-900 dark:text-emerald-300'
+                    : 'bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-neutral-300'
                 }`}
               >
                 {template.active ? 'Active' : 'Inactive'}
@@ -279,17 +279,17 @@ export function CMSTemplateManager() {
 
             <div className="space-y-1 text-sm">
               <p>
-                <span className="font-medium text-zinc-700">Category:</span> {template.category}
+                <span className="font-medium text-zinc-700 dark:text-neutral-200">Category:</span> {template.category}
               </p>
               {template.titleHint && (
                 <p>
-                  <span className="font-medium text-zinc-700">Title Hint:</span> {template.titleHint}
+                  <span className="font-medium text-zinc-700 dark:text-neutral-200">Title Hint:</span> {template.titleHint}
                 </p>
               )}
               {template.suggestedTags && (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {JSON.parse(template.suggestedTags || '[]').map((tag: string, i: number) => (
-                    <span key={i} className="px-2 py-1 text-xs rounded bg-zinc-100 text-zinc-700">
+                    <span key={i} className="px-2 py-1 text-xs rounded bg-zinc-100 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300">
                       {tag}
                     </span>
                   ))}
@@ -297,22 +297,22 @@ export function CMSTemplateManager() {
               )}
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-zinc-200">
+            <div className="flex gap-2 pt-2 border-t border-zinc-200 dark:border-neutral-700">
               <button
                 onClick={() => editTemplate(template)}
-                className="flex-1 text-emerald-600 hover:underline font-medium text-sm"
+                className="flex-1 text-emerald-600 hover:underline font-medium text-sm dark:text-emerald-400"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleToggleActive(template.id, !template.active)}
-                className="flex-1 text-blue-600 hover:underline font-medium text-sm"
+                className="flex-1 text-blue-600 hover:underline font-medium text-sm dark:text-blue-400"
               >
                 {template.active ? 'Deactivate' : 'Activate'}
               </button>
               <button
                 onClick={() => handleDelete(template.id)}
-                className="flex-1 text-red-600 hover:underline font-medium text-sm"
+                className="flex-1 text-red-600 hover:underline font-medium text-sm dark:text-red-400"
               >
                 Delete
               </button>
@@ -322,7 +322,7 @@ export function CMSTemplateManager() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-8 text-zinc-600">No templates found</div>
+        <div className="text-center py-8 text-zinc-600 dark:text-neutral-300">No templates found</div>
       )}
     </div>
   );
