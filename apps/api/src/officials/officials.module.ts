@@ -6,6 +6,8 @@ import { GeographyModule } from '../geography/geography.module';
 import { OfficialsService } from './officials.service';
 import { OfficialInboxService } from './official-inbox.service';
 import { ResponseWorkflowService } from './response-workflow.service';
+import { ConstituencyScopeService } from './constituency-scope.service';
+import { ConstituencyFeedService } from './constituency-feed.service';
 import { OfficialStaffService } from './official-staff.service';
 import { OfficialOwnershipGuard } from './guards/official-ownership.guard';
 import { OfficialsController } from './officials.controller';
@@ -19,6 +21,8 @@ import { OfficialStaffController } from './official-staff.controller';
     OfficialsService,
     OfficialInboxService,
     ResponseWorkflowService,
+    ConstituencyScopeService,
+    ConstituencyFeedService,
     OfficialStaffService,
     OfficialOwnershipGuard,
   ],
@@ -28,6 +32,11 @@ import { OfficialStaffController } from './official-staff.controller';
     AdminOfficialsController,
     OfficialStaffController,
   ],
-  exports: [OfficialsService, ResponseWorkflowService],
+  exports: [
+    OfficialsService,
+    ResponseWorkflowService,
+    ConstituencyScopeService,
+    ConstituencyFeedService,
+  ],
 })
 export class OfficialsModule {}
