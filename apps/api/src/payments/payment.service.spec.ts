@@ -3,7 +3,65 @@ import { BadRequestException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MoMoService } from './providers/momo.service';
-import Stripe from 'stripe';
+import type { StripeEvent } from '../config/stripe.config';
+
+// `expect.objectContaining` is typed to return `any`, so nesting it as the
+// value of an object literal property trips no-unsafe-assignment. This
+// wraps it with the sample's own inferred type so the matcher stays
+// type-safe at the call site.
+function matching<T extends object>(sample: T): T {
+  return expect.objectContaining(sample) as unknown as T;
+}
+
+// Mock factories (rather than a single shared object) so every test starts
+// from the same fresh, non-`any` mocks the old per-test `useValue` literal
+// gave them — several tests here override a mock's resolved value
+// persistently (not `mockResolvedValueOnce`), so a shared instance would
+// leak state between tests.
+function createMockPrisma() {
+  return {
+    petition: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue(null),
+    },
+    payment: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(null),
+      updateMany: jest.fn().mockResolvedValue(null),
+    },
+    paymentIntent: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(null),
+    },
+    donation: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(null),
+    },
+    checkoutSession: {
+      create: jest.fn().mockResolvedValue(null),
+    },
+    subscription: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(null),
+      updateMany: jest.fn().mockResolvedValue(null),
+    },
+    paymentMethodRecord: {
+      create: jest.fn().mockResolvedValue(null),
+    },
+    refund: {
+      create: jest.fn().mockResolvedValue(null),
+    },
+  };
+}
 
 /**
  * Payment Service Unit Tests
@@ -11,19 +69,14 @@ import Stripe from 'stripe';
  */
 describe('PaymentService', () => {
   let service: PaymentService;
-  let prisma: any;
-  let stripe: any; // Stripe mock
+  let prisma: ReturnType<typeof createMockPrisma>;
+  let stripe: ReturnType<typeof createMockStripe>;
 
   const mockPetition = {
     id: 'petition-1',
     title: 'Test Petition',
     description: 'Test Description',
     imageUrl: 'https://example.com/image.jpg',
-  };
-
-  const mockUser = {
-    id: 'user-1',
-    email: 'user@example.com',
   };
 
   const mockPaymentIntent = {
@@ -34,9 +87,7 @@ describe('PaymentService', () => {
     status: 'succeeded',
     metadata: {},
     payment_method: 'pm_test123',
-    charges: {
-      data: [{ id: 'ch_test123' }],
-    },
+    latest_charge: 'ch_test123',
   };
 
   const mockSubscription = {
@@ -50,84 +101,9 @@ describe('PaymentService', () => {
     },
   };
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentService,
-        {
-          provide: PrismaService,
-          useValue: {
-            petition: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-            payment: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findFirst: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-              updateMany: jest.fn().mockResolvedValue(null) as any,
-            },
-            paymentIntent: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-            },
-            donation: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findFirst: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-            },
-            checkoutSession: {
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-            subscription: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              findFirst: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-              updateMany: jest.fn().mockResolvedValue(null) as any,
-            },
-            paymentMethodRecord: {
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-            refund: {
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-          },
-        },
-        {
-          provide: MoMoService,
-          useValue: {
-            isAvailable: jest.fn().mockReturnValue(true),
-            generateIdempotencyKey: jest.fn().mockReturnValue('momo-key'),
-            requestToPay: jest.fn().mockResolvedValue({
-              referenceId: 'ref_test123',
-              status: 'PENDING',
-              expiresAt: new Date(),
-              transactionId: 'tx_test123',
-            }),
-            getTransactionStatus: jest.fn().mockResolvedValue({
-              status: 'SUCCESSFUL',
-              transactionId: 'tx_test123',
-              failureReason: undefined,
-            }),
-            createPreApproval: jest.fn().mockResolvedValue({
-              expiresAt: new Date(),
-            }),
-          },
-        },
-      ],
-    }).compile();
-
-    service = moduleFixture.get<PaymentService>(PaymentService);
-    prisma = moduleFixture.get(PrismaService) as any;
-
-    // Mock Stripe
-    stripe = {
+  // Mock Stripe (factory — see createMockPrisma for why)
+  function createMockStripe() {
+    return {
       paymentIntents: {
         create: jest.fn().mockResolvedValue(mockPaymentIntent),
         confirm: jest.fn().mockResolvedValue(mockPaymentIntent),
@@ -166,6 +142,7 @@ describe('PaymentService', () => {
         retrieve: jest.fn().mockResolvedValue(mockSubscription),
         update: jest.fn().mockResolvedValue(mockSubscription),
         del: jest.fn().mockResolvedValue(mockSubscription),
+        cancel: jest.fn().mockResolvedValue(mockSubscription),
       },
       prices: {
         create: jest.fn().mockResolvedValue({
@@ -186,9 +163,49 @@ describe('PaymentService', () => {
       webhooks: {
         constructEvent: jest.fn(),
       },
-    } as any;
+    };
+  }
 
-    (service as any).stripe = stripe;
+  beforeEach(async () => {
+    prisma = createMockPrisma();
+
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      providers: [
+        PaymentService,
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+        {
+          provide: MoMoService,
+          useValue: {
+            isAvailable: jest.fn().mockReturnValue(true),
+            generateIdempotencyKey: jest.fn().mockReturnValue('momo-key'),
+            requestToPay: jest.fn().mockResolvedValue({
+              referenceId: 'ref_test123',
+              status: 'PENDING',
+              expiresAt: new Date(),
+              transactionId: 'tx_test123',
+            }),
+            getTransactionStatus: jest.fn().mockResolvedValue({
+              status: 'SUCCESSFUL',
+              transactionId: 'tx_test123',
+              failureReason: undefined,
+            }),
+            createPreApproval: jest.fn().mockResolvedValue({
+              expiresAt: new Date(),
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    service = moduleFixture.get<PaymentService>(PaymentService);
+
+    // Mock Stripe
+    stripe = createMockStripe();
+
+    (service as unknown as { stripe: typeof stripe }).stripe = stripe;
   });
 
   describe('Payment Intent Creation', () => {
@@ -246,7 +263,7 @@ describe('PaymentService', () => {
 
       expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          metadata: expect.objectContaining({
+          metadata: matching({
             petitionId: 'petition-1',
             userId: 'user-1',
             customField: 'customValue',
@@ -286,7 +303,7 @@ describe('PaymentService', () => {
       expect(prisma.payment.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'payment-1' },
-          data: expect.objectContaining({ status: 'COMPLETED' }),
+          data: matching({ status: 'COMPLETED' }),
         }),
       );
       expect(prisma.paymentMethodRecord.create).toHaveBeenCalled();
@@ -437,7 +454,7 @@ describe('PaymentService', () => {
       const result = await service.cancelSubscription('sub-1');
 
       expect(result.status).toBe('canceled');
-      expect(stripe.subscriptions.del).toHaveBeenCalledWith('sub_test123');
+      expect(stripe.subscriptions.cancel).toHaveBeenCalledWith('sub_test123');
     });
   });
 
@@ -563,12 +580,12 @@ describe('PaymentService', () => {
       await service.handleWebhookEvent({
         type: 'payment_intent.succeeded',
         data: { object: mockPaymentIntent },
-      } as any);
+      } as unknown as StripeEvent);
 
       expect(prisma.payment.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { stripePaymentIntentId: mockPaymentIntent.id },
-          data: expect.objectContaining({ status: 'COMPLETED' }),
+          data: matching({ status: 'COMPLETED' }),
         }),
       );
     });
@@ -579,12 +596,12 @@ describe('PaymentService', () => {
       await service.handleWebhookEvent({
         type: 'customer.subscription.deleted',
         data: { object: mockSubscription },
-      } as any);
+      } as unknown as StripeEvent);
 
       expect(prisma.subscription.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { stripeSubscriptionId: mockSubscription.id },
-          data: expect.objectContaining({ status: 'CANCELLED' }),
+          data: matching({ status: 'CANCELLED' }),
         }),
       );
     });
@@ -594,13 +611,19 @@ describe('PaymentService', () => {
 
       await service.handleWebhookEvent({
         type: 'invoice.payment_succeeded',
-        data: { object: { subscription: mockSubscription.id } },
-      } as any);
+        data: {
+          object: {
+            parent: {
+              subscription_details: { subscription: mockSubscription.id },
+            },
+          },
+        },
+      } as unknown as StripeEvent);
 
       expect(prisma.subscription.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { stripeSubscriptionId: mockSubscription.id },
-          data: expect.objectContaining({ status: 'ACTIVE' }),
+          data: matching({ status: 'ACTIVE' }),
         }),
       );
     });
@@ -625,9 +648,7 @@ describe('PaymentService', () => {
     });
 
     it('should handle database errors', async () => {
-      prisma.petition.findUnique.mockRejectedValue(
-        new Error('Database error'),
-      );
+      prisma.petition.findUnique.mockRejectedValue(new Error('Database error'));
 
       await expect(
         service.createPaymentIntent({

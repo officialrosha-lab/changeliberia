@@ -6,30 +6,25 @@ import {
   ChallengeCompletedEvent,
 } from '../events/domain-events';
 
+// `expect.objectContaining` is typed to return `any`, so nesting it as the
+// value of an object literal property trips no-unsafe-assignment. This
+// wraps it with the sample's own inferred type so the matcher stays
+// type-safe at the call site.
+function matching<T extends object>(sample: T): T {
+  return expect.objectContaining(sample) as unknown as T;
+}
+
 /**
  * Notifications Service Unit Tests
  * Tests notification creation, badge/challenge events, and preferences
  */
 describe('NotificationsService', () => {
   let service: NotificationsService;
-  let prismaService: any;
-
-  const mockUser = {
-    id: 'user-1',
-    name: 'Test User',
-    email: 'test@example.com',
-  };
 
   const mockPetition = {
     id: 'petition-1',
     title: 'Test Petition',
     creatorId: 'creator-1',
-  };
-
-  const mockBadge = {
-    id: 'badge-1',
-    userId: 'user-1',
-    badgeType: 'SHARE_WIZARD',
   };
 
   const mockChallenge = {
@@ -39,47 +34,53 @@ describe('NotificationsService', () => {
     rewardMultiplier: 2.0,
   };
 
+  const mockPrisma = {
+    notification: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+      count: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      findMany: jest.fn(),
+    },
+    petition: {
+      findUnique: jest.fn(),
+    },
+    shareChallenge: {
+      findUnique: jest.fn(),
+    },
+    notificationPreference: {
+      findUnique: jest.fn(),
+      upsert: jest.fn(),
+    },
+    content: {
+      findUnique: jest.fn(),
+    },
+  };
+
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsService,
         {
           provide: PrismaService,
-          useValue: {
-            notification: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-              updateMany: jest.fn().mockResolvedValue(null) as any,
-              delete: jest.fn().mockResolvedValue(null) as any,
-              count: jest.fn().mockResolvedValue(0) as any,
-            },
-            user: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-            petition: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-            shareChallenge: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-            notificationPreference: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              upsert: jest.fn().mockResolvedValue(null) as any,
-            },
-            content: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-          },
+          useValue: mockPrisma,
         },
       ],
     }).compile();
 
     service = moduleFixture.get<NotificationsService>(NotificationsService);
-    prismaService = moduleFixture.get(PrismaService) as any;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('createNotification', () => {
@@ -90,7 +91,7 @@ describe('NotificationsService', () => {
         message: 'You unlocked a badge',
       };
 
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
         userId: 'user-1',
         ...payload,
@@ -99,9 +100,12 @@ describe('NotificationsService', () => {
         createdAt: new Date(),
       } as any);
 
-      const result = await service.createNotification('user-1', payload);
+      const result = (await service.createNotification(
+        'user-1',
+        payload,
+      )) as Record<string, unknown>;
 
-      expect(prismaService.notification.create).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
         data: {
           userId: 'user-1',
           type: 'BADGE_UNLOCKED',
@@ -124,7 +128,7 @@ describe('NotificationsService', () => {
         metadata: { badgeType: 'SHARE_WIZARD' },
       };
 
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
         userId: 'user-1',
         ...payload,
@@ -132,7 +136,10 @@ describe('NotificationsService', () => {
         createdAt: new Date(),
       } as any);
 
-      const result = await service.createNotification('user-1', payload);
+      const result = (await service.createNotification(
+        'user-1',
+        payload,
+      )) as Record<string, unknown>;
 
       expect(result).toBeDefined();
       expect(result.metadata).toEqual({ badgeType: 'SHARE_WIZARD' });
@@ -141,23 +148,23 @@ describe('NotificationsService', () => {
 
   describe('Badge Unlock Notifications', () => {
     it('should handle badge unlocked event', async () => {
-      const event: BadgeUnlockedEvent = {
+      const event = {
         userId: 'user-1',
         badgeType: 'SHARE_WIZARD',
         petitionId: 'petition-1',
-      } as any;
+      } as unknown as BadgeUnlockedEvent;
 
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.handleBadgeUnlocked(event);
 
-      expect(prismaService.notification.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: matching({
           userId: 'user-1',
           type: 'BADGE_UNLOCKED',
-          title: expect.stringContaining('Share Wizard'),
+          title: expect.stringContaining('Share Wizard') as string,
         }),
       });
     });
@@ -172,106 +179,108 @@ describe('NotificationsService', () => {
       ];
 
       for (const badgeType of badgeTypes) {
-        const event: BadgeUnlockedEvent = {
+        const event = {
           userId: 'user-1',
           badgeType: badgeType,
           petitionId: 'petition-1',
-        } as any;
+        } as unknown as BadgeUnlockedEvent;
 
-        prismaService.notification.create.mockResolvedValue({
+        mockPrisma.notification.create.mockResolvedValue({
           id: 'notif-1',
         } as any);
 
         await service.handleBadgeUnlocked(event);
 
-        expect(prismaService.notification.create).toHaveBeenCalled();
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
       }
     });
   });
 
   describe('Challenge Completion Notifications', () => {
     it('should handle challenge completed event', async () => {
-      const event: ChallengeCompletedEvent = {
+      const event = {
         userId: 'user-1',
         challengeId: 'challenge-1',
         petitionId: 'petition-1',
-      } as any;
+      } as unknown as ChallengeCompletedEvent;
 
-      prismaService.shareChallenge.findUnique.mockResolvedValue(
+      mockPrisma.shareChallenge.findUnique.mockResolvedValue(
         mockChallenge as any,
       );
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.handleChallengeCompleted(event);
 
-      expect(prismaService.shareChallenge.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.shareChallenge.findUnique).toHaveBeenCalledWith({
         where: { id: 'challenge-1' },
         select: { title: true, rewardMultiplier: true },
       });
 
-      expect(prismaService.notification.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: matching({
           userId: 'user-1',
           type: 'CHALLENGE_COMPLETED',
-          title: expect.stringContaining('Share Challenge'),
+          title: expect.stringContaining('Share Challenge') as string,
         }),
       });
     });
 
     it('should include reward multiplier in challenge notification', async () => {
-      const event: ChallengeCompletedEvent = {
+      const event = {
         userId: 'user-1',
         challengeId: 'challenge-1',
         petitionId: 'petition-1',
-      } as any;
+      } as unknown as ChallengeCompletedEvent;
 
-      prismaService.shareChallenge.findUnique.mockResolvedValue({
+      mockPrisma.shareChallenge.findUnique.mockResolvedValue({
         title: 'Advanced Challenge',
         rewardMultiplier: 3.0,
       } as any);
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.handleChallengeCompleted(event);
 
-      expect(prismaService.notification.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          message: expect.stringContaining('3x'),
-          metadata: expect.stringContaining('"rewardMultiplier":3'),
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: matching({
+          message: expect.stringContaining('3x') as string,
+          metadata: expect.stringContaining('"rewardMultiplier":3') as string,
         }),
       });
     });
 
     it('should handle missing challenge gracefully', async () => {
-      const event: ChallengeCompletedEvent = {
+      const event = {
         userId: 'user-1',
         challengeId: 'challenge-999',
         petitionId: 'petition-1',
-      } as any;
+      } as unknown as ChallengeCompletedEvent;
 
-      prismaService.shareChallenge.findUnique.mockResolvedValue(null);
+      mockPrisma.shareChallenge.findUnique.mockResolvedValue(null);
 
       // Should not throw, just log warning
       await service.handleChallengeCompleted(event);
 
-      expect(prismaService.notification.create).not.toHaveBeenCalled();
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
     });
   });
 
   describe('Mark Notification As Read', () => {
     it('should mark notification as read', async () => {
-      prismaService.notification.updateMany.mockResolvedValue({ count: 1 } as any);
+      mockPrisma.notification.updateMany.mockResolvedValue({
+        count: 1,
+      } as any);
 
       await service.markAsRead('notif-1', 'user-1');
 
-      expect(prismaService.notification.updateMany).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.updateMany).toHaveBeenCalledWith({
         where: { id: 'notif-1', userId: 'user-1' },
         data: {
           status: 'READ',
-          readAt: expect.any(Date),
+          readAt: expect.any(Date) as Date,
         },
       });
     });
@@ -279,17 +288,17 @@ describe('NotificationsService', () => {
 
   describe('Mark All Notifications As Read', () => {
     it('should mark all unread notifications as read', async () => {
-      prismaService.notification.updateMany.mockResolvedValue({
+      mockPrisma.notification.updateMany.mockResolvedValue({
         count: 5,
       } as any);
 
       await service.markAllAsRead('user-1');
 
-      expect(prismaService.notification.updateMany).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.updateMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', status: 'UNREAD' },
         data: {
           status: 'READ',
-          readAt: expect.any(Date),
+          readAt: expect.any(Date) as Date,
         },
       });
     });
@@ -297,11 +306,13 @@ describe('NotificationsService', () => {
 
   describe('Delete Notification', () => {
     it('should delete notification', async () => {
-      prismaService.notification.deleteMany.mockResolvedValue({ count: 1 } as any);
+      mockPrisma.notification.deleteMany.mockResolvedValue({
+        count: 1,
+      } as any);
 
       await service.deleteNotification('notif-1', 'user-1');
 
-      expect(prismaService.notification.deleteMany).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.deleteMany).toHaveBeenCalledWith({
         where: { id: 'notif-1', userId: 'user-1' },
       });
     });
@@ -314,16 +325,17 @@ describe('NotificationsService', () => {
         { id: 'notif-2', type: 'CHALLENGE_COMPLETED', status: 'UNREAD' },
       ];
 
-      prismaService.notification.findMany.mockResolvedValue(
+      mockPrisma.notification.findMany.mockResolvedValue(
         mockNotifications as any,
       );
 
       const result = await service.getUnreadNotifications('user-1', 20);
 
-      expect(prismaService.notification.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', status: 'UNREAD' },
         orderBy: { createdAt: 'desc' },
         take: 20,
+        skip: 0,
       });
 
       expect(result).toEqual(mockNotifications);
@@ -331,14 +343,15 @@ describe('NotificationsService', () => {
     });
 
     it('should default to limit of 10', async () => {
-      prismaService.notification.findMany.mockResolvedValue([]);
+      mockPrisma.notification.findMany.mockResolvedValue([]);
 
       await service.getUnreadNotifications('user-1');
 
-      expect(prismaService.notification.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', status: 'UNREAD' },
         orderBy: { createdAt: 'desc' },
         take: 10,
+        skip: 0,
       });
     });
   });
@@ -353,13 +366,13 @@ describe('NotificationsService', () => {
         sms: false,
       };
 
-      prismaService.notificationPreference.findUnique.mockResolvedValue(
+      mockPrisma.notificationPreference.findUnique.mockResolvedValue(
         mockPrefs as any,
       );
 
       const result = await service.getPreferences('user-1');
 
-      expect(prismaService.notificationPreference.findUnique).toHaveBeenCalledWith(
+      expect(mockPrisma.notificationPreference.findUnique).toHaveBeenCalledWith(
         { where: { userId: 'user-1' } },
       );
       expect(result).toEqual(mockPrefs);
@@ -368,29 +381,28 @@ describe('NotificationsService', () => {
     it('should update user notification preferences', async () => {
       const updatedPrefs = {
         userId: 'user-1',
-        badges: false,
-        challenges: true,
-        email: false,
-        sms: true,
+        inAppEnabled: false,
+        emailEnabled: false,
+        pushEnabled: true,
       };
 
-      prismaService.notificationPreference.upsert.mockResolvedValue(
+      mockPrisma.notificationPreference.upsert.mockResolvedValue(
         updatedPrefs as any,
       );
 
       const result = await service.updatePreferences('user-1', {
-        badges: false,
-        email: false,
-        sms: true,
+        inAppEnabled: false,
+        emailEnabled: false,
+        pushEnabled: true,
       });
 
-      expect(prismaService.notificationPreference.upsert).toHaveBeenCalledWith({
+      expect(mockPrisma.notificationPreference.upsert).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
-        create: expect.objectContaining({ userId: 'user-1' }),
+        create: matching({ userId: 'user-1' }),
         update: {
-          badges: false,
-          email: false,
-          sms: true,
+          inAppEnabled: false,
+          emailEnabled: false,
+          pushEnabled: true,
         },
       });
 
@@ -400,51 +412,45 @@ describe('NotificationsService', () => {
 
   describe('Share Milestone Notifications', () => {
     it('should send milestone notification for 10 shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.notifyShareMilestone('user-1', 'petition-1', 10);
 
-      expect(prismaService.notification.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: matching({
           type: 'SHARE_MILESTONE',
-          title: expect.stringContaining('10'),
+          title: expect.stringContaining('10') as string,
         }),
       });
     });
 
     it('should send milestone notification for 50 and 100 shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       for (const count of [50, 100, 250, 500, 1000]) {
         await service.notifyShareMilestone('user-1', 'petition-1', count);
-        expect(prismaService.notification.create).toHaveBeenCalled();
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
       }
     });
 
     it('should not send notification for non-milestone shares', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrisma.petition.findUnique.mockResolvedValue(mockPetition as any);
 
       await service.notifyShareMilestone('user-1', 'petition-1', 15);
 
-      expect(prismaService.notification.create).not.toHaveBeenCalled();
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
     });
   });
 
   describe('Leaderboard Achievement Notifications', () => {
     it('should send notification for top 10 leaderboard positions', async () => {
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
@@ -454,22 +460,22 @@ describe('NotificationsService', () => {
           rank,
           'Global Shares',
         );
-        expect(prismaService.notification.create).toHaveBeenCalled();
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
       }
     });
 
     it('should not send notification for rank outside top 10', async () => {
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.notifyLeaderboardAchievement('user-1', 11, 'Global Shares');
 
-      expect(prismaService.notification.create).not.toHaveBeenCalled();
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
     });
 
     it('should use different medal emojis for top 3 positions', async () => {
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
@@ -482,9 +488,9 @@ describe('NotificationsService', () => {
           'Global Shares',
         );
 
-        expect(prismaService.notification.create).toHaveBeenCalledWith({
-          data: expect.objectContaining({
-            title: expect.stringContaining(medals[i]),
+        expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+          data: matching({
+            title: expect.stringContaining(medals[i]) as string,
           }),
         });
       }
@@ -500,13 +506,13 @@ describe('NotificationsService', () => {
         message: 'A new challenge is available',
       };
 
-      prismaService.notification.create.mockResolvedValue({
+      mockPrisma.notification.create.mockResolvedValue({
         id: 'notif-1',
       } as any);
 
       await service.createBulkNotifications(userIds, payload);
 
-      expect(prismaService.notification.create).toHaveBeenCalledTimes(3);
+      expect(mockPrisma.notification.create).toHaveBeenCalledTimes(3);
     });
   });
 });

@@ -8,7 +8,8 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, Inject } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -61,7 +62,7 @@ export class NotificationsGateway
    * Should be called after user logs in
    */
   @SubscribeMessage('subscribe_notifications')
-  async handleSubscribeNotifications(
+  handleSubscribeNotifications(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userId: string },
   ) {
@@ -73,7 +74,7 @@ export class NotificationsGateway
     }
 
     // Join user-specific room
-    client.join(`user:${userId}`);
+    void client.join(`user:${userId}`);
 
     // Track connection
     if (!this.userConnections.has(userId)) {
@@ -101,7 +102,7 @@ export class NotificationsGateway
     @MessageBody() data: { userId: string },
   ) {
     const { userId } = data;
-    client.leave(`user:${userId}`);
+    void client.leave(`user:${userId}`);
 
     // Remove from tracking
     const socketIds = this.userConnections.get(userId);
@@ -119,7 +120,10 @@ export class NotificationsGateway
    * Broadcast new notification to a user
    * Called from NotificationTriggerService or NotificationService
    */
-  broadcastNotificationToUser(userId: string, notification: any) {
+  broadcastNotificationToUser(
+    userId: string,
+    notification: { type: NotificationType } & Record<string, unknown>,
+  ) {
     this.server.to(`user:${userId}`).emit('new_notification', {
       ...notification,
       deliveredAt: new Date().toISOString(),

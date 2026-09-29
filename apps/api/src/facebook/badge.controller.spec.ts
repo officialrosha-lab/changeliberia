@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  INestApplication,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { BadgeType } from '@prisma/client';
 import { BadgeController } from './badge.controller';
-import { BadgeService } from './badge.service';
+import { BadgeService, BadgeProgress } from './badge.service';
 
 describe('BadgeController', () => {
   let app: INestApplication;
@@ -20,7 +25,9 @@ describe('BadgeController', () => {
     role: 'admin',
   };
 
-  const mockBadges = {
+  const mockBadges: Partial<
+    Record<BadgeType, { description: string; multiplier: number }>
+  > = {
     SHARE_WIZARD: {
       description: '10+ shares on a single petition',
       multiplier: 2.0,
@@ -31,7 +38,12 @@ describe('BadgeController', () => {
     },
   };
 
-  const mockUserBadges = [
+  const mockUserBadges: Array<{
+    badgeType: BadgeType;
+    earnedAt: Date;
+    multiplier: number;
+    petitionId: string;
+  }> = [
     {
       badgeType: 'SHARE_WIZARD',
       earnedAt: new Date(),
@@ -60,7 +72,7 @@ describe('BadgeController', () => {
     await app.init();
 
     controller = module.get<BadgeController>(BadgeController);
-    badgeService = module.get(BadgeService) as jest.Mocked<BadgeService>;
+    badgeService = module.get(BadgeService);
   });
 
   afterEach(async () => {
@@ -69,7 +81,12 @@ describe('BadgeController', () => {
 
   describe('getAllBadges', () => {
     it('should return all badge descriptions', () => {
-      badgeService.getBadgeDescriptions.mockReturnValue(mockBadges as any);
+      badgeService.getBadgeDescriptions.mockReturnValue(
+        mockBadges as Record<
+          BadgeType,
+          { description: string; multiplier: number }
+        >,
+      );
 
       const result = controller.getAllBadges();
 
@@ -101,7 +118,7 @@ describe('BadgeController', () => {
 
   describe('getUserBadges', () => {
     it('should return user badges', async () => {
-      badgeService.getUserBadges.mockResolvedValue(mockUserBadges as any);
+      badgeService.getUserBadges.mockResolvedValue(mockUserBadges);
 
       const result = await controller.getUserBadges('user-1');
 
@@ -121,7 +138,7 @@ describe('BadgeController', () => {
     });
 
     it('should filter by petitionId if provided', async () => {
-      badgeService.getUserBadges.mockResolvedValue(mockUserBadges as any);
+      badgeService.getUserBadges.mockResolvedValue(mockUserBadges);
 
       await controller.getUserBadges('user-1', 'petition-1');
 
@@ -156,13 +173,13 @@ describe('BadgeController', () => {
 
   describe('getBadgeProgress', () => {
     it('should return badge progress for own user', async () => {
-      const progress = {
+      const progress: BadgeProgress = {
         badgeType: 'SHARE_WIZARD',
         progress: 7,
         target: 10,
         percentComplete: 70,
       };
-      badgeService.getBadgeProgress.mockResolvedValue(progress as any);
+      badgeService.getBadgeProgress.mockResolvedValue(progress);
 
       const result = await controller.getBadgeProgress(
         'user-1',
@@ -178,13 +195,13 @@ describe('BadgeController', () => {
     });
 
     it('should allow admin to view other users progress', async () => {
-      const progress = {
+      const progress: BadgeProgress = {
         badgeType: 'SHARE_WIZARD',
         progress: 7,
         target: 10,
         percentComplete: 70,
       };
-      badgeService.getBadgeProgress.mockResolvedValue(progress as any);
+      badgeService.getBadgeProgress.mockResolvedValue(progress);
 
       await controller.getBadgeProgress(
         'user-2',
@@ -229,7 +246,12 @@ describe('BadgeController', () => {
 
   describe('getBadgeLeaderboard', () => {
     it('should return badge leaderboard with default limit', async () => {
-      const leaderboard = [
+      const leaderboard: Array<{
+        userId: string;
+        badgeCount: number;
+        totalMultiplier: number;
+        topBadges: BadgeType[];
+      }> = [
         {
           userId: 'user-1',
           badgeCount: 5,
@@ -237,7 +259,7 @@ describe('BadgeController', () => {
           topBadges: ['SHARE_WIZARD'],
         },
       ];
-      badgeService.getBadgeLeaderboard.mockResolvedValue(leaderboard as any);
+      badgeService.getBadgeLeaderboard.mockResolvedValue(leaderboard);
 
       const result = await controller.getBadgeLeaderboard();
 

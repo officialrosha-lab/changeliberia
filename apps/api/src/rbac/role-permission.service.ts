@@ -1,6 +1,13 @@
-import { Injectable, BadRequestException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  Prisma,
   Role,
   Permission,
   UserRoleAssignment,
@@ -31,7 +38,9 @@ export class RolePermissionService implements OnModuleInit {
       await this.initializeDefaultRoles();
       this.logger.log('RBAC default roles and permissions initialized');
     } catch (err) {
-      this.logger.warn(`RBAC init skipped: ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.warn(
+        `RBAC init skipped: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -70,7 +79,7 @@ export class RolePermissionService implements OnModuleInit {
     resource?: PermissionResource;
     action?: PermissionAction;
   }): Promise<Permission[]> {
-    const where: any = {};
+    const where: Prisma.PermissionWhereInput = {};
 
     if (filters?.resource) {
       where.resource = filters.resource;
@@ -106,7 +115,9 @@ export class RolePermissionService implements OnModuleInit {
   /**
    * Create a new role with permissions
    */
-  async createRole(dto: CreateRoleDto): Promise<Role & { permissions: Permission[] }> {
+  async createRole(
+    dto: CreateRoleDto,
+  ): Promise<Role & { permissions: Permission[] }> {
     // Check for duplicate role name
     const existing = await this.prisma.role.findUnique({
       where: { name: dto.name },
@@ -140,7 +151,7 @@ export class RolePermissionService implements OnModuleInit {
 
     // Assign permissions
     await this.prisma.rolePermission.createMany({
-      data: dto.permissionIds.map(permissionId => ({
+      data: dto.permissionIds.map((permissionId) => ({
         roleId: role.id,
         permissionId,
       })),
@@ -152,7 +163,9 @@ export class RolePermissionService implements OnModuleInit {
   /**
    * Get role with all permissions
    */
-  async getRoleWithPermissions(roleId: string): Promise<Role & { permissions: Permission[] }> {
+  async getRoleWithPermissions(
+    roleId: string,
+  ): Promise<Role & { permissions: Permission[] }> {
     const role = await this.prisma.role.findUnique({
       where: { id: roleId },
       include: {
@@ -170,7 +183,7 @@ export class RolePermissionService implements OnModuleInit {
 
     return {
       ...role,
-      permissions: role.permissions.map(rp => rp.permission),
+      permissions: role.permissions.map((rp) => rp.permission),
     };
   }
 
@@ -209,7 +222,7 @@ export class RolePermissionService implements OnModuleInit {
 
     // Add new permissions
     await this.prisma.rolePermission.createMany({
-      data: permissionIds.map(permissionId => ({
+      data: permissionIds.map((permissionId) => ({
         roleId,
         permissionId,
       })),
@@ -221,7 +234,9 @@ export class RolePermissionService implements OnModuleInit {
   /**
    * List all roles
    */
-  async listRoles(): Promise<Array<Role & { permissions: Permission[]; userCount: number }>> {
+  async listRoles(): Promise<
+    Array<Role & { permissions: Permission[]; userCount: number }>
+  > {
     const roles = await this.prisma.role.findMany({
       include: {
         permissions: {
@@ -234,9 +249,9 @@ export class RolePermissionService implements OnModuleInit {
       orderBy: { name: 'asc' },
     });
 
-    return roles.map(role => ({
+    return roles.map((role) => ({
       ...role,
-      permissions: role.permissions.map(rp => rp.permission),
+      permissions: role.permissions.map((rp) => rp.permission),
       userCount: role.userRoles.length,
     }));
   }
@@ -356,16 +371,15 @@ export class RolePermissionService implements OnModuleInit {
   /**
    * Get user's active roles
    */
-  async getUserRoles(userId: string): Promise<Array<Role & { permissions: Permission[] }>> {
+  async getUserRoles(
+    userId: string,
+  ): Promise<Array<Role & { permissions: Permission[] }>> {
     const now = new Date();
 
     const assignments = await this.prisma.userRoleAssignment.findMany({
       where: {
         userId,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: now } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
       include: {
         role: {
@@ -380,9 +394,9 @@ export class RolePermissionService implements OnModuleInit {
       },
     });
 
-    return assignments.map(a => ({
+    return assignments.map((a) => ({
       ...a.role,
-      permissions: a.role.permissions.map(rp => rp.permission),
+      permissions: a.role.permissions.map((rp) => rp.permission),
     }));
   }
 
@@ -402,9 +416,9 @@ export class RolePermissionService implements OnModuleInit {
     }
 
     // Check if any role has the required permission
-    return roles.some(role =>
+    return roles.some((role) =>
       role.permissions.some(
-        p => p.resource === resource && p.action === action,
+        (p) => p.resource === resource && p.action === action,
       ),
     );
   }
@@ -419,11 +433,11 @@ export class RolePermissionService implements OnModuleInit {
 
     // Add default USER permissions
     const userPermissions = await this.getUserPermissions_DefaultUser();
-    userPermissions.forEach(p => permissionMap.set(p.key, p));
+    userPermissions.forEach((p) => permissionMap.set(p.key, p));
 
     // Add role-based permissions
-    roles.forEach(role => {
-      role.permissions.forEach(p => {
+    roles.forEach((role) => {
+      role.permissions.forEach((p) => {
         permissionMap.set(p.key, p);
       });
     });
@@ -434,22 +448,21 @@ export class RolePermissionService implements OnModuleInit {
   /**
    * List users with a specific role
    */
-  async getUsersWithRole(roleId: string): Promise<Array<{
-    id: string;
-    email: string;
-    fullName: string;
-    grantedAt: Date;
-    expiresAt: Date | null;
-  }>> {
+  async getUsersWithRole(roleId: string): Promise<
+    Array<{
+      id: string;
+      email: string;
+      fullName: string;
+      grantedAt: Date;
+      expiresAt: Date | null;
+    }>
+  > {
     const now = new Date();
 
     const assignments = await this.prisma.userRoleAssignment.findMany({
       where: {
         roleId,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: now } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
       include: {
         user: {
@@ -463,7 +476,7 @@ export class RolePermissionService implements OnModuleInit {
       orderBy: { grantedAt: 'desc' },
     });
 
-    return assignments.map(a => ({
+    return assignments.map((a) => ({
       id: a.user.id,
       email: a.user.email || 'N/A',
       fullName: a.user.fullName,
@@ -515,24 +528,60 @@ export class RolePermissionService implements OnModuleInit {
     // Define default permissions
     const defaultPermissions = [
       // Petition permissions
-      { resource: PermissionResource.PETITION, action: PermissionAction.CREATE },
+      {
+        resource: PermissionResource.PETITION,
+        action: PermissionAction.CREATE,
+      },
       { resource: PermissionResource.PETITION, action: PermissionAction.READ },
-      { resource: PermissionResource.PETITION, action: PermissionAction.UPDATE },
-      { resource: PermissionResource.PETITION, action: PermissionAction.DELETE },
-      { resource: PermissionResource.PETITION, action: PermissionAction.APPROVE },
-      { resource: PermissionResource.PETITION, action: PermissionAction.REJECT },
+      {
+        resource: PermissionResource.PETITION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.PETITION,
+        action: PermissionAction.DELETE,
+      },
+      {
+        resource: PermissionResource.PETITION,
+        action: PermissionAction.APPROVE,
+      },
+      {
+        resource: PermissionResource.PETITION,
+        action: PermissionAction.REJECT,
+      },
 
       // Directory permissions
       { resource: PermissionResource.DIRECTORY, action: PermissionAction.READ },
-      { resource: PermissionResource.DIRECTORY, action: PermissionAction.CREATE },
-      { resource: PermissionResource.DIRECTORY, action: PermissionAction.UPDATE },
-      { resource: PermissionResource.DIRECTORY, action: PermissionAction.DELETE },
+      {
+        resource: PermissionResource.DIRECTORY,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.DIRECTORY,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.DIRECTORY,
+        action: PermissionAction.DELETE,
+      },
 
       // Institution permissions
-      { resource: PermissionResource.INSTITUTION, action: PermissionAction.CREATE },
-      { resource: PermissionResource.INSTITUTION, action: PermissionAction.READ },
-      { resource: PermissionResource.INSTITUTION, action: PermissionAction.UPDATE },
-      { resource: PermissionResource.INSTITUTION, action: PermissionAction.DELETE },
+      {
+        resource: PermissionResource.INSTITUTION,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.INSTITUTION,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.INSTITUTION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.INSTITUTION,
+        action: PermissionAction.DELETE,
+      },
 
       // User management
       { resource: PermissionResource.USER, action: PermissionAction.READ },
@@ -540,7 +589,10 @@ export class RolePermissionService implements OnModuleInit {
 
       // Routing
       { resource: PermissionResource.ROUTING, action: PermissionAction.READ },
-      { resource: PermissionResource.ROUTING, action: PermissionAction.OVERRIDE },
+      {
+        resource: PermissionResource.ROUTING,
+        action: PermissionAction.OVERRIDE,
+      },
 
       // Analytics
       { resource: PermissionResource.ANALYTICS, action: PermissionAction.READ },
@@ -563,11 +615,23 @@ export class RolePermissionService implements OnModuleInit {
 
       // Public Officials Portal
       { resource: PermissionResource.OFFICIAL, action: PermissionAction.READ },
-      { resource: PermissionResource.OFFICIAL, action: PermissionAction.UPDATE },
-      { resource: PermissionResource.OFFICIAL, action: PermissionAction.APPROVE },
+      {
+        resource: PermissionResource.OFFICIAL,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.OFFICIAL,
+        action: PermissionAction.APPROVE,
+      },
       { resource: PermissionResource.INBOX, action: PermissionAction.READ },
-      { resource: PermissionResource.RESPONSE, action: PermissionAction.CREATE },
-      { resource: PermissionResource.RESPONSE, action: PermissionAction.UPDATE },
+      {
+        resource: PermissionResource.RESPONSE,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.RESPONSE,
+        action: PermissionAction.UPDATE,
+      },
       { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
     ];
 
@@ -601,40 +665,82 @@ export class RolePermissionService implements OnModuleInit {
         name: 'ADMIN',
         description: 'Administrative access',
         permissions: defaultPermissions.filter(
-          p => p.resource !== PermissionResource.ROLE,
+          (p) => p.resource !== PermissionResource.ROLE,
         ), // Everything except role management
       },
       {
         name: 'MODERATOR',
         description: 'Limited moderation access',
         permissions: [
-          { resource: PermissionResource.PETITION, action: PermissionAction.APPROVE },
-          { resource: PermissionResource.PETITION, action: PermissionAction.REJECT },
-          { resource: PermissionResource.PETITION, action: PermissionAction.READ },
-          { resource: PermissionResource.DIRECTORY, action: PermissionAction.READ },
-          { resource: PermissionResource.CONTENT, action: PermissionAction.READ },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.APPROVE,
+          },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.REJECT,
+          },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.READ,
+          },
+          {
+            resource: PermissionResource.DIRECTORY,
+            action: PermissionAction.READ,
+          },
+          {
+            resource: PermissionResource.CONTENT,
+            action: PermissionAction.READ,
+          },
         ],
       },
       {
         name: 'USER',
         description: 'Regular user access',
         permissions: [
-          { resource: PermissionResource.PETITION, action: PermissionAction.CREATE },
-          { resource: PermissionResource.PETITION, action: PermissionAction.READ },
-          { resource: PermissionResource.CONTENT, action: PermissionAction.READ },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.CREATE,
+          },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.READ,
+          },
+          {
+            resource: PermissionResource.CONTENT,
+            action: PermissionAction.READ,
+          },
         ],
       },
       {
         name: 'OFFICIAL',
         description: 'Verified public official access (own institution only)',
         permissions: [
-          { resource: PermissionResource.OFFICIAL, action: PermissionAction.READ },
-          { resource: PermissionResource.OFFICIAL, action: PermissionAction.UPDATE },
+          {
+            resource: PermissionResource.OFFICIAL,
+            action: PermissionAction.READ,
+          },
+          {
+            resource: PermissionResource.OFFICIAL,
+            action: PermissionAction.UPDATE,
+          },
           { resource: PermissionResource.INBOX, action: PermissionAction.READ },
-          { resource: PermissionResource.RESPONSE, action: PermissionAction.CREATE },
-          { resource: PermissionResource.RESPONSE, action: PermissionAction.UPDATE },
-          { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
-          { resource: PermissionResource.PETITION, action: PermissionAction.READ },
+          {
+            resource: PermissionResource.RESPONSE,
+            action: PermissionAction.CREATE,
+          },
+          {
+            resource: PermissionResource.RESPONSE,
+            action: PermissionAction.UPDATE,
+          },
+          {
+            resource: PermissionResource.RESPONSE,
+            action: PermissionAction.READ,
+          },
+          {
+            resource: PermissionResource.PETITION,
+            action: PermissionAction.READ,
+          },
         ],
       },
     ];
@@ -646,7 +752,7 @@ export class RolePermissionService implements OnModuleInit {
 
       if (!existing) {
         const permissionIds = await Promise.all(
-          roleDef.permissions.map(async p => {
+          roleDef.permissions.map(async (p) => {
             const perm = await this.prisma.permission.findUnique({
               where: {
                 key: `${p.resource}:${p.action}`.toLowerCase(),
@@ -665,7 +771,7 @@ export class RolePermissionService implements OnModuleInit {
               createMany: {
                 data: permissionIds
                   .filter((id): id is string => id !== undefined)
-                  .map(permissionId => ({ permissionId })),
+                  .map((permissionId) => ({ permissionId })),
               },
             },
           },

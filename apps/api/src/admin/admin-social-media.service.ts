@@ -50,7 +50,9 @@ export class AdminSocialMediaService {
       where: { name: { in: keys } },
     });
 
-    const byName = Object.fromEntries(toggles.map((toggle) => [toggle.name, toggle]));
+    const byName = Object.fromEntries(
+      toggles.map((toggle) => [toggle.name, toggle]),
+    );
     const resolve = (key: string): string =>
       byName[key]?.config ?? process.env[key] ?? '';
 
@@ -88,7 +90,9 @@ export class AdminSocialMediaService {
       return {
         status: hasAllConfig ? 'healthy' : 'degraded',
         configured,
-        pixelId: config.facebook.pixelId ? `${config.facebook.pixelId.substring(0, 8)}***` : 'NOT_SET',
+        pixelId: config.facebook.pixelId
+          ? `${config.facebook.pixelId.substring(0, 8)}***`
+          : 'NOT_SET',
       };
     } catch (error) {
       this.logger.error('Facebook health check failed:', error);
@@ -118,8 +122,7 @@ export class AdminSocialMediaService {
         status: hasAllConfig ? 'healthy' : 'degraded',
         configured,
         phoneNumberId:
-          config.whatsapp.phoneNumberId?.substring(0, 8) + '***' ||
-          'NOT_SET',
+          config.whatsapp.phoneNumberId?.substring(0, 8) + '***' || 'NOT_SET',
       };
     } catch (error) {
       this.logger.error('WhatsApp health check failed:', error);
@@ -147,9 +150,8 @@ export class AdminSocialMediaService {
 
       const metrics = {
         totalReferrals: referrals.length,
-        convertedReferrals: referrals.filter(
-          (r) => r.status === 'CONVERTED',
-        ).length,
+        convertedReferrals: referrals.filter((r) => r.status === 'CONVERTED')
+          .length,
         conversionRate:
           referrals.length > 0
             ? (
@@ -237,11 +239,9 @@ export class AdminSocialMediaService {
           referrals.map((r) => [r.status, r._count.id]),
         ),
         topPetitions: petitionStats.length,
-        totalCampaigns: (
-          await this.prisma.petition.count({
-            where: { donationsEnabled: true },
-          })
-        ),
+        totalCampaigns: await this.prisma.petition.count({
+          where: { donationsEnabled: true },
+        }),
       };
     } catch (error) {
       this.logger.error('Failed to get WhatsApp campaign stats:', error);

@@ -21,7 +21,9 @@ describe('CMSScheduler', () => {
     }).compile();
 
     scheduler = module.get<CMSScheduler>(CMSScheduler);
-    contentSchedulingService = module.get<ContentSchedulingService>(ContentSchedulingService);
+    contentSchedulingService = module.get<ContentSchedulingService>(
+      ContentSchedulingService,
+    );
   });
 
   afterEach(async () => {
@@ -32,25 +34,37 @@ describe('CMSScheduler', () => {
     it('should call contentSchedulingService.executeScheduledActions', async () => {
       await scheduler.executeScheduledActions();
 
-      expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
+      expect(
+        contentSchedulingService.executeScheduledActions,
+      ).toHaveBeenCalled();
     });
 
     it('should handle service errors gracefully', async () => {
       const error = new Error('Database connection failed');
-      (contentSchedulingService.executeScheduledActions as jest.Mock).mockRejectedValueOnce(error);
+      (
+        contentSchedulingService.executeScheduledActions as jest.Mock
+      ).mockRejectedValueOnce(error);
 
       // The scheduler catches errors and logs them, doesn't throw
-      await expect(scheduler.executeScheduledActions()).resolves.toBeUndefined();
-      expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
+      await expect(
+        scheduler.executeScheduledActions(),
+      ).resolves.toBeUndefined();
+      expect(
+        contentSchedulingService.executeScheduledActions,
+      ).toHaveBeenCalled();
     });
 
     it('should execute successfully and call service method', async () => {
-      (contentSchedulingService.executeScheduledActions as jest.Mock).mockResolvedValueOnce(undefined);
+      (
+        contentSchedulingService.executeScheduledActions as jest.Mock
+      ).mockResolvedValueOnce(undefined);
 
       const result = await scheduler.executeScheduledActions();
 
       expect(result).toBeUndefined();
-      expect(contentSchedulingService.executeScheduledActions).toHaveBeenCalled();
+      expect(
+        contentSchedulingService.executeScheduledActions,
+      ).toHaveBeenCalled();
     });
   });
 });

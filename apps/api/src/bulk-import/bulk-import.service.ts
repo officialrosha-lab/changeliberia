@@ -71,18 +71,22 @@ export class BulkImportService {
         .on('data', (row: CSVRow) => {
           rows.push(row);
         })
-        .on('end', async () => {
-          try {
-            result.totalRows = rows.length;
-            await this.processCSVRows(rows, result);
-            result.success = result.errors.length === 0;
-            resolve(result);
-          } catch (error) {
-            reject(error);
-          }
+        .on('end', () => {
+          void (async () => {
+            try {
+              result.totalRows = rows.length;
+              await this.processCSVRows(rows, result);
+              result.success = result.errors.length === 0;
+              resolve(result);
+            } catch (error) {
+              reject(error instanceof Error ? error : new Error(String(error)));
+            }
+          })();
         })
         .on('error', (error: Error) => {
-          reject(new BadRequestException(`CSV parsing error: ${error.message}`));
+          reject(
+            new BadRequestException(`CSV parsing error: ${error.message}`),
+          );
         });
     });
   }
@@ -123,9 +127,7 @@ export class BulkImportService {
         let institutionId = institutionMap.get(row.institutionName);
 
         if (!institutionId) {
-          institutionId = await this.createOrFindInstitution(
-            row,
-          );
+          institutionId = await this.createOrFindInstitution(row);
 
           if (institutionId) {
             institutionMap.set(row.institutionName, institutionId);
@@ -193,15 +195,19 @@ export class BulkImportService {
   /**
    * Create or find institution
    */
-  private async createOrFindInstitution(row: CSVRow): Promise<string | undefined> {
+  private async createOrFindInstitution(
+    row: CSVRow,
+  ): Promise<string | undefined> {
     try {
       // Validate required fields
       if (!row.institutionName || !row.email) {
         return undefined;
       }
 
-      const type = this.parseInstitutionType(row.type) || InstitutionType.GOVERNMENT;
-      const category = this.parseInstitutionCategory(row.category) ||
+      const type =
+        this.parseInstitutionType(row.type) || InstitutionType.GOVERNMENT;
+      const category =
+        this.parseInstitutionCategory(row.category) ||
         InstitutionCategory.AGENCY;
 
       // Try to find existing institution
@@ -223,8 +229,8 @@ export class BulkImportService {
       const secondaryEmails = row.secondaryEmails
         ? row.secondaryEmails
             .split(';')
-            .map(e => e.trim())
-            .filter(e => e)
+            .map((e) => e.trim())
+            .filter((e) => e)
         : [];
 
       const institution = await this.prisma.institution.create({
@@ -311,11 +317,12 @@ export class BulkImportService {
       const tags = row.tags
         ? row.tags
             .split(';')
-            .map(t => t.trim().toLowerCase())
-            .filter(t => t)
+            .map((t) => t.trim().toLowerCase())
+            .filter((t) => t)
         : [];
 
-      const priorityLevel = this.parsePriorityLevel(row.priorityLevel) ||
+      const priorityLevel =
+        this.parsePriorityLevel(row.priorityLevel) ||
         ContactPriorityLevel.MEDIUM;
 
       const contact = await this.prisma.contactDirectory.create({
@@ -420,9 +427,7 @@ export class BulkImportService {
 
     const csvContent = [
       headers.join(','),
-      ...exampleRows.map(row =>
-        row.map(cell => `"${cell}"`).join(','),
-      ),
+      ...exampleRows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     return csvContent;
@@ -453,7 +458,11 @@ export class BulkImportService {
     if (!categoryStr) return null;
 
     const category = categoryStr.trim().toUpperCase();
-    if (Object.values(InstitutionCategory).includes(category as InstitutionCategory)) {
+    if (
+      Object.values(InstitutionCategory).includes(
+        category as InstitutionCategory,
+      )
+    ) {
       return category as InstitutionCategory;
     }
 
@@ -467,7 +476,11 @@ export class BulkImportService {
     if (!levelStr) return null;
 
     const level = levelStr.trim().toUpperCase();
-    if (Object.values(ContactPriorityLevel).includes(level as ContactPriorityLevel)) {
+    if (
+      Object.values(ContactPriorityLevel).includes(
+        level as ContactPriorityLevel,
+      )
+    ) {
       return level as ContactPriorityLevel;
     }
 

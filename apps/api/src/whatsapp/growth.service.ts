@@ -1,5 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PetitionMilestone } from '@prisma/client';
+
+interface PetitionWithCountySignatures {
+  id: string;
+  title: string;
+  signaturesCount: number;
+  goal: number;
+  imageUrl: string | null;
+  countySignatures: number;
+}
 
 /**
  * Growth System Service
@@ -18,7 +28,10 @@ export class GrowthService {
    * Checks if a petition has reached a new milestone
    * Creates milestone record and returns milestone info
    */
-  async checkAndCreateMilestone(petitionId: string, currentSignatureCount: number) {
+  async checkAndCreateMilestone(
+    petitionId: string,
+    currentSignatureCount: number,
+  ) {
     const petition = await this.prisma.petition.findUnique({
       where: { id: petitionId },
       include: { milestones: true },
@@ -45,7 +58,7 @@ export class GrowthService {
     }
 
     // Create new milestone records
-    const createdMilestones: any[] = [];
+    const createdMilestones: PetitionMilestone[] = [];
     for (const milestone of newMilestones) {
       const created = await this.prisma.petitionMilestone.create({
         data: {
@@ -58,7 +71,9 @@ export class GrowthService {
         },
       });
       createdMilestones.push(created);
-      this.logger.log(`🎉 Petition ${petitionId} reached ${milestone.targetValue} signatures!`);
+      this.logger.log(
+        `🎉 Petition ${petitionId} reached ${milestone.targetValue} signatures!`,
+      );
     }
 
     return createdMilestones;
@@ -78,6 +93,7 @@ export class GrowthService {
         createdAt: {
           gte: sevenDaysAgo,
         },
+        ...(county && { county }),
       },
       select: {
         id: true,
@@ -135,7 +151,7 @@ export class GrowthService {
     });
 
     // Group by petition and sort by count
-    const petitionCounts: Record<string, any> = {};
+    const petitionCounts: Record<string, PetitionWithCountySignatures> = {};
     countySignatures.forEach((sig) => {
       if (!petitionCounts[sig.petition.id]) {
         petitionCounts[sig.petition.id] = {
@@ -152,7 +168,9 @@ export class GrowthService {
       .map((p, idx) => ({
         ...p,
         rank: idx + 1,
-        percentOfTotal: Math.round((p.countySignatures / p.signaturesCount) * 100),
+        percentOfTotal: Math.round(
+          (p.countySignatures / p.signaturesCount) * 100,
+        ),
       }));
   }
 
@@ -216,9 +234,13 @@ export class GrowthService {
     // Calculate growth rate (signatures per day)
     const daysSinceCreation = Math.max(
       1,
-      Math.ceil((Date.now() - petition.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
+      Math.ceil(
+        (Date.now() - petition.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      ),
     );
-    const avgSignaturesPerDay = Math.round(petition.signaturesCount / daysSinceCreation);
+    const avgSignaturesPerDay = Math.round(
+      petition.signaturesCount / daysSinceCreation,
+    );
 
     // Get signature timeline (last 7 days)
     const sevenDaysAgo = new Date();
@@ -243,11 +265,18 @@ export class GrowthService {
       petitionId,
       signaturesCount: petition.signaturesCount,
       goal: petition.goal,
-      percentToGoal: Math.round((petition.signaturesCount / petition.goal) * 100),
+      percentToGoal: Math.round(
+        (petition.signaturesCount / petition.goal) * 100,
+      ),
       avgSignaturesPerDay,
-      daysToGoal: Math.ceil((petition.goal - petition.signaturesCount) / avgSignaturesPerDay),
+      daysToGoal: Math.ceil(
+        (petition.goal - petition.signaturesCount) / avgSignaturesPerDay,
+      ),
       milestonesAchieved: petition.milestones.filter((m) => m.achieved).length,
-      lastSignatureDate: recentSignatures.length > 0 ? recentSignatures[recentSignatures.length - 1].createdAt : petition.createdAt,
+      lastSignatureDate:
+        recentSignatures.length > 0
+          ? recentSignatures[recentSignatures.length - 1].createdAt
+          : petition.createdAt,
       signatureTimeline: dayGroups,
     };
   }
@@ -288,7 +317,9 @@ export class GrowthService {
       achievedAt: governmentReadyMilestone?.achievedAt,
       creatorContact: petition.creator,
       nextMilestone: 5000,
-      nextMilestoneProgress: Math.round((petition.signaturesCount / 5000) * 100),
+      nextMilestoneProgress: Math.round(
+        (petition.signaturesCount / 5000) * 100,
+      ),
     };
   }
 
@@ -316,7 +347,7 @@ export class GrowthService {
     });
 
     // Create new ones
-    const milestones: any[] = [];
+    const milestones: PetitionMilestone[] = [];
     for (const threshold of this.SIGNATURE_MILESTONES) {
       if (signatureCount >= threshold) {
         const milestone = await this.prisma.petitionMilestone.create({
@@ -333,7 +364,9 @@ export class GrowthService {
       }
     }
 
-    this.logger.log(`Recalculated ${milestones.length} milestones for petition ${petitionId}`);
+    this.logger.log(
+      `Recalculated ${milestones.length} milestones for petition ${petitionId}`,
+    );
     return milestones;
   }
 }

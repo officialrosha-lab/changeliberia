@@ -1,6 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+export interface BlockStats {
+  blockId: string;
+  blockType: string;
+  views: number;
+  clicks: number;
+  engagement: number;
+}
+
+export interface VariantTotals {
+  views: number;
+  clicks: number;
+  engagement: number;
+}
+
 @Injectable()
 export class CMSAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -8,7 +22,12 @@ export class CMSAnalyticsService {
   /**
    * Track a block view
    */
-  async trackBlockView(pageId: string, blockId: string, blockType: string, variantId?: string) {
+  async trackBlockView(
+    pageId: string,
+    blockId: string,
+    blockType: string,
+    variantId?: string,
+  ) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -43,7 +62,12 @@ export class CMSAnalyticsService {
   /**
    * Track a block click (CTA, button, etc)
    */
-  async trackBlockClick(pageId: string, blockId: string, blockType: string, variantId?: string) {
+  async trackBlockClick(
+    pageId: string,
+    blockId: string,
+    blockType: string,
+    variantId?: string,
+  ) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -137,7 +161,7 @@ export class CMSAnalyticsService {
     });
 
     // Group by block and calculate stats
-    const blockStats: Record<string, any> = {};
+    const blockStats: Record<string, BlockStats> = {};
 
     for (const record of analytics) {
       if (!blockStats[record.blockId]) {
@@ -157,13 +181,14 @@ export class CMSAnalyticsService {
     // Calculate engagement rates
     for (const blockId in blockStats) {
       if (blockStats[blockId].views > 0) {
-        blockStats[blockId].engagement = blockStats[blockId].clicks / blockStats[blockId].views;
+        blockStats[blockId].engagement =
+          blockStats[blockId].clicks / blockStats[blockId].views;
       }
     }
 
     const totals = {
-      views: Object.values(blockStats).reduce((sum: number, b: any) => sum + b.views, 0),
-      clicks: Object.values(blockStats).reduce((sum: number, b: any) => sum + b.clicks, 0),
+      views: Object.values(blockStats).reduce((sum, b) => sum + b.views, 0),
+      clicks: Object.values(blockStats).reduce((sum, b) => sum + b.clicks, 0),
       avgEngagement: 0,
     };
 
@@ -181,8 +206,13 @@ export class CMSAnalyticsService {
   /**
    * Compare variant performance for A/B testing
    */
-  async compareVariants(blockId: string, variantIds: string[], startDate: Date, endDate: Date) {
-    const results: Record<string, any> = {};
+  async compareVariants(
+    blockId: string,
+    variantIds: string[],
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const results: Record<string, VariantTotals> = {};
 
     for (const variantId of variantIds) {
       const analytics = await this.prisma.cMSBlockAnalytics.findMany({
@@ -214,7 +244,7 @@ export class CMSAnalyticsService {
     let maxEngagement = 0;
 
     for (const variantId of variantIds) {
-      const engagement = (results[variantId] as any).engagement;
+      const engagement = results[variantId].engagement;
       if (engagement > maxEngagement) {
         maxEngagement = engagement;
         winner = variantId;

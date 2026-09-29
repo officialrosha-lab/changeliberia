@@ -11,12 +11,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { SubmissionStatus } from '@prisma/client';
 import { GovernmentService } from './government.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/roles.guard';
 import { CreateGovernmentContactDto } from './dto/create-government-contact.dto';
 
 @Controller('government')
@@ -33,18 +35,30 @@ export class GovernmentController {
   @Post('submit')
   @UseGuards(JwtAuthGuard)
   async submitPetition(
-    @Body() submitData: { petitionId: string; governmentEmail: string; notes?: string },
-    @CurrentUser() user: any,
+    @Body()
+    submitData: { petitionId: string; governmentEmail: string; notes?: string },
+    @CurrentUser() user: RequestUser,
   ) {
     if (!submitData || typeof submitData !== 'object') {
       throw new BadRequestException('Request body is required');
     }
-    const petitionId = typeof submitData.petitionId === 'string' ? submitData.petitionId.trim() : '';
-    const governmentEmail = typeof submitData.governmentEmail === 'string' ? submitData.governmentEmail.trim() : '';
-    const notes = typeof submitData.notes === 'string' ? submitData.notes.trim() : undefined;
+    const petitionId =
+      typeof submitData.petitionId === 'string'
+        ? submitData.petitionId.trim()
+        : '';
+    const governmentEmail =
+      typeof submitData.governmentEmail === 'string'
+        ? submitData.governmentEmail.trim()
+        : '';
+    const notes =
+      typeof submitData.notes === 'string'
+        ? submitData.notes.trim()
+        : undefined;
 
     if (!petitionId || !governmentEmail) {
-      throw new BadRequestException('petitionId and governmentEmail are required');
+      throw new BadRequestException(
+        'petitionId and governmentEmail are required',
+      );
     }
 
     // Validate email format
@@ -59,7 +73,9 @@ export class GovernmentController {
         notes,
       );
 
-      this.logger.log(`Petition ${petitionId} submitted by user ${user.id}`);
+      this.logger.log(
+        `Petition ${petitionId} submitted by user ${user.userId}`,
+      );
 
       return {
         success: true,
@@ -67,7 +83,9 @@ export class GovernmentController {
         submission,
       };
     } catch (error) {
-      this.logger.error(`Submission failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -81,9 +99,8 @@ export class GovernmentController {
   @UseGuards(OptionalJwtAuthGuard)
   async getPetitionStatus(@Param('petitionId') petitionId: string) {
     try {
-      const submissions = await this.governmentService.getPetitionSubmissions(
-        petitionId,
-      );
+      const submissions =
+        await this.governmentService.getPetitionSubmissions(petitionId);
 
       if (submissions.length === 0) {
         return {
@@ -105,7 +122,9 @@ export class GovernmentController {
         submissions,
       };
     } catch (error) {
-      this.logger.error(`Status check failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Status check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -119,12 +138,12 @@ export class GovernmentController {
   async getPetitionReport(
     @Param('petitionId') petitionId: string,
     @Res() res: Response,
-    @CurrentUser() user: any,
+    @CurrentUser() user: RequestUser | undefined,
   ) {
     try {
       const reportBuffer = await this.governmentService.generatePetitionReport(
         petitionId,
-        user?.id ?? user?.userId,
+        user?.userId,
         true,
       );
 
@@ -136,7 +155,9 @@ export class GovernmentController {
       );
       res.send(reportBuffer);
     } catch (error) {
-      this.logger.error(`Report generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Report generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -150,12 +171,12 @@ export class GovernmentController {
   async getPetitionSignaturesCsv(
     @Param('petitionId') petitionId: string,
     @Res() res: Response,
-    @CurrentUser() user: any,
+    @CurrentUser() user: RequestUser,
   ) {
     try {
       const csv = await this.governmentService.generateSignaturesCsv(
         petitionId,
-        user.id ?? user.userId,
+        user.userId,
       );
 
       const date = new Date().toISOString().slice(0, 10);
@@ -166,7 +187,9 @@ export class GovernmentController {
       );
       res.send(csv);
     } catch (error) {
-      this.logger.error(`CSV export failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `CSV export failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -178,9 +201,11 @@ export class GovernmentController {
    */
   @Get('submissions')
   @UseGuards(JwtAuthGuard)
-  async getMySubmissions(@CurrentUser() user: any) {
+  async getMySubmissions(@CurrentUser() user: RequestUser) {
     try {
-      const submissions = await this.governmentService.getUserSubmissions(user.id);
+      const submissions = await this.governmentService.getUserSubmissions(
+        user.userId,
+      );
 
       return {
         success: true,
@@ -188,7 +213,9 @@ export class GovernmentController {
         submissions,
       };
     } catch (error) {
-      this.logger.error(`Submission retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Submission retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -209,7 +236,9 @@ export class GovernmentController {
         contacts,
       };
     } catch (error) {
-      this.logger.error(`Contact retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Contact retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -239,7 +268,9 @@ export class GovernmentController {
         contact,
       };
     } catch (error) {
-      this.logger.error(`Contact creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Contact creation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -261,24 +292,27 @@ export class GovernmentController {
       throw new BadRequestException('status is required');
     }
 
-    const validStatuses = [
+    const validStatuses: SubmissionStatus[] = [
       'SUBMITTED',
       'ACKNOWLEDGED',
       'UNDER_REVIEW',
       'APPROVED',
       'REJECTED',
     ];
-    if (!validStatuses.includes(updateData.status)) {
+    if (!validStatuses.includes(updateData.status as SubmissionStatus)) {
       throw new BadRequestException(`Invalid status: ${updateData.status}`);
     }
+    const status = updateData.status as SubmissionStatus;
 
     try {
       const updated = await this.governmentService.trackPetitionStatus(
         petitionId,
-        updateData.status as any,
+        status,
       );
 
-      this.logger.log(`Petition ${petitionId} status updated to ${updateData.status}`);
+      this.logger.log(
+        `Petition ${petitionId} status updated to ${updateData.status}`,
+      );
 
       return {
         success: true,
@@ -286,7 +320,9 @@ export class GovernmentController {
         submission: updated,
       };
     } catch (error) {
-      this.logger.error(`Status update failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Status update failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -308,7 +344,9 @@ export class GovernmentController {
         stats,
       };
     } catch (error) {
-      this.logger.error(`Stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }

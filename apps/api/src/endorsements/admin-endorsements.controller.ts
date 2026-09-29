@@ -28,7 +28,11 @@ export class AdminEndorsementsController {
   }
 
   @Patch(':id/reject')
-  reject(@Param('id') id: string, @CurrentUser() user: AuthUser, @Body() dto: RejectEndorsementDto) {
+  reject(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RejectEndorsementDto,
+  ) {
     return this.service.reject(id, user.userId, dto);
   }
 }

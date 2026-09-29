@@ -100,10 +100,14 @@ export class MessagesService {
         page: Math.floor(skip / take) + 1,
         pageSize: take,
       };
-    } catch (error: any) {
+    } catch (error) {
       // Handle missing Message table in production (P2021)
-      if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-        console.warn('Message table not yet migrated in database', error.message);
+      const isMissingTableCode =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2021';
+      const message = error instanceof Error ? error.message : String(error);
+      if (isMissingTableCode || message.includes('does not exist')) {
+        console.warn('Message table not yet migrated in database', message);
         return {
           messages: [],
           total: 0,
@@ -263,10 +267,14 @@ export class MessagesService {
           archivedAt: null,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       // Handle missing Message table in production (P2021)
-      if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-        console.warn('Message table not yet migrated in database', error.message);
+      const isMissingTableCode =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2021';
+      const message = error instanceof Error ? error.message : String(error);
+      if (isMissingTableCode || message.includes('does not exist')) {
+        console.warn('Message table not yet migrated in database', message);
         return 0;
       }
       throw error;

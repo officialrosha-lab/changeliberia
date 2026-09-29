@@ -1,8 +1,22 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Payment, Subscription } from '@prisma/client';
 import * as crypto from 'crypto';
+
+interface MoMoRequestToPayStatus {
+  status: 'PENDING' | 'SUCCESSFUL' | 'FAILED';
+  financialTransactionId?: string;
+  reason?: string;
+}
+
+interface MoMoBalanceResponse {
+  availableBalance: string;
+  currency: string;
+}
+
+interface MoMoPreApprovalStatusResponse {
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
 
 export interface MoMoPaymentResponse {
   referenceId: string;
@@ -32,11 +46,16 @@ export class MoMoService {
   private readonly BASE_URL = process.env.MOMO_API_HOST
     ? `https://${process.env.MOMO_API_HOST}/collection`
     : 'https://sandbox.momodeveloper.mtn.com/collection';
-  private readonly ENVIRONMENT = process.env.MOMO_TARGET_ENVIRONMENT || 'sandbox';
+  private readonly ENVIRONMENT =
+    process.env.MOMO_TARGET_ENVIRONMENT || 'sandbox';
   private readonly CURRENCY = process.env.MOMO_CURRENCY || 'XOF';
   private readonly COUNTRY = process.env.MOMO_COUNTRY || 'LR';
-  private readonly POLLING_INTERVAL = parseInt(process.env.MOMO_POLLING_INTERVAL || '2000');
-  private readonly POLLING_MAX_RETRIES = parseInt(process.env.MOMO_POLLING_MAX_RETRIES || '30');
+  private readonly POLLING_INTERVAL = parseInt(
+    process.env.MOMO_POLLING_INTERVAL || '2000',
+  );
+  private readonly POLLING_MAX_RETRIES = parseInt(
+    process.env.MOMO_POLLING_MAX_RETRIES || '30',
+  );
   private readonly WEBHOOK_URL = process.env.MOMO_WEBHOOK_URL || '';
 
   constructor(private readonly prisma: PrismaService) {
@@ -48,23 +67,29 @@ export class MoMoService {
    */
   private initializeApiClient(): void {
     if (!this.API_USER || !this.API_KEY) {
-      this.logger.warn('MoMo credentials not configured — MoMo payments disabled');
+      this.logger.warn(
+        'MoMo credentials not configured — MoMo payments disabled',
+      );
       return;
     }
 
-    const basicAuth = Buffer.from(`${this.API_USER}:${this.API_KEY}`).toString('base64');
+    const basicAuth = Buffer.from(`${this.API_USER}:${this.API_KEY}`).toString(
+      'base64',
+    );
 
     this.apiClient = axios.create({
       baseURL: this.BASE_URL,
       headers: {
-        'Authorization': `Basic ${basicAuth}`,
+        Authorization: `Basic ${basicAuth}`,
         'X-Target-Environment': this.ENVIRONMENT,
         'Ocp-Apim-Subscription-Key': this.API_KEY,
         'Content-Type': 'application/json',
       },
     });
 
-    this.logger.debug(`MoMo API client initialized for ${this.ENVIRONMENT} environment`);
+    this.logger.debug(
+      `MoMo API client initialized for ${this.ENVIRONMENT} environment`,
+    );
   }
 
   /**
@@ -96,14 +121,14 @@ export class MoMoService {
     } else if (!normalized.startsWith('231') && normalized.length === 12) {
       // Assume country code prefix (but not 231)
       throw new BadRequestException(
-        `Invalid country code. Expected Liberia (+231), got +${normalized.substring(0, 3)}`
+        `Invalid country code. Expected Liberia (+231), got +${normalized.substring(0, 3)}`,
       );
     }
 
     // Validate final format: must be 231XXXXXXXXX (12 digits)
     if (!/^231\d{9}$/.test(normalized)) {
       throw new BadRequestException(
-        `Invalid phone number format. Expected format: +231XXXXXXXXX or 0XXXXXXXXX`
+        `Invalid phone number format. Expected format: +231XXXXXXXXX or 0XXXXXXXXX`,
       );
     }
 
@@ -121,10 +146,17 @@ export class MoMoService {
    * Generate idempotency key to prevent duplicate charges
    * Format: userId-paymentId-timestamp
    */
-  generateIdempotencyKey(userId: string | undefined, paymentId: string): string {
+  generateIdempotencyKey(
+    userId: string | undefined,
+    paymentId: string,
+  ): string {
     const timestamp = Date.now();
     const data = `${userId || 'anonymous'}-${paymentId}-${timestamp}`;
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
+    return crypto
+      .createHash('sha256')
+      .update(data)
+      .digest('hex')
+      .substring(0, 32);
   }
 
   /**
@@ -155,10 +187,15 @@ export class MoMoService {
     });
 
     if (existingPayment) {
-      this.logger.debug(`Returning existing payment for idempotency key: ${params.externalId}`);
+      this.logger.debug(
+        `Returning existing payment for idempotency key: ${params.externalId}`,
+      );
       return {
         referenceId: existingPayment.id,
-        status: existingPayment.momoStatus as any,
+        status: existingPayment.momoStatus as
+          | 'PENDING'
+          | 'SUCCESSFUL'
+          | 'FAILED',
         expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min default
         transactionId: existingPayment.momoTransactionId || undefined,
       };
@@ -177,9 +214,11 @@ export class MoMoService {
         payeeNote: params.description || 'Donation to Change Liberia',
       };
 
-      this.logger.debug(`Initiating MoMo payment: ${JSON.stringify(requestPayload)}`);
+      this.logger.debug(
+        `Initiating MoMo payment: ${JSON.stringify(requestPayload)}`,
+      );
 
-      const response = await this.apiClient.post('/v1_0/requesttopay', requestPayload, {
+      await this.apiClient.post('/v1_0/requesttopay', requestPayload, {
         headers: {
           'X-Reference-Id': params.externalId,
           'X-Callback-Url': this.WEBHOOK_URL,
@@ -196,7 +235,7 @@ export class MoMoService {
     } catch (error) {
       this.logger.error(
         `MoMo requestToPay failed: ${(error as Error).message}`,
-        (error as any).response?.data
+        (error as AxiosError).response?.data,
       );
       throw this.parseError(error);
     }
@@ -207,7 +246,7 @@ export class MoMoService {
    */
   async getTransactionStatus(
     referenceId: string,
-    maxRetries: number = this.POLLING_MAX_RETRIES
+    maxRetries: number = this.POLLING_MAX_RETRIES,
   ): Promise<{
     status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'TIMEOUT';
     transactionId?: string;
@@ -218,17 +257,16 @@ export class MoMoService {
     }
 
     let retries = 0;
-    const startTime = Date.now();
 
     while (retries < maxRetries) {
       try {
-        const response = await this.apiClient.get(
+        const response = await this.apiClient.get<MoMoRequestToPayStatus>(
           `/v1_0/requesttopay/${referenceId}`,
           {
             headers: {
               'X-Reference-Id': referenceId,
             },
-          }
+          },
         );
 
         const { status, financialTransactionId, reason } = response.data;
@@ -252,13 +290,15 @@ export class MoMoService {
         }
       } catch (error) {
         // 404 means transaction not found yet (still pending)
-        if ((error as any).response?.status === 404) {
+        if ((error as AxiosError).response?.status === 404) {
           retries++;
           if (retries < maxRetries) {
             await this.sleep(this.POLLING_INTERVAL);
           }
         } else {
-          this.logger.error(`Error checking transaction status: ${(error as Error).message}`);
+          this.logger.error(
+            `Error checking transaction status: ${(error as Error).message}`,
+          );
           throw this.parseError(error);
         }
       }
@@ -279,18 +319,23 @@ export class MoMoService {
     }
 
     try {
-      const response = await this.apiClient.get('/v1_0/account/balance', {
-        headers: {
-          'X-Target-Environment': this.ENVIRONMENT,
+      const response = await this.apiClient.get<MoMoBalanceResponse>(
+        '/v1_0/account/balance',
+        {
+          headers: {
+            'X-Target-Environment': this.ENVIRONMENT,
+          },
         },
-      });
+      );
 
       return {
         balance: parseFloat(response.data.availableBalance),
         currency: response.data.currency,
       };
     } catch (error) {
-      this.logger.error(`Failed to get account balance: ${(error as Error).message}`);
+      this.logger.error(
+        `Failed to get account balance: ${(error as Error).message}`,
+      );
       throw this.parseError(error);
     }
   }
@@ -323,7 +368,7 @@ export class MoMoService {
         validityTime: params.validityTimeInSeconds,
       };
 
-      const response = await this.apiClient.post('/v2_0/preapproval', requestPayload, {
+      await this.apiClient.post('/v2_0/preapproval', requestPayload, {
         headers: {
           'X-Reference-Id': params.externalId,
           'X-Callback-Url': this.WEBHOOK_URL,
@@ -337,7 +382,9 @@ export class MoMoService {
         expiresAt: new Date(Date.now() + params.validityTimeInSeconds * 1000),
       };
     } catch (error) {
-      this.logger.error(`Pre-approval creation failed: ${(error as Error).message}`);
+      this.logger.error(
+        `Pre-approval creation failed: ${(error as Error).message}`,
+      );
       throw this.parseError(error);
     }
   }
@@ -345,9 +392,7 @@ export class MoMoService {
   /**
    * Check pre-approval status
    */
-  async getPreApprovalStatus(
-    preapprovalId: string
-  ): Promise<{
+  async getPreApprovalStatus(preapprovalId: string): Promise<{
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'TIMEOUT';
   }> {
     if (!this.apiClient) {
@@ -355,18 +400,20 @@ export class MoMoService {
     }
 
     try {
-      const response = await this.apiClient.get(
-        `/v2_0/preapproval/${preapprovalId}`
+      const response = await this.apiClient.get<MoMoPreApprovalStatusResponse>(
+        `/v2_0/preapproval/${preapprovalId}`,
       );
 
       return {
         status: response.data.status || 'PENDING',
       };
     } catch (error) {
-      if ((error as any).response?.status === 404) {
+      if ((error as AxiosError).response?.status === 404) {
         return { status: 'PENDING' };
       }
-      this.logger.error(`Error checking pre-approval status: ${(error as Error).message}`);
+      this.logger.error(
+        `Error checking pre-approval status: ${(error as Error).message}`,
+      );
       throw this.parseError(error);
     }
   }
@@ -381,7 +428,10 @@ export class MoMoService {
     currency: string;
     externalId: string; // Idempotency key for this charge
     description?: string;
-  }): Promise<{ referenceId: string; status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }> {
+  }): Promise<{
+    referenceId: string;
+    status: 'PENDING' | 'SUCCESSFUL' | 'FAILED';
+  }> {
     if (!this.apiClient) {
       throw new BadRequestException('MoMo payment service is not configured');
     }
@@ -395,22 +445,20 @@ export class MoMoService {
         payerMessage: params.description || 'Subscription charge',
       };
 
-      const response = await this.apiClient.post(
-        '/v2_0/payment',
-        requestPayload,
-        {
-          headers: {
-            'X-Reference-Id': params.externalId,
-          },
-        }
-      );
+      await this.apiClient.post('/v2_0/payment', requestPayload, {
+        headers: {
+          'X-Reference-Id': params.externalId,
+        },
+      });
 
       return {
         referenceId: params.externalId,
         status: 'PENDING', // Will receive webhook update
       };
     } catch (error) {
-      this.logger.error(`Pre-approved payment execution failed: ${(error as Error).message}`);
+      this.logger.error(
+        `Pre-approved payment execution failed: ${(error as Error).message}`,
+      );
       throw this.parseError(error);
     }
   }
@@ -425,9 +473,10 @@ export class MoMoService {
   /**
    * Parse MoMo API errors to user-friendly messages
    */
-  private parseError(error: any): Error {
-    const status = error?.response?.status;
-    const data = error?.response?.data;
+  private parseError(error: unknown): Error {
+    const axiosError = axios.isAxiosError(error) ? error : undefined;
+    const status = axiosError?.response?.status;
+    const data = axiosError?.response?.data as { message?: string } | undefined;
 
     const errorMap: Record<number, string> = {
       400: 'Invalid request parameters',
@@ -440,7 +489,11 @@ export class MoMoService {
       503: 'MoMo service maintenance',
     };
 
-    const message = errorMap[status] || data?.message || (error as Error)?.message || 'Unknown MoMo error';
+    const message =
+      (status && errorMap[status]) ||
+      data?.message ||
+      (error instanceof Error ? error.message : undefined) ||
+      'Unknown MoMo error';
     return new BadRequestException(message);
   }
 
@@ -459,7 +512,7 @@ export class MoMoService {
   /**
    * Generate webhook signature for verification
    */
-  generateWebhookSignature(payload: any, secret: string): string {
+  generateWebhookSignature(payload: unknown, secret: string): string {
     return crypto
       .createHmac('sha256', secret)
       .update(JSON.stringify(payload))

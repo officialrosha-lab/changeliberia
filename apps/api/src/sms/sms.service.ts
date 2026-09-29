@@ -22,7 +22,9 @@ export class SmsService {
       this.logger.log('Twilio SMS client initialised');
     } else {
       this.client = null;
-      this.logger.warn('Twilio env vars not set — SMS will be logged to console only');
+      this.logger.warn(
+        'Twilio env vars not set — SMS will be logged to console only',
+      );
     }
   }
 
@@ -37,7 +39,12 @@ export class SmsService {
       this.logger.log(`[SMS] Delivered to ${to}`);
     } catch (err: unknown) {
       // Log every field Twilio provides so the error is visible in Railway logs
-      const e = err as { code?: number; status?: number; message?: string; moreInfo?: string };
+      const e = err as {
+        code?: number;
+        status?: number;
+        message?: string;
+        moreInfo?: string;
+      };
       this.logger.error(
         `[SMS] Twilio delivery failed → to=${to} code=${e.code ?? '?'} status=${e.status ?? '?'} message="${e.message ?? ''}" moreInfo=${e.moreInfo ?? ''}`,
       );

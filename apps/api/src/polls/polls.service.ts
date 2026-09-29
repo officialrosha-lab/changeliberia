@@ -1,10 +1,42 @@
-import { Injectable, BadRequestException, NotFoundException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Prisma, PollStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { PollResponse, PollListResponse } from './dto/poll-response.dto';
 import { slugify } from '../common/utils/slugify';
+
+interface PollWithRelations {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  category: string;
+  county: string | null;
+  status: string;
+  visibility: string;
+  expiresAt: Date;
+  totalVotes: number;
+  relatedPetitionIds: string;
+  options: {
+    id: string;
+    text: string;
+    imageUrl: string | null;
+    voteCount: number;
+  }[];
+  createdAt: Date;
+  creator: {
+    id: string;
+    fullName: string;
+    email?: string | null;
+  };
+}
 
 @Injectable()
 export class PollsService {
@@ -32,9 +64,7 @@ export class PollsService {
   async createPoll(createPollDto: CreatePollDto, createdBy: string) {
     // Validate options
     if (!createPollDto.options || createPollDto.options.length < 2) {
-      throw new BadRequestException(
-        'Poll must have at least 2 options',
-      );
+      throw new BadRequestException('Poll must have at least 2 options');
     }
 
     // Generate slug
@@ -43,9 +73,7 @@ export class PollsService {
     let counter = 1;
 
     // Ensure unique slug
-    while (
-      await this.prisma.poll.findUnique({ where: { slug } })
-    ) {
+    while (await this.prisma.poll.findUnique({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
@@ -117,9 +145,11 @@ export class PollsService {
           district: createPollDto.district || null,
           community: createPollDto.community || null,
           createdBy: submittedBy,
-          status: 'PENDING' as any,
+          status: PollStatus.PENDING,
           expiresAt: new Date(createPollDto.expiresAt),
-          relatedPetitionIds: JSON.stringify(createPollDto.relatedPetitionIds || []),
+          relatedPetitionIds: JSON.stringify(
+            createPollDto.relatedPetitionIds || [],
+          ),
           options: {
             create: this.formatPollOptions(createPollDto.options),
           },
@@ -145,23 +175,39 @@ export class PollsService {
 
       return this.formatPollResponse(poll);
     } catch (err) {
-      if (err instanceof BadRequestException || err instanceof NotFoundException) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      ) {
         throw err;
       }
       // Surface Prisma error codes to help diagnose production issues
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        this.logger.error(`Poll submit Prisma error P${err.code}: ${err.message}`, err.meta);
+        this.logger.error(
+          `Poll submit Prisma error P${err.code}: ${err.message}`,
+          err.meta,
+        );
         if (err.code === 'P2002') {
-          throw new BadRequestException('A poll with that title already exists. Please use a different title.');
+          throw new BadRequestException(
+            'A poll with that title already exists. Please use a different title.',
+          );
         }
-        throw new InternalServerErrorException(`Database error: ${err.code} — ${err.message}`);
+        throw new InternalServerErrorException(
+          `Database error: ${err.code} — ${err.message}`,
+        );
       }
       if (err instanceof Prisma.PrismaClientValidationError) {
         this.logger.error(`Poll submit validation error: ${err.message}`);
-        throw new InternalServerErrorException(`Validation error: ${err.message}`);
+        throw new InternalServerErrorException(
+          `Validation error: ${err.message}`,
+        );
       }
-      this.logger.error(`Poll submit unexpected error: ${err}`);
-      throw new InternalServerErrorException(`Unexpected error: ${String(err)}`);
+      this.logger.error(
+        `Poll submit unexpected error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      throw new InternalServerErrorException(
+        `Unexpected error: ${String(err)}`,
+      );
     }
   }
 
@@ -295,21 +341,36 @@ export class PollsService {
     search?: string,
   ): Promise<PollListResponse[]> {
     // Validate status is a valid PollStatus
-    const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'ACTIVE', 'EXPIRED', 'CLOSED'];
-    const finalStatus = validStatuses.includes(status) ? (status as any) : 'APPROVED';
+    const validStatuses: PollStatus[] = [
+      PollStatus.PENDING,
+      PollStatus.APPROVED,
+      PollStatus.REJECTED,
+      PollStatus.ACTIVE,
+      PollStatus.EXPIRED,
+      PollStatus.CLOSED,
+    ];
+    const finalStatus = validStatuses.includes(status as PollStatus)
+      ? (status as PollStatus)
+      : PollStatus.APPROVED;
 
     const orderBy =
-      sort === 'popular' ? { totalVotes: 'desc' as const } :
-      sort === 'name'    ? { title: 'asc' as const } :
-                           { createdAt: 'desc' as const };
+      sort === 'popular'
+        ? { totalVotes: 'desc' as const }
+        : sort === 'name'
+          ? { title: 'asc' as const }
+          : { createdAt: 'desc' as const };
 
     const polls = await this.prisma.poll.findMany({
       where: {
         status: finalStatus,
         visibility: 'PUBLIC',
-        category: category ? { equals: category, mode: 'insensitive' } : undefined,
+        category: category
+          ? { equals: category, mode: 'insensitive' }
+          : undefined,
         county: county ? { equals: county, mode: 'insensitive' } : undefined,
-        ...(search ? { title: { contains: search, mode: 'insensitive' as const } } : {}),
+        ...(search
+          ? { title: { contains: search, mode: 'insensitive' as const } }
+          : {}),
       },
       orderBy,
       take: limit,
@@ -326,7 +387,7 @@ export class PollsService {
       },
     });
 
-    return polls.map(poll => ({
+    return polls.map((poll) => ({
       ...poll,
       expiresAt: poll.expiresAt.toISOString(),
     }));
@@ -355,7 +416,7 @@ export class PollsService {
       },
     });
 
-    return polls.map(poll => ({
+    return polls.map((poll) => ({
       ...poll,
       expiresAt: poll.expiresAt.toISOString(),
     }));
@@ -415,15 +476,26 @@ export class PollsService {
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        this.logger.error(`getPollBySlug Prisma error P${err.code}: ${err.message}`, err.meta);
-        throw new InternalServerErrorException(`Database error: ${err.code} — ${err.message}`);
+        this.logger.error(
+          `getPollBySlug Prisma error P${err.code}: ${err.message}`,
+          err.meta,
+        );
+        throw new InternalServerErrorException(
+          `Database error: ${err.code} — ${err.message}`,
+        );
       }
       if (err instanceof Prisma.PrismaClientValidationError) {
         this.logger.error(`getPollBySlug validation error: ${err.message}`);
-        throw new InternalServerErrorException(`Validation error: ${err.message}`);
+        throw new InternalServerErrorException(
+          `Validation error: ${err.message}`,
+        );
       }
-      this.logger.error(`getPollBySlug unexpected error: ${err}`);
-      throw new InternalServerErrorException(`Unexpected error: ${String(err)}`);
+      this.logger.error(
+        `getPollBySlug unexpected error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      throw new InternalServerErrorException(
+        `Unexpected error: ${String(err)}`,
+      );
     }
   }
 
@@ -460,9 +532,10 @@ export class PollsService {
         text: option.text,
         imageUrl: option.imageUrl ?? undefined,
         voteCount: option.voteCount,
-        percentage: poll.totalVotes > 0
-          ? Math.round((option.voteCount / poll.totalVotes) * 100)
-          : 0,
+        percentage:
+          poll.totalVotes > 0
+            ? Math.round((option.voteCount / poll.totalVotes) * 100)
+            : 0,
       })),
     };
   }
@@ -500,9 +573,18 @@ export class PollsService {
 
     return {
       total,
-      byCounty: byCounty.map((r) => ({ label: r.county as string, count: r._count._all })),
-      byDistrict: byDistrict.map((r) => ({ label: r.district as string, count: r._count._all })),
-      byCommunity: byCommunity.map((r) => ({ label: r.community as string, count: r._count._all })),
+      byCounty: byCounty.map((r) => ({
+        label: r.county as string,
+        count: r._count._all,
+      })),
+      byDistrict: byDistrict.map((r) => ({
+        label: r.district as string,
+        count: r._count._all,
+      })),
+      byCommunity: byCommunity.map((r) => ({
+        label: r.community as string,
+        count: r._count._all,
+      })),
     };
   }
 
@@ -552,7 +634,7 @@ export class PollsService {
       },
     });
 
-    return polls.map(poll => ({
+    return polls.map((poll) => ({
       ...poll,
       expiresAt: poll.expiresAt.toISOString(),
     }));
@@ -561,16 +643,16 @@ export class PollsService {
   /**
    * Format poll response with calculated percentages
    */
-  private formatPollResponse(poll: any): PollResponse {
-    const relatedPetitionIds = Array.isArray(poll.relatedPetitionIds)
-      ? poll.relatedPetitionIds
-      : JSON.parse(poll.relatedPetitionIds || '[]');
+  private formatPollResponse(poll: PollWithRelations): PollResponse {
+    const relatedPetitionIds = JSON.parse(
+      poll.relatedPetitionIds || '[]',
+    ) as string[];
 
     return {
       id: poll.id,
       slug: poll.slug,
       title: poll.title,
-      description: poll.description,
+      description: poll.description ?? undefined,
       category: poll.category,
       county: poll.county,
       status: poll.status,
@@ -583,9 +665,10 @@ export class PollsService {
         text: option.text,
         imageUrl: option.imageUrl ?? undefined,
         voteCount: option.voteCount,
-        percentage: poll.totalVotes > 0
-          ? Math.round((option.voteCount / poll.totalVotes) * 100)
-          : 0,
+        percentage:
+          poll.totalVotes > 0
+            ? Math.round((option.voteCount / poll.totalVotes) * 100)
+            : 0,
       })),
       createdAt: poll.createdAt.toISOString(),
       createdBy: poll.creator,

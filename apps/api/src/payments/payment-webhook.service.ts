@@ -9,15 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WebhookEventHandlerService } from './webhook-event-handler.service';
 import { WEBHOOK_CONFIG, PaymentErrorCode } from './payments.constants';
 import { RawBodyRequest } from '../common/middleware/raw-body.middleware';
-
-/**
- * Stripe webhook event type (not exported from Stripe SDK)
- */
-interface StripeWebhookEvent {
-  id: string;
-  type: string;
-  [key: string]: any;
-}
+import { StripeEvent } from '../config/stripe.config';
 
 /**
  * Service to handle Stripe webhook processing
@@ -36,7 +28,9 @@ export class PaymentWebhookService {
     const apiKey = process.env.STRIPE_API_KEY;
     this.stripe = apiKey ? new Stripe(apiKey) : null;
     if (!this.stripe) {
-      this.logger.warn('STRIPE_API_KEY not set — webhook endpoint will be unavailable.');
+      this.logger.warn(
+        'STRIPE_API_KEY not set — webhook endpoint will be unavailable.',
+      );
     }
 
     this.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -122,7 +116,7 @@ export class PaymentWebhookService {
   private verifyWebhookSignature(
     rawBody: Buffer,
     signature: string,
-  ): StripeWebhookEvent {
+  ): StripeEvent {
     try {
       // Parse signature header to extract timestamp and signatures
       const signatureHeader = this.parseSignatureHeader(signature);
@@ -131,7 +125,9 @@ export class PaymentWebhookService {
       this.validateTimestamp(signatureHeader.timestamp);
 
       if (!this.stripe) {
-        throw new BadRequestException('Payment webhooks are not configured on this server.');
+        throw new BadRequestException(
+          'Payment webhooks are not configured on this server.',
+        );
       }
       // Verify signature using Stripe library
       const event = this.stripe.webhooks.constructEvent(

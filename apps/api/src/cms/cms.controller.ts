@@ -244,7 +244,8 @@ export class CMSController {
   @Patch('blocks/:blockId')
   async updateBlock(
     @Param('blockId') blockId: string,
-    @Body() data: { type?: string; order?: number; props?: Record<string, any> },
+    @Body()
+    data: { type?: string; order?: number; props?: Record<string, any> },
   ) {
     return this.cmsService.updateBlock(blockId, data);
   }
@@ -300,7 +301,11 @@ export class CMSController {
     @Param('fileId') fileId: string,
     @Body() data: { alt?: string; tags?: string[] },
   ) {
-    return this.fileUploadService.updateFileMetadata(fileId, data.alt, data.tags);
+    return this.fileUploadService.updateFileMetadata(
+      fileId,
+      data.alt,
+      data.tags,
+    );
   }
 
   /**
@@ -417,7 +422,8 @@ export class CMSController {
   async scheduleAction(
     @Param('pageId') pageId: string,
     @CurrentUser() user: { id: string; email: string },
-    @Body() data: { action: 'publish' | 'unpublish' | 'update'; scheduledFor: Date },
+    @Body()
+    data: { action: 'publish' | 'unpublish' | 'update'; scheduledFor: Date },
   ) {
     return this.contentSchedulingService.scheduleAction(
       pageId,

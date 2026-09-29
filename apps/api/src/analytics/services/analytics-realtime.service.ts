@@ -9,14 +9,15 @@ import { AnalyticsGateway } from '../gateways/analytics.gateway';
 @Injectable()
 export class AnalyticsRealtimeService {
   constructor(
-    @Inject(AnalyticsGateway) private readonly analyticsGateway: AnalyticsGateway,
+    @Inject(AnalyticsGateway)
+    private readonly analyticsGateway: AnalyticsGateway,
   ) {}
 
   /**
    * Listen to message.created event and broadcast to analytics subscribers
    */
   @OnEvent('message.created')
-  async onMessageCreated(event: {
+  onMessageCreated(event: {
     messageId: string;
     senderId: string;
     recipientId: string;
@@ -34,7 +35,10 @@ export class AnalyticsRealtimeService {
         timestamp: event.createdAt,
       });
     } catch (error) {
-      console.error('[AnalyticsRealtimeService] Error emitting message.created:', error);
+      console.error(
+        '[AnalyticsRealtimeService] Error emitting message.created:',
+        error,
+      );
     }
   }
 
@@ -42,7 +46,7 @@ export class AnalyticsRealtimeService {
    * Listen to broadcast.sent event and broadcast to analytics subscribers
    */
   @OnEvent('broadcast.sent')
-  async onBroadcastSent(event: {
+  onBroadcastSent(event: {
     broadcastId: string;
     title: string;
     recipientCount: number;
@@ -58,7 +62,10 @@ export class AnalyticsRealtimeService {
         timestamp: event.sentAt,
       });
     } catch (error) {
-      console.error('[AnalyticsRealtimeService] Error emitting broadcast.sent:', error);
+      console.error(
+        '[AnalyticsRealtimeService] Error emitting broadcast.sent:',
+        error,
+      );
     }
   }
 
@@ -73,7 +80,10 @@ export class AnalyticsRealtimeService {
     try {
       this.analyticsGateway.emitMessageCountUpdate(data);
     } catch (error) {
-      console.error('[AnalyticsRealtimeService] Error emitting message count update:', error);
+      console.error(
+        '[AnalyticsRealtimeService] Error emitting message count update:',
+        error,
+      );
     }
   }
 
@@ -89,7 +99,10 @@ export class AnalyticsRealtimeService {
     try {
       this.analyticsGateway.emitBroadcastCountUpdate(data);
     } catch (error) {
-      console.error('[AnalyticsRealtimeService] Error emitting broadcast count update:', error);
+      console.error(
+        '[AnalyticsRealtimeService] Error emitting broadcast count update:',
+        error,
+      );
     }
   }
 
@@ -107,7 +120,10 @@ export class AnalyticsRealtimeService {
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error('[AnalyticsRealtimeService] Error emitting metrics update:', error);
+      console.error(
+        '[AnalyticsRealtimeService] Error emitting metrics update:',
+        error,
+      );
     }
   }
 }

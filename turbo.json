@@ -16,7 +16,8 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
-      "outputs": []
+      "outputs": [],
+      "env": ["DATABASE_URL", "JWT_SECRET", "NODE_ENV"]
     }
   }
 }

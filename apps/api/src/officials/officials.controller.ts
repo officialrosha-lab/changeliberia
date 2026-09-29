@@ -15,8 +15,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
 import { Permission } from '../rbac/decorators/permission.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { PermissionResource, PermissionAction, GovernmentResponseStage } from '@prisma/client';
-import { OfficialOwnershipGuard, OfficialAccess } from './guards/official-ownership.guard';
+import {
+  PermissionResource,
+  PermissionAction,
+  GovernmentResponseStage,
+} from '@prisma/client';
+import {
+  OfficialOwnershipGuard,
+  OfficialAccess,
+} from './guards/official-ownership.guard';
 import { OfficialsService } from './officials.service';
 import { OfficialInboxService } from './official-inbox.service';
 import { ResponseWorkflowService } from './response-workflow.service';
@@ -44,8 +51,12 @@ const RESPONSE_STAGES = Object.values(GovernmentResponseStage);
 function parsePagination(page: string, limit: string) {
   const parsedPage = parseInt(page, 10);
   const parsedLimit = parseInt(limit, 10);
-  const safePage = Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
-  const safeLimit = Number.isInteger(parsedLimit) && parsedLimit >= 1 ? Math.min(parsedLimit, 50) : 20;
+  const safePage =
+    Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
+  const safeLimit =
+    Number.isInteger(parsedLimit) && parsedLimit >= 1
+      ? Math.min(parsedLimit, 50)
+      : 20;
   return { page: safePage, take: safeLimit, skip: (safePage - 1) * safeLimit };
 }
 
@@ -60,7 +71,10 @@ export class OfficialsController {
 
   @Post('apply')
   @UseGuards(JwtAuthGuard)
-  apply(@CurrentUser() user: AuthUser, @Body() dto: CreateOfficialApplicationDto) {
+  apply(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreateOfficialApplicationDto,
+  ) {
     return this.officialsService.apply(user.userId, dto);
   }
 
@@ -92,38 +106,65 @@ export class OfficialsController {
   @Patch('me/profile')
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.UPDATE)
-  async updateMyProfile(@Req() req: OfficialRequest, @Body() dto: UpdateOfficialProfileDto) {
+  async updateMyProfile(
+    @Req() req: OfficialRequest,
+    @Body() dto: UpdateOfficialProfileDto,
+  ) {
     if (!req.officialAccess?.isOfficeholder && !req.officialAccess?.canDraft) {
-      throw new ForbiddenException('You do not have permission to edit this profile');
+      throw new ForbiddenException(
+        'You do not have permission to edit this profile',
+      );
     }
-    return this.officialsService.updateMyProfile(req.officialInstitution!.id, dto);
+    return this.officialsService.updateMyProfile(
+      req.officialInstitution!.id,
+      dto,
+    );
   }
 
   @Get('me/dashboard')
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
   async getDashboard(@CurrentUser() user: AuthUser) {
-    const institution = await this.officialsService.getMyInstitution(user.userId);
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
 
-    const [byStage, unreadMessages, totalPetitions, directlyAffectedCount] = await Promise.all([
-      this.prisma.petitionGovernmentResponse.groupBy({
-        by: ['currentStage'],
-        where: { institutionId: institution.id },
-        _count: { id: true },
-      }),
-      this.inboxService.getUnreadCount(user.userId),
-      this.prisma.petitionGovernmentResponse.count({ where: { institutionId: institution.id } }),
-      this.prisma.signatureLocation.count({
-        where: {
-          classification: 'DIRECTLY_AFFECTED',
-          signature: { petition: { governmentResponses: { some: { institutionId: institution.id } } } },
-        },
-      }),
-    ]);
+    const [byStage, unreadMessages, totalPetitions, directlyAffectedCount] =
+      await Promise.all([
+        this.prisma.petitionGovernmentResponse.groupBy({
+          by: ['currentStage'],
+          where: { institutionId: institution.id },
+          _count: { id: true },
+        }),
+        this.inboxService.getUnreadCount(user.userId),
+        this.prisma.petitionGovernmentResponse.count({
+          where: { institutionId: institution.id },
+        }),
+        this.prisma.signatureLocation.count({
+          where: {
+            classification: 'DIRECTLY_AFFECTED',
+            signature: {
+              petition: {
+                governmentResponses: {
+                  some: { institutionId: institution.id },
+                },
+              },
+            },
+          },
+        }),
+      ]);
 
     return {
-      institution: { id: institution.id, name: institution.name, county: institution.county, district: institution.district },
-      petitionsByStage: byStage.map((s) => ({ stage: s.currentStage, count: s._count.id })),
+      institution: {
+        id: institution.id,
+        name: institution.name,
+        county: institution.county,
+        district: institution.district,
+      },
+      petitionsByStage: byStage.map((s) => ({
+        stage: s.currentStage,
+        count: s._count.id,
+      })),
       totalPetitions,
       unreadInboxCount: unreadMessages,
       // Petition Location Verification & Impact Area System (Phase 2)
@@ -135,7 +176,9 @@ export class OfficialsController {
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
   async getConstituency(@CurrentUser() user: AuthUser) {
-    const institution = await this.officialsService.getMyInstitution(user.userId);
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
     if (!institution.county) {
       return {
         county: null,
@@ -149,49 +192,73 @@ export class OfficialsController {
       };
     }
 
-    const countyPetitionFilter = { county: institution.county, status: 'APPROVED' as const };
+    const countyPetitionFilter = {
+      county: institution.county,
+      status: 'APPROVED' as const,
+    };
 
-    const [petitionsCount, signaturesAgg, topCategories, directlyAffectedCount, nearbyCommunityCount, topAffectedAreas] =
-      await Promise.all([
-        this.prisma.petition.count({ where: countyPetitionFilter }),
-        this.prisma.petition.aggregate({
-          where: countyPetitionFilter,
-          _sum: { signaturesCount: true },
-        }),
-        this.prisma.petition.groupBy({
-          by: ['category'],
-          where: countyPetitionFilter,
-          _count: { id: true },
-          orderBy: { _count: { id: 'desc' } },
-          take: 5,
-        }),
-        this.prisma.signatureLocation.count({
-          where: { classification: 'DIRECTLY_AFFECTED', signature: { petition: countyPetitionFilter } },
-        }),
-        this.prisma.signatureLocation.count({
-          where: { classification: 'NEARBY_COMMUNITY', signature: { petition: countyPetitionFilter } },
-        }),
-        this.prisma.signatureLocation.groupBy({
-          by: ['community'],
-          where: { community: { not: null }, signature: { petition: countyPetitionFilter } },
-          _count: { _all: true },
-          orderBy: { _count: { community: 'desc' } },
-          take: 5,
-        }),
-      ]);
+    const [
+      petitionsCount,
+      signaturesAgg,
+      topCategories,
+      directlyAffectedCount,
+      nearbyCommunityCount,
+      topAffectedAreas,
+    ] = await Promise.all([
+      this.prisma.petition.count({ where: countyPetitionFilter }),
+      this.prisma.petition.aggregate({
+        where: countyPetitionFilter,
+        _sum: { signaturesCount: true },
+      }),
+      this.prisma.petition.groupBy({
+        by: ['category'],
+        where: countyPetitionFilter,
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
+      }),
+      this.prisma.signatureLocation.count({
+        where: {
+          classification: 'DIRECTLY_AFFECTED',
+          signature: { petition: countyPetitionFilter },
+        },
+      }),
+      this.prisma.signatureLocation.count({
+        where: {
+          classification: 'NEARBY_COMMUNITY',
+          signature: { petition: countyPetitionFilter },
+        },
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['community'],
+        where: {
+          community: { not: null },
+          signature: { petition: countyPetitionFilter },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { community: 'desc' } },
+        take: 5,
+      }),
+    ]);
 
     return {
       county: institution.county,
       district: institution.district,
       petitionsCount,
       signaturesTotal: signaturesAgg._sum.signaturesCount ?? 0,
-      topCategories: topCategories.map((c) => ({ category: c.category, count: c._count.id })),
+      topCategories: topCategories.map((c) => ({
+        category: c.category,
+        count: c._count.id,
+      })),
       // Petition Location Verification & Impact Area System (Phase 2):
       // how much of the county's support is directly affected vs. nearby,
       // and which communities have the most concentrated concern.
       directlyAffectedCount,
       nearbyCommunityCount,
-      topAffectedAreas: topAffectedAreas.map((a) => ({ community: a.community as string, count: a._count._all })),
+      topAffectedAreas: topAffectedAreas.map((a) => ({
+        community: a.community as string,
+        count: a._count._all,
+      })),
     };
   }
 
@@ -203,7 +270,9 @@ export class OfficialsController {
     @Query('page') page = '1',
     @Query('limit') limit = '20',
   ) {
-    const institution = await this.officialsService.getMyInstitution(user.userId);
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
     const { page: safePage, take, skip } = parsePagination(page, limit);
 
     const [rows, total] = await Promise.all([
@@ -212,13 +281,24 @@ export class OfficialsController {
         include: {
           petition: {
             select: {
-              id: true, title: true, summary: true, category: true, county: true,
-              signaturesCount: true, goal: true, status: true, createdAt: true,
+              id: true,
+              title: true,
+              summary: true,
+              category: true,
+              county: true,
+              signaturesCount: true,
+              goal: true,
+              status: true,
+              createdAt: true,
               // Public Officials Portal: cross-institution collaboration —
               // surface which other institutions are also handling this
               // petition, so the official knows they're not the only one.
               governmentResponses: {
-                select: { institutionId: true, currentStage: true, institution: { select: { id: true, name: true, slug: true } } },
+                select: {
+                  institutionId: true,
+                  currentStage: true,
+                  institution: { select: { id: true, name: true, slug: true } },
+                },
               },
             },
           },
@@ -228,18 +308,33 @@ export class OfficialsController {
         skip,
         take,
       }),
-      this.prisma.petitionGovernmentResponse.count({ where: { institutionId: institution.id } }),
+      this.prisma.petitionGovernmentResponse.count({
+        where: { institutionId: institution.id },
+      }),
     ]);
 
     const data = rows.map((row) => {
       const { governmentResponses, ...petitionRest } = row.petition;
       const collaboratingInstitutions = governmentResponses
         .filter((gr) => gr.institutionId !== institution.id)
-        .map((gr) => ({ id: gr.institution.id, name: gr.institution.name, slug: gr.institution.slug, stage: gr.currentStage }));
+        .map((gr) => ({
+          id: gr.institution.id,
+          name: gr.institution.name,
+          slug: gr.institution.slug,
+          stage: gr.currentStage,
+        }));
       return { ...row, petition: petitionRest, collaboratingInstitutions };
     });
 
-    return { data, pagination: { page: safePage, limit: take, total, totalPages: Math.ceil(total / take) } };
+    return {
+      data,
+      pagination: {
+        page: safePage,
+        limit: take,
+        total,
+        totalPages: Math.ceil(total / take),
+      },
+    };
   }
 
   @Get('me/inbox')
@@ -256,7 +351,9 @@ export class OfficialsController {
       throw new BadRequestException(`Invalid stage filter: ${stage}`);
     }
 
-    const institution = await this.officialsService.getMyInstitution(user.userId);
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
     const { page: safePage, take } = parsePagination(page, limit);
     return this.inboxService.getInbox(
       institution.id,
@@ -278,7 +375,9 @@ export class OfficialsController {
   ) {
     const isAdmin = user.role === 'ADMIN';
     if (!isAdmin && !req.officialAccess?.canRespond) {
-      throw new ForbiddenException('You do not have permission to publish responses on behalf of this office');
+      throw new ForbiddenException(
+        'You do not have permission to publish responses on behalf of this office',
+      );
     }
     return this.responseWorkflow.advanceStage(
       responseId,

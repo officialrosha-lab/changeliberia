@@ -1,6 +1,11 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Notification, NotificationType, NotificationStatus } from '@prisma/client';
+import {
+  Notification,
+  NotificationType,
+  NotificationStatus,
+  Prisma,
+} from '@prisma/client';
 import { NotificationsGateway } from '../events/notifications.gateway';
 
 export interface CreateNotificationDto {
@@ -76,7 +81,7 @@ export class NotificationService {
     const limit = Math.min(filters.limit || 20, 100);
     const offset = filters.offset || 0;
 
-    const where: any = { userId };
+    const where: Prisma.NotificationWhereInput = { userId };
 
     if (filters.status) {
       where.status = filters.status;
@@ -213,7 +218,7 @@ export class NotificationService {
 
     return {
       ...prefs,
-      mutedTypes: JSON.parse(prefs.mutedTypes || '[]'),
+      mutedTypes: JSON.parse(prefs.mutedTypes || '[]') as NotificationType[],
     };
   }
 
