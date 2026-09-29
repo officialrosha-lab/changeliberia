@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { VotingController } from './voting.controller';
@@ -24,6 +25,10 @@ describe('VotingController (unit)', () => {
             extractRealIP: jest.fn().mockReturnValue('127.0.0.1'),
             extractUserAgent: jest.fn().mockReturnValue('jest-agent'),
           },
+        },
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn() },
         },
       ],
     }).compile();
