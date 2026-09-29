@@ -633,6 +633,24 @@ export class RolePermissionService implements OnModuleInit {
         action: PermissionAction.UPDATE,
       },
       { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
+
+      // Entitlements (Monetization foundation)
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.DELETE,
+      },
     ];
 
     // Create permissions
