@@ -64,6 +64,104 @@ export class ConstituencyFeedService {
     private readonly constituencyScope: ConstituencyScopeService,
   ) {}
 
+  /**
+   * The constituency overview stats — extracted from
+   * `officials.controller.ts`'s `getConstituency` route handler so the
+   * constituency report generator (Milestone 5) can reuse the exact same
+   * logic instead of duplicating it. Optional `dateRange` scopes the stats
+   * to a period (used by report generation); omitted, it's all-time,
+   * matching the live dashboard endpoint's existing behavior.
+   */
+  async getConstituencySummary(
+    institution: Institution,
+    dateRange?: { start: Date; end: Date },
+  ) {
+    const scope = this.constituencyScope.buildScopeFilter(institution);
+    if (!scope) {
+      return {
+        scope: null,
+        county: null,
+        district: institution.district,
+        petitionsCount: 0,
+        signaturesTotal: 0,
+        topCategories: [] as { category: string | null; count: number }[],
+        directlyAffectedCount: 0,
+        nearbyCommunityCount: 0,
+        topAffectedAreas: [] as { community: string; count: number }[],
+      };
+    }
+
+    const where = {
+      ...scope,
+      status: PetitionStatus.APPROVED,
+      ...(dateRange
+        ? { createdAt: { gte: dateRange.start, lte: dateRange.end } }
+        : {}),
+    };
+
+    const [
+      petitionsCount,
+      signaturesAgg,
+      topCategories,
+      directlyAffectedCount,
+      nearbyCommunityCount,
+      topAffectedAreas,
+    ] = await Promise.all([
+      this.prisma.petition.count({ where }),
+      this.prisma.petition.aggregate({
+        where,
+        _sum: { signaturesCount: true },
+      }),
+      this.prisma.petition.groupBy({
+        by: ['category'],
+        where,
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
+      }),
+      this.prisma.signatureLocation.count({
+        where: {
+          classification: 'DIRECTLY_AFFECTED',
+          signature: { petition: where },
+        },
+      }),
+      this.prisma.signatureLocation.count({
+        where: {
+          classification: 'NEARBY_COMMUNITY',
+          signature: { petition: where },
+        },
+      }),
+      this.prisma.signatureLocation.groupBy({
+        by: ['community'],
+        where: {
+          community: { not: null },
+          signature: { petition: where },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { community: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    return {
+      scope,
+      county: institution.county,
+      district: institution.district,
+      petitionsCount,
+      signaturesTotal: signaturesAgg._sum.signaturesCount ?? 0,
+      topCategories: topCategories.map((c) => ({
+        category: c.category,
+        count: c._count.id,
+      })),
+      directlyAffectedCount,
+      nearbyCommunityCount,
+      topAffectedAreas: topAffectedAreas.map((a) => ({
+        community: a.community as string,
+        count: a._count._all,
+      })),
+    };
+  }
+
   async getConstituencyPetitionFeed(
     institution: Institution,
     filters: ConstituencyFeedFilters = {},

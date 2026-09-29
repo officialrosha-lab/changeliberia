@@ -1489,6 +1489,10 @@ model Institution {
   governmentResponses PetitionGovernmentResponse[]
   staffMembers        OfficialStaffMember[]
 
+  // Lawmaker Constituency Portal: automated periodic reports
+  constituencyReportPreference ConstituencyReportPreference?
+  constituencyReports          ConstituencyReport[]
+
   @@index([type, category, verified])
   @@index([verified, createdAt])
   @@index([name])
@@ -1680,6 +1684,87 @@ model GovernmentResponseTimelineEntry {
   createdAt   DateTime                   @default(now())
 
   @@index([responseId, createdAt])
+}
+
+// --- Lawmaker Constituency Portal: automated periodic reports --------
+// Mirrors the existing FraudJob DB-backed job pattern (QUEUED/PROCESSING/
+// COMPLETED/FAILED + attempts/error) rather than introducing a new queue
+// system — see apps/api/src/officials/constituency-report.scheduler.ts.
+
+enum ConstituencyReportPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum ConstituencyReportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Per-institution opt-in for each automated report cadence. A tiny
+// separate model (not booleans on Institution) so it carries its own
+// updatedAt/updatedBy for audit, matching how InstitutionStatusLog keeps
+// status changes separate from the Institution row itself.
+model ConstituencyReportPreference {
+  id               String      @id @default(cuid())
+  institutionId    String      @unique
+  institution      Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  weeklyEnabled    Boolean     @default(false)
+  monthlyEnabled   Boolean     @default(true)
+  quarterlyEnabled Boolean     @default(false)
+  annualEnabled    Boolean     @default(false)
+  updatedAt        DateTime    @updatedAt
+  updatedByUserId  String?
+}
+
+model ConstituencyReport {
+  id            String                   @id @default(cuid())
+  institutionId String
+  institution   Institution              @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  period        ConstituencyReportPeriod
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        ConstituencyReportStatus @default(QUEUED)
+  attempts      Int                      @default(0)
+  error         String?                  @db.Text()
+  generatedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+
+  files      ConstituencyReportFile[]
+  deliveries ConstituencyReportDelivery[]
+
+  @@index([institutionId, period, periodStart])
+  @@index([status])
+}
+
+model ConstituencyReportFile {
+  id        String             @id @default(cuid())
+  reportId  String
+  report    ConstituencyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  format    String // "PDF" | "CSV"
+  filePath  String // local disk path — see constituency-report-storage.service.ts
+  fileSize  Int?
+  createdAt DateTime           @default(now())
+
+  @@index([reportId])
+}
+
+model ConstituencyReportDelivery {
+  id          String             @id @default(cuid())
+  reportId    String
+  report      ConstituencyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  channel     String             @default("EMAIL") // only channel at launch; string not enum so a future channel doesn't need a migration
+  recipientId String // User.id (holder or staff member with canGenerateReports/canView)
+  status      String             @default("PENDING") // PENDING | SENT | FAILED
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime           @default(now())
+
+  @@index([reportId])
 }
 
 model InstitutionDepartment {
@@ -2031,6 +2116,7 @@ enum EmailType {
   BROADCAST_NOTIFICATION
   OFFICIAL_VERIFIED
   OFFICIAL_REJECTED
+  CONSTITUENCY_REPORT_READY
 }
 
 enum EmailStatus {

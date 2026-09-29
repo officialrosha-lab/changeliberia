@@ -10,6 +10,7 @@ import { OfficialIssueTrendsPanel } from '../../../components/official-issue-tre
 import { OfficialAnalyticsPanel } from '../../../components/official-analytics-panel';
 import { OfficialInboxPanel } from '../../../components/official-inbox-panel';
 import { OfficialStaffPanel } from '../../../components/official-staff-panel';
+import { OfficialReportsPanel } from '../../../components/official-reports-panel';
 
 const TABS = [
   ['overview', 'Overview'],
@@ -17,6 +18,7 @@ const TABS = [
   ['feed', 'Assigned Issues'],
   ['pulse', 'Civic Pulse'],
   ['issues', 'Issues'],
+  ['reports', 'Reports'],
   ['analytics', 'Analytics'],
   ['inbox', 'Government Inbox'],
   ['staff', 'Office Staff'],
@@ -29,7 +31,7 @@ type Tab = (typeof TABS)[number][0];
 // Civic Pulse/Issues/Analytics tabs pushed past.
 const TAB_GROUPS: { label: string; keys: Tab[] }[] = [
   { label: 'Constituency', keys: ['overview', 'constituency', 'feed', 'pulse', 'issues'] },
-  { label: 'Operations', keys: ['analytics'] },
+  { label: 'Operations', keys: ['reports', 'analytics'] },
   { label: 'Engagement', keys: ['inbox'] },
   { label: 'Account', keys: ['staff'] },
 ];
@@ -104,6 +106,7 @@ export function OfficialDashboardClient() {
             {tab === 'feed' && <OfficialPetitionFeed />}
             {tab === 'pulse' && <OfficialCivicPulsePanel />}
             {tab === 'issues' && <OfficialIssueTrendsPanel />}
+            {tab === 'reports' && <OfficialReportsPanel />}
             {tab === 'analytics' && <OfficialAnalyticsPanel />}
             {tab === 'inbox' && <OfficialInboxPanel />}
             {tab === 'staff' && <OfficialStaffPanel />}
