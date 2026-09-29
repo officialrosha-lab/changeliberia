@@ -20,6 +20,7 @@ import { FacebookModule } from './facebook/facebook.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentModule } from './payments/payment.module';
 import { RbacModule } from './rbac/rbac.module';
+import { EntitlementsModule } from './entitlements/entitlements.module';
 import { ContactDirectoryModule } from './contact-directory/contact-directory.module';
 import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
@@ -50,6 +51,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     NotificationsModule,
     NotificationModule, // user-facing /notifications HTTP routes
     RbacModule,
+    EntitlementsModule,
     ContactDirectoryModule,
     ModeratorModule,
     CMSModule,
