@@ -39,7 +39,7 @@ export function ModeratorPageClient() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
-        <p className="mt-4 text-zinc-600">Loading…</p>
+        <p className="mt-4 text-zinc-600 dark:text-neutral-300">Loading…</p>
       </main>
     );
   }
@@ -48,8 +48,8 @@ export function ModeratorPageClient() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
-        <p className="mt-4 text-zinc-600">
-          <Link href="/auth/login" className="font-semibold text-emerald-700 underline">
+        <p className="mt-4 text-zinc-600 dark:text-neutral-300">
+          <Link href="/auth/login" className="font-semibold text-emerald-700 dark:text-emerald-400 underline">
             Sign in
           </Link>{' '}
           with a moderator account to continue.
@@ -62,11 +62,11 @@ export function ModeratorPageClient() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
-        <p className="mt-4 text-zinc-600">
+        <p className="mt-4 text-zinc-600 dark:text-neutral-300">
           Your account does not have moderator access. Contact an administrator if you believe this is an error.
         </p>
         <p className="mt-4">
-          <Link href="/dashboard" className="text-emerald-700 underline">
+          <Link href="/dashboard" className="text-emerald-700 dark:text-emerald-400 underline">
             Back to dashboard
           </Link>
         </p>
@@ -78,7 +78,7 @@ export function ModeratorPageClient() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
-        <p className="mt-4 text-zinc-600">Loading…</p>
+        <p className="mt-4 text-zinc-600 dark:text-neutral-300">Loading…</p>
       </main>
     );
   }
@@ -93,7 +93,7 @@ export function ModeratorPageClient() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-zinc-200 overflow-x-auto">
+      <div className="flex gap-2 mb-6 border-b border-zinc-200 dark:border-neutral-700 overflow-x-auto">
         {(
           [
             ['pending', 'Pending Review'],
@@ -106,8 +106,8 @@ export function ModeratorPageClient() {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+                ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-neutral-300 dark:hover:text-white'
             }`}
           >
             {label}
@@ -116,7 +116,7 @@ export function ModeratorPageClient() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg border border-zinc-200 p-6">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg border border-zinc-200 dark:border-neutral-700 p-6">
         {activeTab === 'pending' && <ModeratorPendingPetitions />}
         {activeTab === 'fraud' && <ModeratorFraudReview />}
         {activeTab === 'stats' && <ModeratorStats />}
