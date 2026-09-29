@@ -206,7 +206,7 @@ export class ImpactAreaReportService {
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks: Buffer[] = [];
-    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
 
     doc
       .fillColor('#0f172a')

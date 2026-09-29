@@ -3,6 +3,20 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushNotificationService } from './push-notification.service';
 
+interface MilestoneEvent {
+  creatorId: string;
+  petitionId: string;
+  petitionTitle: string;
+  petitionUrl: string;
+  milestone: number;
+}
+
+interface ResponseAdvancedEvent {
+  petitionId: string;
+  petitionTitle: string;
+  stage: string;
+}
+
 /**
  * Web push notification triggers. Mirrors the EmailEventService pattern —
  * listens to the same domain events already emitted elsewhere, additive
@@ -19,11 +33,11 @@ export class PushEventService {
   ) {
     this.eventEmitter.on(
       'petition.milestone',
-      (event) => void this.onMilestone(event),
+      (event: MilestoneEvent) => void this.onMilestone(event),
     );
     this.eventEmitter.on(
       'petition.government-response-advanced',
-      (event) => void this.onResponseAdvanced(event),
+      (event: ResponseAdvancedEvent) => void this.onResponseAdvanced(event),
     );
   }
 
@@ -38,13 +52,7 @@ export class PushEventService {
     return followers.map((f) => f.userId).filter((id) => id !== excludeUserId);
   }
 
-  private async onMilestone(event: {
-    creatorId: string;
-    petitionId: string;
-    petitionTitle: string;
-    petitionUrl: string;
-    milestone: number;
-  }) {
+  private async onMilestone(event: MilestoneEvent) {
     try {
       const recipients = await this.followerIds(event.petitionId);
       const allRecipients = [event.creatorId, ...recipients];
@@ -60,11 +68,7 @@ export class PushEventService {
     }
   }
 
-  private async onResponseAdvanced(event: {
-    petitionId: string;
-    petitionTitle: string;
-    stage: string;
-  }) {
+  private async onResponseAdvanced(event: ResponseAdvancedEvent) {
     try {
       const recipients = await this.followerIds(event.petitionId);
       if (recipients.length === 0) return;

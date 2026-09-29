@@ -40,7 +40,7 @@ export class ModeratorController {
     });
     if (!toggle?.config) return [];
     try {
-      const parsed = JSON.parse(toggle.config);
+      const parsed: unknown = JSON.parse(toggle.config);
       return Array.isArray(parsed)
         ? parsed.filter((c) => typeof c === 'string')
         : [];

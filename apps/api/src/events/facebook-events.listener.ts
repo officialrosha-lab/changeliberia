@@ -75,7 +75,7 @@ export class FacebookEventsListener {
           where: {
             userId: event.userId,
             petitionId: event.petitionId,
-            badgeType: badgeType as any,
+            badgeType,
           },
         });
 

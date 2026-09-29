@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -119,7 +120,10 @@ export class NotificationsGateway
    * Broadcast new notification to a user
    * Called from NotificationTriggerService or NotificationService
    */
-  broadcastNotificationToUser(userId: string, notification: any) {
+  broadcastNotificationToUser(
+    userId: string,
+    notification: { type: NotificationType } & Record<string, unknown>,
+  ) {
     this.server.to(`user:${userId}`).emit('new_notification', {
       ...notification,
       deliveredAt: new Date().toISOString(),

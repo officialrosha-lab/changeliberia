@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { GovernmentResponseStage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -25,7 +26,9 @@ export class OfficialInboxService {
       this.prisma.petitionGovernmentResponse.findMany({
         where: {
           institutionId,
-          ...(filters.stage ? { currentStage: filters.stage as any } : {}),
+          ...(filters.stage
+            ? { currentStage: filters.stage as GovernmentResponseStage }
+            : {}),
         },
         include: {
           petition: {

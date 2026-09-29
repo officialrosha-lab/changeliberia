@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { DomainEvent } from './domain-events';
+import { DomainEventType } from '@prisma/client';
 
 interface ErrorWithMessage {
   message: string;
@@ -37,7 +38,7 @@ export class EventBusService {
       // Persist event to database
       await this.prisma.domainEvent.create({
         data: {
-          type: event.eventType as any,
+          type: event.eventType as DomainEventType,
           entityId: event.entityId,
           entityType: event.entityType,
           payload: JSON.stringify(event.getPayload()),

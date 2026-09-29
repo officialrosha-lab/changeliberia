@@ -20,7 +20,7 @@ import {
   CreateSubscriptionDto,
 } from './payment.service';
 import { PaymentWebhookService } from './payment-webhook.service';
-import { MoMoWebhookService } from './momo-webhook.service';
+import { MoMoWebhookService, MoMoWebhookPayload } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -230,7 +230,10 @@ export class PaymentController {
    * Processes payment confirmations and subscription updates
    */
   @Post('momo/webhook')
-  async handleMoMoWebhook(@Body() payload: any, @Req() req: Request) {
+  async handleMoMoWebhook(
+    @Body() payload: MoMoWebhookPayload,
+    @Req() req: Request,
+  ) {
     // Extract signature from headers (case-insensitive)
     const signature =
       (req.headers['x-momo-signature'] as string) ||

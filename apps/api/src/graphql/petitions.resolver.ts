@@ -1,5 +1,6 @@
 import { Args, Int, Query, Resolver } from '@nestjs/graphql';
 import { SkipThrottle } from '@nestjs/throttler';
+import { ImpactScope } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PetitionsService } from '../petitions/petitions.service';
 import {
@@ -37,7 +38,7 @@ export class PetitionsResolver {
         status: 'APPROVED',
         ...(county ? { county } : {}),
         ...(category ? { category } : {}),
-        ...(impactScope ? { impactScope: impactScope as any } : {}),
+        ...(impactScope ? { impactScope: impactScope as ImpactScope } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: Math.min(limit ?? 20, 100),

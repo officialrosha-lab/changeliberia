@@ -5,7 +5,7 @@ import { MoMoService } from './providers/momo.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
-interface MoMoWebhookPayload {
+export interface MoMoWebhookPayload {
   eventType?: 'requestToPay' | 'preApproval' | 'payment';
   externalId: string;
   status: string;

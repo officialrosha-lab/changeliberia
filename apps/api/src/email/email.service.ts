@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { EmailTemplate } from './email.types';
 
 /**
@@ -10,7 +11,7 @@ import { EmailTemplate } from './email.types';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter!: nodemailer.Transporter;
+  private transporter!: nodemailer.Transporter<SMTPTransport.SentMessageInfo>;
 
   constructor() {
     this.initializeTransporter();
