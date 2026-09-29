@@ -50,6 +50,12 @@ export function OfficialDashboardOverview() {
         </p>
       </div>
 
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+        Basic constituency access — petitions, Civic Pulse results, and notifications for your area — is free for
+        every verified official, permanently. Optional advanced tools are billed separately and never affect what
+        you see here.
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
           <p className="text-xs uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">Assigned petitions</p>
