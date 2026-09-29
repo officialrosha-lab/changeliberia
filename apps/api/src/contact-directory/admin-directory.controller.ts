@@ -24,6 +24,7 @@ import {
   ActivityLogInput,
 } from '../activity/activity-logger.service';
 import { ContactDirectoryService } from './contact-directory.service';
+import { InstitutionType, InstitutionCategory } from '@prisma/client';
 import { SmartRoutingService } from './routing/smart-routing.service';
 import { BulkImportService } from '../bulk-import/bulk-import.service';
 import {
@@ -83,10 +84,15 @@ export class AdminDirectoryController {
     @Query('verified') verified?: string,
     @Query('search') search?: string,
   ) {
-    const filters: any = {};
+    const filters: {
+      type?: InstitutionType;
+      category?: InstitutionCategory;
+      verified?: boolean;
+      search?: string;
+    } = {};
 
-    if (type) filters.type = type;
-    if (category) filters.category = category;
+    if (type) filters.type = type as InstitutionType;
+    if (category) filters.category = category as InstitutionCategory;
     if (verified !== undefined) filters.verified = verified === 'true';
     if (search) filters.search = search;
 
