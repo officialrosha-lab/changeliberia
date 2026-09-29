@@ -112,15 +112,15 @@ export function OfficialStaffPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-extrabold text-zinc-900">Office Staff</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h2 className="text-xl font-extrabold text-zinc-900 dark:text-white">Office Staff</h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
           Invite Chief of Staff, Legislative Assistants, and other delegated staff to help manage your office.
         </p>
       </div>
 
-      <div className="rounded-3xl border border-zinc-200 p-5">
-        <h3 className="text-lg font-semibold text-zinc-900">Invite staff</h3>
-        <p className="mt-1 text-xs text-zinc-500">
+      <div className="rounded-3xl border border-zinc-200 p-5 dark:border-neutral-700">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Invite staff</h3>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-neutral-400">
           The invitee must already have a Change Liberia account (looked up by phone number).
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -128,12 +128,12 @@ export function OfficialStaffPanel() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Phone number, e.g. +231770000000"
-            className="rounded-xl border border-zinc-300 px-3 py-2 text-sm"
+            className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
           />
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as typeof role)}
-            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm"
+            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           >
             {STAFF_ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -144,7 +144,7 @@ export function OfficialStaffPanel() {
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
           {PERMISSION_FLAGS.map((p) => (
-            <label key={p.key} className="flex items-center gap-2 text-sm text-zinc-700">
+            <label key={p.key} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={permissions[p.key]}
@@ -155,7 +155,7 @@ export function OfficialStaffPanel() {
             </label>
           ))}
         </div>
-        {inviteError && <p className="mt-2 text-xs text-red-600">{inviteError}</p>}
+        {inviteError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{inviteError}</p>}
         <button
           type="button"
           disabled={inviting || !phone.trim()}
@@ -166,25 +166,25 @@ export function OfficialStaffPanel() {
         </button>
       </div>
 
-      {loading && <p className="text-sm text-zinc-500">Loading staff…</p>}
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {loading && <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading staff…</p>}
+      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{error}</div>}
 
       {!loading && !error && (
         <div className="space-y-3">
-          {staff.length === 0 && <p className="text-sm text-zinc-500">No staff invited yet.</p>}
+          {staff.length === 0 && <p className="text-sm text-zinc-500 dark:text-neutral-400">No staff invited yet.</p>}
           {staff.map((member) => (
-            <div key={member.id} className="rounded-2xl border border-zinc-200 p-4">
+            <div key={member.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-neutral-700">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-zinc-900">{member.user.fullName}</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="font-semibold text-zinc-900 dark:text-white">{member.user.fullName}</p>
+                  <p className="text-xs text-zinc-500 dark:text-neutral-400">
                     {STAFF_ROLES.find((r) => r.value === member.role)?.label ?? member.role} · {member.user.phone}
                   </p>
                   <span
                     className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                       member.status === 'ACTIVE'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
                     }`}
                   >
                     {member.status === 'ACTIVE' ? 'Active' : 'Invited (pending acceptance)'}
@@ -194,14 +194,14 @@ export function OfficialStaffPanel() {
                   type="button"
                   disabled={busyId === member.id}
                   onClick={() => void revoke(member)}
-                  className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:bg-neutral-800 dark:text-red-400 dark:hover:bg-red-950/30"
                 >
                   Revoke
                 </button>
               </div>
               <div className="mt-3 flex flex-wrap gap-3">
                 {PERMISSION_FLAGS.map((p) => (
-                  <label key={p.key} className="flex items-center gap-2 text-xs text-zinc-600">
+                  <label key={p.key} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-neutral-300">
                     <input
                       type="checkbox"
                       disabled={busyId === member.id}
