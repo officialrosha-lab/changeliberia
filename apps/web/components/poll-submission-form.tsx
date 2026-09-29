@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { apiPost } from '../lib/api';
+import { useCounties } from '../lib/use-counties';
 import { useAuthStore } from '../lib/store';
 import { PollOptionInput } from './poll-option-input';
 
@@ -17,21 +18,6 @@ const CATEGORIES = [
   'Human Rights',
 ];
 
-const COUNTIES = [
-  'Montserrado',
-  'Grand Cape Mount',
-  'Bomi',
-  'Gbarpolu',
-  'Lofa',
-  'Bong',
-  'Nimba',
-  'Margibi',
-  'Grand Bassa',
-  'River Gee',
-  'Grand Kru',
-  'Sinoe',
-  'Maryland',
-];
 
 const SUGGESTIONS: Record<string, string[]> = {
   default:           ['Yes', 'No', 'Not sure', 'Need more information'],
@@ -49,6 +35,8 @@ const SUGGESTIONS: Record<string, string[]> = {
 type PollOption = { text: string; imageUrl?: string };
 
 export function PollSubmissionForm({ onSuccess }: { onSuccess?: () => void }) {
+  const { counties: countyOptions } = useCounties();
+  const COUNTIES = countyOptions.map((c) => c.name);
   const token = useAuthStore((s) => s.token);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
