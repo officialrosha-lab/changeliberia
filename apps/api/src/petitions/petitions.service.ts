@@ -525,7 +525,7 @@ export class PetitionsService {
     });
 
     // Group petitions by category
-    const grouped = new Map<string | null, typeof petitions>();
+    const grouped = new Map<string, typeof petitions>();
     for (const petition of petitions) {
       const cat = petition.category || 'Uncategorized';
       if (!grouped.has(cat)) {
