@@ -98,6 +98,55 @@ describe('StripeProviderAdapter', () => {
     expect(session.amountTotal).toBe(50);
   });
 
+  it('tags the resulting Subscription with the same metadata for subscription-mode sessions (needed so webhook handlers, e.g. MembershipsService, can recognize it)', async () => {
+    stripe.checkout.sessions.create.mockResolvedValue({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.com/cs_1',
+      amount_total: 5000,
+      currency: 'usd',
+      payment_status: 'unpaid',
+    });
+
+    await adapter.createCheckoutSession({
+      amount: 50,
+      currency: 'USD',
+      description: 'Supporter Monthly',
+      successUrl: 'https://example.com/ok',
+      cancelUrl: 'https://example.com/cancel',
+      recurringInterval: 'monthly',
+      metadata: { membershipSubscriptionId: 'ms_1' },
+    });
+
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { membershipSubscriptionId: 'ms_1' },
+        subscription_data: { metadata: { membershipSubscriptionId: 'ms_1' } },
+      }),
+    );
+  });
+
+  it('does not set subscription_data for a one-time (non-recurring) checkout session', async () => {
+    stripe.checkout.sessions.create.mockResolvedValue({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.com/cs_1',
+      amount_total: 5000,
+      currency: 'usd',
+      payment_status: 'unpaid',
+    });
+
+    await adapter.createCheckoutSession({
+      amount: 50,
+      currency: 'USD',
+      description: 'Donation',
+      successUrl: 'https://example.com/ok',
+      cancelUrl: 'https://example.com/cancel',
+    });
+
+    const calls = stripe.checkout.sessions.create.mock
+      .calls as unknown as Record<string, unknown>[][];
+    expect(calls[0][0].subscription_data).toBeUndefined();
+  });
+
   it('chargeOneTime always returns a PENDING charge', async () => {
     stripe.paymentIntents.create.mockResolvedValue({
       id: 'pi_1',

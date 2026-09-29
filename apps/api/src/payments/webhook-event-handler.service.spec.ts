@@ -34,6 +34,7 @@ describe('WebhookEventHandlerService', () => {
   };
 
   const mockActivityLogger = { logAsync: jest.fn() };
+  const mockEntitlementsService = { grant: jest.fn(), revoke: jest.fn() };
 
   let service: WebhookEventHandlerService;
 
@@ -42,6 +43,7 @@ describe('WebhookEventHandlerService', () => {
     service = new WebhookEventHandlerService(
       mockPrisma as never,
       mockActivityLogger as never,
+      mockEntitlementsService as never,
       null,
     );
   });
