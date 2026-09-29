@@ -572,7 +572,8 @@ export class PaymentService {
 
       // Current period dates live on the subscription's first item, not on
       // the subscription itself (Stripe moved them in a later API version).
-      const currentPeriodStart = subscription.items.data[0]?.current_period_start;
+      const currentPeriodStart =
+        subscription.items.data[0]?.current_period_start;
       const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
 
       // Store in database
@@ -941,8 +942,7 @@ export class PaymentService {
   private async handleInvoicePaymentSucceeded(
     invoice: StripeInvoice,
   ): Promise<void> {
-    const subscriptionId =
-      invoice.parent?.subscription_details?.subscription;
+    const subscriptionId = invoice.parent?.subscription_details?.subscription;
     const stripeSubscriptionId =
       typeof subscriptionId === 'string' ? subscriptionId : subscriptionId?.id;
 
