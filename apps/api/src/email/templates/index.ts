@@ -122,9 +122,10 @@ export interface PetitionRejectedProps {
 }
 
 export interface MilestoneReachedProps {
-  recipientName: string;
+  recipientName?: string;
   petitionTitle: string;
-  milestone: number;
+  milestoneValue: number;
+  currentSignatures: number;
   petitionUrl: string;
 }
 
@@ -176,20 +177,23 @@ export interface SignatureReceivedProps {
 }
 
 export interface WeeklyDigestProps {
-  recipientName: string;
-  trendingPetitions: Array<{
+  recipientName?: string;
+  digestDate?: string;
+  petitions: Array<{
     title: string;
+    signatures: number;
     url: string;
-    newSignatures: number;
   }>;
-  diggestUrl: string;
+  totalNewSignatures?: number;
+  appUrl?: string;
 }
 
 export interface DonationReceivedProps {
-  recipientName: string;
+  recipientName?: string;
   donorName?: string;
+  petitionTitle?: string;
   amount: number;
-  currency: string;
+  currency?: string;
   dedicationMessage?: string;
   receiptUrl: string;
 }

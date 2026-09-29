@@ -3,13 +3,54 @@
  * Centralized configuration for all Stripe-related settings
  */
 
+import type Stripe from 'stripe';
+
+/**
+ * The API version type accepted by the Stripe SDK's constructor config.
+ * The installed `stripe` package only types the latest API version, so
+ * pinning to an older version requires a cast — this type keeps that cast
+ * anchored to the real SDK type instead of `any`.
+ */
+export type StripeApiVersion = NonNullable<
+  ConstructorParameters<typeof Stripe>[1]
+>['apiVersion'];
+
+/**
+ * The `stripe` package's default export type (`StripeConstructor`, see its
+ * `stripe.cjs.node.d.ts`) doesn't re-export the SDK's resource namespace
+ * (`Event`, `PaymentIntent`, `Invoice`, `Subscription`, ...), so `Stripe.Event`
+ * etc. can't be spelled directly from a normal `import Stripe from 'stripe'`.
+ * These aliases pull the real resource types back out structurally, via the
+ * client instance's own method signatures, instead of reaching into the
+ * package's non-exported internal paths.
+ */
+type StripeInstance = Stripe.Stripe;
+export type StripeEvent = ReturnType<
+  StripeInstance['webhooks']['constructEvent']
+>;
+export type StripePaymentIntent = Awaited<
+  ReturnType<StripeInstance['paymentIntents']['retrieve']>
+>;
+export type StripeInvoice = Awaited<
+  ReturnType<StripeInstance['invoices']['retrieve']>
+>;
+export type StripeSubscription = Awaited<
+  ReturnType<StripeInstance['subscriptions']['retrieve']>
+>;
+export type StripeCharge = Awaited<
+  ReturnType<StripeInstance['charges']['retrieve']>
+>;
+export type StripeCustomer = Awaited<
+  ReturnType<StripeInstance['customers']['retrieve']>
+>;
+
 export const stripeConfig = {
   // API Configuration
   apiVersion: '2024-11-20' as const,
-  
+
   // Currency and Amount Settings
   currency: (process.env.STRIPE_CURRENCY || 'USD').toLowerCase(),
-  
+
   // Webhook Configuration
   webhook: {
     // Timestamp tolerance in seconds (default: 5 minutes)
@@ -81,7 +122,8 @@ export const stripeConfig = {
     // Timeout for Stripe API calls (milliseconds)
     apiTimeout: 30000,
     // Enable detailed error messages in development
-    verboseErrors: !process.env.NODE_ENV || process.env.NODE_ENV === 'development',
+    verboseErrors:
+      !process.env.NODE_ENV || process.env.NODE_ENV === 'development',
   },
 };
 
@@ -91,7 +133,7 @@ export const stripeConfig = {
  */
 export function validateStripeConfig(): void {
   const apiKey = process.env.STRIPE_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('STRIPE_API_KEY environment variable is required');
   }
@@ -123,8 +165,8 @@ export function validateStripeConfig(): void {
 /**
  * Get API version for Stripe client
  */
-export function getStripeApiVersion() {
-  return stripeConfig.apiVersion;
+export function getStripeApiVersion(): StripeApiVersion {
+  return stripeConfig.apiVersion as StripeApiVersion;
 }
 
 /**
@@ -137,6 +179,8 @@ export function getWebhookSignatureTolerance(): number {
 /**
  * Check if feature is enabled
  */
-export function isFeatureEnabled(feature: keyof typeof stripeConfig.features): boolean {
+export function isFeatureEnabled(
+  feature: keyof typeof stripeConfig.features,
+): boolean {
   return stripeConfig.features[feature];
 }

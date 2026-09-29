@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   SignatureAddedEvent,
@@ -26,20 +26,23 @@ export class NotificationTriggerService {
   private setupEventListeners() {
     // Subscribe to signature added event
     // When someone signs a petition, notify the petition creator
-    this.eventEmitter.on('SIGNATURE_ADDED', (event: SignatureAddedEvent) =>
-      this.handleSignatureAdded(event),
+    this.eventEmitter.on(
+      'SIGNATURE_ADDED',
+      (event: SignatureAddedEvent) => void this.handleSignatureAdded(event),
     );
 
     // Subscribe to petition approved event
     // When a petition is approved, notify the creator
-    this.eventEmitter.on('PETITION_APPROVED', (event: PetitionApprovedEvent) =>
-      this.handlePetitionApproved(event),
+    this.eventEmitter.on(
+      'PETITION_APPROVED',
+      (event: PetitionApprovedEvent) => void this.handlePetitionApproved(event),
     );
 
     // Subscribe to petition rejected event
     // When a petition is rejected, notify the creator
-    this.eventEmitter.on('PETITION_REJECTED', (event: PetitionRejectedEvent) =>
-      this.handlePetitionRejected(event),
+    this.eventEmitter.on(
+      'PETITION_REJECTED',
+      (event: PetitionRejectedEvent) => void this.handlePetitionRejected(event),
     );
   }
 

@@ -23,9 +23,7 @@ export class PetitionsScheduler {
       const result = await this.prisma.petition.updateMany({
         data: { todaySignatures: 0 },
       });
-      this.logger.log(
-        `✅ Reset todaySignatures for ${result.count} petitions`,
-      );
+      this.logger.log(`✅ Reset todaySignatures for ${result.count} petitions`);
     } catch (error) {
       this.logger.error('Failed to reset daily signatures:', error);
       throw error;

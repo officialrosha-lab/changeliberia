@@ -45,7 +45,13 @@ export interface OpenGraphMeta {
 
 export interface ConversionEvent {
   eventId?: string;
-  eventType: 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | 'CustomEvent' | string;
+  eventType:
+    | 'ViewContent'
+    | 'Lead'
+    | 'Share'
+    | 'Purchase'
+    | 'CustomEvent'
+    | (string & {});
   eventName?: string;
   eventTime?: number;
   contentType?: string;
@@ -240,7 +246,7 @@ export interface CreateAudienceResponse {
 export interface CustomAudienceCreateDto {
   name: string;
   petitionId: string;
-  eventType: 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | string;
+  eventType: 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | (string & {});
   maxSize?: number;
 }
 
@@ -332,7 +338,7 @@ export interface IFacebookSDKService {
   trackConversion(
     eventType: string,
     data: ConversionEvent,
-    userId?: string
+    userId?: string,
   ): Promise<ConversionApiResponse>;
   validateShareUrl(url: string): Promise<UrlValidationResponse>;
   getShareCount(url: string): Promise<ShareCountResponse>;
@@ -345,24 +351,24 @@ export interface IFacebookSDKService {
 export interface IShareDialogService {
   getShareDialogConfig(
     petitionId: string,
-    options?: Partial<ShareDialogConfig>
+    options?: Partial<ShareDialogConfig>,
   ): Promise<ShareDialogConfig>;
   getShareButtonSnippet(
     petitionId: string,
-    text?: string
+    text?: string,
   ): Promise<ShareButtonConfig>;
   recordShareCompletion(
     petitionId: string,
     userId: string,
     method: ShareMethod,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<ShareCompletion>;
   getShareAnalytics(petitionId: string): Promise<ShareAnalytics>;
-  trackShareDialogImpression(petitionId: string, userId?: string): Promise<void>;
-  validateShareCallback(
+  trackShareDialogImpression(
     petitionId: string,
-    postId: string
-  ): Promise<boolean>;
+    userId?: string,
+  ): Promise<void>;
+  validateShareCallback(petitionId: string, postId: string): Promise<boolean>;
   getShareDialogScripts(): string;
 }
 
@@ -370,46 +376,46 @@ export interface IRealPixelTrackingService {
   trackViewContent(
     petitionId: string,
     userId?: string,
-    metadata?: ViewContentMetadata
+    metadata?: ViewContentMetadata,
   ): Promise<TrackingResponse>;
-  
+
   trackShare(
     petitionId: string,
     userId?: string,
     method?: ShareMethod,
-    metadata?: ShareEventMetadata
+    metadata?: ShareEventMetadata,
   ): Promise<TrackingResponse>;
-  
+
   trackLead(
     petitionId: string,
     userId?: string,
-    metadata?: LeadMetadata
+    metadata?: LeadMetadata,
   ): Promise<TrackingResponse>;
-  
+
   trackPurchase(
     petitionId: string,
     userId?: string,
     amount?: number,
     currency?: string,
-    metadata?: PurchaseMetadata
+    metadata?: PurchaseMetadata,
   ): Promise<TrackingResponse>;
-  
+
   trackCustomEvent(
     eventName: string,
     petitionId?: string,
     userId?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<TrackingResponse>;
-  
+
   getPixelStats(petitionId: string): Promise<PixelStats>;
-  
+
   createCustomAudience(
     name: string,
     petitionId: string,
     eventType: string,
-    maxSize?: number
+    maxSize?: number,
   ): Promise<CreateAudienceResponse>;
-  
+
   getPixelConfig(): FacebookPixelConfig;
 }
 
@@ -421,7 +427,7 @@ export class FacebookSDKError extends Error {
   constructor(
     public readonly code: string,
     public readonly details?: any,
-    message?: string
+    message?: string,
   ) {
     super(message || `Facebook SDK Error: ${code}`);
     this.name = 'FacebookSDKError';
@@ -432,7 +438,7 @@ export class PixelTrackingError extends Error {
   constructor(
     public readonly eventType: string,
     public readonly userId?: string,
-    message?: string
+    message?: string,
   ) {
     super(message || `Pixel Tracking Error for ${eventType}`);
     this.name = 'PixelTrackingError';
@@ -442,7 +448,7 @@ export class PixelTrackingError extends Error {
 export class ShareDialogError extends Error {
   constructor(
     public readonly petitionId: string,
-    message?: string
+    message?: string,
   ) {
     super(message || `Share Dialog Error for petition ${petitionId}`);
     this.name = 'ShareDialogError';
@@ -453,7 +459,12 @@ export class ShareDialogError extends Error {
    Utility Types
    ============================================ */
 
-export type EventType = 'ViewContent' | 'Lead' | 'Share' | 'Purchase' | string;
+export type EventType =
+  | 'ViewContent'
+  | 'Lead'
+  | 'Share'
+  | 'Purchase'
+  | (string & {});
 
 export type CurrencyCode =
   | 'USD'
@@ -466,7 +477,7 @@ export type CurrencyCode =
   | 'CNY'
   | 'SEK'
   | 'NZD'
-  | string;
+  | (string & {});
 
 export type GenderType = 'M' | 'F' | 'U';
 

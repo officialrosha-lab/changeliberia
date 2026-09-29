@@ -64,7 +64,9 @@ export class FileUploadService {
    * Delete a file from disk and database
    */
   async deleteFile(fileId: string) {
-    const file = await this.prisma.cMSFile.findUnique({ where: { id: fileId } });
+    const file = await this.prisma.cMSFile.findUnique({
+      where: { id: fileId },
+    });
 
     if (!file) {
       throw new Error('File not found');

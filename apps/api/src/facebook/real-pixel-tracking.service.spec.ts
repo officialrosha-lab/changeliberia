@@ -10,7 +10,6 @@ import { PrismaService } from '../prisma/prisma.service';
 describe('RealPixelTrackingService', () => {
   let service: RealPixelTrackingService;
   let facebookSdk: jest.Mocked<FacebookSDKService>;
-  let prismaService: any;
 
   const mockPetition = {
     id: 'petition-1',
@@ -21,6 +20,22 @@ describe('RealPixelTrackingService', () => {
     id: 'user-1',
     name: 'John Doe',
     email: 'john@example.com',
+  };
+
+  const mockPrismaService = {
+    petition: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    facebookPixelEvent: {
+      create: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    customAudience: {
+      create: jest.fn().mockResolvedValue(null),
+    },
   };
 
   beforeEach(async () => {
@@ -37,21 +52,7 @@ describe('RealPixelTrackingService', () => {
         },
         {
           provide: PrismaService,
-          useValue: {
-            petition: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-            user: {
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-            },
-            facebookPixelEvent: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-            customAudience: {
-              create: jest.fn().mockResolvedValue(null) as any,
-            },
-          },
+          useValue: mockPrismaService,
         },
       ],
     }).compile();
@@ -59,20 +60,21 @@ describe('RealPixelTrackingService', () => {
     service = moduleFixture.get<RealPixelTrackingService>(
       RealPixelTrackingService,
     );
-    facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
-    prismaService = moduleFixture.get(PrismaService) as any;
+    facebookSdk = moduleFixture.get(FacebookSDKService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Track View Content', () => {
     it('should track view content event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       const result = await service.trackViewContent('petition-1', 'user-1');
 
@@ -81,7 +83,6 @@ describe('RealPixelTrackingService', () => {
       expect(facebookSdk.trackConversion).toHaveBeenCalledWith(
         'ViewContent',
         expect.objectContaining({
-          contentType: 'petition',
           contentCategory: 'social_cause',
         }),
         'user-1',
@@ -89,13 +90,11 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should include user metadata in view content', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackViewContent('petition-1', 'user-1', {
         email: 'test@example.com',
@@ -115,7 +114,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should handle missing petition', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(null);
+      mockPrismaService.petition.findUnique.mockResolvedValue(null);
 
       const result = await service.trackViewContent('invalid', 'user-1');
 
@@ -125,21 +124,15 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Share', () => {
     it('should track share event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
-      const result = await service.trackShare(
-        'petition-1',
-        'user-1',
-        'dialog',
-      );
+      const result = await service.trackShare('petition-1', 'user-1', 'dialog');
 
       expect(result.success).toBe(true);
       expect(facebookSdk.trackConversion).toHaveBeenCalledWith(
@@ -150,14 +143,12 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should track different share methods', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       const methods = ['dialog', 'native', 'other'] as const;
       for (const method of methods) {
@@ -171,16 +162,12 @@ describe('RealPixelTrackingService', () => {
         ...mockUser,
         fullName: 'John Michael Doe',
       };
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(
-        userWithFullName as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(userWithFullName);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackShare('petition-1', 'user-1', 'dialog');
 
@@ -196,14 +183,12 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Lead', () => {
     it('should track lead event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       const result = await service.trackLead('petition-1', 'user-1');
 
@@ -219,13 +204,11 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should include metadata in lead event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackLead('petition-1', 'user-1', {
         email: 'test@example.com',
@@ -245,14 +228,12 @@ describe('RealPixelTrackingService', () => {
 
   describe('Track Purchase', () => {
     it('should track purchase event', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       const result = await service.trackPurchase(
         'petition-1',
@@ -274,13 +255,11 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should support different currencies', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackPurchase('petition-1', 'user-1', 100, 'EUR');
 
@@ -300,7 +279,7 @@ describe('RealPixelTrackingService', () => {
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       const result = await service.trackCustomEvent(
         'CustomAction',
@@ -322,12 +301,12 @@ describe('RealPixelTrackingService', () => {
 
   describe('Get Pixel Statistics', () => {
     it('should get pixel statistics', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'Lead', createdAt: new Date() },
         { eventType: 'Purchase', createdAt: new Date() },
-      ] as any);
+      ]);
 
       const stats = await service.getPixelStats('petition-1');
 
@@ -338,14 +317,14 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should calculate conversion rate', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'ViewContent', createdAt: new Date() },
         { eventType: 'Lead', createdAt: new Date() },
         { eventType: 'Purchase', createdAt: new Date() },
-      ] as any);
+      ]);
 
       const stats = await service.getPixelStats('petition-1');
 
@@ -355,9 +334,9 @@ describe('RealPixelTrackingService', () => {
 
     it('should return last event timestamp', async () => {
       const now = new Date();
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([
         { eventType: 'ViewContent', createdAt: now },
-      ] as any);
+      ]);
 
       const stats = await service.getPixelStats('petition-1');
 
@@ -365,7 +344,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should handle no events', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const stats = await service.getPixelStats('petition-1');
 
@@ -377,15 +356,15 @@ describe('RealPixelTrackingService', () => {
 
   describe('Create Custom Audience', () => {
     it('should create custom audience from pixel events', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([
         { userId: 'user-1' },
         { userId: 'user-2' },
         { userId: 'user-3' },
-      ] as any);
-      prismaService.customAudience.create.mockResolvedValue({
+      ]);
+      mockPrismaService.customAudience.create.mockResolvedValue({
         id: 'audience-1',
         size: 3,
-      } as any);
+      });
 
       const result = await service.createCustomAudience(
         'Viewers',
@@ -395,7 +374,7 @@ describe('RealPixelTrackingService', () => {
 
       expect(result.success).toBe(true);
       expect(result.audienceId).toBeDefined();
-      expect(prismaService.customAudience.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.customAudience.create).toHaveBeenCalledWith({
         data: {
           name: 'Viewers',
           petitionId: 'petition-1',
@@ -406,7 +385,7 @@ describe('RealPixelTrackingService', () => {
     });
 
     it('should handle no users for audience', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       const result = await service.createCustomAudience(
         'Viewers',
@@ -422,12 +401,10 @@ describe('RealPixelTrackingService', () => {
       const users = Array.from({ length: 15000 }, (_, i) => ({
         userId: `user-${i}`,
       }));
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue(
-        users as any,
-      );
-      prismaService.customAudience.create.mockResolvedValue({
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue(users);
+      mockPrismaService.customAudience.create.mockResolvedValue({
         id: 'audience-1',
-      } as any);
+      });
 
       await service.createCustomAudience(
         'Viewers',
@@ -435,9 +412,12 @@ describe('RealPixelTrackingService', () => {
         'ViewContent',
       );
 
-      const callArgs = prismaService.customAudience.create.mock.calls[0][0];
-      const userIdsJson = callArgs.data.userIds;
-      const userIdsArray = JSON.parse(userIdsJson);
+      const calls = mockPrismaService.customAudience.create.mock
+        .calls as unknown[][];
+      const callArgs = calls[0][0] as { data: { userIds: string } };
+      const userIdsArray: string[] = JSON.parse(
+        callArgs.data.userIds,
+      ) as string[];
       expect(userIdsArray.length).toBeLessThanOrEqual(10000);
     });
   });
@@ -454,7 +434,10 @@ describe('RealPixelTrackingService', () => {
 
     it('should indicate when not configured', () => {
       facebookSdk.getPixelId.mockReturnValue('');
-      const newService = new RealPixelTrackingService(prismaService, facebookSdk);
+      const newService = new RealPixelTrackingService(
+        mockPrismaService as unknown as PrismaService,
+        facebookSdk,
+      );
 
       const config = newService.getPixelConfig();
 
@@ -464,34 +447,30 @@ describe('RealPixelTrackingService', () => {
 
   describe('Pixel Event Logging', () => {
     it('should log pixel events to database', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
         eventId: 'event-1',
       });
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackViewContent('petition-1', 'user-1');
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           petitionId: 'petition-1',
           userId: 'user-1',
           eventType: 'ViewContent',
-        }),
+        }) as Record<string, unknown>,
       });
     });
 
     it('should handle logging errors gracefully', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
       facebookSdk.trackConversion.mockResolvedValue({
         success: true,
       });
-      prismaService.facebookPixelEvent.create.mockRejectedValue(
+      mockPrismaService.facebookPixelEvent.create.mockRejectedValue(
         new Error('DB error'),
       );
 

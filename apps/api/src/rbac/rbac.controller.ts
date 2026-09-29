@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -27,14 +35,15 @@ export class RbacController {
     @Param('roleId') roleId: string,
     @Body() body: { expiresAt?: string | null },
   ) {
-    return this.rbac.assignRoleToUser(userId, roleId, body.expiresAt ? new Date(body.expiresAt) : undefined);
+    return this.rbac.assignRoleToUser(
+      userId,
+      roleId,
+      body.expiresAt ? new Date(body.expiresAt) : undefined,
+    );
   }
 
   @Delete('users/:userId/roles/:roleId')
-  removeRole(
-    @Param('userId') userId: string,
-    @Param('roleId') roleId: string,
-  ) {
+  removeRole(@Param('userId') userId: string, @Param('roleId') roleId: string) {
     return this.rbac.removeRoleFromUser(userId, roleId);
   }
 }

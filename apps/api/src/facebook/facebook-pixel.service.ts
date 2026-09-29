@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class FacebookPixelService {
   private readonly logger = new Logger(FacebookPixelService.name);
-  private readonly PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || 'placeholder_pixel_id';
+  private readonly PIXEL_ID =
+    process.env.FACEBOOK_PIXEL_ID || 'placeholder_pixel_id';
   private readonly ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || '';
 
   constructor(private prisma: PrismaService) {}
@@ -82,7 +83,7 @@ export class FacebookPixelService {
 
       // In production, would send to Facebook Conversions API
       if (this.ACCESS_TOKEN) {
-        await this.sendToFacebookAPI(eventId, {
+        this.sendToFacebookAPI(eventId, {
           eventName: 'Purchase',
           eventData: {
             content_ids: [petitionId],
@@ -114,7 +115,7 @@ export class FacebookPixelService {
       | 'CompleteRegistration',
     userId: string | null,
     petitionId: string,
-    eventData: Record<string, any>,
+    eventData: Record<string, unknown> & { value?: number },
   ): Promise<void> {
     try {
       const eventId = this.generateEventId();
@@ -202,9 +203,7 @@ export class FacebookPixelService {
   /**
    * Get pixel report/analytics
    */
-  async getPixelReport(
-    petitionId?: string,
-  ): Promise<{
+  async getPixelReport(petitionId?: string): Promise<{
     totalEvents: number;
     eventsByType: Record<string, number>;
     totalConversions: number;
@@ -320,10 +319,7 @@ export class FacebookPixelService {
     return `fb_aud_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   }
 
-  private async sendToFacebookAPI(
-    eventId: string,
-    data: Record<string, any>,
-  ): Promise<void> {
+  private sendToFacebookAPI(eventId: string, data: Record<string, any>): void {
     // Placeholder for Facebook Conversions API call
     // In production:
     // POST https://graph.facebook.com/v18.0/{PIXEL_ID}/events

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { CreateEndorsementDto, RejectEndorsementDto } from './dto';
@@ -17,8 +21,14 @@ export class EndorsementsService {
     private readonly activityLogger: ActivityLoggerService,
   ) {}
 
-  async submit(petitionId: string, userId: string | undefined, dto: CreateEndorsementDto) {
-    const petition = await this.prisma.petition.findUnique({ where: { id: petitionId } });
+  async submit(
+    petitionId: string,
+    userId: string | undefined,
+    dto: CreateEndorsementDto,
+  ) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
     if (!petition) throw new NotFoundException('Petition not found');
 
     const endorsement = await this.prisma.petitionEndorsement.create({
@@ -70,15 +80,23 @@ export class EndorsementsService {
   }
 
   async approve(id: string, adminUserId: string) {
-    const endorsement = await this.prisma.petitionEndorsement.findUnique({ where: { id } });
+    const endorsement = await this.prisma.petitionEndorsement.findUnique({
+      where: { id },
+    });
     if (!endorsement) throw new NotFoundException('Endorsement not found');
     if (endorsement.status !== 'PENDING') {
-      throw new BadRequestException('Only pending endorsements can be approved');
+      throw new BadRequestException(
+        'Only pending endorsements can be approved',
+      );
     }
 
     const updated = await this.prisma.petitionEndorsement.update({
       where: { id },
-      data: { status: 'APPROVED', reviewedBy: adminUserId, reviewedAt: new Date() },
+      data: {
+        status: 'APPROVED',
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+      },
     });
 
     this.activityLogger.logAsync({
@@ -93,15 +111,24 @@ export class EndorsementsService {
   }
 
   async reject(id: string, adminUserId: string, dto: RejectEndorsementDto) {
-    const endorsement = await this.prisma.petitionEndorsement.findUnique({ where: { id } });
+    const endorsement = await this.prisma.petitionEndorsement.findUnique({
+      where: { id },
+    });
     if (!endorsement) throw new NotFoundException('Endorsement not found');
     if (endorsement.status !== 'PENDING') {
-      throw new BadRequestException('Only pending endorsements can be rejected');
+      throw new BadRequestException(
+        'Only pending endorsements can be rejected',
+      );
     }
 
     const updated = await this.prisma.petitionEndorsement.update({
       where: { id },
-      data: { status: 'REJECTED', reviewedBy: adminUserId, reviewedAt: new Date(), reviewNotes: dto.notes },
+      data: {
+        status: 'REJECTED',
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+        reviewNotes: dto.notes,
+      },
     });
 
     this.activityLogger.logAsync({

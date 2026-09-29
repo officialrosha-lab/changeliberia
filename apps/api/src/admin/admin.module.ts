@@ -17,7 +17,14 @@ import { GrowthService } from '../whatsapp/growth.service';
 import { AdminSocialMediaService } from './admin-social-media.service';
 
 @Module({
-  imports: [AuthModule, VerificationModule, PrismaModule, EventsModule, PaymentModule, ActivityModule],
+  imports: [
+    AuthModule,
+    VerificationModule,
+    PrismaModule,
+    EventsModule,
+    PaymentModule,
+    ActivityModule,
+  ],
   controllers: [
     AdminController,
     AdminSettingsController,

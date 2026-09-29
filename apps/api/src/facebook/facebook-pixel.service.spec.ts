@@ -4,7 +4,6 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('FacebookPixelService', () => {
   let service: FacebookPixelService;
-  let prismaService: any;
 
   const mockPixelEvent = {
     id: 'event-1',
@@ -33,29 +32,34 @@ describe('FacebookPixelService', () => {
     updatedAt: new Date(),
   };
 
+  const mockPrismaService = {
+    facebookPixelEvent: {
+      create: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    customAudience: {
+      create: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(null),
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FacebookPixelService,
         {
           provide: PrismaService,
-          useValue: {
-            facebookPixelEvent: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findMany: jest.fn().mockResolvedValue([]) as any,
-            },
-            customAudience: {
-              create: jest.fn().mockResolvedValue(null) as any,
-              findUnique: jest.fn().mockResolvedValue(null) as any,
-              update: jest.fn().mockResolvedValue(null) as any,
-            },
-          },
+          useValue: mockPrismaService,
         },
       ],
     }).compile();
 
     service = module.get<FacebookPixelService>(FacebookPixelService);
-    prismaService = module.get(PrismaService) as any;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('getPixelId', () => {
@@ -73,8 +77,8 @@ describe('FacebookPixelService', () => {
 
       expect(code).toContain('<!-- Facebook Pixel Code -->');
       expect(code).toContain('fbq');
-      expect(code).toContain('fbq(\'init\'');
-      expect(code).toContain('fbq(\'track\', \'PageView\')');
+      expect(code).toContain("fbq('init'");
+      expect(code).toContain("fbq('track', 'PageView')");
     });
 
     it('should include pixel ID in init code', () => {
@@ -87,38 +91,38 @@ describe('FacebookPixelService', () => {
 
   describe('trackConversion', () => {
     it('should track conversion event', async () => {
-      prismaService.facebookPixelEvent.create.mockResolvedValue(
-        mockPixelEvent as any,
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue(
+        mockPixelEvent,
       );
 
       await service.trackConversion('user-1', 'petition-1', 100);
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userId: 'user-1',
             petitionId: 'petition-1',
             eventType: 'Purchase',
             conversionValue: 100,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should include metadata if provided', async () => {
-      prismaService.facebookPixelEvent.create.mockResolvedValue(
-        mockPixelEvent as any,
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue(
+        mockPixelEvent,
       );
 
       await service.trackConversion('user-1', 'petition-1', 100, {
         source: 'facebook',
       });
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalled();
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalled();
     });
 
     it('should not throw on error', async () => {
-      prismaService.facebookPixelEvent.create.mockRejectedValue(
+      mockPrismaService.facebookPixelEvent.create.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -130,39 +134,39 @@ describe('FacebookPixelService', () => {
 
   describe('trackEvent', () => {
     it('should track custom event', async () => {
-      prismaService.facebookPixelEvent.create.mockResolvedValue(
-        mockPixelEvent as any,
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue(
+        mockPixelEvent,
       );
 
       await service.trackEvent('ViewContent', 'user-1', 'petition-1', {
         content_ids: ['petition-1'],
       });
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userId: 'user-1',
             petitionId: 'petition-1',
             eventType: 'ViewContent',
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should handle null userId', async () => {
-      prismaService.facebookPixelEvent.create.mockResolvedValue(
-        mockPixelEvent as any,
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue(
+        mockPixelEvent,
       );
 
       await service.trackEvent('Lead', null, 'petition-1', {
         leadValue: 50,
       });
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalled();
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalled();
     });
 
     it('should not throw on error', async () => {
-      prismaService.facebookPixelEvent.create.mockRejectedValue(
+      mockPrismaService.facebookPixelEvent.create.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -176,14 +180,12 @@ describe('FacebookPixelService', () => {
 
   describe('createAndSyncAudience', () => {
     it('should create and sync custom audience', async () => {
-      prismaService.customAudience.create.mockResolvedValue({
+      mockPrismaService.customAudience.create.mockResolvedValue({
         ...mockAudience,
         facebookAudienceId: null,
         syncedAt: null,
-      } as any);
-      prismaService.customAudience.update.mockResolvedValue(
-        mockAudience as any,
-      );
+      });
+      mockPrismaService.customAudience.update.mockResolvedValue(mockAudience);
 
       const result = await service.createAndSyncAudience(
         'petition-1',
@@ -192,45 +194,43 @@ describe('FacebookPixelService', () => {
       );
 
       expect(result).toEqual({
-        facebookAudienceId: expect.any(String),
+        facebookAudienceId: expect.any(String) as string,
         estimatedSize: 2,
-        syncedAt: expect.any(Date),
+        syncedAt: expect.any(Date) as Date,
       });
-      expect(prismaService.customAudience.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.customAudience.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             petitionId: 'petition-1',
             audienceType: 'SHARERS',
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should store user IDs as JSON', async () => {
-      prismaService.customAudience.create.mockResolvedValue({
+      mockPrismaService.customAudience.create.mockResolvedValue({
         ...mockAudience,
         facebookAudienceId: null,
         syncedAt: null,
-      } as any);
-      prismaService.customAudience.update.mockResolvedValue(
-        mockAudience as any,
-      );
+      });
+      mockPrismaService.customAudience.update.mockResolvedValue(mockAudience);
 
       const userIds = ['user-1', 'user-2', 'user-3'];
       await service.createAndSyncAudience('petition-1', 'CONVERTERS', userIds);
 
-      expect(prismaService.customAudience.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.customAudience.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userIds: JSON.stringify(userIds),
             estimatedSize: 3,
-          }),
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should throw on error', async () => {
-      prismaService.customAudience.create.mockRejectedValue(
+      mockPrismaService.customAudience.create.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -242,29 +242,31 @@ describe('FacebookPixelService', () => {
 
   describe('getPixelReport', () => {
     it('should return pixel report', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([
         mockPixelEvent,
         { ...mockPixelEvent, eventType: 'ViewContent' },
-      ] as any);
+      ]);
 
       const result = await service.getPixelReport();
 
       expect(result).toEqual({
-        totalEvents: expect.any(Number),
-        eventsByType: expect.any(Object),
-        totalConversions: expect.any(Number),
-        totalConversionValue: expect.any(Number),
-        conversionRate: expect.any(Number),
+        totalEvents: expect.any(Number) as number,
+        eventsByType: expect.any(Object) as Record<string, number>,
+        totalConversions: expect.any(Number) as number,
+        totalConversionValue: expect.any(Number) as number,
+        conversionRate: expect.any(Number) as number,
       });
       expect(result.totalEvents).toBeGreaterThanOrEqual(0);
     });
 
     it('should filter by petitionId if provided', async () => {
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue([]);
 
       await service.getPixelReport('petition-1');
 
-      expect(prismaService.facebookPixelEvent.findMany).toHaveBeenCalledWith(
+      expect(
+        mockPrismaService.facebookPixelEvent.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { petitionId: 'petition-1' },
         }),
@@ -276,8 +278,8 @@ describe('FacebookPixelService', () => {
         { ...mockPixelEvent, eventType: 'Purchase', conversionValue: 100 },
         { ...mockPixelEvent, eventType: 'ViewContent', conversionValue: 0 },
       ];
-      prismaService.facebookPixelEvent.findMany.mockResolvedValue(
-        pixelEvents as any,
+      mockPrismaService.facebookPixelEvent.findMany.mockResolvedValue(
+        pixelEvents,
       );
 
       const result = await service.getPixelReport();
@@ -286,7 +288,7 @@ describe('FacebookPixelService', () => {
     });
 
     it('should throw on error', async () => {
-      prismaService.facebookPixelEvent.findMany.mockRejectedValue(
+      mockPrismaService.facebookPixelEvent.findMany.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -296,8 +298,8 @@ describe('FacebookPixelService', () => {
 
   describe('getAudience', () => {
     it('should return audience details', async () => {
-      prismaService.customAudience.findUnique.mockResolvedValue(
-        mockAudience as any,
+      mockPrismaService.customAudience.findUnique.mockResolvedValue(
+        mockAudience,
       );
 
       const result = await service.getAudience('audience-1');
@@ -312,7 +314,7 @@ describe('FacebookPixelService', () => {
     });
 
     it('should throw error when audience not found', async () => {
-      prismaService.customAudience.findUnique.mockResolvedValue(null);
+      mockPrismaService.customAudience.findUnique.mockResolvedValue(null);
 
       await expect(service.getAudience('invalid')).rejects.toThrow(
         'Audience invalid not found',
@@ -322,25 +324,25 @@ describe('FacebookPixelService', () => {
 
   describe('resyncAudience', () => {
     it('should resync audience', async () => {
-      prismaService.customAudience.findUnique.mockResolvedValue(
-        mockAudience as any,
+      mockPrismaService.customAudience.findUnique.mockResolvedValue(
+        mockAudience,
       );
-      prismaService.customAudience.update.mockResolvedValue(mockAudience as any);
+      mockPrismaService.customAudience.update.mockResolvedValue(mockAudience);
 
       await service.resyncAudience('audience-1');
 
-      expect(prismaService.customAudience.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.customAudience.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'audience-1' },
           data: expect.objectContaining({
-            syncedAt: expect.any(Date),
-          }),
+            syncedAt: expect.any(Date) as Date,
+          }) as Record<string, unknown>,
         }),
       );
     });
 
     it('should throw error when audience not found', async () => {
-      prismaService.customAudience.findUnique.mockResolvedValue(null);
+      mockPrismaService.customAudience.findUnique.mockResolvedValue(null);
 
       await expect(service.resyncAudience('invalid')).rejects.toThrow();
     });

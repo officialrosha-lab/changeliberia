@@ -1,14 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { VotingController } from './voting.controller';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 
 describe('VotingController (unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let votingService: jest.Mocked<VotingService>;
-  let fingerprintService: jest.Mocked<SessionFingerprintService>;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,16 +26,17 @@ describe('VotingController (unit)', () => {
             extractUserAgent: jest.fn().mockReturnValue('jest-agent'),
           },
         },
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn() },
+        },
       ],
     }).compile();
 
     app = module.createNestApplication();
     await app.init();
 
-    votingService = module.get(VotingService) as jest.Mocked<VotingService>;
-    fingerprintService = module.get(
-      SessionFingerprintService,
-    ) as jest.Mocked<SessionFingerprintService>;
+    votingService = module.get(VotingService);
   });
 
   afterAll(async () => {
@@ -49,16 +51,21 @@ describe('VotingController (unit)', () => {
   });
 
   it('calls VotingService.castVote and returns result', () => {
-    votingService.castVote.mockResolvedValueOnce({ success: true, message: 'OK', voteId: 'v1' });
+    votingService.castVote.mockResolvedValueOnce({
+      success: true,
+      message: 'OK',
+      voteId: 'v1',
+    });
 
     return request(app.getHttpServer())
       .post('/polls/poll-1/vote')
       .send({ optionId: 'opt-1' })
       .expect(201)
       .expect((res) => {
+        const body = res.body as { success: boolean; voteId: string };
         expect(votingService.castVote).toHaveBeenCalled();
-        expect(res.body.success).toBe(true);
-        expect(res.body.voteId).toBe('v1');
+        expect(body.success).toBe(true);
+        expect(body.voteId).toBe('v1');
       });
   });
 });

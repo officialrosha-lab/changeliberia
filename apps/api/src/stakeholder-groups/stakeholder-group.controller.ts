@@ -7,7 +7,6 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
   HttpStatus,
   HttpCode,
   NotFoundException,
@@ -77,7 +76,7 @@ export class StakeholderGroupController {
       petitionId,
       memberCounts: counts,
       totalStakeholders: Object.values(counts).reduce(
-        (sum: any, count: any) => sum + count,
+        (sum, count) => sum + count,
         0,
       ),
     };

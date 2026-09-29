@@ -90,7 +90,7 @@ export class EmailScheduleService {
               {
                 recipientName: user.fullName,
                 digestDate: new Date().toLocaleDateString(),
-                petitions: petitions.map((p, i) => ({
+                petitions: petitions.map((p) => ({
                   title: p.title,
                   signatures: p._count.signatures,
                   url: `${process.env.NEXT_PUBLIC_APP_URL}/petitions/${p.id}`,
@@ -105,13 +105,17 @@ export class EmailScheduleService {
             }
           }
         } catch (error) {
-          this.logger.error(`Failed to send digest to ${user.email}: ${error}`);
+          this.logger.error(
+            `Failed to send digest to ${user.email}: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       }
 
       this.logger.log(`Weekly digest emails sent: ${sent}/${users.length}`);
     } catch (error) {
-      this.logger.error(`Failed to send weekly digests: ${error}`);
+      this.logger.error(
+        `Failed to send weekly digests: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -119,14 +123,16 @@ export class EmailScheduleService {
    * Retry failed emails every 15 minutes
    */
   @Cron('*/15 * * * *') // Every 15 minutes
-  async retryFailedEmails(): Promise<void> {
+  retryFailedEmails(): void {
     try {
       // Retry failed emails directly
       this.logger.log('Retrying failed emails...');
       // This would be implemented by the email service
       // For now, just log the scheduled execution
     } catch (error) {
-      this.logger.error(`Failed to retry failed emails: ${error}`);
+      this.logger.error(
+        `Failed to retry failed emails: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -152,7 +158,9 @@ export class EmailScheduleService {
 
       this.logger.log(`Deleted ${deleted.count} old email logs`);
     } catch (error) {
-      this.logger.error(`Failed to cleanup email logs: ${error}`);
+      this.logger.error(
+        `Failed to cleanup email logs: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -176,10 +184,12 @@ export class EmailScheduleService {
           // Mark as archived or just log deletion
         },
       });
-      
+
       this.logger.log(`Archived ${archivedCount.count} completed email jobs`);
     } catch (error) {
-      this.logger.error(`Failed to archive jobs: ${error}`);
+      this.logger.error(
+        `Failed to archive jobs: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -212,7 +222,9 @@ export class EmailScheduleService {
 
       // Could store in analytics table for dashboard
     } catch (error) {
-      this.logger.error(`Failed to generate analytics: ${error}`);
+      this.logger.error(
+        `Failed to generate analytics: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }

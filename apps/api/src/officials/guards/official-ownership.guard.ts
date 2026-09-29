@@ -5,7 +5,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RequestUser } from '../../auth/roles.guard';
+import { Institution } from '@prisma/client';
 
 export interface OfficialAccess {
   isOfficeholder: boolean;
@@ -14,6 +17,12 @@ export interface OfficialAccess {
   canRespond: boolean;
   canManageInbox: boolean;
   canGenerateReports: boolean;
+}
+
+interface OfficialRequest extends Request {
+  user?: RequestUser;
+  officialInstitution?: Institution;
+  officialAccess?: OfficialAccess;
 }
 
 /**
@@ -36,7 +45,7 @@ export class OfficialOwnershipGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<OfficialRequest>();
     const user = request.user;
 
     if (!user || !user.userId) {
@@ -55,11 +64,18 @@ export class OfficialOwnershipGuard implements CanActivate {
       return true;
     }
 
-    const institutionId = request.params?.institutionId;
+    const rawInstitutionId = request.params?.institutionId;
+    const institutionId = Array.isArray(rawInstitutionId)
+      ? rawInstitutionId[0]
+      : rawInstitutionId;
 
     let institution = institutionId
-      ? await this.prisma.institution.findUnique({ where: { id: institutionId } })
-      : await this.prisma.institution.findUnique({ where: { holderUserId: user.userId } });
+      ? await this.prisma.institution.findUnique({
+          where: { id: institutionId },
+        })
+      : await this.prisma.institution.findUnique({
+          where: { holderUserId: user.userId },
+        });
 
     let access: OfficialAccess | null = null;
 
@@ -78,14 +94,20 @@ export class OfficialOwnershipGuard implements CanActivate {
       // the caller's own ACTIVE staff membership ("my dashboard" case).
       const staff = institutionId
         ? await this.prisma.officialStaffMember.findUnique({
-            where: { institutionId_userId: { institutionId, userId: user.userId } },
+            where: {
+              institutionId_userId: { institutionId, userId: user.userId },
+            },
           })
         : await this.prisma.officialStaffMember.findFirst({
             where: { userId: user.userId, status: 'ACTIVE' },
           });
 
       if (staff && staff.status === 'ACTIVE') {
-        institution = institution ?? (await this.prisma.institution.findUnique({ where: { id: staff.institutionId } }));
+        institution =
+          institution ??
+          (await this.prisma.institution.findUnique({
+            where: { id: staff.institutionId },
+          }));
         access = {
           isOfficeholder: false,
           canView: staff.canView,

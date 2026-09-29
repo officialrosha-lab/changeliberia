@@ -73,17 +73,13 @@ export class SmartRoutingService {
     const allTags = this.extractAndNormalizeTags(petitionTitle, petitionTags);
 
     // Step 1: Try to find matching institution by tags
-    let match = await this.findMatchingInstitution(allTags, petitionCategory);
+    let match = await this.findMatchingInstitution(allTags);
 
     if (match) {
       this.logger.debug(
         `Found matching institution: ${match.institution.name} (${match.institution.id}) with tags: ${match.matchedTags.join(', ')}`,
       );
-      return this.buildRoutingResult(
-        match,
-        RoutingDecision.MATCHED,
-        allTags,
-      );
+      return this.buildRoutingResult(match, RoutingDecision.MATCHED, allTags);
     }
 
     // Step 2: Fallback to category-based matching
@@ -104,8 +100,7 @@ export class SmartRoutingService {
     }
 
     // Step 3: Final fallback - use primary government contact or highest priority
-    const fallbackInstitution =
-      await this.findFallbackInstitution();
+    const fallbackInstitution = await this.findFallbackInstitution();
 
     if (fallbackInstitution) {
       this.logger.debug(
@@ -157,8 +152,12 @@ export class SmartRoutingService {
     // District-scoped offices (Representative, District Commissioner) also
     // require a district match; county-scoped offices match on county alone.
     const matches = candidates.filter((institution) => {
-      const isDistrictScoped = DISTRICT_SCOPED_CATEGORIES.includes(institution.category);
-      return isDistrictScoped ? !!district && institution.district === district : true;
+      const isDistrictScoped = DISTRICT_SCOPED_CATEGORIES.includes(
+        institution.category,
+      );
+      return isDistrictScoped
+        ? !!district && institution.district === district
+        : true;
     });
 
     return matches.map((institution) => {
@@ -190,7 +189,9 @@ export class SmartRoutingService {
         petitionId,
         institutionId: result.institutionId || null,
         decision: result.decision,
-        matchedTags: JSON.stringify({ jurisdictionMatch: { county, district } }),
+        matchedTags: JSON.stringify({
+          jurisdictionMatch: { county, district },
+        }),
         recipientEmails: JSON.stringify(result.recipientEmails),
         ccEmails: JSON.stringify(result.ccEmails),
         adminNotes: result.notes,
@@ -204,14 +205,13 @@ export class SmartRoutingService {
    */
   private async findMatchingInstitution(
     tags: string[],
-    category?: string | null,
   ): Promise<RoutingMatch | null> {
     if (!tags || tags.length === 0) {
       return null;
     }
 
     // Normalize tags to lowercase for comparison
-    const normalizedTags = tags.map(t => t.toLowerCase());
+    const normalizedTags = tags.map((t) => t.toLowerCase());
 
     // Get all contacts with tags
     const contacts = await this.prisma.contactDirectory.findMany({
@@ -233,12 +233,13 @@ export class SmartRoutingService {
 
     // Score each contact based on tag matches
     const scoredMatches = contacts
-      .map(contact => {
-        const contactTags = JSON.parse(contact.issueTags || '[]')
-          .map((t: string) => t.toLowerCase()) as string[];
+      .map((contact) => {
+        const contactTags = (
+          JSON.parse(contact.issueTags || '[]') as string[]
+        ).map((t) => t.toLowerCase());
 
         // Find matching tags
-        const matched = normalizedTags.filter(tag =>
+        const matched = normalizedTags.filter((tag) =>
           contactTags.includes(tag),
         );
 
@@ -258,7 +259,7 @@ export class SmartRoutingService {
           score,
         };
       })
-      .filter(item => item !== null)
+      .filter((item) => item !== null)
       .sort((a, b) => b.score - a.score);
 
     if (scoredMatches.length === 0) {
@@ -292,7 +293,8 @@ export class SmartRoutingService {
       water: ['UTILITY', 'AGENCY'],
     };
 
-    const categoryList = (categoryMap[category.toLowerCase()] || []) as InstitutionCategory[];
+    const categoryList = (categoryMap[category.toLowerCase()] ||
+      []) as InstitutionCategory[];
 
     if (categoryList.length === 0) {
       return null;
@@ -403,7 +405,14 @@ export class SmartRoutingService {
     // Keywords commonly used in petitions
     const commonKeywords: { [key: string]: string[] } = {
       road: ['roads', 'street', 'pothole', 'pavement', 'highway', 'bridge'],
-      electricity: ['power', 'light', 'blackout', 'generator', 'current', 'electricity'],
+      electricity: [
+        'power',
+        'light',
+        'blackout',
+        'generator',
+        'current',
+        'electricity',
+      ],
       health: [
         'hospital',
         'clinic',
@@ -424,7 +433,7 @@ export class SmartRoutingService {
 
     // Extract keywords from title
     Object.entries(commonKeywords).forEach(([category, keywords]) => {
-      keywords.forEach(keyword => {
+      keywords.forEach((keyword) => {
         if (titleLower.includes(keyword)) {
           extracted.add(category);
         }
@@ -434,7 +443,7 @@ export class SmartRoutingService {
     // Combine with provided tags
     const allTags = [
       ...Array.from(extracted),
-      ...providedTags.map(t => t.toLowerCase()),
+      ...providedTags.map((t) => t.toLowerCase()),
     ];
 
     // Remove duplicates and return
@@ -461,26 +470,29 @@ export class SmartRoutingService {
 
     // If department specified, use department email
     if (departmentId) {
-      const dept = institution.departments.find(d => d.id === departmentId);
+      const dept = institution.departments.find((d) => d.id === departmentId);
       if (dept && dept.email) {
         to.push(dept.email);
       }
     }
 
     // Add secondary emails to CC
-    const secondaryEmails = JSON.parse(institution.secondaryEmails || '[]') as string[];
+    const secondaryEmails = JSON.parse(
+      institution.secondaryEmails || '[]',
+    ) as string[];
     cc.push(...secondaryEmails);
 
     // Add contact emails from ContactDirectory
     const contactEmails = institution.contacts
-      .filter(c => c.email)
-      .map(c => c.email) as string[];
+      .filter((c) => c.email)
+      .map((c) => c.email) as string[];
     cc.push(...contactEmails);
 
     // Remove duplicates
-    const uniqueTo = Array.from(new Set(to)).filter(e => e);
-    const uniqueCc = Array.from(new Set(cc))
-      .filter(e => e && !uniqueTo.includes(e));
+    const uniqueTo = Array.from(new Set(to)).filter((e) => e);
+    const uniqueCc = Array.from(new Set(cc)).filter(
+      (e) => e && !uniqueTo.includes(e),
+    );
 
     return {
       to: uniqueTo,
@@ -584,10 +596,10 @@ export class SmartRoutingService {
     });
 
     const totalRouted = emailStats.length;
-    const emailsSent = emailStats.filter(e => e.emailSentAt).length;
-    const emailsDelivered = emailStats.filter(e => e.emailDeliveredAt).length;
+    const emailsSent = emailStats.filter((e) => e.emailSentAt).length;
+    const emailsDelivered = emailStats.filter((e) => e.emailDeliveredAt).length;
     const emailsFailed = emailStats.filter(
-      e => e.emailFailureReason !== null,
+      (e) => e.emailFailureReason !== null,
     ).length;
 
     return {
@@ -627,8 +639,10 @@ export class SmartRoutingService {
 
   private parseTagsArray(raw: string): string[] {
     try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter((t): t is string => typeof t === 'string')
+        : [];
     } catch {
       return [];
     }

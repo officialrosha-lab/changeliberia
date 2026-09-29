@@ -1,8 +1,13 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 import { CastVoteDto } from './dto/vote.dto';
 import { PollsGateway } from './polls.gateway';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class VotingService {
@@ -47,16 +52,22 @@ export class VotingService {
       throw new BadRequestException('Option not found');
     }
 
-    const fingerprint = this.fingerprintService.generateFingerprint(ipAddress, userAgent);
+    const fingerprint = this.fingerprintService.generateFingerprint(
+      ipAddress,
+      userAgent,
+    );
     // Authenticated users dedup by userId; anonymous users dedup by fingerprint
     const sessionId = userId ?? fingerprint;
     const ipHash = this.hashIP(ipAddress);
 
     // Rate limiting only applies to anonymous (fingerprint-based) votes
     if (!userId) {
-      const isRateLimited = await this.fingerprintService.isRateLimited(fingerprint);
+      const isRateLimited =
+        await this.fingerprintService.isRateLimited(fingerprint);
       if (isRateLimited) {
-        throw new UnauthorizedException('Too many votes from this session. Please try again later.');
+        throw new UnauthorizedException(
+          'Too many votes from this session. Please try again later.',
+        );
       }
     }
 
@@ -73,7 +84,11 @@ export class VotingService {
     // the voter's profile county/district/community as a lightweight
     // geographic participation signal — no separate confirmation flow,
     // unlike petition signing (this is not a classification).
-    let voterLocation: { county: string | null; district: string | null; community: string | null } = {
+    let voterLocation: {
+      county: string | null;
+      district: string | null;
+      community: string | null;
+    } = {
       county: null,
       district: null,
       community: null,
@@ -92,7 +107,7 @@ export class VotingService {
         pollId,
         optionId: voteDto.optionId,
         userId: userId ?? null,
-        sessionId,   // userId for authenticated, fingerprint for anonymous
+        sessionId, // userId for authenticated, fingerprint for anonymous
         ipHash,
         fingerprint, // always stored for audit
         county: voterLocation.county,
@@ -128,10 +143,13 @@ export class VotingService {
       if (this.pollsGateway && updated) {
         this.pollsGateway.broadcastPollUpdate(pollId, {
           totalVotes: updated.totalVotes,
-          options: updated.options.map(o => ({ id: o.id, voteCount: o.voteCount })),
+          options: updated.options.map((o) => ({
+            id: o.id,
+            voteCount: o.voteCount,
+          })),
         });
       }
-    } catch (e) {
+    } catch {
       // non-fatal: broadcasting failure should not block vote
     }
     return {
@@ -178,7 +196,10 @@ export class VotingService {
    * Hash IP address for privacy
    */
   private hashIP(ipAddress: string): string {
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(ipAddress).digest('hex').substring(0, 16);
+    return crypto
+      .createHash('sha256')
+      .update(ipAddress)
+      .digest('hex')
+      .substring(0, 16);
   }
 }

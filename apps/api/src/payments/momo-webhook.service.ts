@@ -5,6 +5,14 @@ import { MoMoService } from './providers/momo.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
+export interface MoMoWebhookPayload {
+  eventType?: 'requestToPay' | 'preApproval' | 'payment';
+  externalId: string;
+  status: string;
+  transactionId?: string;
+  reason?: string;
+}
+
 @Injectable()
 export class MoMoWebhookService {
   private readonly logger = new Logger(MoMoWebhookService.name);
@@ -18,7 +26,10 @@ export class MoMoWebhookService {
   /**
    * Handle MoMo webhook events
    */
-  async handleWebhook(payload: any, signature?: string): Promise<void> {
+  async handleWebhook(
+    payload: MoMoWebhookPayload,
+    signature?: string,
+  ): Promise<void> {
     try {
       this.logger.debug(`Received MoMo webhook: ${JSON.stringify(payload)}`);
 
@@ -32,11 +43,21 @@ export class MoMoWebhookService {
 
       // Handle different event types
       if (payload.eventType === 'requestToPay' || payload.status) {
-        await this.handlePaymentStatusUpdate(externalId, status, transactionId, reason);
+        await this.handlePaymentStatusUpdate(
+          externalId,
+          status,
+          transactionId,
+          reason,
+        );
       } else if (payload.eventType === 'preApproval') {
         await this.handlePreApprovalUpdate(externalId, status);
       } else if (payload.eventType === 'payment') {
-        await this.handleSubscriptionPayment(externalId, status, transactionId, reason);
+        await this.handleSubscriptionPayment(
+          externalId,
+          status,
+          transactionId,
+          reason,
+        );
       } else {
         this.logger.warn(`Unknown webhook event type: ${payload.eventType}`);
       }
@@ -100,7 +121,8 @@ export class MoMoWebhookService {
 
     this.activityLogger.logAsync({
       userId: payment.userId ?? undefined,
-      action: newStatus === 'COMPLETED' ? 'PAYMENT_COMPLETED' : 'PAYMENT_FAILED',
+      action:
+        newStatus === 'COMPLETED' ? 'PAYMENT_COMPLETED' : 'PAYMENT_FAILED',
       entityType: 'PAYMENT',
       entityId: payment.id,
       description: `MoMo payment ${newStatus.toLowerCase()} for payment ${payment.id}`,
@@ -126,12 +148,14 @@ export class MoMoWebhookService {
     });
 
     if (!subscription) {
-      this.logger.warn(`Subscription not found for pre-approval ID: ${externalId}`);
+      this.logger.warn(
+        `Subscription not found for pre-approval ID: ${externalId}`,
+      );
       return;
     }
 
     // Update pre-approval authorization
-    const authUpdate = await this.prisma.moMoSubscriptionAuthorization.updateMany({
+    await this.prisma.moMoSubscriptionAuthorization.updateMany({
       where: { preapprovalId: externalId },
       data: {
         status: status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED',
@@ -150,7 +174,9 @@ export class MoMoWebhookService {
         where: { id: subscription.id },
         data: { status: 'CANCELLED' as SubscriptionStatus },
       });
-      this.logger.debug(`Cancelled subscription ${subscription.id} due to pre-approval rejection`);
+      this.logger.debug(
+        `Cancelled subscription ${subscription.id} due to pre-approval rejection`,
+      );
     }
   }
 
@@ -169,7 +195,9 @@ export class MoMoWebhookService {
     });
 
     if (!payment) {
-      this.logger.warn(`Subscription payment not found for external ID: ${externalId}`);
+      this.logger.warn(
+        `Subscription payment not found for external ID: ${externalId}`,
+      );
       return;
     }
 
@@ -211,7 +239,9 @@ export class MoMoWebhookService {
       });
 
       if (subscription) {
-        const nextBillingDate = this.calculateNextBillingDate(subscription.interval);
+        const nextBillingDate = this.calculateNextBillingDate(
+          subscription.interval,
+        );
         await this.prisma.subscription.update({
           where: { id: subscription.id },
           data: {
@@ -223,11 +253,16 @@ export class MoMoWebhookService {
       }
     }
 
-    this.logger.debug(`Updated subscription payment ${payment.id} status to ${newStatus}`);
+    this.logger.debug(
+      `Updated subscription payment ${payment.id} status to ${newStatus}`,
+    );
 
     this.activityLogger.logAsync({
       userId: payment.userId ?? undefined,
-      action: newStatus === 'COMPLETED' ? 'SUBSCRIPTION_PAYMENT_COMPLETED' : 'SUBSCRIPTION_PAYMENT_FAILED',
+      action:
+        newStatus === 'COMPLETED'
+          ? 'SUBSCRIPTION_PAYMENT_COMPLETED'
+          : 'SUBSCRIPTION_PAYMENT_FAILED',
       entityType: 'PAYMENT',
       entityId: payment.id,
       description: `MoMo subscription payment ${newStatus.toLowerCase()} for payment ${payment.id}`,
@@ -242,13 +277,18 @@ export class MoMoWebhookService {
   /**
    * Verify webhook signature
    */
-  private verifyWebhookSignature(payload: any, signature?: string): boolean {
+  private verifyWebhookSignature(
+    payload: MoMoWebhookPayload,
+    signature?: string,
+  ): boolean {
     const secret = process.env.MOMO_WEBHOOK_SECRET;
     if (!secret) {
       if (process.env.NODE_ENV === 'production') {
         throw new Error('MOMO_WEBHOOK_SECRET is required in production');
       }
-      this.logger.warn('MoMo webhook secret not configured - skipping signature verification (development only)');
+      this.logger.warn(
+        'MoMo webhook secret not configured - skipping signature verification (development only)',
+      );
       return true;
     }
 
@@ -256,13 +296,21 @@ export class MoMoWebhookService {
       if (process.env.NODE_ENV === 'production') {
         return false;
       }
-      this.logger.warn('MoMo webhook signature missing (development only - skipping)');
+      this.logger.warn(
+        'MoMo webhook signature missing (development only - skipping)',
+      );
       return true;
     }
 
-    const expectedSignature = this.momoService.generateWebhookSignature(payload, secret);
+    const expectedSignature = this.momoService.generateWebhookSignature(
+      payload,
+      secret,
+    );
     try {
-      return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature),
+      );
     } catch {
       return false;
     }

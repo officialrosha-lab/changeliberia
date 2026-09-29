@@ -40,8 +40,10 @@ export class ModeratorController {
     });
     if (!toggle?.config) return [];
     try {
-      const parsed = JSON.parse(toggle.config);
-      return Array.isArray(parsed) ? parsed.filter((c) => typeof c === 'string') : [];
+      const parsed: unknown = JSON.parse(toggle.config);
+      return Array.isArray(parsed)
+        ? parsed.filter((c) => typeof c === 'string')
+        : [];
     } catch {
       return [];
     }
@@ -56,7 +58,11 @@ export class ModeratorController {
     @Query('status') status?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to review petitions');
     }
@@ -102,10 +108,13 @@ export class ModeratorController {
   async approvePetition(
     @CurrentUser() user: { id: string; email: string },
     @Param('id') petitionId: string,
-    @Body('feedback') feedback?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to approve petitions');
     }
@@ -119,7 +128,7 @@ export class ModeratorController {
     }
 
     // Update petition status
-    const updatedPetition = await this.prisma.petition.update({
+    await this.prisma.petition.update({
       where: { id: petitionId },
       data: {
         status: 'APPROVED' as PetitionStatus,
@@ -150,7 +159,11 @@ export class ModeratorController {
     @Body('reason') reason: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'REJECT');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'REJECT',
+    );
     if (!can) {
       throw new Error('No permission to reject petitions');
     }
@@ -224,19 +237,19 @@ export class ModeratorController {
    * Get fraud flags for moderator review
    */
   @Get('fraud-flags')
-  async getFraudFlags(
-    @CurrentUser() user: { id: string; email: string },
-    @Query('status') status?: string,
-  ) {
+  async getFraudFlags(@CurrentUser() user: { id: string; email: string }) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to review fraud flags');
     }
 
     // Placeholder: return empty array until FraudLog model is added to schema
     // In production, would query FraudLog model filtered by status
-    const statusFilter = status === 'all' ? undefined : status || 'PENDING';
 
     // Mock data structure:
     return [];
@@ -266,7 +279,11 @@ export class ModeratorController {
     @Body('notes') notes?: string,
   ) {
     // Check permission
-    const can = await this.rolePermissionService.hasPermission(user.id, 'PETITION', 'APPROVE');
+    const can = await this.rolePermissionService.hasPermission(
+      user.id,
+      'PETITION',
+      'APPROVE',
+    );
     if (!can) {
       throw new Error('No permission to resolve fraud flags');
     }

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EmailLog } from '@prisma/client';
+import { EmailLog, Prisma } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
@@ -54,7 +54,7 @@ export class EmailTrackingService {
       return emailLog;
     } catch (error) {
       this.logger.error(
-        `Failed to record email open for ${emailLogId}: ${error}`,
+        `Failed to record email open for ${emailLogId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -63,7 +63,10 @@ export class EmailTrackingService {
   /**
    * Record click event on email link
    */
-  async recordClick(emailLogId: string, linkId?: string): Promise<EmailLog | null> {
+  async recordClick(
+    emailLogId: string,
+    linkId?: string,
+  ): Promise<EmailLog | null> {
     try {
       const emailLog = await this.prisma.emailLog.update({
         where: { id: emailLogId },
@@ -81,7 +84,7 @@ export class EmailTrackingService {
       return emailLog;
     } catch (error) {
       this.logger.error(
-        `Failed to record email click for ${emailLogId}: ${error}`,
+        `Failed to record email click for ${emailLogId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -110,7 +113,7 @@ export class EmailTrackingService {
       return null;
     } catch (error) {
       this.logger.error(
-        `Failed to record delivery for ${resendMessageId}: ${error}`,
+        `Failed to record delivery for ${resendMessageId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -119,7 +122,10 @@ export class EmailTrackingService {
   /**
    * Record bounce event (from Resend webhook)
    */
-  async recordBounce(resendMessageId: string, reason?: string): Promise<EmailLog | null> {
+  async recordBounce(
+    resendMessageId: string,
+    reason?: string,
+  ): Promise<EmailLog | null> {
     try {
       const updateResult = await this.prisma.emailLog.updateMany({
         where: { resendMessageId },
@@ -140,7 +146,7 @@ export class EmailTrackingService {
       return null;
     } catch (error) {
       this.logger.error(
-        `Failed to record bounce for ${resendMessageId}: ${error}`,
+        `Failed to record bounce for ${resendMessageId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -149,7 +155,10 @@ export class EmailTrackingService {
   /**
    * Get email statistics
    */
-  async getEmailStats(startDate?: Date, endDate?: Date): Promise<{
+  async getEmailStats(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     total: number;
     sent: number;
     delivered: number;
@@ -160,22 +169,30 @@ export class EmailTrackingService {
     openRate: number;
     clickRate: number;
   }> {
-    const where: any = {};
+    const where: Prisma.EmailLogWhereInput = {};
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = startDate;
+      if (endDate) createdAt.lte = endDate;
+      where.createdAt = createdAt;
     }
 
-    const [total, sent, delivered, opened, clicked, bounced, failed] = await Promise.all([
-      this.prisma.emailLog.count({ where }),
-      this.prisma.emailLog.count({ where: { ...where, status: 'SENT' } }),
-      this.prisma.emailLog.count({ where: { ...where, status: 'DELIVERED' } }),
-      this.prisma.emailLog.count({ where: { ...where, openedAt: { not: null } } }),
-      this.prisma.emailLog.count({ where: { ...where, clickedAt: { not: null } } }),
-      this.prisma.emailLog.count({ where: { ...where, status: 'BOUNCED' } }),
-      this.prisma.emailLog.count({ where: { ...where, status: 'FAILED' } }),
-    ]);
+    const [total, sent, delivered, opened, clicked, bounced, failed] =
+      await Promise.all([
+        this.prisma.emailLog.count({ where }),
+        this.prisma.emailLog.count({ where: { ...where, status: 'SENT' } }),
+        this.prisma.emailLog.count({
+          where: { ...where, status: 'DELIVERED' },
+        }),
+        this.prisma.emailLog.count({
+          where: { ...where, openedAt: { not: null } },
+        }),
+        this.prisma.emailLog.count({
+          where: { ...where, clickedAt: { not: null } },
+        }),
+        this.prisma.emailLog.count({ where: { ...where, status: 'BOUNCED' } }),
+        this.prisma.emailLog.count({ where: { ...where, status: 'FAILED' } }),
+      ]);
 
     const openRate = total > 0 ? (opened / total) * 100 : 0;
     const clickRate = total > 0 ? (clicked / total) * 100 : 0;

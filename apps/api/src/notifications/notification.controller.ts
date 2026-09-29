@@ -5,13 +5,18 @@ import {
   Patch,
   Delete,
   UseGuards,
-  Req,
   Body,
   Param,
   Query,
 } from '@nestjs/common';
+import { NotificationStatus, NotificationType } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { NotificationService, NotificationFilterDto } from './notification.service';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/roles.guard';
+import {
+  NotificationService,
+  NotificationFilterDto,
+} from './notification.service';
 
 @Controller('notifications')
 export class NotificationController {
@@ -24,22 +29,22 @@ export class NotificationController {
   @Get()
   @UseGuards(JwtAuthGuard)
   async getNotifications(
-    @Req() req: any,
-    @Query('status') status?: string,
-    @Query('type') type?: string,
+    @CurrentUser() user: RequestUser,
+    @Query('status') status?: NotificationStatus,
+    @Query('type') type?: NotificationType,
     @Query('unreadOnly') unreadOnly?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
     const filters: NotificationFilterDto = {
-      status: status as any,
-      type: type as any,
+      status,
+      type,
       unreadOnly: unreadOnly === 'true',
       limit: limit ? parseInt(limit, 10) : 20,
       offset: offset ? parseInt(offset, 10) : 0,
     };
 
-    return this.notificationService.getUserNotifications(req.user.id, filters);
+    return this.notificationService.getUserNotifications(user.userId, filters);
   }
 
   /**
@@ -48,8 +53,8 @@ export class NotificationController {
    */
   @Get('unread-count')
   @UseGuards(JwtAuthGuard)
-  async getUnreadCount(@Req() req: any) {
-    const count = await this.notificationService.getUnreadCount(req.user.id);
+  async getUnreadCount(@CurrentUser() user: RequestUser) {
+    const count = await this.notificationService.getUnreadCount(user.userId);
     return { unreadCount: count };
   }
 
@@ -69,8 +74,8 @@ export class NotificationController {
    */
   @Post('mark-all-read')
   @UseGuards(JwtAuthGuard)
-  async markAllAsRead(@Req() req: any) {
-    return this.notificationService.markAllAsRead(req.user.id);
+  async markAllAsRead(@CurrentUser() user: RequestUser) {
+    return this.notificationService.markAllAsRead(user.userId);
   }
 
   /**
@@ -100,8 +105,8 @@ export class NotificationController {
    */
   @Get('preferences')
   @UseGuards(JwtAuthGuard)
-  async getPreferences(@Req() req: any) {
-    return this.notificationService.getPreferences(req.user.id);
+  async getPreferences(@CurrentUser() user: RequestUser) {
+    return this.notificationService.getPreferences(user.userId);
   }
 
   /**
@@ -111,19 +116,16 @@ export class NotificationController {
   @Post('preferences')
   @UseGuards(JwtAuthGuard)
   async updatePreferences(
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
     @Body()
     updates: {
       inAppEnabled?: boolean;
       emailEnabled?: boolean;
       pushEnabled?: boolean;
       digestFrequency?: string;
-      mutedTypes?: string[];
+      mutedTypes?: NotificationType[];
     },
   ) {
-    return this.notificationService.updatePreferences(req.user.id, {
-      ...updates,
-      mutedTypes: updates.mutedTypes as any,
-    });
+    return this.notificationService.updatePreferences(user.userId, updates);
   }
 }

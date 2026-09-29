@@ -10,7 +10,9 @@ import { ContentSchedulingService } from './content-scheduling.service';
 export class CMSScheduler {
   private readonly logger = new Logger(CMSScheduler.name);
 
-  constructor(private readonly contentSchedulingService: ContentSchedulingService) {}
+  constructor(
+    private readonly contentSchedulingService: ContentSchedulingService,
+  ) {}
 
   /**
    * Execute scheduled content actions every minute

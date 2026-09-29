@@ -1,4 +1,10 @@
-import { IsString, IsEmail, IsOptional, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ApplicationStatus } from '@prisma/client';
 
 export class CreateAmbassadorApplicationDto {

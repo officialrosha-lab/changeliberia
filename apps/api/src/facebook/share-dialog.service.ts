@@ -151,7 +151,7 @@ export class ShareDialogService {
 
       return { success: true, shareId: share.id };
     } catch (error) {
-      const message = (error instanceof Error ? error.message : 'Unknown error');
+      const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to record share: ${message}`);
       return { success: false, error: message };
     }
@@ -256,7 +256,7 @@ export class ShareDialogService {
         },
       });
     } catch (error) {
-      const message = (error instanceof Error ? error.message : 'Unknown error');
+      const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn(`Failed to track share dialog impression: ${message}`);
     }
   }
@@ -308,14 +308,8 @@ export class ShareDialogService {
       },
     });
 
-    const totalClicks = shares.reduce(
-      (sum, s) => sum + s.clickCount,
-      0,
-    );
-    const totalConversions = shares.reduce(
-      (sum, s) => sum + s.conversions,
-      0,
-    );
+    const totalClicks = shares.reduce((sum, s) => sum + s.clickCount, 0);
+    const totalConversions = shares.reduce((sum, s) => sum + s.conversions, 0);
     const totalReach = shares.reduce(
       (sum, s) => sum + s.networkReachEstimate,
       0,
@@ -326,7 +320,8 @@ export class ShareDialogService {
     );
 
     const averageReach = shares.length > 0 ? totalReach / shares.length : 0;
-    const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+    const conversionRate =
+      totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
 
     return {
       totalShares: totalFacebookShares,

@@ -89,22 +89,23 @@ export enum Currency {
 }
 
 // Payment status transitions
-export const VALID_STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-  [PaymentStatus.PENDING]: [
-    PaymentStatus.PROCESSING,
-    PaymentStatus.CANCELLED,
-    PaymentStatus.FAILED,
-  ],
-  [PaymentStatus.PROCESSING]: [
-    PaymentStatus.COMPLETED,
-    PaymentStatus.FAILED,
-    PaymentStatus.CANCELLED,
-  ],
-  [PaymentStatus.COMPLETED]: [PaymentStatus.REFUNDED],
-  [PaymentStatus.FAILED]: [PaymentStatus.CANCELLED],
-  [PaymentStatus.CANCELLED]: [],
-  [PaymentStatus.REFUNDED]: [],
-};
+export const VALID_STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> =
+  {
+    [PaymentStatus.PENDING]: [
+      PaymentStatus.PROCESSING,
+      PaymentStatus.CANCELLED,
+      PaymentStatus.FAILED,
+    ],
+    [PaymentStatus.PROCESSING]: [
+      PaymentStatus.COMPLETED,
+      PaymentStatus.FAILED,
+      PaymentStatus.CANCELLED,
+    ],
+    [PaymentStatus.COMPLETED]: [PaymentStatus.REFUNDED],
+    [PaymentStatus.FAILED]: [PaymentStatus.CANCELLED],
+    [PaymentStatus.CANCELLED]: [],
+    [PaymentStatus.REFUNDED]: [],
+  };
 
 // Stripe webhook events to listen for
 export const STRIPE_WEBHOOK_EVENTS = [

@@ -21,15 +21,23 @@ export function mapSystemSettings(toggles: FeatureToggle[]) {
   const byName = Object.fromEntries(toggles.map((t) => [t.name, t]));
 
   return {
-    petitionApprovalThreshold: Number(byName['petitionApprovalThreshold']?.config ?? 10),
-    autoApprovalSignatureThreshold: Number(byName['autoApprovalSignatureThreshold']?.config ?? 1000),
-    routingDefaultPriority: byName['routingDefaultPriority']?.config ?? 'NORMAL',
-    emailNotificationEnabled: byName['emailNotificationEnabled']?.enabled ?? true,
+    petitionApprovalThreshold: Number(
+      byName['petitionApprovalThreshold']?.config ?? 10,
+    ),
+    autoApprovalSignatureThreshold: Number(
+      byName['autoApprovalSignatureThreshold']?.config ?? 1000,
+    ),
+    routingDefaultPriority:
+      byName['routingDefaultPriority']?.config ?? 'NORMAL',
+    emailNotificationEnabled:
+      byName['emailNotificationEnabled']?.enabled ?? true,
     fraudDetectionLevel: byName['fraudDetectionLevel']?.config ?? 'MEDIUM',
     maxSignaturesPerUser: Number(byName['maxSignaturesPerUser']?.config ?? 5),
     donationsEnabled: byName['donationsEnabled']?.enabled ?? true,
-    platformDonationsEnabled: byName['platformDonationsEnabled']?.enabled ?? true,
-    petitionDonationsEnabled: byName['petitionDonationsEnabled']?.enabled ?? true,
+    platformDonationsEnabled:
+      byName['platformDonationsEnabled']?.enabled ?? true,
+    petitionDonationsEnabled:
+      byName['petitionDonationsEnabled']?.enabled ?? true,
   };
 }
 
@@ -82,7 +90,9 @@ export class AdminSettingsController {
 
   @Get('moderator-scopes')
   async getModeratorScopes() {
-    const moderatorRole = await this.prisma.role.findFirst({ where: { name: 'MODERATOR' } });
+    const moderatorRole = await this.prisma.role.findFirst({
+      where: { name: 'MODERATOR' },
+    });
     if (!moderatorRole) return [];
 
     const assignments = await this.prisma.userRoleAssignment.findMany({
@@ -100,7 +110,10 @@ export class AdminSettingsController {
       where: { name: { startsWith: 'moderator_scope_' } },
     });
     const scopeMap = Object.fromEntries(
-      scopeToggles.map((t) => [t.name, t.config ? (JSON.parse(t.config) as string[]) : []]),
+      scopeToggles.map((t) => [
+        t.name,
+        t.config ? (JSON.parse(t.config) as string[]) : [],
+      ]),
     );
 
     return assignments.map((a) => ({
@@ -275,8 +288,15 @@ export class AdminSettingsController {
         const isBoolean = typeof value === 'boolean';
         return this.prisma.featureToggle.upsert({
           where: { name },
-          create: { name, enabled: isBoolean ? value : true, config: isBoolean ? undefined : String(value) },
-          update: { enabled: isBoolean ? value : true, config: isBoolean ? undefined : String(value) },
+          create: {
+            name,
+            enabled: isBoolean ? value : true,
+            config: isBoolean ? undefined : String(value),
+          },
+          update: {
+            enabled: isBoolean ? value : true,
+            config: isBoolean ? undefined : String(value),
+          },
         });
       }),
     );
