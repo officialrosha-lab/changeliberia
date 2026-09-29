@@ -49,7 +49,8 @@ export class SmsInboundController {
     const host = (req.headers['x-forwarded-host'] as string) ?? req.get('host');
     const url = `${proto}://${host}${req.originalUrl}`;
 
-    return twilio.validateRequest(authToken, signature, url, req.body ?? {});
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    return twilio.validateRequest(authToken, signature, url, body);
   }
 
   @Post('inbound')
@@ -59,8 +60,9 @@ export class SmsInboundController {
       throw new BadRequestException('Invalid Twilio request signature');
     }
 
-    const from = String(req.body?.From ?? '').trim();
-    const body = String(req.body?.Body ?? '').trim();
+    const reqBody = (req.body ?? {}) as Record<string, unknown>;
+    const from = typeof reqBody.From === 'string' ? reqBody.From.trim() : '';
+    const body = typeof reqBody.Body === 'string' ? reqBody.Body.trim() : '';
 
     const match = body.match(/^sign\s+([a-z0-9]{4,12})$/i);
     if (!from || !match) {
