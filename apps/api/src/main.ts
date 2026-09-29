@@ -14,13 +14,14 @@ import { rawBodyMiddleware } from './common/middleware/raw-body.middleware';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
+import { Server } from 'socket.io';
 
 class RedisIoAdapter extends IoAdapter {
   private pubClient?: ReturnType<typeof createClient>;
   private subClient?: ReturnType<typeof createClient>;
 
-  createIOServer(port: number, options?: any) {
-    const server = super.createIOServer(port, options);
+  createIOServer(port: number, options?: unknown) {
+    const server = super.createIOServer(port, options) as Server;
 
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.pubClient = createClient({ url: redisUrl });
@@ -39,7 +40,7 @@ class RedisIoAdapter extends IoAdapter {
           console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
         }
       } else {
-        const error =
+        const error: unknown =
           pubResult.status === 'rejected'
             ? pubResult.reason
             : (subResult as PromiseRejectedResult).reason;
