@@ -19,7 +19,7 @@ export function CMSPageClient() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-zinc-200 overflow-x-auto">
+      <div className="flex gap-2 mb-6 border-b border-zinc-200 dark:border-neutral-700 overflow-x-auto">
         {(
           [
             ['pages', 'Pages'],
@@ -31,8 +31,8 @@ export function CMSPageClient() {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+                ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-neutral-300 dark:hover:text-white'
             }`}
           >
             {label}
@@ -41,7 +41,7 @@ export function CMSPageClient() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg border border-zinc-200 p-6">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg border border-zinc-200 dark:border-neutral-700 p-6">
         {activeTab === 'pages' && <CMSPageManager />}
         {activeTab === 'templates' && <CMSTemplateManager />}
       </div>

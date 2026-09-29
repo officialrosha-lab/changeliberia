@@ -23,11 +23,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   };
 
   const getTrustColor = (score: number) => {
-    if (score >= 100) return { bg: 'bg-amber-50', border: 'border-amber-300', badge: 'bg-amber-100 text-amber-800' };
-    if (score >= 50) return { bg: 'bg-green-50', border: 'border-green-300', badge: 'bg-green-100 text-green-800' };
-    if (score >= 20) return { bg: 'bg-blue-50', border: 'border-blue-300', badge: 'bg-blue-100 text-blue-800' };
-    if (score >= 5) return { bg: 'bg-cyan-50', border: 'border-cyan-300', badge: 'bg-cyan-100 text-cyan-800' };
-    return { bg: 'bg-gray-50', border: 'border-gray-300', badge: 'bg-gray-100 text-gray-800' };
+    if (score >= 100) return { bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-300 dark:border-amber-800', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300' };
+    if (score >= 50) return { bg: 'bg-green-50 dark:bg-green-950/30', border: 'border-green-300 dark:border-green-800', badge: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' };
+    if (score >= 20) return { bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-300 dark:border-blue-800', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' };
+    if (score >= 5) return { bg: 'bg-cyan-50 dark:bg-cyan-950/30', border: 'border-cyan-300 dark:border-cyan-800', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300' };
+    return { bg: 'bg-gray-50 dark:bg-neutral-900', border: 'border-gray-300 dark:border-neutral-700', badge: 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-neutral-200' };
   };
 
   const getStatusIcon = (status: string) => {
@@ -71,8 +71,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-gray-700" />
-          <h3 className="font-bold text-gray-900">Verification Status</h3>
+          <Shield className="w-5 h-5 text-gray-700 dark:text-neutral-300" />
+          <h3 className="font-bold text-gray-900 dark:text-white">Verification Status</h3>
         </div>
         <span className="text-2xl">{getTrustIcon(trustScore)}</span>
       </div>
@@ -80,8 +80,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       {/* Trust Level */}
       <div className="space-y-3">
         <div>
-          <p className="text-xs text-gray-600 uppercase tracking-wide">Trust Level</p>
-          <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <p className="text-xs text-gray-600 dark:text-neutral-400 uppercase tracking-wide">Trust Level</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             {getTrustLevel(trustScore)}
             <span className={`text-xs font-mono px-2 py-0.5 rounded ${colors.badge}`}>
               {trustScore} points
@@ -92,8 +92,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
         {/* Progress Bar */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-gray-700">Progress to Next Level</span>
-            <span className="text-xs text-gray-600">
+            <span className="text-xs font-semibold text-gray-700 dark:text-neutral-300">Progress to Next Level</span>
+            <span className="text-xs text-gray-600 dark:text-neutral-400">
               {trustScore >= 100
                 ? '✓ Maximum'
                 : trustScore < 5
@@ -106,7 +106,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
               points
             </span>
           </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all"
               style={{
@@ -117,12 +117,12 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
         </div>
 
         {/* Verification Status */}
-        <div className="border-t pt-3">
-          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Verified Info</p>
+        <div className="border-t dark:border-neutral-700 pt-3">
+          <p className="text-xs text-gray-600 dark:text-neutral-400 uppercase tracking-wide mb-2">Verified Info</p>
           <div className="flex items-center gap-2">
             <span className="text-xl">{getStatusIcon(verificationStatus)}</span>
             <div>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {verificationStatus === 'VERIFIED_ID'
                   ? 'ID Verified'
                   : verificationStatus === 'VERIFIED_PHONE'
@@ -131,7 +131,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
                       ? 'Diaspora Member'
                       : 'Not Verified'}
               </p>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 dark:text-neutral-400">
                 {verificationStatus === 'VERIFIED_ID'
                   ? 'Government ID verified'
                   : verificationStatus === 'VERIFIED_PHONE'
@@ -145,11 +145,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
         </div>
 
         {/* How to Earn Trust */}
-        <div className="bg-white rounded-lg p-3 border">
-          <p className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-1">
+        <div className="bg-white dark:bg-neutral-900 rounded-lg p-3 border dark:border-neutral-700">
+          <p className="text-xs font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1">
             <Zap className="w-4 h-4" /> How to earn trust
           </p>
-          <ul className="text-xs text-gray-700 space-y-1">
+          <ul className="text-xs text-gray-700 dark:text-neutral-300 space-y-1">
             <li>• Sign petitions (+1 per petition)</li>
             <li>• Verify phone number (+3)</li>
             <li>• Upload ID document (+10)</li>

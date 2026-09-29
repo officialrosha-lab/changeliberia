@@ -271,17 +271,17 @@ export function PetitionGovernmentPanel({
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-zinc-500">Loading campaign readiness...</p>
+      <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading campaign readiness...</p>
       </div>
     );
   }
 
   if (!readiness) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
-        <p className="text-sm text-red-700">Unable to load campaign readiness details.</p>
-        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm dark:border-red-900 dark:bg-red-950">
+        <p className="text-sm text-red-700 dark:text-red-400">Unable to load campaign readiness details.</p>
+        {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </div>
     );
   }
@@ -289,12 +289,12 @@ export function PetitionGovernmentPanel({
   /* ── Social / Community — simplified "Collect & share" panel ── */
   if (!isSubmissionType) {
     return (
-      <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Signature progress</p>
-            <h2 className="mt-1 text-xl font-extrabold text-zinc-900">Collect &amp; share</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-neutral-500">Signature progress</p>
+            <h2 className="mt-1 text-xl font-extrabold text-zinc-900 dark:text-white">Collect &amp; share</h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
               This petition collects signatures directly. Download a report or share the link when
               you&apos;re ready to act.
             </p>
@@ -312,38 +312,38 @@ export function PetitionGovernmentPanel({
               type="button"
               onClick={handleDownloadCsv}
               disabled={downloadingCsv}
-              className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
             >
               {downloadingCsv ? 'Exporting…' : 'CSV export'}
             </button>
           </div>
         </div>
         {downloadError && (
-          <p className="mt-3 text-xs text-red-600">{downloadError}</p>
+          <p className="mt-3 text-xs text-red-600 dark:text-red-400">{downloadError}</p>
         )}
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-3xl bg-emerald-50 p-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Signatures</p>
-            <p className="mt-2 text-3xl font-semibold text-emerald-900">{readiness.signaturesCount.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-emerald-700">
+          <div className="rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
+            <p className="text-xs uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">Signatures</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-900 dark:text-emerald-200">{readiness.signaturesCount.toLocaleString()}</p>
+            <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">
               {readiness.isGovernmentReady ? 'Goal reached!' : `${readiness.signaturesNeeded.toLocaleString()} more to goal`}
             </p>
           </div>
-          <div className="rounded-3xl bg-blue-50 p-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Next milestone</p>
-            <p className="mt-2 text-3xl font-semibold text-blue-900">{readiness.nextMilestone.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-blue-700">{readiness.nextMilestoneProgress}% there</p>
+          <div className="rounded-3xl bg-blue-50 p-4 dark:bg-blue-900/40">
+            <p className="text-xs uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">Next milestone</p>
+            <p className="mt-2 text-3xl font-semibold text-blue-900 dark:text-blue-200">{readiness.nextMilestone.toLocaleString()}</p>
+            <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">{readiness.nextMilestoneProgress}% there</p>
           </div>
-          <div className="rounded-3xl bg-zinc-50 p-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Petition</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-900 break-words">{petitionTitle}</p>
+          <div className="rounded-3xl bg-zinc-50 p-4 dark:bg-neutral-800">
+            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-neutral-400">Petition</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-900 break-words dark:text-white">{petitionTitle}</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl bg-zinc-50 p-4">
-          <p className="text-sm font-semibold text-zinc-700">Campaign status</p>
-          <p className="mt-1 text-sm text-zinc-500">
+        <div className="mt-4 rounded-2xl bg-zinc-50 p-4 dark:bg-neutral-800">
+          <p className="text-sm font-semibold text-zinc-700 dark:text-neutral-200">Campaign status</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
             You&apos;re in control — share your petition link and present the report directly to your
             target audience when you&apos;re ready.
           </p>
@@ -354,11 +354,11 @@ export function PetitionGovernmentPanel({
 
   /* ── Government / NGO — full submission panel ── */
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-zinc-900">{copy.panelTitle}</h2>
-          <p className="mt-2 text-sm text-zinc-600">{copy.panelDesc}</p>
+          <h2 className="text-xl font-extrabold text-zinc-900 dark:text-white">{copy.panelTitle}</h2>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-300">{copy.panelDesc}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           <button
@@ -373,46 +373,46 @@ export function PetitionGovernmentPanel({
             type="button"
             onClick={handleDownloadCsv}
             disabled={downloadingCsv}
-            className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
           >
             {downloadingCsv ? 'Exporting…' : 'CSV export'}
           </button>
         </div>
       </div>
       {downloadError && (
-        <p className="mt-3 text-xs text-red-600">{downloadError}</p>
+        <p className="mt-3 text-xs text-red-600 dark:text-red-400">{downloadError}</p>
       )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl bg-emerald-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Signatures</p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-900">{readiness.signaturesCount.toLocaleString()}</p>
-          <p className="mt-1 text-sm text-emerald-700">
+        <div className="rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
+          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">Signatures</p>
+          <p className="mt-2 text-3xl font-semibold text-emerald-900 dark:text-emerald-200">{readiness.signaturesCount.toLocaleString()}</p>
+          <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">
             {readiness.isGovernmentReady ? 'Ready for submission' : `${readiness.signaturesNeeded.toLocaleString()} more to go`}
           </p>
         </div>
-        <div className="rounded-3xl bg-blue-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Next readiness</p>
-          <p className="mt-2 text-3xl font-semibold text-blue-900">{readiness.nextMilestone.toLocaleString()}</p>
-          <p className="mt-1 text-sm text-blue-700">{readiness.nextMilestoneProgress}% to next level</p>
+        <div className="rounded-3xl bg-blue-50 p-4 dark:bg-blue-900/40">
+          <p className="text-xs uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">Next readiness</p>
+          <p className="mt-2 text-3xl font-semibold text-blue-900 dark:text-blue-200">{readiness.nextMilestone.toLocaleString()}</p>
+          <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">{readiness.nextMilestoneProgress}% to next level</p>
         </div>
-        <div className="rounded-3xl bg-zinc-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Petition</p>
-          <p className="mt-2 text-lg font-semibold text-zinc-900 break-words">{petitionTitle}</p>
+        <div className="rounded-3xl bg-zinc-50 p-4 dark:bg-neutral-800">
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-neutral-400">Petition</p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900 break-words dark:text-white">{petitionTitle}</p>
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+      <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-800 dark:bg-neutral-800">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-zinc-900">{copy.statusLabel}</p>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">{copy.statusLabel}</p>
+            <p className="text-sm text-zinc-600 dark:text-neutral-300">
               {readiness.isGovernmentReady ? copy.readyMsg : copy.notReadyMsg}
             </p>
           </div>
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${
-              readiness.isGovernmentReady ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'
+              readiness.isGovernmentReady ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-yellow-100 text-yellow-800 dark:bg-amber-950/30 dark:text-amber-400'
             }`}
           >
             {readiness.isGovernmentReady ? 'Ready' : 'Pending'}
@@ -420,7 +420,7 @@ export function PetitionGovernmentPanel({
         </div>
 
         {!readiness.isGovernmentReady && (
-          <div className="mt-4 rounded-2xl bg-white p-4 text-sm text-zinc-600">
+          <div className="mt-4 rounded-2xl bg-white p-4 text-sm text-zinc-600 dark:bg-neutral-900 dark:text-neutral-300">
             <p>
               This petition needs <strong>{readiness.signaturesNeeded.toLocaleString()}</strong> more verified signatures before it can be submitted.
             </p>
@@ -432,28 +432,28 @@ export function PetitionGovernmentPanel({
         <div className="mt-6 space-y-4">
           {status?.submissions?.length ? (
             <>
-              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-sm font-semibold text-emerald-900">Submission status</p>
-                <p className="mt-2 text-sm text-emerald-700">{`Current status: ${status.status}`}</p>
-                <p className="mt-2 text-sm text-zinc-700">Submitted at {status.submittedAt ? new Date(status.submittedAt).toLocaleString() : 'N/A'}</p>
+              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+                <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Submission status</p>
+                <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{`Current status: ${status.status}`}</p>
+                <p className="mt-2 text-sm text-zinc-700 dark:text-neutral-200">Submitted at {status.submittedAt ? new Date(status.submittedAt).toLocaleString() : 'N/A'}</p>
               </div>
 
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
-                <h3 className="text-lg font-semibold text-zinc-900">Submission history</h3>
+              <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4 dark:border-neutral-800 dark:bg-neutral-800">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Submission history</h3>
                 <div className="mt-4 space-y-3">
                   {status.submissions.map((submission) => (
-                    <div key={submission.id} className="rounded-2xl bg-white p-4 shadow-sm">
+                    <div key={submission.id} className="rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
                       <div className="flex flex-wrap items-start justify-between gap-3 min-w-0">
                         <div className="min-w-0">
-                          <p className="font-semibold text-zinc-900 break-words">{submission.governmentEmail}</p>
-                          <p className="mt-1 text-sm text-zinc-500">{submission.status}</p>
+                          <p className="font-semibold text-zinc-900 break-words dark:text-white">{submission.governmentEmail}</p>
+                          <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">{submission.status}</p>
                         </div>
-                        <div className="text-sm text-zinc-500 text-right">
+                        <div className="text-sm text-zinc-500 text-right dark:text-neutral-400">
                           <p>Submitted {new Date(submission.submittedAt).toLocaleString()}</p>
                           <p>Updated {new Date(submission.updatedAt).toLocaleString()}</p>
                         </div>
                       </div>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-zinc-600">
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-zinc-600 dark:text-neutral-300">
                         <p className="break-words">Signatures: {submission.signatureCount ?? 'N/A'}</p>
                         <p className="break-words">Notes: {submission.notes || '—'}</p>
                         <p className="sm:col-span-2 break-words">Response notes: {submission.responseNotes || '—'}</p>
@@ -464,9 +464,9 @@ export function PetitionGovernmentPanel({
               </div>
             </>
           ) : (
-            <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-zinc-900">{copy.recipientLabel}</p>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">{copy.recipientLabel}</p>
                 {!token ? (
                   <Link href="/auth/login" className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                     Sign in to submit
@@ -476,14 +476,14 @@ export function PetitionGovernmentPanel({
 
               {contacts.length > 0 ? (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-zinc-700">Pick a contact</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-200">Pick a contact</label>
                   <select
                     value={selectedContactId}
                     onChange={(e) => {
                       setSelectedContactId(e.target.value);
                       setCustomEmail('');
                     }}
-                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                   >
                     <option value="">Choose a contact</option>
                     {contacts.map((contact) => (
@@ -494,13 +494,13 @@ export function PetitionGovernmentPanel({
                   </select>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
                   {copy.noContactsMsg}
                 </div>
               )}
 
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-zinc-700">Email address</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-200">Email address</label>
                 <input
                   type="email"
                   value={customEmail}
@@ -509,25 +509,25 @@ export function PetitionGovernmentPanel({
                     setSelectedContactId('');
                   }}
                   placeholder={copy.emailPlaceholder}
-                  className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-700">Notes</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-200">Notes</label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
               </div>
 
               {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{error}</div>
               ) : null}
               {message ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">{message}</div>
               ) : null}
 
               <button

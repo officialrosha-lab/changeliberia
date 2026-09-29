@@ -26,13 +26,13 @@ export function CreatePetitionCard() {
       transition={{ duration: 0.4, type: 'spring', stiffness: 320, damping: 28 }}
       className="w-full max-w-lg mx-auto px-4 sm:px-0"
     >
-      <div className="rounded-2xl bg-white shadow-2xl shadow-emerald-900/40 p-6 sm:p-8 border border-white/20">
+      <div className="rounded-2xl bg-white shadow-2xl shadow-emerald-900/40 p-6 sm:p-8 border border-white/20 dark:bg-neutral-900 dark:border-neutral-700">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <h2 className="text-2xl font-extrabold text-zinc-900">
+            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
               What change does Liberia need?
             </h2>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500 dark:text-neutral-400">
               A pothole, a clinic with no medicine, a road that floods every rainy season —
               tell us what&apos;s wrong and we&apos;ll walk you through the rest.
             </p>
@@ -57,13 +57,13 @@ export function CreatePetitionCard() {
             className={`w-full rounded-xl px-6 py-4 text-base font-bold shadow-sm transition-all ${
               hasTitle
                 ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-zinc-900 shadow-amber-200 hover:from-amber-300 hover:to-amber-400 hover:shadow-md active:scale-95'
-                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-500'
             }`}
           >
             {hasTitle ? 'Create petition →' : 'Create petition'}
           </motion.button>
 
-          <p className="text-xs text-zinc-400 text-center leading-relaxed">
+          <p className="text-xs text-zinc-400 dark:text-neutral-500 text-center leading-relaxed">
             Your petition will be reviewed before going live. It&apos;s free and takes less than 5 minutes.
           </p>
         </form>

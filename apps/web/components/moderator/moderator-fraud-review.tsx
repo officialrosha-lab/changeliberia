@@ -81,13 +81,13 @@ export function ModeratorFraudReview() {
   const getRiskColor = (level: string) => {
     switch (level.toUpperCase()) {
       case 'CRITICAL':
-        return 'bg-red-100 text-red-900 border-red-200';
+        return 'bg-red-100 text-red-900 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900';
       case 'HIGH':
-        return 'bg-orange-100 text-orange-900 border-orange-200';
+        return 'bg-orange-100 text-orange-900 border-orange-200 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-900';
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-900 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-900 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-900';
       default:
-        return 'bg-blue-100 text-blue-900 border-blue-200';
+        return 'bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-900';
     }
   };
 
@@ -108,7 +108,7 @@ export function ModeratorFraudReview() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               statusFilter === status
                 ? 'bg-emerald-600 text-white'
-                : 'bg-zinc-200 text-zinc-900 hover:bg-zinc-300'
+                : 'bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700'
             }`}
           >
             {label}
@@ -118,20 +118,20 @@ export function ModeratorFraudReview() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Count */}
-      <div className="text-sm text-zinc-600">
+      <div className="text-sm text-zinc-600 dark:text-neutral-300">
         {filtered.length} flag{filtered.length !== 1 ? 's' : ''} to review
       </div>
 
       {/* Flags List */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 bg-zinc-50 rounded-lg border border-zinc-200">
-          <p className="text-zinc-600">No fraud flags to review</p>
+        <div className="text-center py-12 bg-zinc-50 rounded-lg border border-zinc-200 dark:bg-neutral-800 dark:border-neutral-700">
+          <p className="text-zinc-600 dark:text-neutral-300">No fraud flags to review</p>
         </div>
       ) : (
         <div className="space-y-3">

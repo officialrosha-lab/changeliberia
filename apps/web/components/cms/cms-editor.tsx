@@ -126,7 +126,7 @@ export function CMSEditor() {
   }
 
   if (!page) {
-    return <div className="text-center py-8 text-red-600">Page not found</div>;
+    return <div className="text-center py-8 text-red-600 dark:text-red-400">Page not found</div>;
   }
 
   return (
@@ -135,17 +135,17 @@ export function CMSEditor() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{page.title}</h1>
-          <p className="text-sm text-zinc-600 mt-1">/{page.slug}</p>
+          <p className="text-sm text-zinc-600 mt-1 dark:text-neutral-300">/{page.slug}</p>
           <div className="mt-2 flex gap-2 items-center">
             <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
               page.isDraft
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-emerald-100 text-emerald-700'
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
             }`}>
               {page.isDraft ? 'Draft' : 'Ready'}
             </span>
             {page.published && (
-              <span className="inline-block px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+              <span className="inline-block px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                 Published
               </span>
             )}
@@ -153,7 +153,7 @@ export function CMSEditor() {
         </div>
         <button
           onClick={() => router.back()}
-          className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+          className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
         >
           Back
         </button>
@@ -161,21 +161,21 @@ export function CMSEditor() {
 
       {/* Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
           {success}
         </div>
       )}
 
       {/* Draft/Publish Controls */}
-      <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 flex justify-between items-center">
+      <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 flex justify-between items-center dark:border-neutral-700 dark:bg-blue-900/40">
         <div>
           <p className="font-semibold">Publishing Controls</p>
-          <p className="text-sm text-zinc-600 mt-1">
+          <p className="text-sm text-zinc-600 mt-1 dark:text-neutral-300">
             {page.isDraft ? 'Mark page as ready for review before publishing' : 'Page is ready for publishing'}
           </p>
         </div>
@@ -205,7 +205,7 @@ export function CMSEditor() {
               setShowVersionHistory(!showVersionHistory);
               if (!showVersionHistory) loadVersionHistory();
             }}
-            className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 font-semibold"
+            className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 font-semibold dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
           >
             Version History
           </button>
@@ -214,17 +214,17 @@ export function CMSEditor() {
 
       {/* Version History Panel */}
       {showVersionHistory && (
-        <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
+        <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800">
           <h3 className="font-semibold mb-3">Version History ({versions.length})</h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {versions.length === 0 ? (
-              <p className="text-sm text-zinc-600">No versions yet</p>
+              <p className="text-sm text-zinc-600 dark:text-neutral-300">No versions yet</p>
             ) : (
               versions.map((v, idx) => (
-                <div key={v.id} className="flex justify-between items-center text-sm bg-white p-2 rounded">
+                <div key={v.id} className="flex justify-between items-center text-sm bg-white p-2 rounded dark:bg-neutral-900">
                   <span>{new Date(v.createdAt).toLocaleString()}</span>
                   {idx > 0 && (
-                    <button className="text-blue-600 hover:underline text-xs font-medium">
+                    <button className="text-blue-600 hover:underline text-xs font-medium dark:text-blue-400">
                       Restore
                     </button>
                   )}
@@ -236,20 +236,20 @@ export function CMSEditor() {
       )}
 
       {/* Block Editor */}
-      <div className="border border-zinc-200 rounded-lg p-6 bg-white">
+      <div className="border border-zinc-200 rounded-lg p-6 bg-white dark:border-neutral-700 dark:bg-neutral-900">
         <h2 className="text-xl font-bold mb-4">Page Blocks</h2>
         <CMSPageBlockEditor />
       </div>
 
       {/* Basic Info */}
-      <div className="space-y-4 border border-zinc-200 rounded-lg p-4 bg-white">
+      <div className="space-y-4 border border-zinc-200 rounded-lg p-4 bg-white dark:border-neutral-700 dark:bg-neutral-900">
         <div>
           <label className="block text-sm font-semibold mb-2">Page Title</label>
           <input
             type="text"
             value={page.title}
             onChange={(e) => setPage({ ...page, title: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
         </div>
 
@@ -259,14 +259,14 @@ export function CMSEditor() {
             type="text"
             value={page.slug}
             onChange={(e) => setPage({ ...page, slug: e.target.value })}
-            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             placeholder="URL-friendly page slug"
           />
         </div>
       </div>
 
       {/* SEO Metadata */}
-      <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50">
+      <div className="border border-zinc-200 rounded-lg p-4 bg-blue-50 dark:border-neutral-700 dark:bg-blue-900/40">
         <h3 className="font-semibold text-lg mb-4">SEO & Social Metadata</h3>
         <div className="space-y-4">
           <div>
@@ -274,11 +274,11 @@ export function CMSEditor() {
             <textarea
               value={page.metaDescription || ''}
               onChange={(e) => setPage({ ...page, metaDescription: e.target.value })}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               rows={2}
               placeholder="Description for search engines (160 chars max)"
             />
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1 dark:text-neutral-400">
               {page.metaDescription?.length || 0} / 160 characters
             </p>
           </div>
@@ -289,7 +289,7 @@ export function CMSEditor() {
               type="text"
               value={page.metaKeywords || ''}
               onChange={(e) => setPage({ ...page, metaKeywords: e.target.value })}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               placeholder="keyword1, keyword2, keyword3"
             />
           </div>
@@ -300,7 +300,7 @@ export function CMSEditor() {
               type="text"
               value={page.ogTitle || ''}
               onChange={(e) => setPage({ ...page, ogTitle: e.target.value })}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
           </div>
 
@@ -309,7 +309,7 @@ export function CMSEditor() {
             <textarea
               value={page.ogDescription || ''}
               onChange={(e) => setPage({ ...page, ogDescription: e.target.value })}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               rows={2}
             />
           </div>
@@ -320,7 +320,7 @@ export function CMSEditor() {
               type="text"
               value={page.ogImage || ''}
               onChange={(e) => setPage({ ...page, ogImage: e.target.value })}
-              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               placeholder="https://..."
             />
           </div>
@@ -338,7 +338,7 @@ export function CMSEditor() {
         </button>
         <button
           onClick={() => router.back()}
-          className="px-4 py-3 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 font-semibold"
+          className="px-4 py-3 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 font-semibold dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
         >
           Cancel
         </button>

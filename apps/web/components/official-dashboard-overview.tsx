@@ -34,52 +34,52 @@ export function OfficialDashboardOverview() {
   }, [token]);
 
   if (error) {
-    return <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>;
+    return <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{error}</div>;
   }
 
   if (!data) {
-    return <p className="text-sm text-zinc-500">Loading overview…</p>;
+    return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading overview…</p>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-zinc-900">{data.institution.name}</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white">{data.institution.name}</h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
           {[data.institution.county, data.institution.district].filter(Boolean).join(' · ') || 'National'}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-3xl bg-emerald-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Assigned petitions</p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-900">{data.totalPetitions}</p>
+        <div className="rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
+          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">Assigned petitions</p>
+          <p className="mt-2 text-3xl font-semibold text-emerald-900 dark:text-emerald-200">{data.totalPetitions}</p>
         </div>
-        <div className="rounded-3xl bg-purple-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-purple-700">Directly affected</p>
-          <p className="mt-2 text-3xl font-semibold text-purple-900">{data.directlyAffectedCount.toLocaleString()}</p>
+        <div className="rounded-3xl bg-purple-50 p-4 dark:bg-purple-950/30">
+          <p className="text-xs uppercase tracking-[0.24em] text-purple-700 dark:text-purple-300">Directly affected</p>
+          <p className="mt-2 text-3xl font-semibold text-purple-900 dark:text-purple-200">{data.directlyAffectedCount.toLocaleString()}</p>
         </div>
-        <div className="rounded-3xl bg-blue-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Unread inbox</p>
-          <p className="mt-2 text-3xl font-semibold text-blue-900">{data.unreadInboxCount}</p>
+        <div className="rounded-3xl bg-blue-50 p-4 dark:bg-blue-900/40">
+          <p className="text-xs uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">Unread inbox</p>
+          <p className="mt-2 text-3xl font-semibold text-blue-900 dark:text-blue-200">{data.unreadInboxCount}</p>
         </div>
-        <div className="rounded-3xl bg-zinc-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Stages tracked</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-900">{data.petitionsByStage.length}</p>
+        <div className="rounded-3xl bg-zinc-50 p-4 dark:bg-neutral-800">
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-neutral-400">Stages tracked</p>
+          <p className="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{data.petitionsByStage.length}</p>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-zinc-200 p-5">
-        <h3 className="text-lg font-semibold text-zinc-900">Petitions by stage</h3>
+      <div className="rounded-3xl border border-zinc-200 p-5 dark:border-neutral-700">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Petitions by stage</h3>
         <div className="mt-3 space-y-2">
           {data.petitionsByStage.map((s) => (
-            <div key={s.stage} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-2 text-sm">
-              <span className="font-medium text-zinc-700">{s.stage.replaceAll('_', ' ')}</span>
-              <span className="font-semibold text-zinc-900">{s.count}</span>
+            <div key={s.stage} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-2 text-sm dark:bg-neutral-800">
+              <span className="font-medium text-zinc-700 dark:text-neutral-300">{s.stage.replaceAll('_', ' ')}</span>
+              <span className="font-semibold text-zinc-900 dark:text-white">{s.count}</span>
             </div>
           ))}
           {data.petitionsByStage.length === 0 && (
-            <p className="text-sm text-zinc-500">No petitions routed yet.</p>
+            <p className="text-sm text-zinc-500 dark:text-neutral-400">No petitions routed yet.</p>
           )}
         </div>
       </div>

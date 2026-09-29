@@ -76,8 +76,8 @@ export function ChallengeCard({
   }, [challenge, petitionId]);
 
   const renderProgressBar = (percentComplete: number, completed: boolean) => (
-    <div className="w-full h-3 bg-zinc-200 rounded-full overflow-hidden">
-      <div 
+    <div className="w-full h-3 bg-zinc-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+      <div
         className={`h-full transition-all ${completed ? 'bg-green-500' : 'bg-blue-500'}`}
         style={{ width: `${percentComplete}%` }}
       />
@@ -90,14 +90,14 @@ export function ChallengeCard({
     
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className="font-semibold text-zinc-700">{challenge.title}</span>
-        <div className="flex-1 max-w-32 h-2 bg-zinc-200 rounded-full overflow-hidden">
-          <div 
+        <span className="font-semibold text-zinc-700 dark:text-neutral-200">{challenge.title}</span>
+        <div className="flex-1 max-w-32 h-2 bg-zinc-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+          <div
             className="h-full bg-blue-500 transition-all"
             style={{ width: `${challenge.percentComplete}%` }}
           />
         </div>
-        <span className="text-xs font-semibold text-zinc-600">
+        <span className="text-xs font-semibold text-zinc-600 dark:text-neutral-300">
           {challenge.progress}/{challenge.goalValue}
         </span>
       </div>
@@ -115,20 +115,20 @@ export function ChallengeCard({
     return (
       <div className="space-y-2">
         {displayChallenges.map((c, idx) => (
-          <div 
+          <div
             key={idx}
-            className={`p-2 rounded-lg ${c.completed ? 'bg-green-50' : 'bg-blue-50'}`}
+            className={`p-2 rounded-lg ${c.completed ? 'bg-green-50 dark:bg-green-950/30' : 'bg-blue-50 dark:bg-blue-950/30'}`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-zinc-700">{c.title}</span>
-              <span className="text-xs font-bold text-zinc-600">{c.percentComplete}%</span>
+              <span className="text-xs font-semibold text-zinc-700 dark:text-neutral-200">{c.title}</span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-neutral-300">{c.percentComplete}%</span>
             </div>
             {renderProgressBar(c.percentComplete, c.completed)}
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-zinc-500 dark:text-neutral-400">
                 {c.progress} of {c.goalValue}
               </span>
-              <span className="text-xs font-semibold text-zinc-600">
+              <span className="text-xs font-semibold text-zinc-600 dark:text-neutral-300">
                 {c.daysRemaining > 0 ? `${c.daysRemaining}d left` : 'Ended'}
               </span>
             </div>
@@ -144,17 +144,17 @@ export function ChallengeCard({
   if (loading) {
     return (
       <div className="animate-pulse space-y-3">
-        <div className="h-4 bg-zinc-200 rounded w-1/2" />
-        <div className="h-3 bg-zinc-200 rounded w-full" />
+        <div className="h-4 bg-zinc-200 dark:bg-neutral-700 rounded w-1/2" />
+        <div className="h-3 bg-zinc-200 dark:bg-neutral-700 rounded w-full" />
       </div>
     );
   }
 
   if (displayChallenges.length === 0 && activeChallenges.length === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 p-4 text-center">
-        <p className="text-sm text-zinc-600">No active challenges yet</p>
-        <p className="text-xs text-zinc-500 mt-1">Check back soon for new opportunities to earn bonuses!</p>
+      <div className="rounded-lg border border-zinc-200 dark:border-neutral-700 p-4 text-center">
+        <p className="text-sm text-zinc-600 dark:text-neutral-300">No active challenges yet</p>
+        <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Check back soon for new opportunities to earn bonuses!</p>
       </div>
     );
   }
@@ -164,21 +164,21 @@ export function ChallengeCard({
       {/* User's participating challenges */}
       {displayChallenges.length > 0 && (
         <div>
-          <h4 className="font-semibold text-sm mb-3">Your Challenges</h4>
+          <h4 className="font-semibold text-sm mb-3 text-zinc-900 dark:text-white">Your Challenges</h4>
           <div className="space-y-3">
             {displayChallenges.map((c, idx) => (
-              <div 
+              <div
                 key={idx}
-                className={`rounded-lg p-4 border-2 ${c.completed ? 'border-green-300 bg-green-50' : 'border-blue-300 bg-blue-50'}`}
+                className={`rounded-lg p-4 border-2 ${c.completed ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30' : 'border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30'}`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="font-semibold text-sm">{c.title}</p>
-                    <p className="text-xs text-zinc-600 mt-0.5">
+                    <p className="font-semibold text-sm text-zinc-900 dark:text-white">{c.title}</p>
+                    <p className="text-xs text-zinc-600 dark:text-neutral-300 mt-0.5">
                       {c.progress} of {c.goalValue} shares
                     </p>
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white text-zinc-900 dark:bg-neutral-800 dark:text-white">
                     {c.percentComplete}%
                   </span>
                 </div>
@@ -186,17 +186,17 @@ export function ChallengeCard({
                 {renderProgressBar(c.percentComplete, c.completed)}
 
                 {c.completed ? (
-                  <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-green-700">
+                  <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-green-700 dark:text-green-400">
                     ✓ Completed
                     {c.earnedBonus > 1 && (
-                      <span className="bg-green-200 px-2 py-0.5 rounded">
+                      <span className="bg-green-200 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-200">
                         +{(c.earnedBonus - 1) * 100}% Trust Bonus
                       </span>
                     )}
                   </div>
                 ) : (
-                  <p className="mt-2 text-xs text-zinc-600">
-                    {c.daysRemaining > 0 
+                  <p className="mt-2 text-xs text-zinc-600 dark:text-neutral-300">
+                    {c.daysRemaining > 0
                       ? `${c.daysRemaining} days remaining`
                       : 'Ended'}
                   </p>
@@ -210,25 +210,25 @@ export function ChallengeCard({
       {/* Available challenges for this petition */}
       {petitionId && activeChallenges.length > 0 && (
         <div>
-          <h4 className="font-semibold text-sm mb-3">Available Challenges</h4>
+          <h4 className="font-semibold text-sm mb-3 text-zinc-900 dark:text-white">Available Challenges</h4>
           <div className="space-y-2">
             {activeChallenges.map((ac, idx) => (
-              <div 
+              <div
                 key={idx}
-                className="rounded-lg p-3 border border-purple-200 bg-purple-50"
+                className="rounded-lg p-3 border border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/30"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-semibold text-sm text-purple-900">{ac.title}</p>
-                    <p className="text-xs text-purple-700 mt-0.5">
+                    <p className="font-semibold text-sm text-purple-900 dark:text-purple-200">{ac.title}</p>
+                    <p className="text-xs text-purple-700 mt-0.5 dark:text-purple-300">
                       Goal: {ac.goalValue} {ac.goalType.replace(/_/g, ' ')}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
+                  <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded dark:bg-purple-900 dark:text-purple-300">
                     +{Math.round((ac.rewardMultiplier - 1) * 100)}%
                   </span>
                 </div>
-                <p className="text-xs text-purple-600 mt-2">
+                <p className="text-xs text-purple-600 mt-2 dark:text-purple-400">
                   {ac.participantCount} participant{ac.participantCount !== 1 ? 's' : ''}
                 </p>
               </div>

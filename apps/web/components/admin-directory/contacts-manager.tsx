@@ -191,24 +191,24 @@ export function ContactsManager() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-        <p className="text-sm font-semibold text-zinc-900">Contact management for government submissions</p>
-        <p className="mt-2 text-sm text-zinc-600">
+      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-neutral-700 dark:bg-neutral-800">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-white">Contact management for government submissions</p>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-neutral-300">
           Pick an institution to manage its routing contacts, issue tags, and primary government recipients.
         </p>
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center">Loading institutions…</div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">Loading institutions…</div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <label className="block text-sm font-semibold text-zinc-700">Select institution</label>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+              <label className="block text-sm font-semibold text-zinc-700 dark:text-neutral-200">Select institution</label>
               <select
                 value={selectedInstitutionId}
                 onChange={(e) => void handleSelectInstitution(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               >
                 <option value="">Choose an institution</option>
                 {institutions.map((inst) => (
@@ -218,11 +218,11 @@ export function ContactsManager() {
             </div>
 
             {selectedInstitutionId && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900">Contacts</p>
-                    <p className="mt-1 text-sm text-zinc-600">Manage routing contacts for the selected institution.</p>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Contacts</p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-300">Manage routing contacts for the selected institution.</p>
                   </div>
                   <button
                     type="button"
@@ -246,22 +246,22 @@ export function ContactsManager() {
                 </div>
 
                 {contacts.length === 0 ? (
-                  <p className="mt-4 text-sm text-zinc-600">No contacts registered yet. Add a contact to make this institution available for petition routing.</p>
+                  <p className="mt-4 text-sm text-zinc-600 dark:text-neutral-300">No contacts registered yet. Add a contact to make this institution available for petition routing.</p>
                 ) : (
                   <div className="mt-4 space-y-3 text-sm">
                     {contacts.map((contact) => (
-                      <div key={contact.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                      <div key={contact.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="font-semibold text-zinc-900">{contact.contactName || 'Unnamed contact'}</p>
-                            <p className="mt-1 text-zinc-600">{contact.email || 'No email provided'}</p>
+                            <p className="font-semibold text-zinc-900 dark:text-white">{contact.contactName || 'Unnamed contact'}</p>
+                            <p className="mt-1 text-zinc-600 dark:text-neutral-300">{contact.email || 'No email provided'}</p>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {contact.isPrimary && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Primary</span>}
-                            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700">{contact.priorityLevel}</span>
+                            {contact.isPrimary && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">Primary</span>}
+                            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-neutral-700 dark:text-neutral-200">{contact.priorityLevel}</span>
                           </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap gap-3 text-sm text-zinc-600">
+                        <div className="mt-3 flex flex-wrap gap-3 text-sm text-zinc-600 dark:text-neutral-300">
                           <span>{contact.phone || 'No phone'}</span>
                           <span>{contact.department?.name || 'General'}</span>
                           <span>{contact.issueTags.join(', ') || 'No tags'}</span>
@@ -270,14 +270,14 @@ export function ContactsManager() {
                           <button
                             type="button"
                             onClick={() => handleEditContact(contact)}
-                            className="rounded-full border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                            className="rounded-full border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => void handleDeleteContact(contact.id)}
-                            className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+                            className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900/50"
                           >
                             Delete
                           </button>
@@ -292,31 +292,31 @@ export function ContactsManager() {
 
           <div className="space-y-4">
             {showForm && selectedInstitutionId ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <h3 className="text-lg font-semibold text-zinc-900">{editContactId ? 'Edit contact' : 'New contact'}</h3>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">{editContactId ? 'Edit contact' : 'New contact'}</h3>
                 <div className="mt-4 grid gap-4">
                   <input
                     value={formData.contactName}
                     onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
                     placeholder="Contact name"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <input
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="Email address"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <input
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="Phone number"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <select
                     value={formData.departmentId}
                     onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                   >
                     <option value="">General contact</option>
                     {departments.map((department) => (
@@ -327,31 +327,31 @@ export function ContactsManager() {
                     value={formData.issueTags}
                     onChange={(e) => setFormData({ ...formData, issueTags: e.target.value })}
                     placeholder="Issue tags, comma separated"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <select
                       value={formData.priorityLevel}
                       onChange={(e) => setFormData({ ...formData, priorityLevel: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
-                      className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     >
                       {PRIORITY_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
-                    <label className="inline-flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200">
+                    <label className="inline-flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
                       <input
                         type="checkbox"
                         checked={formData.isPrimary}
                         onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-neutral-600"
                       />
                       Primary contact
                     </label>
                   </div>
 
                   {error ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
                       {error}
                     </div>
                   ) : null}
@@ -366,7 +366,7 @@ export function ContactsManager() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
                 Select an institution to manage routing contacts and government submission targets.
               </div>
             )}
