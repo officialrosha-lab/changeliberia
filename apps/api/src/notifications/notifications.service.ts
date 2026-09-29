@@ -7,6 +7,7 @@ import {
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from '../events/notifications.gateway';
+import { NotificationType } from '@prisma/client';
 import {
   ContentPublishedEvent,
   ContentRejectedEvent,
@@ -52,7 +53,7 @@ export class NotificationsService {
       const notification = await this.prisma.notification.create({
         data: {
           userId,
-          type: payload.type as any,
+          type: payload.type as NotificationType,
           title: payload.title,
           message: payload.message,
           actionUrl: payload.actionUrl,
@@ -69,7 +70,7 @@ export class NotificationsService {
         ...notification,
         metadata: notification?.metadata
           ? typeof notification.metadata === 'string'
-            ? JSON.parse(notification.metadata)
+            ? (JSON.parse(notification.metadata) as Record<string, unknown>)
             : notification.metadata
           : null,
       };
@@ -174,7 +175,18 @@ export class NotificationsService {
   /**
    * Update notification preferences
    */
-  async updatePreferences(userId: string, preferences: any) {
+  async updatePreferences(
+    userId: string,
+    preferences: {
+      inAppEnabled?: boolean;
+      emailEnabled?: boolean;
+      pushEnabled?: boolean;
+      digestFrequency?: string;
+      mutedTypes?: string;
+      emailCategories?: string;
+      preferredSendTime?: string;
+    },
+  ) {
     return this.prisma.notificationPreference.upsert({
       where: { userId },
       create: {

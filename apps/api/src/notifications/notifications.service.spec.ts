@@ -379,10 +379,9 @@ describe('NotificationsService', () => {
     it('should update user notification preferences', async () => {
       const updatedPrefs = {
         userId: 'user-1',
-        badges: false,
-        challenges: true,
-        email: false,
-        sms: true,
+        inAppEnabled: false,
+        emailEnabled: false,
+        pushEnabled: true,
       };
 
       mockPrisma.notificationPreference.upsert.mockResolvedValue(
@@ -390,18 +389,18 @@ describe('NotificationsService', () => {
       );
 
       const result = await service.updatePreferences('user-1', {
-        badges: false,
-        email: false,
-        sms: true,
+        inAppEnabled: false,
+        emailEnabled: false,
+        pushEnabled: true,
       });
 
       expect(mockPrisma.notificationPreference.upsert).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
         create: matching({ userId: 'user-1' }),
         update: {
-          badges: false,
-          email: false,
-          sms: true,
+          inAppEnabled: false,
+          emailEnabled: false,
+          pushEnabled: true,
         },
       });
 
