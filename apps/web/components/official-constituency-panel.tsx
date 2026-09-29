@@ -15,19 +15,75 @@ interface ConstituencyData {
   topAffectedAreas: Array<{ community: string; count: number }>;
 }
 
+interface PetitionFeedIndicators {
+  isRecentlyCreated: boolean;
+  isHighParticipation: boolean;
+  isRapidlyGrowing: boolean;
+  isAwaitingResponse: boolean;
+}
+
+interface PetitionFeedItem {
+  id: string;
+  title: string;
+  summary: string;
+  category: string | null;
+  county: string | null;
+  district: string | null;
+  signaturesCount: number;
+  goal: number;
+  status: string;
+  createdAt: string;
+  indicators: PetitionFeedIndicators;
+}
+
+interface PetitionFeedResponse {
+  scope: { county: string; district?: string } | null;
+  data: PetitionFeedItem[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+const INDICATOR_LABELS: Array<{ key: keyof PetitionFeedIndicators; label: string; className: string }> = [
+  { key: 'isRecentlyCreated', label: 'New', className: 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+  {
+    key: 'isHighParticipation',
+    label: 'High participation',
+    className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+  },
+  {
+    key: 'isRapidlyGrowing',
+    label: 'Rapidly growing',
+    className: 'bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300',
+  },
+  {
+    key: 'isAwaitingResponse',
+    label: 'Awaiting response',
+    className: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
+  },
+];
+
 export function OfficialConstituencyPanel() {
   const token = useAuthStore((s) => s.token);
   const [data, setData] = useState<ConstituencyData | null>(null);
+  const [feed, setFeed] = useState<PetitionFeedResponse | null>(null);
 
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
     void (async () => {
       try {
-        const result = await apiGet<ConstituencyData>('/officials/me/constituency', token);
-        if (!cancelled) setData(result);
+        const [result, feedResult] = await Promise.all([
+          apiGet<ConstituencyData>('/officials/me/constituency', token),
+          apiGet<PetitionFeedResponse>('/officials/me/constituency/petitions', token),
+        ]);
+        if (!cancelled) {
+          setData(result);
+          setFeed(feedResult);
+        }
       } catch {
-        if (!cancelled) setData(null);
+        if (!cancelled) {
+          setData(null);
+          setFeed(null);
+        }
       }
     })();
     return () => {
@@ -79,6 +135,32 @@ export function OfficialConstituencyPanel() {
               <div key={a.community} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-2 text-sm dark:bg-neutral-800">
                 <span className="font-medium text-zinc-700 dark:text-neutral-300">{a.community}</span>
                 <span className="font-semibold text-zinc-900 dark:text-white">{a.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {feed && feed.data.length > 0 && (
+        <div className="rounded-3xl border border-zinc-200 p-5 dark:border-neutral-700">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Constituency petitions</h3>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
+            Approved petitions concerning your area — descriptive flags, not a ranking.
+          </p>
+          <div className="mt-3 space-y-3">
+            {feed.data.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-neutral-700">
+                <p className="font-semibold text-zinc-900 dark:text-white break-words">{p.title}</p>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400 break-words">{p.summary}</p>
+                <p className="mt-2 text-xs text-zinc-400 dark:text-neutral-500">
+                  {p.category ?? 'Uncategorized'} · {p.signaturesCount.toLocaleString()} / {p.goal.toLocaleString()} signatures
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {INDICATOR_LABELS.filter((i) => p.indicators[i.key]).map((i) => (
+                    <span key={i.key} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${i.className}`}>
+                      {i.label}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
