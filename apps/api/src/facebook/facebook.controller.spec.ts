@@ -109,7 +109,7 @@ describe('FacebookController', () => {
 
       const result = await controller.createShare(
         { petitionId: 'petition-1' },
-        { sub: 'user-1' } as any,
+        { sub: 'user-1' } as { sub: string },
       );
 
       expect(result).toEqual({
@@ -128,7 +128,9 @@ describe('FacebookController', () => {
 
     it('should throw BadRequestException when petitionId missing', async () => {
       await expect(
-        controller.createShare({ petitionId: '' }, { sub: 'user-1' } as any),
+        controller.createShare({ petitionId: '' }, { sub: 'user-1' } as {
+          sub: string;
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -140,7 +142,7 @@ describe('FacebookController', () => {
       await expect(
         controller.createShare({ petitionId: 'invalid' }, {
           sub: 'user-1',
-        } as any),
+        } as { sub: string }),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -219,7 +221,7 @@ describe('FacebookController', () => {
 
       const result = await controller.recordShareEvent(
         { petitionId: 'petition-1', shortCode: 'abc12345' },
-        { sub: 'user-1' } as any,
+        { sub: 'user-1' } as { sub: string },
       );
 
       expect(result).toEqual({
@@ -237,7 +239,7 @@ describe('FacebookController', () => {
       await expect(
         controller.recordShareEvent({ petitionId: '', shortCode: 'abc12345' }, {
           sub: 'user-1',
-        } as any),
+        } as { sub: string }),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -267,7 +269,7 @@ describe('FacebookController', () => {
 
       expect(result).toEqual({
         success: false,
-        error: expect.stringContaining('Failed to get pixel code'),
+        error: expect.stringContaining('Failed to get pixel code') as string,
       });
     });
   });
