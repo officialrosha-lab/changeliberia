@@ -335,6 +335,7 @@ describe('NotificationsService', () => {
         where: { userId: 'user-1', status: 'UNREAD' },
         orderBy: { createdAt: 'desc' },
         take: 20,
+        skip: 0,
       });
 
       expect(result).toEqual(mockNotifications);
@@ -350,6 +351,7 @@ describe('NotificationsService', () => {
         where: { userId: 'user-1', status: 'UNREAD' },
         orderBy: { createdAt: 'desc' },
         take: 10,
+        skip: 0,
       });
     });
   });
