@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
 import {
-  EmailTemplatePropsMap,
   EmailTemplateProps,
   WelcomeEmailProps,
   VerifyEmailProps,
@@ -15,6 +14,7 @@ import {
   BroadcastNotificationProps,
   OfficialVerifiedProps,
   OfficialRejectedProps,
+  ConstituencyReportReadyProps,
 } from '../templates/index';
 
 export interface RenderedTemplate {
@@ -32,9 +32,9 @@ export class EmailTemplateService {
    * Note: This is a simplified implementation that generates basic HTML.
    * For production, consider using proper email templating (EJS, Handlebars, etc.)
    */
-  renderTemplate<T extends EmailType>(
-    templateType: T,
-    props: EmailTemplatePropsMap[T],
+  renderTemplate(
+    templateType: EmailType,
+    props: EmailTemplateProps,
   ): RenderedTemplate {
     try {
       const subject = this.getSubjectForType(templateType);
@@ -76,6 +76,8 @@ export class EmailTemplateService {
       [EmailType.BROADCAST_NOTIFICATION]: 'Broadcast message delivered',
       [EmailType.OFFICIAL_VERIFIED]: 'Your official account has been verified',
       [EmailType.OFFICIAL_REJECTED]: 'Your official account application',
+      [EmailType.CONSTITUENCY_REPORT_READY]:
+        'Your constituency report is ready',
     };
     return subjects[templateType] || 'Notification from Change Liberia';
   }
@@ -254,6 +256,16 @@ export class EmailTemplateService {
           <p>Your official account application for <strong>${p.institutionName || 'your office'}</strong> could not be approved at this time.</p>
           ${p.reason ? `<p><strong>Reason:</strong> ${p.reason}</p>` : ''}
           <p>You may submit a revised application or contact our support team for more information.</p>
+        `;
+        break;
+      }
+
+      case EmailType.CONSTITUENCY_REPORT_READY: {
+        const p = props as ConstituencyReportReadyProps;
+        content = `
+          <p>Your ${p.period?.toLowerCase() || 'constituency'} report for <strong>${p.institutionName || 'your office'}</strong> is ready.</p>
+          <p>Covering <strong>${p.periodStart} – ${p.periodEnd}</strong>: petitions, signatures, and issue trends for your constituency.</p>
+          <p><a href="${p.reportUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Report</a></p>
         `;
         break;
       }

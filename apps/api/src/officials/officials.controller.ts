@@ -4,13 +4,17 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { existsSync, createReadStream } from 'fs';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
 import { Permission } from '../rbac/decorators/permission.decorator';
@@ -19,6 +23,7 @@ import {
   PermissionResource,
   PermissionAction,
   GovernmentResponseStage,
+  ConstituencyReportPeriod,
 } from '@prisma/client';
 import {
   OfficialOwnershipGuard,
@@ -27,11 +32,11 @@ import {
 import { OfficialsService } from './officials.service';
 import { OfficialInboxService } from './official-inbox.service';
 import { ResponseWorkflowService } from './response-workflow.service';
-import { ConstituencyScopeService } from './constituency-scope.service';
 import {
   ConstituencyFeedService,
   ConstituencyFeedFilters,
 } from './constituency-feed.service';
+import { ConstituencyReportService } from './constituency-report.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AdvanceResponseStageDto,
@@ -71,8 +76,8 @@ export class OfficialsController {
     private readonly officialsService: OfficialsService,
     private readonly inboxService: OfficialInboxService,
     private readonly responseWorkflow: ResponseWorkflowService,
-    private readonly constituencyScope: ConstituencyScopeService,
     private readonly constituencyFeed: ConstituencyFeedService,
+    private readonly constituencyReport: ConstituencyReportService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -186,93 +191,11 @@ export class OfficialsController {
     const institution = await this.officialsService.getMyInstitution(
       user.userId,
     );
-    const scope = this.constituencyScope.buildScopeFilter(institution);
-    if (!scope) {
-      return {
-        county: null,
-        district: institution.district,
-        petitionsCount: 0,
-        signaturesTotal: 0,
-        topCategories: [],
-        directlyAffectedCount: 0,
-        nearbyCommunityCount: 0,
-        topAffectedAreas: [],
-      };
-    }
-
-    // Fixed: previously hardcoded to `{ county: institution.county }` only,
-    // silently ignoring `scope.district` — a Representative's "constituency"
-    // endpoint returned county-wide data instead of their own district. Every
-    // consumer below now goes through ConstituencyScopeService so this can't
-    // regress.
-    const countyPetitionFilter = {
-      ...scope,
-      status: 'APPROVED' as const,
-    };
-
-    const [
-      petitionsCount,
-      signaturesAgg,
-      topCategories,
-      directlyAffectedCount,
-      nearbyCommunityCount,
-      topAffectedAreas,
-    ] = await Promise.all([
-      this.prisma.petition.count({ where: countyPetitionFilter }),
-      this.prisma.petition.aggregate({
-        where: countyPetitionFilter,
-        _sum: { signaturesCount: true },
-      }),
-      this.prisma.petition.groupBy({
-        by: ['category'],
-        where: countyPetitionFilter,
-        _count: { id: true },
-        orderBy: { _count: { id: 'desc' } },
-        take: 5,
-      }),
-      this.prisma.signatureLocation.count({
-        where: {
-          classification: 'DIRECTLY_AFFECTED',
-          signature: { petition: countyPetitionFilter },
-        },
-      }),
-      this.prisma.signatureLocation.count({
-        where: {
-          classification: 'NEARBY_COMMUNITY',
-          signature: { petition: countyPetitionFilter },
-        },
-      }),
-      this.prisma.signatureLocation.groupBy({
-        by: ['community'],
-        where: {
-          community: { not: null },
-          signature: { petition: countyPetitionFilter },
-        },
-        _count: { _all: true },
-        orderBy: { _count: { community: 'desc' } },
-        take: 5,
-      }),
-    ]);
-
-    return {
-      county: institution.county,
-      district: institution.district,
-      petitionsCount,
-      signaturesTotal: signaturesAgg._sum.signaturesCount ?? 0,
-      topCategories: topCategories.map((c) => ({
-        category: c.category,
-        count: c._count.id,
-      })),
-      // Petition Location Verification & Impact Area System (Phase 2):
-      // how much of the county's support is directly affected vs. nearby,
-      // and which communities have the most concentrated concern.
-      directlyAffectedCount,
-      nearbyCommunityCount,
-      topAffectedAreas: topAffectedAreas.map((a) => ({
-        community: a.community as string,
-        count: a._count._all,
-      })),
-    };
+    // Delegates to ConstituencyFeedService.getConstituencySummary(), the
+    // single source of truth also used by the report generator (Milestone 5)
+    // — fixes the previously hardcoded `{ county: institution.county }`-only
+    // filter that silently ignored district scoping for Representatives.
+    return this.constituencyFeed.getConstituencySummary(institution);
   }
 
   @Get('me/constituency/petitions')
@@ -329,6 +252,122 @@ export class OfficialsController {
       user.userId,
     );
     return this.constituencyFeed.getIssueTrends(institution, period);
+  }
+
+  @Get('me/reports')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async listReports(
+    @CurrentUser() user: AuthUser,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+  ) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    return this.constituencyReport.listReports(
+      institution.id,
+      parseInt(page, 10),
+      parseInt(limit, 10),
+    );
+  }
+
+  @Post('me/reports/generate')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.UPDATE)
+  async generateReport(
+    @CurrentUser() user: AuthUser,
+    @Req() req: OfficialRequest,
+    @Body() body: { period?: ConstituencyReportPeriod },
+  ) {
+    if (
+      !req.officialAccess?.isOfficeholder &&
+      !req.officialAccess?.canGenerateReports
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to generate reports for this office',
+      );
+    }
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    const period = body.period ?? ConstituencyReportPeriod.MONTHLY;
+    if (!Object.values(ConstituencyReportPeriod).includes(period)) {
+      throw new BadRequestException(`Invalid report period: ${String(period)}`);
+    }
+    return this.constituencyReport.enqueueOnDemandReport(institution, period);
+  }
+
+  @Get('me/reports/preferences')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async getReportPreferences(@CurrentUser() user: AuthUser) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    return this.constituencyReport.getPreference(institution.id);
+  }
+
+  @Patch('me/reports/preferences')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.UPDATE)
+  async updateReportPreferences(
+    @CurrentUser() user: AuthUser,
+    @Req() req: OfficialRequest,
+    @Body()
+    body: {
+      weeklyEnabled?: boolean;
+      monthlyEnabled?: boolean;
+      quarterlyEnabled?: boolean;
+      annualEnabled?: boolean;
+    },
+  ) {
+    if (!req.officialAccess?.isOfficeholder) {
+      throw new ForbiddenException(
+        'Only the officeholder can change report preferences',
+      );
+    }
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    return this.constituencyReport.upsertPreference(
+      institution.id,
+      user.userId,
+      body,
+    );
+  }
+
+  @Get('me/reports/:reportId/download/:format')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async downloadReport(
+    @CurrentUser() user: AuthUser,
+    @Param('reportId') reportId: string,
+    @Param('format') format: string,
+    @Res() res: Response,
+  ) {
+    const normalizedFormat = format.toUpperCase();
+    if (normalizedFormat !== 'PDF' && normalizedFormat !== 'CSV') {
+      throw new BadRequestException('Format must be PDF or CSV');
+    }
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    const abs = await this.constituencyReport.getReportFile(
+      institution.id,
+      reportId,
+      normalizedFormat,
+    );
+    if (!existsSync(abs)) throw new NotFoundException('Report file not found');
+    res.setHeader(
+      'Content-Type',
+      normalizedFormat === 'PDF' ? 'application/pdf' : 'text/csv',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="constituency-report-${reportId}.${normalizedFormat.toLowerCase()}"`,
+    );
+    createReadStream(abs).pipe(res);
   }
 
   @Get('me/feed')
