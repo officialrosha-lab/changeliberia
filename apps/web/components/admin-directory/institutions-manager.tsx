@@ -110,7 +110,7 @@ export function InstitutionsManager() {
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading institutions...</div>;
+    return <div className="text-center py-8 dark:text-neutral-300">Loading institutions...</div>;
   }
 
   return (
@@ -127,20 +127,20 @@ export function InstitutionsManager() {
 
       {/* Create Form */}
       {showForm && (
-        <div className="bg-zinc-50 p-6 rounded-lg border border-zinc-200">
-          <h3 className="text-lg font-semibold mb-4">Add New Institution</h3>
+        <div className="bg-zinc-50 p-6 rounded-lg border border-zinc-200 dark:bg-neutral-800 dark:border-neutral-700">
+          <h3 className="text-lg font-semibold mb-4 dark:text-white">Add New Institution</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Institution Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-500"
             />
             <select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
             >
               <option value="GOVERNMENT">Government</option>
               <option value="NGO">NGO</option>
@@ -151,20 +151,20 @@ export function InstitutionsManager() {
               placeholder="Official Email"
               value={formData.officialEmail}
               onChange={(e) => setFormData({ ...formData, officialEmail: e.target.value })}
-              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-500"
             />
             <input
               type="tel"
               placeholder="Phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-500"
             />
             <textarea
               placeholder="Description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="col-span-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="col-span-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-500"
               rows={3}
             />
           </div>
@@ -179,7 +179,7 @@ export function InstitutionsManager() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
@@ -187,51 +187,51 @@ export function InstitutionsManager() {
       {/* Institutions Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
+          <thead className="bg-zinc-50 border-b border-zinc-200 dark:bg-neutral-800 dark:border-neutral-700">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold">Name</th>
-              <th className="px-4 py-3 text-left font-semibold">Type</th>
-              <th className="px-4 py-3 text-left font-semibold">Email</th>
-              <th className="px-4 py-3 text-left font-semibold">Status</th>
-              <th className="px-4 py-3 text-left font-semibold">Contacts</th>
-              <th className="px-4 py-3 text-left font-semibold">Actions</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Name</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Type</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Email</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Status</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Contacts</th>
+              <th className="px-4 py-3 text-left font-semibold dark:text-white">Actions</th>
             </tr>
           </thead>
           <tbody>
             {institutions.map((inst) => (
-              <tr key={inst.id} className="border-b border-zinc-200 hover:bg-zinc-50">
-                <td className="px-4 py-3 font-medium">{inst.name}</td>
+              <tr key={inst.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
+                <td className="px-4 py-3 font-medium dark:text-neutral-100">{inst.name}</td>
                 <td className="px-4 py-3">
-                  <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+                  <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                     {inst.type}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-zinc-600">{inst.officialEmail}</td>
+                <td className="px-4 py-3 text-zinc-600 dark:text-neutral-300">{inst.officialEmail}</td>
                 <td className="px-4 py-3">
                   {inst.verified ? (
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-emerald-900 dark:text-emerald-300">
                       Verified
                     </span>
                   ) : (
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">
+                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-amber-950/30 dark:text-amber-400">
                       Unverified
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 dark:text-neutral-300">
                   {inst._count?.departments || 0} dept, {inst._count?.contacts || 0} contacts
                 </td>
                 <td className="px-4 py-3 space-x-2">
                   <button
                     onClick={() => handleSelectInstitution(inst.id)}
-                    className="text-emerald-600 hover:underline font-medium"
+                    className="text-emerald-600 hover:underline font-medium dark:text-emerald-400"
                   >
                     View
                   </button>
                   {!inst.verified && (
                     <button
                       onClick={() => handleVerify(inst.id)}
-                      className="text-blue-600 hover:underline font-medium"
+                      className="text-blue-600 hover:underline font-medium dark:text-blue-400"
                     >
                       Verify
                     </button>
@@ -245,14 +245,14 @@ export function InstitutionsManager() {
 
       {/* Departments for Selected Institution */}
       {selectedId && departments.length > 0 && (
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="font-semibold mb-3">Departments</h3>
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 dark:bg-blue-900/40 dark:border-blue-900">
+          <h3 className="font-semibold mb-3 dark:text-white">Departments</h3>
           <div className="space-y-2">
             {departments.map((dept) => (
-              <div key={dept.id} className="flex justify-between items-center p-2 bg-white rounded">
+              <div key={dept.id} className="flex justify-between items-center p-2 bg-white rounded dark:bg-neutral-900">
                 <div>
-                  <p className="font-medium">{dept.name}</p>
-                  <p className="text-sm text-zinc-600">{dept.email}</p>
+                  <p className="font-medium dark:text-neutral-100">{dept.name}</p>
+                  <p className="text-sm text-zinc-600 dark:text-neutral-300">{dept.email}</p>
                 </div>
               </div>
             ))}
