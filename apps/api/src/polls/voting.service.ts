@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
+import { GeographyService } from '../geography/geography.service';
 import { CastVoteDto } from './dto/vote.dto';
 import { PollsGateway } from './polls.gateway';
 import * as crypto from 'crypto';
@@ -14,6 +15,7 @@ export class VotingService {
   constructor(
     private prisma: PrismaService,
     private fingerprintService: SessionFingerprintService,
+    private readonly geographyService: GeographyService,
     private pollsGateway?: PollsGateway,
   ) {}
 
@@ -88,17 +90,47 @@ export class VotingService {
       county: string | null;
       district: string | null;
       community: string | null;
+      countyId: string | null;
+      electoralDistrictId: string | null;
     } = {
       county: null,
       district: null,
       community: null,
+      countyId: null,
+      electoralDistrictId: null,
     };
     if (userId) {
       const voter = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { county: true, district: true, community: true },
+        select: {
+          county: true,
+          district: true,
+          community: true,
+          countyId: true,
+          electoralDistrictId: true,
+        },
       });
-      if (voter) voterLocation = voter;
+      if (voter) {
+        voterLocation = voter;
+        // Geography dual-write: the voter's User row may predate the
+        // county/district -> countyId/electoralDistrictId backfill, so fall
+        // back to a defensive by-name resolve rather than copying nulls.
+        if (!voterLocation.countyId && voterLocation.county) {
+          const resolvedCounty =
+            await this.geographyService.resolveCountyByName(
+              voterLocation.county,
+            );
+          voterLocation.countyId = resolvedCounty?.id ?? null;
+          voterLocation.electoralDistrictId = resolvedCounty
+            ? ((
+                await this.geographyService.resolveDistrictByName(
+                  resolvedCounty.id,
+                  voterLocation.district,
+                )
+              )?.id ?? null)
+            : null;
+        }
+      }
     }
 
     // Record the vote
@@ -113,6 +145,8 @@ export class VotingService {
         county: voterLocation.county,
         district: voterLocation.district,
         community: voterLocation.community,
+        countyId: voterLocation.countyId,
+        electoralDistrictId: voterLocation.electoralDistrictId,
       },
     });
 

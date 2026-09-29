@@ -8,11 +8,13 @@ import { PollsController } from './polls.controller';
 import { VotingController } from './voting.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { PollsGateway } from './polls.gateway';
+import { GeographyModule } from '../geography/geography.module';
 
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
     JwtModule.register({ secret: process.env.JWT_SECRET ?? 'super-secret' }),
+    GeographyModule,
   ],
   controllers: [PollsController, VotingController],
   providers: [

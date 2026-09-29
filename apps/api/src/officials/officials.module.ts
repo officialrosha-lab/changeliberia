@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RbacModule } from '../rbac/rbac.module';
 import { ActivityModule } from '../activity/activity.module';
+import { GeographyModule } from '../geography/geography.module';
 import { OfficialsService } from './officials.service';
 import { OfficialInboxService } from './official-inbox.service';
 import { ResponseWorkflowService } from './response-workflow.service';
@@ -13,7 +14,7 @@ import { AdminOfficialsController } from './admin-officials.controller';
 import { OfficialStaffController } from './official-staff.controller';
 
 @Module({
-  imports: [PrismaModule, RbacModule, ActivityModule],
+  imports: [PrismaModule, RbacModule, ActivityModule, GeographyModule],
   providers: [
     OfficialsService,
     OfficialInboxService,
