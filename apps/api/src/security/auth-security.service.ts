@@ -4,7 +4,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
@@ -143,10 +143,10 @@ export class AuthSecurityService {
     // Special characters check
     if (
       this.config.passwordRequireSpecialChars &&
-      !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+      !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)
     ) {
       feedback.push('Include special characters');
-    } else if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    } else if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
       score += 1;
     }
 
@@ -187,24 +187,19 @@ export class AuthSecurityService {
    * Generate refresh token
    */
   generateRefreshToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(
-      payload as any,
-      {
-        expiresIn: this.config.refreshTokenExpiresIn,
-      } as any,
-    );
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config
+        .refreshTokenExpiresIn as JwtSignOptions['expiresIn'],
+    });
   }
 
   /**
    * Generate access token
    */
   generateAccessToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(
-      payload as any,
-      {
-        expiresIn: this.config.jwtExpiresIn,
-      } as any,
-    );
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config.jwtExpiresIn as JwtSignOptions['expiresIn'],
+    });
   }
 
   /**

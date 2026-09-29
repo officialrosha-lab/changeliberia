@@ -30,7 +30,7 @@ export class EncryptionService {
   private encryptionKey: Buffer;
 
   constructor(configService: ConfigService) {
-    const encryptionKey = configService.get('ENCRYPTION_KEY');
+    const encryptionKey = configService.get<string>('ENCRYPTION_KEY');
 
     if (!encryptionKey) {
       throw new Error('ENCRYPTION_KEY environment variable not set');
@@ -98,7 +98,9 @@ export class EncryptionService {
         algorithm: this.config.algorithm,
       };
     } catch (error) {
-      throw new Error(`Encryption failed: ${(error as Error).message}`);
+      throw new Error(`Encryption failed: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 
@@ -131,7 +133,9 @@ export class EncryptionService {
 
       return plaintext;
     } catch (error) {
-      throw new Error(`Decryption failed: ${(error as Error).message}`);
+      throw new Error(`Decryption failed: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 

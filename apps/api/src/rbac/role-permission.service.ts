@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  Prisma,
   Role,
   Permission,
   UserRoleAssignment,
@@ -78,7 +79,7 @@ export class RolePermissionService implements OnModuleInit {
     resource?: PermissionResource;
     action?: PermissionAction;
   }): Promise<Permission[]> {
-    const where: any = {};
+    const where: Prisma.PermissionWhereInput = {};
 
     if (filters?.resource) {
       where.resource = filters.resource;

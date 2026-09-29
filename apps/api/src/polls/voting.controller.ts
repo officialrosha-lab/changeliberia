@@ -6,6 +6,7 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
@@ -28,7 +29,7 @@ export class VotingController {
   async castVote(
     @Param('pollId') pollId: string,
     @Body() voteDto: CastVoteDto,
-    @Request() req: any,
+    @Request() req: ExpressRequest,
   ) {
     if (!pollId || !voteDto.optionId) {
       throw new BadRequestException('Invalid poll or option ID');
@@ -38,15 +39,14 @@ export class VotingController {
     const userAgent = this.fingerprintService.extractUserAgent(req);
 
     let userId: string | undefined;
-    const rawToken = (req.headers.authorization as string | undefined)?.replace(
-      'Bearer ',
-      '',
-    );
+    const rawToken = req.headers.authorization?.replace('Bearer ', '');
     if (rawToken) {
       try {
         const payload = this.jwtService.verify<{ sub: string }>(rawToken);
         userId = payload.sub;
-      } catch {}
+      } catch {
+        // Invalid or expired token — proceed as anonymous vote
+      }
     }
 
     return this.votingService.castVote(
