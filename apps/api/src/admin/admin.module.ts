@@ -15,6 +15,7 @@ import { FacebookSDKService } from '../facebook/facebook-sdk.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { GrowthService } from '../whatsapp/growth.service';
 import { AdminSocialMediaService } from './admin-social-media.service';
+import { FeatureFlagService } from './feature-flag.service';
 
 @Module({
   imports: [
@@ -38,6 +39,8 @@ import { AdminSocialMediaService } from './admin-social-media.service';
     WhatsAppService,
     GrowthService,
     AdminSocialMediaService,
+    FeatureFlagService,
   ],
+  exports: [FeatureFlagService],
 })
 export class AdminModule {}

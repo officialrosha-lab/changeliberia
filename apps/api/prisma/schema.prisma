@@ -128,12 +128,13 @@ model User {
   pixelEvents             FacebookPixelEvent[]    @relation("FacebookPixelEvents")
 
   // RBAC relations
-  userRoles       UserRoleAssignment[] // New role-based access control
-  cmsPages        CMSPage[]            @relation("CMSPageAuthor")
-  cmsPageVersions CMSPageVersion[]     @relation("CMSPageVersionAuthor") // Phase 3: Version history
-  cmsFiles        CMSFile[] // Phase 2: File uploads
-  cmsExperiments  CMSExperiment[] // Phase 4: A/B testing
-  cmsSchedules    CMSSchedule[]        @relation("CMSScheduleCreator") // Phase 3: Content scheduling
+  userRoles         UserRoleAssignment[] // New role-based access control
+  entitlementGrants EntitlementGrant[]
+  cmsPages          CMSPage[]            @relation("CMSPageAuthor")
+  cmsPageVersions   CMSPageVersion[]     @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  cmsFiles          CMSFile[] // Phase 2: File uploads
+  cmsExperiments    CMSExperiment[] // Phase 4: A/B testing
+  cmsSchedules      CMSSchedule[]        @relation("CMSScheduleCreator") // Phase 3: Content scheduling
 
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
@@ -973,6 +974,63 @@ model FeatureToggle {
 }
 
 // ============================================================================
+// Entitlements (Monetization foundation, Milestone 6)
+// ============================================================================
+//
+// A catalog of gateable capabilities (ENTITLEMENT_* keys) plus the grants
+// that hand them to a user/organization/institution. Deliberately does not
+// pre-materialize plan-derived entitlements into grant rows — a grant here
+// means "hand-issued" (admin override, trial, or a purchase's fulfillment);
+// EntitlementsService.hasEntitlement() additionally live-joins active
+// subscriptions so a lapsed subscription can't leave a stale grant behind.
+//
+// Civic-principle guardrail (non-negotiable, enforced by
+// civic-principle.e2e-spec.ts): EntitlementGuard must never gate petition
+// create/sign/follow/view, Civic Pulse participate/view, or a verified
+// lawmaker's basic officials/me/constituency routes.
+
+enum EntitlementScope {
+  USER
+  ORGANIZATION
+  INSTITUTION
+}
+
+model Entitlement {
+  id        String             @id @default(cuid())
+  key       String             @unique // e.g. "ENTITLEMENT_PETITION_BOOST"
+  name      String
+  scope     EntitlementScope
+  createdAt DateTime           @default(now())
+  grants    EntitlementGrant[]
+}
+
+model EntitlementGrant {
+  id            String      @id @default(cuid())
+  entitlementId String
+  entitlement   Entitlement @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  // Exactly one of these is set, matching the entitlement's scope.
+  // organizationId stays a loose string (no Organization model yet —
+  // lands in Milestone 9) rather than an FK, same looseness already
+  // established by Payment.subscriptionId elsewhere in this schema.
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  institutionId  String?
+  institution    Institution? @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  source    String // "MANUAL_ADMIN" | "SUBSCRIPTION" | "MEMBERSHIP_PLAN" | "TRIAL"
+  sourceId  String? // loose reference to the granting record, e.g. a subscription id
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+
+  @@index([entitlementId, userId])
+  @@index([entitlementId, institutionId])
+  @@index([expiresAt])
+}
+
+// ============================================================================
 // WhatsApp Viral Growth System
 // ============================================================================
 
@@ -1274,6 +1332,7 @@ enum PermissionResource {
   OFFICIAL
   INBOX
   RESPONSE
+  ENTITLEMENT
 }
 
 model Permission {
@@ -1492,6 +1551,8 @@ model Institution {
   // Lawmaker Constituency Portal: automated periodic reports
   constituencyReportPreference ConstituencyReportPreference?
   constituencyReports          ConstituencyReport[]
+
+  entitlementGrants EntitlementGrant[]
 
   @@index([type, category, verified])
   @@index([verified, createdAt])
