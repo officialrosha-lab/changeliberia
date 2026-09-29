@@ -1372,6 +1372,8 @@ enum OfficialVerificationStatus {
   VERIFIED
   REJECTED
   SUSPENDED
+  UNDER_REVIEW // periodic re-verification in progress (e.g. term renewal), distinct from the initial PENDING_REVIEW intake state
+  REVOKED // lost office (term ended, recall) — terminal, distinct from the temporary/admin-initiated SUSPENDED
 }
 
 // --- Geography (Lawmaker Constituency Portal foundation) ---------------
