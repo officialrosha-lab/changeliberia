@@ -686,6 +686,12 @@ model Donation {
   donorEmail            String?
   donorName             String?
   amount                Float
+  // Decimal migration Phase A (Milestone 7) — additive, dual-write target.
+  // No live write path creates a Donation row today (confirmed: zero
+  // `prisma.donation.create` call sites in src/), so there is nothing to
+  // dual-write into this column yet; it exists so the backfill script and
+  // future Phase B/C cutover cover this model uniformly with the others.
+  amountDecimal         Decimal?       @db.Decimal(12, 2)
   currency              String         @default("USD")
   description           String?
   stripePaymentIntentId String?
@@ -749,6 +755,12 @@ model Payment {
   contentId             String?
   content               Content?          @relation("ContentPayments", fields: [contentId], references: [id], onDelete: SetNull)
   amount                Float
+  // Decimal migration Phase A (Milestone 7): additive dual-write target,
+  // nullable until backfilled — see apps/api/src/scripts/backfill-decimal-amounts.ts.
+  // Both columns store the same major-unit (dollars) value as `amount`;
+  // Stripe/MoMo minor-unit (cents) conversion happens only at the provider
+  // API boundary, never in these stored values.
+  amountDecimal         Decimal?          @db.Decimal(12, 2)
   currency              String            @default("USD")
   status                PaymentStatus     @default(PENDING)
   paymentMethod         PaymentMethod     @default(CARD)
@@ -817,6 +829,7 @@ model Subscription {
   contentId            String?
   content              Content?                       @relation("ContentSubscriptions", fields: [contentId], references: [id], onDelete: SetNull)
   amount               Float
+  amountDecimal        Decimal?                       @db.Decimal(12, 2)
   currency             String                         @default("USD")
   interval             String                         @default("monthly") // monthly, quarterly, yearly
   status               SubscriptionStatus             @default(ACTIVE)
@@ -872,6 +885,7 @@ model Refund {
   paymentId      String
   payment        Payment   @relation("PaymentRefunds", fields: [paymentId], references: [id], onDelete: Cascade)
   amount         Float
+  amountDecimal  Decimal?  @db.Decimal(12, 2)
   currency       String    @default("USD")
   reason         String
   stripeRefundId String?   @unique
@@ -886,15 +900,20 @@ model Refund {
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  paymentId   String
-  payment     Payment  @relation("PaymentItems", fields: [paymentId], references: [id], onDelete: Cascade)
-  description String
-  quantity    Int      @default(1)
-  unitPrice   Float
-  totalPrice  Float
-  metadata    String?  @db.Text() // JSON: item details
-  createdAt   DateTime @default(now())
+  id                String   @id @default(cuid())
+  paymentId         String
+  payment           Payment  @relation("PaymentItems", fields: [paymentId], references: [id], onDelete: Cascade)
+  description       String
+  quantity          Int      @default(1)
+  unitPrice         Float
+  // No live write path creates OrderItem rows today (confirmed: zero
+  // `prisma.orderItem.create` call sites in src/) — same rationale as
+  // Donation.amountDecimal above.
+  unitPriceDecimal  Decimal? @db.Decimal(12, 2)
+  totalPrice        Float
+  totalPriceDecimal Decimal? @db.Decimal(12, 2)
+  metadata          String?  @db.Text() // JSON: item details
+  createdAt         DateTime @default(now())
 
   @@index([paymentId])
 }

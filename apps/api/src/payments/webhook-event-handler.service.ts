@@ -1,4 +1,5 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailQueueService } from '../email/email-queue.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
@@ -355,6 +356,17 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      // Stripe's price.unit_amount is minor units (cents); this codebase's
+      // amount columns are major units (dollars) — see the fix note in
+      // handleSubscriptionUpdated below for the full explanation. This
+      // create-path had the identical bug: a subscription whose first
+      // webhook was customer.subscription.created (rather than one created
+      // through PaymentService.createStripeSubscription, which already
+      // divides correctly) got its dollar amount stored 100x too large.
+      const unitAmountCents = subscription.items.data[0]?.price?.unit_amount;
+      const createdAmount =
+        typeof unitAmountCents === 'number' ? unitAmountCents / 100 : 0;
+
       // Create subscription record
       await this.prisma.subscription.upsert({
         where: { stripeSubscriptionId: subscriptionId },
@@ -367,7 +379,8 @@ export class WebhookEventHandlerService {
           stripeSubscriptionId: subscriptionId,
           stripeCustomerId: customerId,
           status: SubscriptionStatus.ACTIVE,
-          amount: subscription.items.data[0]?.price?.unit_amount || 0,
+          amount: createdAmount,
+          amountDecimal: new Prisma.Decimal(createdAmount),
           currency: (subscription.currency || 'usd').toUpperCase(),
           interval: this.mapStripeInterval(
             subscription.items.data[0]?.price?.recurring?.interval,
@@ -391,7 +404,7 @@ export class WebhookEventHandlerService {
         entityId: subscriptionId,
         description: `Stripe subscription created for user ${user.id}`,
         changes: {
-          amount: subscription.items.data[0]?.price?.unit_amount || 0,
+          amount: createdAmount,
           currency: (subscription.currency || 'usd').toUpperCase(),
           interval: this.mapStripeInterval(
             subscription.items.data[0]?.price?.recurring?.interval,
@@ -440,13 +453,24 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      // Stripe's price.unit_amount is in minor units (cents); every amount
+      // column in this codebase stores major units (dollars) — confirmed
+      // against payment.service.spec.ts's own fixtures. Fixed here: this
+      // previously wrote the raw cents value straight into `amount`,
+      // inflating a subscription's stored dollar amount 100x whenever
+      // Stripe sent a price change on this webhook.
+      const unitAmountCents = subscription.items.data[0]?.price?.unit_amount;
+      const updatedAmount =
+        typeof unitAmountCents === 'number'
+          ? unitAmountCents / 100
+          : dbSubscription.amount;
+
       // Update subscription details
       await this.prisma.subscription.update({
         where: { id: dbSubscription.id },
         data: {
-          amount:
-            subscription.items.data[0]?.price?.unit_amount ||
-            dbSubscription.amount,
+          amount: updatedAmount,
+          amountDecimal: new Prisma.Decimal(updatedAmount),
           lastWebhookEventId: eventId,
         },
       });
@@ -460,9 +484,7 @@ export class WebhookEventHandlerService {
         entityId: dbSubscription.id,
         description: `Stripe subscription updated for subscription ${subscriptionId}`,
         changes: {
-          amount:
-            subscription.items.data[0]?.price?.unit_amount ||
-            dbSubscription.amount,
+          amount: updatedAmount,
         },
       });
 
@@ -577,6 +599,10 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      // Stripe's invoice.amount_paid is minor units (cents); dollars here,
+      // same fix as handleSubscriptionCreated/Updated above.
+      const paidAmount = (invoice.amount_paid || 0) / 100;
+
       // Create/update payment record for the subscription charge
       await this.prisma.payment.upsert({
         where: { stripeInvoiceId: invoiceId },
@@ -587,7 +613,8 @@ export class WebhookEventHandlerService {
         create: {
           userId: subscription.userId,
           stripeInvoiceId: invoiceId,
-          amount: invoice.amount_paid || 0,
+          amount: paidAmount,
+          amountDecimal: new Prisma.Decimal(paidAmount),
           currency: (invoice.currency || 'usd').toUpperCase(),
           status: PaymentStatus.COMPLETED,
           lastWebhookEventId: eventId,
@@ -605,7 +632,7 @@ export class WebhookEventHandlerService {
         description: `Stripe invoice payment succeeded for subscription ${subscriptionId}`,
         changes: {
           subscriptionId,
-          amount: invoice.amount_paid || 0,
+          amount: paidAmount,
         },
       });
 
@@ -661,6 +688,10 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      // Stripe's invoice.amount_due is minor units (cents); dollars here,
+      // same fix as the other Stripe amount fields in this file.
+      const dueAmount = (invoice.amount_due || 0) / 100;
+
       // Create/update payment record for failed charge
       await this.prisma.payment.upsert({
         where: { stripeInvoiceId: invoiceId },
@@ -671,7 +702,8 @@ export class WebhookEventHandlerService {
         create: {
           userId: subscription.userId,
           stripeInvoiceId: invoiceId,
-          amount: invoice.amount_due || 0,
+          amount: dueAmount,
+          amountDecimal: new Prisma.Decimal(dueAmount),
           currency: (invoice.currency || 'usd').toUpperCase(),
           status: PaymentStatus.FAILED,
           lastWebhookEventId: eventId,
@@ -690,7 +722,7 @@ export class WebhookEventHandlerService {
         status: 'FAILED',
         changes: {
           subscriptionId,
-          amountDue: invoice.amount_due || 0,
+          amountDue: dueAmount,
         },
       });
 
