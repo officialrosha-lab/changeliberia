@@ -5,10 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { InstitutionType, Prisma } from '@prisma/client';
+import { Institution, InstitutionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { RolePermissionService } from '../rbac/role-permission.service';
+import { GeographyService } from '../geography/geography.service';
+import { JURISDICTION_RULES } from './jurisdiction-rules';
 import {
   ClaimInstitutionDto,
   CreateOfficialApplicationDto,
@@ -48,6 +50,7 @@ export class OfficialsService {
     private readonly activityLogger: ActivityLoggerService,
     private readonly eventEmitter: EventEmitter2,
     private readonly rolePermissionService: RolePermissionService,
+    private readonly geographyService: GeographyService,
   ) {}
 
   async apply(userId: string, dto: CreateOfficialApplicationDto) {
@@ -66,6 +69,21 @@ export class OfficialsService {
     });
     if (slugTaken) slug = `${slug}-${Date.now().toString(36)}`;
 
+    // Geography dual-write: resolve the applicant's free-text county/
+    // district to the canonical County/ElectoralDistrict rows alongside the
+    // free-text columns. resolveCountyByName/resolveDistrictByName never
+    // throw — an unresolved value (e.g. a typo) just leaves the FK null,
+    // never blocking the application.
+    const resolvedCounty = await this.geographyService.resolveCountyByName(
+      dto.county,
+    );
+    const resolvedDistrict = resolvedCounty
+      ? await this.geographyService.resolveDistrictByName(
+          resolvedCounty.id,
+          dto.district,
+        )
+      : null;
+
     const institution = await this.prisma.institution.create({
       data: {
         name: dto.name,
@@ -75,6 +93,8 @@ export class OfficialsService {
         phone: dto.phone,
         county: dto.county,
         district: dto.district,
+        countyId: resolvedCounty?.id,
+        electoralDistrictId: resolvedDistrict?.id,
         politicalParty: dto.politicalParty,
         holderUserId: userId,
         officialStatus: 'PENDING_REVIEW',
@@ -356,6 +376,8 @@ export class OfficialsService {
       );
     }
 
+    await this.assertJurisdictionAvailable(institution);
+
     const updated = await this.prisma.institution.update({
       where: { id: institutionId },
       data: {
@@ -405,6 +427,48 @@ export class OfficialsService {
     }
 
     return updated;
+  }
+
+  /**
+   * Enforces Liberia's real electoral cardinality among *verified*
+   * officeholders: at most 2 verified Senators per county, at most 1
+   * verified Representative per electoral district (and, more loosely, at
+   * most 1 verified holder of other county/district-scoped offices per
+   * jurisdiction). A DB-level unique index can't express "at most 2", so
+   * this application-level check is the primary guard; it's skipped
+   * (rather than blocking approval) when the institution's countyId/
+   * electoralDistrictId haven't been resolved yet — e.g. during the
+   * geography dual-write rollout before a backfill has run — since we'd
+   * rather approve without the check than block approvals platform-wide
+   * on an unrelated migration being incomplete.
+   */
+  private async assertJurisdictionAvailable(
+    institution: Institution,
+  ): Promise<void> {
+    const rule = JURISDICTION_RULES[institution.category];
+    if (rule === 'NONE' || !institution.countyId) return;
+
+    const maxHolders = institution.category === 'SENATOR' ? 2 : 1;
+    const where: Prisma.InstitutionWhereInput = {
+      id: { not: institution.id },
+      category: institution.category,
+      officialStatus: 'VERIFIED',
+      countyId: institution.countyId,
+    };
+
+    if (rule === 'COUNTY_AND_DISTRICT') {
+      if (!institution.electoralDistrictId) return;
+      where.electoralDistrictId = institution.electoralDistrictId;
+    }
+
+    const verifiedCount = await this.prisma.institution.count({ where });
+    if (verifiedCount >= maxHolders) {
+      throw new ConflictException(
+        rule === 'COUNTY_AND_DISTRICT'
+          ? 'This electoral district already has a verified officeholder for this office'
+          : `This county already has ${maxHolders} verified officeholder(s) for this office`,
+      );
+    }
   }
 
   async reject(
