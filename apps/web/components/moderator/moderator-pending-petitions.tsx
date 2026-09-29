@@ -287,7 +287,7 @@ function PetitionApprovalPanel({
             value={approvalFeedback}
             onChange={(e) => setApprovalFeedback(e.target.value)}
             placeholder="Add any feedback or notes..."
-            className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-emerald-800 dark:bg-neutral-800 dark:text-white"
             rows={3}
           />
           <div className="flex gap-2">
@@ -303,7 +303,7 @@ function PetitionApprovalPanel({
                 setAction(null);
                 setApprovalFeedback('');
               }}
-              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
               disabled={isLoading}
             >
               Cancel
@@ -314,14 +314,14 @@ function PetitionApprovalPanel({
 
       {action === 'reject' && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-red-900">
+          <label className="block text-sm font-medium text-red-900 dark:text-red-400">
             Rejection Reason (Required)
           </label>
           <textarea
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Explain why this petition is being rejected..."
-            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-800 dark:bg-neutral-800 dark:text-white"
             rows={3}
             required
           />
@@ -338,7 +338,7 @@ function PetitionApprovalPanel({
                 setAction(null);
                 setRejectionReason('');
               }}
-              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400"
+              className="px-4 py-2 bg-zinc-300 text-zinc-900 rounded-lg hover:bg-zinc-400 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
               disabled={isLoading}
             >
               Cancel

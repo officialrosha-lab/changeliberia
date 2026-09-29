@@ -36,7 +36,7 @@ function parseOfficeHours(raw: string | null): OfficeHoursEntry[] {
 export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
   const officeHours = parseOfficeHours(profile.officeHours);
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+    <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
         {profile.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -46,23 +46,23 @@ export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
             className="h-28 w-28 shrink-0 rounded-2xl object-cover"
           />
         ) : (
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl font-bold text-emerald-700">
+          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl font-bold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
             {profile.name.charAt(0)}
           </div>
         )}
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
             ✓ Verified Government Official
           </span>
-          <h1 className="mt-2 text-2xl font-extrabold text-zinc-900 break-words">{profile.name}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="mt-2 text-2xl font-extrabold text-zinc-900 dark:text-white break-words">{profile.name}</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
             {profile.category.replaceAll('_', ' ')}
             {profile.county ? ` · ${profile.county}` : ''}
             {profile.district ? ` · District ${profile.district}` : ''}
           </p>
-          {profile.politicalParty && <p className="mt-1 text-sm text-zinc-500">{profile.politicalParty}</p>}
+          {profile.politicalParty && <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">{profile.politicalParty}</p>}
           {(profile.termStartDate || profile.termEndDate) && (
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-zinc-500 dark:text-neutral-400">
               Term: {profile.termStartDate ? new Date(profile.termStartDate).getFullYear() : 'Unknown'}
               {' – '}
               {profile.termEndDate ? new Date(profile.termEndDate).getFullYear() : 'Present'}
@@ -71,26 +71,26 @@ export function OfficialProfileCard({ profile }: { profile: OfficialProfile }) {
         </div>
       </div>
 
-      {profile.bio && <p className="mt-6 text-sm text-zinc-700 whitespace-pre-line">{profile.bio}</p>}
+      {profile.bio && <p className="mt-6 text-sm text-zinc-700 dark:text-neutral-200 whitespace-pre-line">{profile.bio}</p>}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl bg-emerald-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Active petitions</p>
-          <p className="mt-2 text-2xl font-semibold text-emerald-900">{profile.stats.activePetitions}</p>
+        <div className="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
+          <p className="text-xs uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">Active petitions</p>
+          <p className="mt-2 text-2xl font-semibold text-emerald-900 dark:text-emerald-200">{profile.stats.activePetitions}</p>
         </div>
-        <div className="rounded-2xl bg-blue-50 p-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Resolved issues</p>
-          <p className="mt-2 text-2xl font-semibold text-blue-900">{profile.stats.resolvedCount}</p>
+        <div className="rounded-2xl bg-blue-50 p-4 dark:bg-blue-900/40">
+          <p className="text-xs uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">Resolved issues</p>
+          <p className="mt-2 text-2xl font-semibold text-blue-900 dark:text-blue-200">{profile.stats.resolvedCount}</p>
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
+      <div className="mt-6 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600 dark:bg-neutral-800 dark:text-neutral-300">
         <p>Office email: {profile.officialEmail}</p>
         {profile.phone && <p>Phone: {profile.phone}</p>}
         {profile.officeAddress && <p>Office address: {profile.officeAddress}</p>}
         {officeHours.length > 0 && (
           <div className="mt-2">
-            <p className="font-semibold text-zinc-700">Office hours</p>
+            <p className="font-semibold text-zinc-700 dark:text-neutral-200">Office hours</p>
             <ul>
               {officeHours.map((entry, idx) => (
                 <li key={`${entry.day}-${idx}`}>

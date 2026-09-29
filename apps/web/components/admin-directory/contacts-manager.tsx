@@ -292,31 +292,31 @@ export function ContactsManager() {
 
           <div className="space-y-4">
             {showForm && selectedInstitutionId ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <h3 className="text-lg font-semibold text-zinc-900">{editContactId ? 'Edit contact' : 'New contact'}</h3>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">{editContactId ? 'Edit contact' : 'New contact'}</h3>
                 <div className="mt-4 grid gap-4">
                   <input
                     value={formData.contactName}
                     onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
                     placeholder="Contact name"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <input
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="Email address"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <input
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="Phone number"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <select
                     value={formData.departmentId}
                     onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                   >
                     <option value="">General contact</option>
                     {departments.map((department) => (
@@ -327,31 +327,31 @@ export function ContactsManager() {
                     value={formData.issueTags}
                     onChange={(e) => setFormData({ ...formData, issueTags: e.target.value })}
                     placeholder="Issue tags, comma separated"
-                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
                   />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <select
                       value={formData.priorityLevel}
                       onChange={(e) => setFormData({ ...formData, priorityLevel: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
-                      className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="w-full rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     >
                       {PRIORITY_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
-                    <label className="inline-flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200">
+                    <label className="inline-flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
                       <input
                         type="checkbox"
                         checked={formData.isPrimary}
                         onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-neutral-600"
                       />
                       Primary contact
                     </label>
                   </div>
 
                   {error ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
                       {error}
                     </div>
                   ) : null}
@@ -366,7 +366,7 @@ export function ContactsManager() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
                 Select an institution to manage routing contacts and government submission targets.
               </div>
             )}

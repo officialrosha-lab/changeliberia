@@ -66,7 +66,7 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
       <div className="space-y-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-24 bg-zinc-200 rounded-lg" />
+            <div className="h-24 bg-zinc-200 dark:bg-neutral-800 rounded-lg" />
           </div>
         ))}
       </div>
@@ -75,7 +75,7 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
 
   if (error && !analytics) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
         Failed to load analytics
       </div>
     );
@@ -83,9 +83,9 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
 
   if (!analytics) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-center">
-        <p className="text-sm text-zinc-600">No analytics data available yet</p>
-        <p className="text-xs text-zinc-500 mt-1">Start sharing to see your viral metrics!</p>
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-center dark:border-neutral-700 dark:bg-neutral-900">
+        <p className="text-sm text-zinc-600 dark:text-neutral-300">No analytics data available yet</p>
+        <p className="text-xs text-zinc-500 mt-1 dark:text-neutral-400">Start sharing to see your viral metrics!</p>
       </div>
     );
   }
@@ -104,10 +104,10 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
     color?: string;
   }) => {
     const colorClasses = {
-      blue: 'bg-blue-50 border-blue-200',
-      green: 'bg-green-50 border-green-200',
-      purple: 'bg-purple-50 border-purple-200',
-      orange: 'bg-orange-50 border-orange-200',
+      blue: 'bg-blue-50 border-blue-200 dark:bg-blue-900/40 dark:border-blue-800',
+      green: 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800',
+      purple: 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800',
+      orange: 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800',
     };
 
     return (
@@ -115,9 +115,9 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
         <div className="flex items-center gap-3">
           <span className="text-3xl">{icon}</span>
           <div>
-            <p className="text-xs font-semibold text-zinc-600">{label}</p>
-            <p className="text-2xl font-bold text-zinc-900 mt-0.5">{value}</p>
-            {subtext && <p className="text-xs text-zinc-600 mt-0.5">{subtext}</p>}
+            <p className="text-xs font-semibold text-zinc-600 dark:text-neutral-300">{label}</p>
+            <p className="text-2xl font-bold text-zinc-900 mt-0.5 dark:text-white">{value}</p>
+            {subtext && <p className="text-xs text-zinc-600 mt-0.5 dark:text-neutral-400">{subtext}</p>}
           </div>
         </div>
       </div>
@@ -194,17 +194,17 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
           <h3 className="font-semibold text-sm mb-3">Top Sharers</h3>
           <div className="space-y-2">
             {analytics.topSharers.slice(0, 5).map((sharer, idx) => (
-              <div 
+              <div
                 key={idx}
-                className="rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 p-3 flex items-center justify-between"
+                className="rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 p-3 flex items-center justify-between dark:from-blue-950/30 dark:to-purple-950/30 dark:border-blue-800"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-blue-600">#{idx + 1}</span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">#{idx + 1}</span>
                   <div>
-                    <p className="font-semibold text-sm text-zinc-900">
+                    <p className="font-semibold text-sm text-zinc-900 dark:text-white">
                       {isOwner ? sharer.userId : `User ${idx + 1}`}
                     </p>
-                    <p className="text-xs text-zinc-600">
+                    <p className="text-xs text-zinc-600 dark:text-neutral-400">
                       {sharer.shareCount} share{sharer.shareCount !== 1 ? 's' : ''}, {sharer.conversionCount} conversion{sharer.conversionCount !== 1 ? 's' : ''}
                     </p>
                   </div>
@@ -219,9 +219,9 @@ export function FacebookAnalyticsDashboard({ petitionId, isOwner = false }: Prop
       )}
 
       {/* Insights */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p className="font-semibold text-sm text-blue-900">💡 Insights</p>
-        <ul className="mt-2 space-y-1 text-xs text-blue-800">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/40">
+        <p className="font-semibold text-sm text-blue-900 dark:text-blue-200">💡 Insights</p>
+        <ul className="mt-2 space-y-1 text-xs text-blue-800 dark:text-blue-300">
           {analytics.conversionRate > 15 && (
             <li>✓ Your petition has a strong conversion rate! Keep sharing.</li>
           )}
