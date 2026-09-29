@@ -72,16 +72,16 @@ export function CSVImporter() {
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
-    e.currentTarget.classList.add('bg-emerald-50');
+    e.currentTarget.classList.add('bg-emerald-50', 'dark:bg-emerald-950/30');
   }
 
   function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
-    e.currentTarget.classList.remove('bg-emerald-50');
+    e.currentTarget.classList.remove('bg-emerald-50', 'dark:bg-emerald-950/30');
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
-    e.currentTarget.classList.remove('bg-emerald-50');
+    e.currentTarget.classList.remove('bg-emerald-50', 'dark:bg-emerald-950/30');
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -91,9 +91,9 @@ export function CSVImporter() {
   return (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">CSV Import Guide</h3>
-        <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/40 dark:border-blue-900">
+        <h3 className="font-semibold text-blue-900 mb-2 dark:text-blue-200">CSV Import Guide</h3>
+        <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc dark:text-blue-300">
           <li>Download the template CSV file to see the expected format</li>
           <li>Fill in institution, department, and contact information</li>
           <li>Upload the file to bulk import into the directory</li>
@@ -111,7 +111,7 @@ export function CSVImporter() {
         </button>
         <button
           onClick={() => setShowTemplate(!showTemplate)}
-          className="px-4 py-2 bg-zinc-200 text-zinc-900 rounded-lg font-medium hover:bg-zinc-300 transition-colors"
+          className="px-4 py-2 bg-zinc-200 text-zinc-900 rounded-lg font-medium hover:bg-zinc-300 transition-colors dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
         >
           View Format
         </button>
@@ -119,9 +119,9 @@ export function CSVImporter() {
 
       {/* Format Preview */}
       {showTemplate && (
-        <div className="bg-zinc-50 p-4 rounded-lg border border-zinc-200 overflow-x-auto">
-          <p className="text-sm font-semibold mb-2">Expected CSV Format:</p>
-          <pre className="text-xs bg-white p-3 rounded border border-zinc-200 overflow-auto max-h-48">
+        <div className="bg-zinc-50 p-4 rounded-lg border border-zinc-200 overflow-x-auto dark:bg-neutral-800 dark:border-neutral-700">
+          <p className="text-sm font-semibold mb-2 dark:text-white">Expected CSV Format:</p>
+          <pre className="text-xs bg-white p-3 rounded border border-zinc-200 overflow-auto max-h-48 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-200">
             institutionName,type,category,departmentName,email,secondaryEmails,phone,tags,priorityLevel,contactName,official,verified
             Ministry of Health,GOVERNMENT,HEALTH,General Inquiries,health@moh.gov.lr,health-ops@moh.gov.lr,+231-6-000-0001,health;medical,HIGH,John Doe,true,true
             National Road Authority,GOVERNMENT,AGENCY,Engineering,nra@nra.gov.lr,,+231-6-000-0002,roads;infrastructure;maintenance,HIGH,Jane Smith,true,false
@@ -134,11 +134,11 @@ export function CSVImporter() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="border-2 border-dashed border-zinc-300 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-emerald-400"
+        className="border-2 border-dashed border-zinc-300 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-emerald-400 dark:border-neutral-700 dark:hover:border-emerald-600"
         onClick={() => fileInputRef.current?.click()}
       >
         <svg
-          className="mx-auto h-12 w-12 text-zinc-400"
+          className="mx-auto h-12 w-12 text-zinc-400 dark:text-neutral-500"
           stroke="currentColor"
           fill="none"
           viewBox="0 0 48 48"
@@ -150,8 +150,8 @@ export function CSVImporter() {
             strokeLinejoin="round"
           />
         </svg>
-        <p className="mt-4 font-semibold">Drag and drop your CSV file here</p>
-        <p className="text-sm text-zinc-600">or click to select from your computer</p>
+        <p className="mt-4 font-semibold dark:text-white">Drag and drop your CSV file here</p>
+        <p className="text-sm text-zinc-600 dark:text-neutral-300">or click to select from your computer</p>
         <input
           ref={fileInputRef}
           type="file"
@@ -166,42 +166,42 @@ export function CSVImporter() {
 
       {/* Upload Status */}
       {uploading && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg dark:bg-blue-900/40 dark:border-blue-900 dark:text-blue-300">
           Uploading and processing your file...
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg dark:bg-red-950 dark:border-red-900 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Import Results */}
       {result && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="font-semibold text-green-900 mb-3">Import Complete!</h3>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 dark:bg-emerald-950/30 dark:border-emerald-800">
+          <h3 className="font-semibold text-green-900 mb-3 dark:text-emerald-200">Import Complete!</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white p-3 rounded border border-green-200">
-              <p className="text-xs text-zinc-600">Total Rows</p>
-              <p className="text-lg font-bold text-green-700">{result.totalRows}</p>
+            <div className="bg-white p-3 rounded border border-green-200 dark:bg-neutral-900 dark:border-emerald-800">
+              <p className="text-xs text-zinc-600 dark:text-neutral-400">Total Rows</p>
+              <p className="text-lg font-bold text-green-700 dark:text-emerald-400">{result.totalRows}</p>
             </div>
-            <div className="bg-white p-3 rounded border border-green-200">
-              <p className="text-xs text-zinc-600">Institutions</p>
-              <p className="text-lg font-bold text-green-700">{result.createdInstitutions}</p>
+            <div className="bg-white p-3 rounded border border-green-200 dark:bg-neutral-900 dark:border-emerald-800">
+              <p className="text-xs text-zinc-600 dark:text-neutral-400">Institutions</p>
+              <p className="text-lg font-bold text-green-700 dark:text-emerald-400">{result.createdInstitutions}</p>
             </div>
-            <div className="bg-white p-3 rounded border border-green-200">
-              <p className="text-xs text-zinc-600">Departments</p>
-              <p className="text-lg font-bold text-green-700">{result.createdDepartments}</p>
+            <div className="bg-white p-3 rounded border border-green-200 dark:bg-neutral-900 dark:border-emerald-800">
+              <p className="text-xs text-zinc-600 dark:text-neutral-400">Departments</p>
+              <p className="text-lg font-bold text-green-700 dark:text-emerald-400">{result.createdDepartments}</p>
             </div>
-            <div className="bg-white p-3 rounded border border-green-200">
-              <p className="text-xs text-zinc-600">Contacts</p>
-              <p className="text-lg font-bold text-green-700">{result.createdContacts}</p>
+            <div className="bg-white p-3 rounded border border-green-200 dark:bg-neutral-900 dark:border-emerald-800">
+              <p className="text-xs text-zinc-600 dark:text-neutral-400">Contacts</p>
+              <p className="text-lg font-bold text-green-700 dark:text-emerald-400">{result.createdContacts}</p>
             </div>
-            <div className="bg-white p-3 rounded border border-green-200">
-              <p className="text-xs text-zinc-600">Skipped</p>
-              <p className="text-lg font-bold text-orange-700">{result.skippedRows}</p>
+            <div className="bg-white p-3 rounded border border-green-200 dark:bg-neutral-900 dark:border-emerald-800">
+              <p className="text-xs text-zinc-600 dark:text-neutral-400">Skipped</p>
+              <p className="text-lg font-bold text-orange-700 dark:text-orange-400">{result.skippedRows}</p>
             </div>
           </div>
 
@@ -210,8 +210,8 @@ export function CSVImporter() {
             <div className="mt-4 space-y-2">
               {result.errors.length > 0 && (
                 <div>
-                  <p className="font-semibold text-red-700 mb-1">Errors:</p>
-                  <ul className="text-sm text-red-600 space-y-1 ml-4 list-disc">
+                  <p className="font-semibold text-red-700 mb-1 dark:text-red-400">Errors:</p>
+                  <ul className="text-sm text-red-600 space-y-1 ml-4 list-disc dark:text-red-400">
                     {result.errors.slice(0, 5).map((e, i) => (
                       <li key={i}>
                         Row {e.row}: {e.error}
@@ -225,8 +225,8 @@ export function CSVImporter() {
               )}
               {result.warnings.length > 0 && (
                 <div>
-                  <p className="font-semibold text-yellow-700 mb-1">Warnings:</p>
-                  <ul className="text-sm text-yellow-600 space-y-1 ml-4 list-disc">
+                  <p className="font-semibold text-yellow-700 mb-1 dark:text-amber-400">Warnings:</p>
+                  <ul className="text-sm text-yellow-600 space-y-1 ml-4 list-disc dark:text-amber-400">
                     {result.warnings.slice(0, 5).map((w, i) => (
                       <li key={i}>
                         Row {w.row}: {w.warning}

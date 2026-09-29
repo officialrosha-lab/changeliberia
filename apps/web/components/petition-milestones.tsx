@@ -76,30 +76,30 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 dark:bg-neutral-900">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <Trophy className="w-6 h-6 text-amber-500" />
-        <h3 className="text-lg font-bold">Milestone Progress</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Milestone Progress</h3>
       </div>
 
       {/* Current Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-semibold text-gray-700">Signatures</span>
-          <span className="text-2xl font-bold text-blue-600">
+          <span className="font-semibold text-gray-700 dark:text-neutral-200">Signatures</span>
+          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {currentSignatures.toLocaleString()}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3 dark:text-neutral-300">
           <Zap className="w-4 h-4" />
           {currentSignatures >= goal ? (
-            <span className="text-green-600 font-semibold">🎉 Goal reached!</span>
+            <span className="text-green-600 font-semibold dark:text-green-400">🎉 Goal reached!</span>
           ) : (
             <span>{goal - currentSignatures} more needed</span>
           )}
         </div>
-        <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+        <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700">
           <div
             className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
             style={{ width: `${Math.min((currentSignatures / goal) * 100, 100)}%` }}
@@ -112,7 +112,7 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
         {loading ? (
           <div className="animate-pulse space-y-2">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded" />
+              <div key={i} className="h-12 bg-gray-200 rounded dark:bg-neutral-700" />
             ))}
           </div>
         ) : (
