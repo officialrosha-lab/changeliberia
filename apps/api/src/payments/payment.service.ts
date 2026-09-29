@@ -6,6 +6,7 @@ import {
   Subscription,
   PaymentStatus,
   SubscriptionStatus,
+  Prisma,
 } from '@prisma/client';
 import { MoMoService } from './providers/momo.service';
 import * as crypto from 'crypto';
@@ -162,6 +163,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           stripePaymentIntentId: intent.id,
@@ -237,6 +239,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           paymentMethod: 'MOBILE_MONEY',
@@ -409,6 +412,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           stripeCheckoutId: session.id,
@@ -582,6 +586,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           interval: dto.recurringInterval,
           status: 'ACTIVE' as SubscriptionStatus,
@@ -655,6 +660,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           interval: dto.recurringInterval,
           status: 'PENDING' as SubscriptionStatus, // Wait for pre-approval confirmation
@@ -742,7 +748,7 @@ export class PaymentService {
 
         updated = await this.prisma.subscription.update({
           where: { id: subscriptionId },
-          data: { amount },
+          data: { amount, amountDecimal: new Prisma.Decimal(amount) },
         });
       }
 
@@ -855,6 +861,11 @@ export class PaymentService {
         data: {
           paymentId,
           amount: payment.amount,
+          // Prefer the payment's own already-backfilled Decimal value when
+          // present, so a refund never reconstructs a Decimal from a Float
+          // that itself may already be stale relative to its sibling.
+          amountDecimal:
+            payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
           currency: payment.currency,
           reason,
           stripeRefundId: refund.id,
