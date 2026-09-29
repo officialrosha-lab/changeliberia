@@ -36,6 +36,7 @@ import { MessagesModule } from './messages/messages.module';
 import { StakeholderGroupModule } from './stakeholder-groups/stakeholder-group.module';
 import { BroadcastModule } from './broadcast/broadcast.module';
 import { OfficialsModule } from './officials/officials.module';
+import { GeographyModule } from './geography/geography.module';
 import { EndorsementsModule } from './endorsements/endorsements.module';
 import { PushModule } from './push/push.module';
 import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
@@ -78,6 +79,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     FeedbackModule,
     ActivityModule,
     OfficialsModule, // Public Officials Portal
+    GeographyModule, // Canonical County/ElectoralDistrict catalog (Lawmaker Constituency Portal foundation)
     EndorsementsModule, // Public Officials Portal: community leader endorsements
     PushModule, // Web push notifications
     ChangeLiberiaGraphQLModule, // Read-only GraphQL API for research/civil-society consumers

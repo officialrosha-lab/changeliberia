@@ -1,8 +1,11 @@
 import { PrismaClient, PetitionStatus } from '@prisma/client';
+import { seedGeography } from './seed-geography';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await seedGeography(prisma);
+
   const user = await prisma.user.upsert({
     where: { phone: '+231770000001' },
     update: { role: 'ADMIN' },
