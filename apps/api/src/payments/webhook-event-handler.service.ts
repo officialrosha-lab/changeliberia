@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailQueueService } from '../email/email-queue.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import {
   StripeEventType,
   PaymentStatus,
@@ -16,6 +17,11 @@ import {
   StripeCharge,
   StripeCustomer,
 } from '../config/stripe.config';
+import {
+  activateMembershipSubscription,
+  cancelMembershipSubscriptionByProviderSubscriptionId,
+  markMembershipPastDue,
+} from '../memberships/membership-webhook.util';
 
 /**
  * Service to handle specific Stripe webhook event types
@@ -28,6 +34,7 @@ export class WebhookEventHandlerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly activityLogger: ActivityLoggerService,
+    private readonly entitlementsService: EntitlementsService,
     @Optional() private readonly emailQueue: EmailQueueService | null,
   ) {}
 
@@ -346,6 +353,36 @@ export class WebhookEventHandlerService {
 
       this.logger.log(`Subscription created: ${subscriptionId}`);
 
+      // Membership checkout sessions tag the resulting Subscription with
+      // this metadata key (see StripeProviderAdapter.createCheckoutSession
+      // and MembershipsService.subscribe) — when present, this event
+      // belongs to a MembershipSubscription, not the generic donation
+      // Subscription model below, so activate it and stop here.
+      const membershipSubscriptionId =
+        subscription.metadata?.membershipSubscriptionId;
+      if (membershipSubscriptionId) {
+        await activateMembershipSubscription(
+          this.prisma,
+          this.entitlementsService,
+          membershipSubscriptionId,
+          {
+            providerSubscriptionId: subscriptionId,
+            providerCustomerId: customerId,
+            currentPeriodStart: subscriptionPeriodStart
+              ? new Date(subscriptionPeriodStart * 1000)
+              : null,
+            currentPeriodEnd: subscriptionPeriodEnd
+              ? new Date(subscriptionPeriodEnd * 1000)
+              : null,
+            eventId,
+          },
+        );
+        this.logger.log(
+          `Membership subscription ${membershipSubscriptionId} activated (${subscriptionId})`,
+        );
+        return;
+      }
+
       // Find user by Stripe customer ID
       const user = await this.prisma.user.findFirst({
         where: { stripeCustomerId: customerId },
@@ -447,8 +484,10 @@ export class WebhookEventHandlerService {
       });
 
       if (!dbSubscription) {
-        this.logger.warn(
-          `Subscription not found in database: ${subscriptionId}`,
+        await this.handleMembershipSubscriptionUpdated(
+          subscriptionId,
+          subscription.status,
+          eventId,
         );
         return;
       }
@@ -519,9 +558,22 @@ export class WebhookEventHandlerService {
       });
 
       if (!dbSubscription) {
-        this.logger.warn(
-          `Subscription not found in database: ${subscriptionId}`,
-        );
+        const membershipSubscription =
+          await cancelMembershipSubscriptionByProviderSubscriptionId(
+            this.prisma,
+            this.entitlementsService,
+            subscriptionId,
+            eventId,
+          );
+        if (!membershipSubscription) {
+          this.logger.warn(
+            `Subscription not found in database: ${subscriptionId}`,
+          );
+        } else {
+          this.logger.log(
+            `Membership subscription ${membershipSubscription.id} cancelled (${subscriptionId})`,
+          );
+        }
         return;
       }
 
@@ -684,6 +736,7 @@ export class WebhookEventHandlerService {
       });
 
       if (!subscription) {
+        await markMembershipPastDue(this.prisma, subscriptionId, eventId);
         this.logger.warn(`Subscription not found: ${subscriptionId}`);
         return;
       }
@@ -831,6 +884,50 @@ export class WebhookEventHandlerService {
   private handleCustomerDeleted(customer: StripeCustomer): void {
     this.logger.debug(`Customer deleted: ${customer.id}`);
     // Clean up user Stripe customer reference if needed
+  }
+
+  /**
+   * Fallback for customer.subscription.updated when no generic (donation)
+   * Subscription row matches — checks MembershipSubscription instead.
+   * Membership plans have a fixed price (no amount to reconcile here), so
+   * the only thing worth tracking off this event is status: Stripe moving
+   * a subscription to past_due/unpaid, or recovering it back to active.
+   * Entitlements are only granted/revoked on activation/cancellation, not
+   * on every status wobble, so this never touches EntitlementGrant.
+   */
+  private async handleMembershipSubscriptionUpdated(
+    providerSubscriptionId: string,
+    stripeStatus: string,
+    eventId: string,
+  ): Promise<void> {
+    const membershipSubscription =
+      await this.prisma.membershipSubscription.findUnique({
+        where: { providerSubscriptionId },
+      });
+    if (!membershipSubscription) {
+      this.logger.warn(
+        `Subscription not found in database: ${providerSubscriptionId}`,
+      );
+      return;
+    }
+
+    if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
+      await markMembershipPastDue(this.prisma, providerSubscriptionId, eventId);
+    } else if (stripeStatus === 'active') {
+      await this.prisma.membershipSubscription.update({
+        where: { id: membershipSubscription.id },
+        data: { status: 'ACTIVE', lastWebhookEventId: eventId },
+      });
+    } else {
+      await this.prisma.membershipSubscription.update({
+        where: { id: membershipSubscription.id },
+        data: { lastWebhookEventId: eventId },
+      });
+    }
+
+    this.logger.log(
+      `Membership subscription ${membershipSubscription.id} updated (Stripe status: ${stripeStatus})`,
+    );
   }
 
   /**
