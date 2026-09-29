@@ -76,24 +76,24 @@ export function FacebookShareDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-neutral-900">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Share on Facebook</h3>
-          <button 
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Share on Facebook</h3>
+          <button
             onClick={onClose}
-            className="text-2xl text-zinc-400 hover:text-zinc-600"
+            className="text-2xl text-zinc-400 hover:text-zinc-600 dark:text-neutral-500 dark:hover:text-neutral-300"
           >
             ×
           </button>
         </div>
 
         {shared ? (
-          <div className="mt-4 rounded-lg bg-green-50 p-4">
+          <div className="mt-4 rounded-lg bg-green-50 p-4 dark:bg-green-950/30">
             <div className="flex items-start gap-3">
               <span className="text-2xl">✓</span>
               <div>
-                <p className="font-semibold text-green-800">Thanks for sharing!</p>
-                <p className="mt-1 text-sm text-green-700">
+                <p className="font-semibold text-green-800 dark:text-green-300">Thanks for sharing!</p>
+                <p className="mt-1 text-sm text-green-700 dark:text-green-400">
                   Your share could reach up to {Math.round(estimatedReach * 1.2)} people.
                 </p>
               </div>
@@ -107,19 +107,19 @@ export function FacebookShareDialog({
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-900">Estimated reach</p>
-              <p className="mt-1 text-2xl font-bold text-blue-600">
+            <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/40">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">Estimated reach</p>
+              <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {Math.round(estimatedReach)} people
               </p>
-              <p className="mt-1 text-xs text-blue-700">
+              <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
                 Based on your network size and engagement
               </p>
             </div>
 
-            <div className="rounded-lg bg-purple-50 p-4">
-              <p className="text-sm font-semibold text-purple-900">Sharing benefits</p>
-              <ul className="mt-2 space-y-1 text-xs text-purple-700">
+            <div className="rounded-lg bg-purple-50 p-4 dark:bg-purple-950/30">
+              <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">Sharing benefits</p>
+              <ul className="mt-2 space-y-1 text-xs text-purple-700 dark:text-purple-300">
                 <li>✓ Earn Trust Points for every share</li>
                 <li>✓ Unlock social badges</li>
                 <li>✓ Track your viral impact</li>
@@ -147,7 +147,7 @@ export function FacebookShareDialog({
 
             <button
               onClick={onClose}
-              className="w-full rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-700 hover:bg-zinc-50 transition"
+              className="w-full rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-700 hover:bg-zinc-50 transition dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
             >
               Cancel
             </button>
