@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   UseGuards,
-  Req,
   Query,
   Res,
   Logger,
@@ -14,14 +13,43 @@ import {
 import { Response } from 'express';
 import { createClient } from 'redis';
 import { EmailService } from '../services/email.service';
-import { EmailPreferenceService, EmailPreferenceDTO } from '../services/email-preference.service';
+import {
+  EmailPreferenceService,
+  EmailPreferenceDTO,
+} from '../services/email-preference.service';
 import { EmailTrackingService } from '../services/email-tracking.service';
 import { MailerooProvider } from '../providers/maileroo.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CurrentUser } from '../../auth/current-user.decorator';
+import { RequestUser } from '../../auth/roles.guard';
 import { Permission } from '../../rbac/decorators/permission.decorator';
 import { PermissionGuard } from '../../rbac/guards/permission.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionResource, PermissionAction } from '@prisma/client';
+
+interface EmailPreferencesResponse {
+  emailEnabled: boolean;
+  digestFrequency: string;
+  emailCategories: string[];
+  preferredSendTime: string;
+}
+
+interface EmailLogsResponse {
+  emails: Array<{
+    id: string;
+    type: string;
+    subject: string;
+    recipient: string;
+    status: string;
+    sentAt: Date | null;
+    openedAt: Date | null;
+    clickedAt: Date | null;
+    createdAt: Date;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 @Controller('email')
 export class EmailController {
@@ -50,10 +78,10 @@ export class EmailController {
 
       // Return a 1x1 transparent GIF pixel
       const pixel = Buffer.from([
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
-        0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04,
-        0x01, 0x0a, 0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
+        0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x0a,
+        0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+        0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
       ]);
 
       res.setHeader('Content-Type', 'image/gif');
@@ -61,13 +89,15 @@ export class EmailController {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.end(pixel);
     } catch (error) {
-      this.logger.error(`Error tracking open: ${error}`);
+      this.logger.error(
+        `Error tracking open: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Still return pixel even on error
       const pixel = Buffer.from([
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
-        0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04,
-        0x01, 0x0a, 0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
+        0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x0a,
+        0x00, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+        0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
       ]);
       res.setHeader('Content-Type', 'image/gif');
       res.setHeader('Content-Length', pixel.length);
@@ -98,7 +128,9 @@ export class EmailController {
 
       res.json({ ok: true });
     } catch (error) {
-      this.logger.error(`Error tracking click: ${error}`);
+      this.logger.error(
+        `Error tracking click: ${error instanceof Error ? error.message : String(error)}`,
+      );
       if (redirect) {
         const url = Buffer.from(redirect, 'base64').toString('utf-8');
         return res.redirect(url);
@@ -138,7 +170,9 @@ export class EmailController {
       // lookup failure (e.g. a foreign-key violation on preference
       // auto-creation for a nonexistent user) — that's an invalid link,
       // not a server error, so it's a 404 rather than a 500.
-      this.logger.warn(`Invalid unsubscribe link for user ${userId}: ${error}`);
+      this.logger.warn(
+        `Invalid unsubscribe link for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       res.status(404).json({ error: 'Invalid or expired unsubscribe link' });
     }
   }
@@ -149,15 +183,17 @@ export class EmailController {
    */
   @Get('preferences')
   @UseGuards(JwtAuthGuard)
-  async getPreferences(@Req() req: any): Promise<any> {
-    const userId = req.user.userId;
+  async getPreferences(
+    @CurrentUser() user: RequestUser,
+  ): Promise<EmailPreferencesResponse> {
+    const userId = user.userId;
     const prefs = await this.preferenceService.getPreferences(userId);
 
     return {
       emailEnabled: prefs?.emailEnabled ?? true,
       digestFrequency: prefs?.digestFrequency ?? 'weekly',
       emailCategories: prefs?.emailCategories
-        ? JSON.parse(prefs.emailCategories)
+        ? (JSON.parse(prefs.emailCategories) as string[])
         : [],
       preferredSendTime: prefs?.preferredSendTime ?? '09:00',
     };
@@ -170,17 +206,20 @@ export class EmailController {
   @Patch('preferences')
   @UseGuards(JwtAuthGuard)
   async updatePreferences(
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
     @Body() updates: EmailPreferenceDTO,
-  ): Promise<any> {
-    const userId = req.user.userId;
-    const prefs = await this.preferenceService.updatePreferences(userId, updates);
+  ): Promise<EmailPreferencesResponse> {
+    const userId = user.userId;
+    const prefs = await this.preferenceService.updatePreferences(
+      userId,
+      updates,
+    );
 
     return {
       emailEnabled: prefs.emailEnabled,
       digestFrequency: prefs.digestFrequency,
       emailCategories: prefs.emailCategories
-        ? JSON.parse(prefs.emailCategories)
+        ? (JSON.parse(prefs.emailCategories) as string[])
         : [],
       preferredSendTime: prefs.preferredSendTime,
     };
@@ -193,11 +232,11 @@ export class EmailController {
   @Get('logs')
   @UseGuards(JwtAuthGuard)
   async getEmailLogs(
-    @Req() req: any,
+    @CurrentUser() user: RequestUser,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
-  ): Promise<any> {
-    const userId = req.user.userId;
+  ): Promise<EmailLogsResponse> {
+    const userId = user.userId;
     const { emails, total } = await this.emailService.listUserEmails(
       userId,
       parseInt(limit || '50'),
@@ -221,7 +260,6 @@ export class EmailController {
       offset: parseInt(offset || '0'),
     };
   }
-
 }
 
 @Controller('admin/email')
@@ -259,7 +297,7 @@ export class AdminEmailController {
   @Get('queue-stats')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.EMAIL, PermissionAction.READ)
-  async getQueueStats(): Promise<any> {
+  getQueueStats(): any {
     // This would require injecting the queue and calling queue.getJobCounts()
     // Placeholder for now
     return {
@@ -317,7 +355,11 @@ export class AdminEmailController {
 
     const allUp = apiKey && redisConnected && databaseConnected;
     const allDown = !apiKey && !redisConnected && !databaseConnected;
-    const status: 'ok' | 'warning' | 'error' = allUp ? 'ok' : allDown ? 'error' : 'warning';
+    const status: 'ok' | 'warning' | 'error' = allUp
+      ? 'ok'
+      : allDown
+        ? 'error'
+        : 'warning';
     const downParts = [
       !apiKey && 'Maileroo API',
       !redisConnected && 'Redis',
@@ -326,7 +368,9 @@ export class AdminEmailController {
 
     return {
       status,
-      message: allUp ? 'All systems operational' : `Unreachable: ${downParts.join(', ')}`,
+      message: allUp
+        ? 'All systems operational'
+        : `Unreachable: ${downParts.join(', ')}`,
       lastChecked: new Date().toISOString(),
       apiKey,
       redisConnected,
@@ -347,7 +391,10 @@ export class AdminEmailController {
     const redisUrl = process.env.REDIS_URL;
     if (!redisUrl) return false;
 
-    const client = createClient({ url: redisUrl, socket: { connectTimeout: 2000 } });
+    const client = createClient({
+      url: redisUrl,
+      socket: { connectTimeout: 2000 },
+    });
     client.on('error', () => {});
     try {
       await client.connect();

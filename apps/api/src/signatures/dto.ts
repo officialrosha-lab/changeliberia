@@ -16,5 +16,7 @@ export class CreateSignatureDto {
   @IsOptional() @IsString() confirmedCounty?: string; // Step 3
   @IsOptional() @IsString() confirmedDistrict?: string;
   @IsOptional() @IsString() confirmedCommunity?: string;
-  @IsOptional() @IsIn(['profile_match', 'user_confirmed', 'unconfirmed']) locationSource?: string;
+  @IsOptional()
+  @IsIn(['profile_match', 'user_confirmed', 'unconfirmed'])
+  locationSource?: string;
 }

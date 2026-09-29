@@ -14,11 +14,7 @@ import { RealPixelTrackingService } from './real-pixel-tracking.service';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => EventsModule)],
-  controllers: [
-    FacebookController,
-    BadgeController,
-    ChallengeController,
-  ],
+  controllers: [FacebookController, BadgeController, ChallengeController],
   providers: [
     FacebookService,
     FacebookPixelService,

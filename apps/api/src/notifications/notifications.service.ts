@@ -1,12 +1,17 @@
-import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from '../events/notifications.gateway';
+import { NotificationType } from '@prisma/client';
 import {
   ContentPublishedEvent,
   ContentRejectedEvent,
   SignatureAddedEvent,
-  UserVerifiedEvent,
   FraudDetectedEvent,
   DonationReceivedEvent,
   BadgeUnlockedEvent,
@@ -48,7 +53,7 @@ export class NotificationsService {
       const notification = await this.prisma.notification.create({
         data: {
           userId,
-          type: payload.type as any,
+          type: payload.type as NotificationType,
           title: payload.title,
           message: payload.message,
           actionUrl: payload.actionUrl,
@@ -65,7 +70,7 @@ export class NotificationsService {
         ...notification,
         metadata: notification?.metadata
           ? typeof notification.metadata === 'string'
-            ? JSON.parse(notification.metadata)
+            ? (JSON.parse(notification.metadata) as Record<string, unknown>)
             : notification.metadata
           : null,
       };
@@ -74,13 +79,17 @@ export class NotificationsService {
       try {
         this.gateway?.broadcastNotificationToUser(userId, result);
       } catch (gatewayErr) {
-        this.logger.warn(`Gateway broadcast failed for user ${userId}: ${(gatewayErr as Error)?.message}`);
+        this.logger.warn(
+          `Gateway broadcast failed for user ${userId}: ${(gatewayErr as Error)?.message}`,
+        );
       }
 
       return result;
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
+      this.logger.error(
+        `Failed to create notification: ${err?.message || 'Unknown error'}`,
+      );
       throw error;
     }
   }
@@ -142,7 +151,10 @@ export class NotificationsService {
   /**
    * Delete notification
    */
-  async deleteNotification(notificationId: string, userId: string): Promise<void> {
+  async deleteNotification(
+    notificationId: string,
+    userId: string,
+  ): Promise<void> {
     const result = await this.prisma.notification.deleteMany({
       where: { id: notificationId, userId },
     });
@@ -163,7 +175,18 @@ export class NotificationsService {
   /**
    * Update notification preferences
    */
-  async updatePreferences(userId: string, preferences: any) {
+  async updatePreferences(
+    userId: string,
+    preferences: {
+      inAppEnabled?: boolean;
+      emailEnabled?: boolean;
+      pushEnabled?: boolean;
+      digestFrequency?: string;
+      mutedTypes?: string;
+      emailCategories?: string;
+      preferredSendTime?: string;
+    },
+  ) {
     return this.prisma.notificationPreference.upsert({
       where: { userId },
       create: {
@@ -432,7 +455,11 @@ export class NotificationsService {
   }
 
   @OnEvent('poll.submitted')
-  async handlePollSubmitted(event: { pollId: string; pollTitle: string; submittedBy: string }) {
+  async handlePollSubmitted(event: {
+    pollId: string;
+    pollTitle: string;
+    submittedBy: string;
+  }) {
     const admins = await this.prisma.user.findMany({
       where: { role: 'ADMIN' },
       select: { id: true },

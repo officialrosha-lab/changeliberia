@@ -11,8 +11,18 @@ export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
     info: unknown,
   ): TUser | null {
     if (err || !user) {
-      const reason = err ? String(err) : (info ? String(info) : 'no token');
-      this.logger.debug(`JWT parse error (optional guard, treating as anonymous): ${reason}`);
+      const reason = err
+        ? err instanceof Error
+          ? err.message
+          : JSON.stringify(err)
+        : info
+          ? info instanceof Error
+            ? info.message
+            : JSON.stringify(info)
+          : 'no token';
+      this.logger.debug(
+        `JWT parse error (optional guard, treating as anonymous): ${reason}`,
+      );
       return null;
     }
     return user;

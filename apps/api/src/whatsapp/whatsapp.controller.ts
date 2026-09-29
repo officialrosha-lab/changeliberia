@@ -4,11 +4,8 @@ import {
   Post,
   Body,
   Param,
-  Query,
   UseGuards,
   Req,
-  HttpCode,
-  HttpStatus,
   BadRequestException,
   NotFoundException,
   Logger,
@@ -36,7 +33,6 @@ export class WhatsAppController {
   @Post('generate-message')
   async generateMessage(
     @Body() dto: { petitionId: string; signerName?: string },
-    @Req() req: { user?: { userId: string } },
   ) {
     if (!dto.petitionId) {
       throw new BadRequestException('petitionId is required');
@@ -106,11 +102,12 @@ export class WhatsAppController {
       expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiration
 
       // Generate WhatsApp message
-      const whatsappMessage = await this.whatsappService.generateWhatsAppMessage(
-        dto.petitionId,
-        referralCode,
-        user.fullName,
-      );
+      const whatsappMessage =
+        await this.whatsappService.generateWhatsAppMessage(
+          dto.petitionId,
+          referralCode,
+          user.fullName,
+        );
 
       // Create share link
       const shareUrl = await this.whatsappService.createShareLink(
@@ -151,10 +148,7 @@ export class WhatsAppController {
    * This is the /r/abc123 endpoint that gets shared
    */
   @Get('share-link/:shortCode')
-  async followShareLink(
-    @Param('shortCode') shortCode: string,
-    @Query() query: Record<string, any>,
-  ) {
+  async followShareLink(@Param('shortCode') shortCode: string) {
     try {
       const shareLink = await this.prisma.shareLink.findUnique({
         where: { shortCode },
@@ -192,11 +186,17 @@ export class WhatsAppController {
   @UseGuards(JwtAuthGuard)
   @Post('track-conversion')
   async trackConversion(
-    @Body() dto: { referralCode: string; signatureId: string; trustBonus?: number },
-    @Req() req: { user: { userId: string } },
+    @Body()
+    dto: {
+      referralCode: string;
+      signatureId: string;
+      trustBonus?: number;
+    },
   ) {
     if (!dto.referralCode || !dto.signatureId) {
-      throw new BadRequestException('referralCode and signatureId are required');
+      throw new BadRequestException(
+        'referralCode and signatureId are required',
+      );
     }
 
     try {
@@ -241,7 +241,10 @@ export class WhatsAppController {
 
     try {
       const metrics = await this.whatsappService.getReferralMetrics(petitionId);
-      const topReferrers = await this.whatsappService.getTopReferrers(petitionId, 5);
+      const topReferrers = await this.whatsappService.getTopReferrers(
+        petitionId,
+        5,
+      );
 
       return {
         success: true,
@@ -266,7 +269,8 @@ export class WhatsAppController {
   @Get('referral/:referralCode')
   async getReferralDetails(@Param('referralCode') referralCode: string) {
     try {
-      const referral = await this.whatsappService.getReferralDetails(referralCode);
+      const referral =
+        await this.whatsappService.getReferralDetails(referralCode);
 
       if (!referral) {
         throw new NotFoundException('Referral not found');
@@ -309,7 +313,10 @@ export class WhatsAppController {
       const stats = {
         total: referrals.length,
         converted: referrals.filter((r) => r.status === 'CONVERTED').length,
-        totalBonusEarned: referrals.reduce((sum, r) => sum + r.trustBonusApplied, 0),
+        totalBonusEarned: referrals.reduce(
+          (sum, r) => sum + r.trustBonusApplied,
+          0,
+        ),
         totalClicks: referrals.reduce((sum, r) => sum + r.clickCount, 0),
       };
 

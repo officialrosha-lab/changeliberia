@@ -199,7 +199,9 @@ export class AnalyticsService {
   /**
    * Get user engagement metrics
    */
-  async getUserEngagementMetrics(userId: string): Promise<UserEngagementMetrics> {
+  async getUserEngagementMetrics(
+    userId: string,
+  ): Promise<UserEngagementMetrics> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -217,7 +219,10 @@ export class AnalyticsService {
       where: { petition: { creatorId: userId } },
     });
 
-    const totalDonated = user.payments.reduce((sum: number, d: any) => sum + (d.amount || 0), 0);
+    const totalDonated = user.payments.reduce(
+      (sum, d) => sum + (d.amount || 0),
+      0,
+    );
     const engagementLevel = this.calculateEngagementLevel(
       user.petitions.length,
       user.signatures.length,
@@ -251,13 +256,13 @@ export class AnalyticsService {
       where: { petitionId, eventType: 'Share' },
     });
 
-    const uniqueSharers = new Set(shareEvents.map(e => e.userId)).size;
+    const uniqueSharers = new Set(shareEvents.map((e) => e.userId)).size;
     const shareLinks = await this.prisma.shareLink.findMany({
       where: { petitionId },
     });
 
     const sharesByMethod = shareLinks.reduce(
-      (acc: Record<string, number>, s: any) => {
+      (acc: Record<string, number>, s) => {
         acc[s.source] = (acc[s.source] || 0) + 1;
         return acc;
       },
@@ -277,9 +282,7 @@ export class AnalyticsService {
       uniqueSharers,
       avgSharesPerUser: uniqueSharers ? shareLinks.length / uniqueSharers : 0,
       conversionFromShares:
-        uniqueSharers > 0
-          ? (convertedFromShares / uniqueSharers) * 100
-          : 0,
+        uniqueSharers > 0 ? (convertedFromShares / uniqueSharers) * 100 : 0,
     };
   }
 
@@ -293,10 +296,12 @@ export class AnalyticsService {
       where,
     });
 
-    const amounts = donations.map(d => d.amount).filter(a => a > 0);
+    const amounts = donations.map((d) => d.amount).filter((a) => a > 0);
     amounts.sort((a, b) => a - b);
 
-    const donorCount = new Set(donations.filter(d => d.donorUserId).map(d => d.donorUserId)).size;
+    const donorCount = new Set(
+      donations.filter((d) => d.donorUserId).map((d) => d.donorUserId),
+    ).size;
     const repeatDonors = donations.reduce(
       (acc, d) => {
         if (d.donorUserId) {
@@ -308,17 +313,20 @@ export class AnalyticsService {
     );
 
     const repeatDonorCount = Object.values(repeatDonors).filter(
-      count => count > 1,
+      (count) => count > 1,
     ).length;
 
     const totalAmount = amounts.reduce((sum, a) => sum + a, 0);
 
     // Get content titles for donations
-    const donationsByContent: Record<string, { contentTitle: string; totalAmount: number; donorCount: Set<string> }> = {};
-    
+    const donationsByContent: Record<
+      string,
+      { contentTitle: string; totalAmount: number; donorCount: Set<string> }
+    > = {};
+
     for (const d of donations) {
       if (!d.contentId) continue;
-      
+
       const content = await this.prisma.content.findUnique({
         where: { id: d.contentId },
         select: { title: true },
@@ -350,9 +358,7 @@ export class AnalyticsService {
       .sort((a, b) => b.totalAmount - a.totalAmount)
       .slice(0, 5);
 
-    const median = amounts.length
-      ? amounts[Math.floor(amounts.length / 2)]
-      : 0;
+    const median = amounts.length ? amounts[Math.floor(amounts.length / 2)] : 0;
 
     return {
       totalDonations: donations.length,
@@ -394,7 +400,7 @@ export class AnalyticsService {
     });
 
     const topPetitionsMetrics = await Promise.all(
-      topPetitions.map(p => this.getPetitionMetrics(p.id)),
+      topPetitions.map((p) => this.getPetitionMetrics(p.id)),
     );
 
     // Get recent activity trend (last 30 days)
@@ -456,8 +462,7 @@ export class AnalyticsService {
       where: { petitionId, eventType: 'Purchase' },
     });
 
-    const shareMultiplier =
-      engagedCount > 0 ? viewsCount / engagedCount : 1;
+    const shareMultiplier = engagedCount > 0 ? viewsCount / engagedCount : 1;
 
     return {
       totalReach: viewsCount,
@@ -531,9 +536,7 @@ export class AnalyticsService {
       take: limit,
     });
 
-    return Promise.all(
-      petitions.map(p => this.getPetitionMetrics(p.id)),
-    );
+    return Promise.all(petitions.map((p) => this.getPetitionMetrics(p.id)));
   }
 
   /**
@@ -628,8 +631,11 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const [
       totalUsers,
-      totalPetitions, approvedPetitions, petitionsThisMonth,
-      totalSignatures, signaturesThisMonth,
+      totalPetitions,
+      approvedPetitions,
+      petitionsThisMonth,
+      totalSignatures,
+      signaturesThisMonth,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.petition.count(),
@@ -643,7 +649,8 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       totalPetitions,
       totalSignatures,
       approvalRate: totalPetitions > 0 ? approvedPetitions / totalPetitions : 0,
-      avgSignaturesPerPetition: totalPetitions > 0 ? totalSignatures / totalPetitions : 0,
+      avgSignaturesPerPetition:
+        totalPetitions > 0 ? totalSignatures / totalPetitions : 0,
       petitionsThisMonth,
       signaturesThisMonth,
     };
@@ -676,13 +683,21 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     ]);
 
     const toMap = (rows: { date: Date; count: bigint }[]) =>
-      Object.fromEntries(rows.map((r) => [r.date.toISOString().slice(0, 10), Number(r.count)]));
+      Object.fromEntries(
+        rows.map((r) => [r.date.toISOString().slice(0, 10), Number(r.count)]),
+      );
 
     const uMap = toMap(users);
     const pMap = toMap(petitions);
     const sMap = toMap(signatures);
 
-    const allDates = [...new Set([...Object.keys(uMap), ...Object.keys(pMap), ...Object.keys(sMap)])].sort();
+    const allDates = [
+      ...new Set([
+        ...Object.keys(uMap),
+        ...Object.keys(pMap),
+        ...Object.keys(sMap),
+      ]),
+    ].sort();
     // Return field names matching the frontend interface: date, petitions, signatures, users
     return allDates.map((date) => ({
       date,
@@ -778,13 +793,24 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
       DIASPORA_SUPPORTER: 0,
       UNKNOWN: 0,
     };
-    for (const row of byClassification) classificationCounts[row.classification] = row._count._all;
-    const classifiedExcludingUnknown = totalClassified - classificationCounts.UNKNOWN;
+    for (const row of byClassification)
+      classificationCounts[row.classification] = row._count._all;
+    const classifiedExcludingUnknown =
+      totalClassified - classificationCounts.UNKNOWN;
 
     return {
-      topCounties: topCounties.map((r) => ({ label: r.county as string, count: r._count._all })),
-      topDistricts: topDistricts.map((r) => ({ label: r.district as string, count: r._count._all })),
-      mostActiveCommunities: topCommunities.map((r) => ({ label: r.community as string, count: r._count._all })),
+      topCounties: topCounties.map((r) => ({
+        label: r.county as string,
+        count: r._count._all,
+      })),
+      topDistricts: topDistricts.map((r) => ({
+        label: r.district as string,
+        count: r._count._all,
+      })),
+      mostActiveCommunities: topCommunities.map((r) => ({
+        label: r.community as string,
+        count: r._count._all,
+      })),
       diasporaParticipation: classificationCounts.DIASPORA_SUPPORTER,
       directlyAffectedTotal: classificationCounts.DIRECTLY_AFFECTED,
       nearbyCommunityTotal: classificationCounts.NEARBY_COMMUNITY,
@@ -817,7 +843,9 @@ Estimated Potential Reach,${audience.estimatedPotentialReach}
     // Return field names matching the frontend interface
     return {
       flaggedAccounts: flaggedUserSet.size,
-      flaggedSignatures: events.filter((e) => e.ruleKey.toLowerCase().includes('signature')).length,
+      flaggedSignatures: events.filter((e) =>
+        e.ruleKey.toLowerCase().includes('signature'),
+      ).length,
       blockedIPs: flaggedIpSet.size,
       suspiciousActivity: events.length,
     };

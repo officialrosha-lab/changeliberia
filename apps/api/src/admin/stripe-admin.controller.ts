@@ -12,7 +12,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { PaymentStatus, SubscriptionStatus } from '@prisma/client';
+import { PaymentStatus, SubscriptionStatus, Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -22,6 +22,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ActivityLoggerService } from '../activity/activity-logger.service';
 import { PaymentService } from '../payments/payment.service';
 import { UserRole } from '@prisma/client';
+import {
+  getStripeApiVersion,
+  StripePaymentIntent,
+  StripeSubscription,
+} from '../config/stripe.config';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -38,7 +43,7 @@ export class StripeAdminController {
     const apiKey = process.env.STRIPE_API_KEY;
     if (apiKey) {
       this.stripe = new Stripe(apiKey, {
-        apiVersion: '2024-11-20' as any,
+        apiVersion: getStripeApiVersion(),
       });
     }
   }
@@ -124,7 +129,7 @@ export class StripeAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.PaymentWhereInput = {};
       if (status) filters.status = status;
       if (startDate || endDate) {
         filters.completedAt = {};
@@ -166,7 +171,7 @@ export class StripeAdminController {
       if (!payment) throw new NotFoundException('Payment not found');
 
       // Fetch Stripe details if available
-      let stripeDetails: any = null;
+      let stripeDetails: StripePaymentIntent | null = null;
       if (payment.stripePaymentIntentId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().paymentIntents.retrieve(
@@ -230,14 +235,17 @@ export class StripeAdminController {
       if (!subscription) throw new NotFoundException('Subscription not found');
 
       // Fetch Stripe subscription if available
-      let stripeDetails: any = null;
+      let stripeDetails: StripeSubscription | null = null;
       if (subscription.stripeSubscriptionId && this.stripe) {
         try {
           stripeDetails = await this.getStripe().subscriptions.retrieve(
             subscription.stripeSubscriptionId,
           );
         } catch (e) {
-          this.logger.warn('Could not fetch Stripe details for subscription', e);
+          this.logger.warn(
+            'Could not fetch Stripe details for subscription',
+            e,
+          );
         }
       }
 
@@ -312,7 +320,7 @@ export class StripeAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.RefundWhereInput = {};
       if (startDate || endDate) {
         filters.createdAt = {};
         if (startDate) filters.createdAt.gte = new Date(startDate);
@@ -372,10 +380,20 @@ export class StripeAdminController {
 
       if (payment.stripePaymentIntentId && this.stripe) {
         try {
+          const stripeReasons = [
+            'duplicate',
+            'fraudulent',
+            'requested_by_customer',
+          ] as const;
+          const stripeReason = stripeReasons.includes(
+            dto.reason as (typeof stripeReasons)[number],
+          )
+            ? (dto.reason as (typeof stripeReasons)[number])
+            : 'requested_by_customer';
           const stripeRefund = await this.getStripe().refunds.create({
             payment_intent: payment.stripePaymentIntentId,
             amount: Math.round(refundAmount * 100),
-            reason: dto.reason as any,
+            reason: stripeReason,
           });
           stripeRefundId = stripeRefund.id;
         } catch (e) {
@@ -419,10 +437,7 @@ export class StripeAdminController {
    * Get analytics: revenue trends and subscription metrics
    */
   @Get('analytics')
-  async getAnalytics(
-    @Query('days') days: string = '30',
-    @Query('metric') metric?: 'revenue' | 'subscriptions' | 'refunds' | 'all',
-  ) {
+  async getAnalytics(@Query('days') days: string = '30') {
     try {
       const numDays = Math.min(parseInt(days), 365);
       const startDate = new Date();
@@ -442,11 +457,6 @@ export class StripeAdminController {
         select: { amount: true, interval: true, createdAt: true, status: true },
       });
 
-      const refunds = await this.prisma.refund.findMany({
-        where: { createdAt: { gte: startDate } },
-        select: { amount: true, createdAt: true },
-      });
-
       // Group revenue by day
       const revenueByDay: Record<string, number> = {};
       payments.forEach((p) => {
@@ -457,10 +467,12 @@ export class StripeAdminController {
       });
 
       // Convert to revenueTrend array
-      const revenueTrend = Object.entries(revenueByDay).map(([date, amount]) => ({
-        date,
-        amount,
-      }));
+      const revenueTrend = Object.entries(revenueByDay).map(
+        ([date, amount]) => ({
+          date,
+          amount,
+        }),
+      );
 
       const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
       const avgDailyRevenue = totalRevenue / numDays;
@@ -468,20 +480,23 @@ export class StripeAdminController {
 
       // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
       const activeSubscriptions = subscriptions.filter(
-        s => s.status === 'ACTIVE'
+        (s) => s.status === 'ACTIVE',
       );
       const mrrFromSubscriptions = activeSubscriptions.reduce(
         (sum, s) => sum + (s.amount || 0),
-        0
+        0,
       );
       const mrr = mrrFromSubscriptions;
       const mrrTrend =
-        activeSubscriptions.length > 0 ? (mrr / activeSubscriptions.length) * 100 : 0;
+        activeSubscriptions.length > 0
+          ? (mrr / activeSubscriptions.length) * 100
+          : 0;
 
       return {
         revenueTrend,
         mrr: Math.round(mrr * 100) / 100,
         mrrTrend: Math.round(mrrTrend * 100) / 100,
+        projectedMonthly: Math.round(projectedMonthly * 100) / 100,
         dailyBreakdown: revenueByDay,
         currency: process.env.STRIPE_CURRENCY || 'USD',
       };

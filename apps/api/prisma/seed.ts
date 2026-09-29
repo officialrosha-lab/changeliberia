@@ -20,7 +20,8 @@ async function main() {
     data: {
       title: 'Fix Sinkor Community Roads Before Rainy Season',
       summary: 'Thousands cannot safely commute when rains begin.',
-      description: 'Residents of Sinkor are requesting emergency rehabilitation of primary roads and drainage infrastructure before peak rainfall.',
+      description:
+        'Residents of Sinkor are requesting emergency rehabilitation of primary roads and drainage infrastructure before peak rainfall.',
       goal: 5000,
       status: PetitionStatus.APPROVED,
       creatorId: user.id,
@@ -44,8 +45,18 @@ async function main() {
 
   await prisma.verificationLog.createMany({
     data: [
-      { userId: user.id, type: 'OTP', delta: 40, details: 'Phone OTP complete' },
-      { userId: user.id, type: 'IP_GEO', delta: 20, details: 'Liberia geolocated IP' },
+      {
+        userId: user.id,
+        type: 'OTP',
+        delta: 40,
+        details: 'Phone OTP complete',
+      },
+      {
+        userId: user.id,
+        type: 'IP_GEO',
+        delta: 20,
+        details: 'Liberia geolocated IP',
+      },
       { userId: user.id, type: 'DEVICE', delta: 10, details: 'Known device' },
     ],
   });
@@ -295,7 +306,8 @@ async function main() {
       submittedBy: user.id,
       submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       signatureCount: 1240,
-      notes: 'Submitted via Change Liberia platform with full citizen support documentation',
+      notes:
+        'Submitted via Change Liberia platform with full citizen support documentation',
     },
   });
 
@@ -315,11 +327,13 @@ async function main() {
       publishedAt: new Date(),
       authorId: user.id,
       content: '', // Legacy field
-      metaDescription: 'Learn about Change Liberia — our mission, values, and how we empower Liberians to drive civic change.',
+      metaDescription:
+        'Learn about Change Liberia — our mission, values, and how we empower Liberians to drive civic change.',
       metaKeywords: 'about us, civic petitions, Liberia, democracy',
       ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
       ogTitle: 'About Change Liberia',
-      ogDescription: 'Empowering Liberians to drive civic change through verifiable petitions.',
+      ogDescription:
+        'Empowering Liberians to drive civic change through verifiable petitions.',
     },
   });
 
@@ -332,9 +346,11 @@ async function main() {
         order: 0,
         props: JSON.stringify({
           title: 'About Change Liberia',
-          subtitle: 'Built so a complaint doesn\'t just disappear',
-          description: 'We got tired of watching real problems — bad roads, clinics with no supplies, unpaid teachers — get raised once and then go nowhere. Change Liberia gives any Liberian, at home or abroad, a way to put an issue on the record, gather signatures that are actually verified, and send it to the government office responsible for it.',
-          backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          subtitle: "Built so a complaint doesn't just disappear",
+          description:
+            'We got tired of watching real problems — bad roads, clinics with no supplies, unpaid teachers — get raised once and then go nowhere. Change Liberia gives any Liberian, at home or abroad, a way to put an issue on the record, gather signatures that are actually verified, and send it to the government office responsible for it.',
+          backgroundImage:
+            'https://images.unsplash.com/photo-1552664730-d307ca884978',
           ctaText: 'Start a Petition',
           ctaUrl: '/create',
         }),
@@ -344,8 +360,8 @@ async function main() {
         type: 'text',
         order: 1,
         props: JSON.stringify({
-          title: 'What we\'re trying to do',
-          body: 'Liberians have never lacked things to say — what\'s been missing is a way to say them that officials can\'t easily ignore. So we built a place where a petition isn\'t just words: it carries real, verified signatures, gets sent to the right desk, and stays public so everyone can see whether it got a response.',
+          title: "What we're trying to do",
+          body: "Liberians have never lacked things to say — what's been missing is a way to say them that officials can't easily ignore. So we built a place where a petition isn't just words: it carries real, verified signatures, gets sent to the right desk, and stays public so everyone can see whether it got a response.",
           alignment: 'left',
           emphasize: true,
         }),
@@ -360,22 +376,26 @@ async function main() {
             {
               icon: '🔍',
               title: 'Nothing hidden',
-              description: 'You can watch a petition move from the day it\'s filed to whatever the government office does — or doesn\'t do — about it.',
+              description:
+                "You can watch a petition move from the day it's filed to whatever the government office does — or doesn't do — about it.",
             },
             {
               icon: '🛡️',
               title: 'Real signatures only',
-              description: 'We check identities by email and, optionally, national ID — so a thousand signatures means a thousand actual people.',
+              description:
+                'We check identities by email and, optionally, national ID — so a thousand signatures means a thousand actual people.',
             },
             {
               icon: '⚖️',
               title: 'Someone has to answer',
-              description: 'Every petition gets routed to the office responsible for it, and we track the response in public. If they stay quiet, that\'s public too.',
+              description:
+                "Every petition gets routed to the office responsible for it, and we track the response in public. If they stay quiet, that's public too.",
             },
             {
               icon: '🌍',
               title: 'Open to every Liberian',
-              description: 'Whether you\'re in Monrovia or Minnesota — if you have a connection to Liberia, you can raise an issue here.',
+              description:
+                "Whether you're in Monrovia or Minnesota — if you have a connection to Liberia, you can raise an issue here.",
             },
           ],
           columns: 2,
@@ -386,7 +406,7 @@ async function main() {
         type: 'text',
         order: 3,
         props: JSON.stringify({
-          title: 'Who\'s behind this',
+          title: "Who's behind this",
           body: 'Change Liberia is built and run by a small team of Liberian technologists and civic organizers, working alongside community leaders, civil society groups, and government contacts in all 15 counties to make sure petitions actually reach someone who can act on them.',
           alignment: 'center',
         }),
@@ -397,7 +417,8 @@ async function main() {
         order: 4,
         props: JSON.stringify({
           title: 'Got something that needs fixing?',
-          description: 'Put it into words, gather support, and put it in front of the people responsible. It takes a few minutes to start.',
+          description:
+            'Put it into words, gather support, and put it in front of the people responsible. It takes a few minutes to start.',
           buttons: [
             { text: 'Create a Petition', url: '/create', primary: true },
             { text: 'Browse Petitions', url: '/petitions', primary: false },
@@ -418,7 +439,8 @@ async function main() {
       publishedAt: new Date(),
       authorId: user.id,
       content: '', // Legacy field
-      metaDescription: 'A step-by-step guide to creating a petition, building support, and reaching decision-makers on Change Liberia.',
+      metaDescription:
+        'A step-by-step guide to creating a petition, building support, and reaching decision-makers on Change Liberia.',
       metaKeywords: 'how to create petition, how it works, civic engagement',
       ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
       ogTitle: 'How Change Liberia Works',
@@ -436,8 +458,10 @@ async function main() {
         props: JSON.stringify({
           title: 'How It Works',
           subtitle: 'From complaint to a real response, in four steps',
-          description: 'Here\'s exactly what happens after you hit submit — no guesswork, no black box.',
-          backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          description:
+            "Here's exactly what happens after you hit submit — no guesswork, no black box.",
+          backgroundImage:
+            'https://images.unsplash.com/photo-1552664730-d307ca884978',
           ctaText: 'Start Now',
           ctaUrl: '/create',
         }),
@@ -452,7 +476,8 @@ async function main() {
             {
               icon: '✍️',
               title: 'Submit Your Issue',
-              description: 'Create a petition in minutes. Describe the problem clearly, choose the relevant category — infrastructure, health, governance, or more — and explain what steps you have already taken.',
+              description:
+                'Create a petition in minutes. Describe the problem clearly, choose the relevant category — infrastructure, health, governance, or more — and explain what steps you have already taken.',
               details: [
                 'No fees, no paperwork',
                 'Upload supporting images or documents',
@@ -463,7 +488,8 @@ async function main() {
             {
               icon: '🔎',
               title: 'Petition is Reviewed',
-              description: 'Our moderation team reviews every petition to ensure it is a genuine civic issue that complies with community guidelines. This usually takes 24–48 hours.',
+              description:
+                'Our moderation team reviews every petition to ensure it is a genuine civic issue that complies with community guidelines. This usually takes 24–48 hours.',
               details: [
                 'Independent moderation process',
                 'Declined petitions receive a reason',
@@ -474,7 +500,8 @@ async function main() {
             {
               icon: '🤝',
               title: 'People Sign & Support',
-              description: 'Once approved, your petition is published. Share it on WhatsApp, Facebook, and in your community. Verified Liberian signatures carry weight with decision-makers.',
+              description:
+                'Once approved, your petition is published. Share it on WhatsApp, Facebook, and in your community. Verified Liberian signatures carry weight with decision-makers.',
               details: [
                 'Email and ID verification increases credibility',
                 'Verified diaspora signatures count too',
@@ -485,7 +512,8 @@ async function main() {
             {
               icon: '🏛️',
               title: 'Government Delivery',
-              description: 'When you reach your signature goal, your petition is formally submitted to the relevant government body with a full accountability report.',
+              description:
+                'When you reach your signature goal, your petition is formally submitted to the relevant government body with a full accountability report.',
               details: [
                 'Automatic routing to right authority',
                 'Full petition & signatures delivered',
@@ -503,7 +531,7 @@ async function main() {
         order: 2,
         props: JSON.stringify({
           title: 'Why Verified Signatures Matter',
-          body: 'Anyone can claim a thousand people agree with them. We check — every signer confirms their email, and can add national ID verification on top. So when your petition says 1,000 signatures, that\'s 1,000 real Liberians, not a number someone made up.',
+          body: "Anyone can claim a thousand people agree with them. We check — every signer confirms their email, and can add national ID verification on top. So when your petition says 1,000 signatures, that's 1,000 real Liberians, not a number someone made up.",
           alignment: 'center',
           emphasize: true,
         }),
@@ -529,7 +557,7 @@ async function main() {
             },
             {
               q: 'Can diaspora Liberians sign?',
-              a: "Yes! Anyone with a Liberian passport, national ID, or verified Liberian connection can sign — no matter where they live.",
+              a: 'Yes! Anyone with a Liberian passport, national ID, or verified Liberian connection can sign — no matter where they live.',
             },
             {
               q: 'What if my petition is rejected?',
@@ -552,7 +580,8 @@ async function main() {
       publishedAt: new Date(),
       authorId: user.id,
       content: '', // Legacy field
-      metaDescription: 'Find answers to common questions about creating petitions, signing, verification, and using Change Liberia.',
+      metaDescription:
+        'Find answers to common questions about creating petitions, signing, verification, and using Change Liberia.',
       metaKeywords: 'help, faq, support, troubleshooting',
       ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
       ogTitle: 'Help Center — Change Liberia',
@@ -570,8 +599,10 @@ async function main() {
         props: JSON.stringify({
           title: 'Help Center',
           subtitle: 'Straight answers to the questions people actually ask',
-          description: 'Not finding what you need? Email support@changeliberia.org and a real person will get back to you within a day.',
-          backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          description:
+            'Not finding what you need? Email support@changeliberia.org and a real person will get back to you within a day.',
+          backgroundImage:
+            'https://images.unsplash.com/photo-1552664730-d307ca884978',
         }),
       },
       {
@@ -581,12 +612,42 @@ async function main() {
         props: JSON.stringify({
           title: 'Help Categories',
           items: [
-            { icon: '🚀', title: 'Getting Started', description: 'Create your first petition, understand the process, and set up your account.' },
-            { icon: '✍️', title: 'Creating Petitions', description: 'Best practices for writing your petition, adding media, and choosing the right category.' },
-            { icon: '🖊️', title: 'Signing Petitions', description: 'How to sign, what verification means, and why your signature counts.' },
-            { icon: '🔐', title: 'Account & Verification', description: 'ID verification, trust scores, and managing your profile.' },
-            { icon: '📢', title: 'Sharing & Growth', description: 'How to promote your petition, reach your signature goal, and engage supporters.' },
-            { icon: '⚙️', title: 'Technical Help', description: 'Troubleshooting login issues, page errors, and platform problems.' },
+            {
+              icon: '🚀',
+              title: 'Getting Started',
+              description:
+                'Create your first petition, understand the process, and set up your account.',
+            },
+            {
+              icon: '✍️',
+              title: 'Creating Petitions',
+              description:
+                'Best practices for writing your petition, adding media, and choosing the right category.',
+            },
+            {
+              icon: '🖊️',
+              title: 'Signing Petitions',
+              description:
+                'How to sign, what verification means, and why your signature counts.',
+            },
+            {
+              icon: '🔐',
+              title: 'Account & Verification',
+              description:
+                'ID verification, trust scores, and managing your profile.',
+            },
+            {
+              icon: '📢',
+              title: 'Sharing & Growth',
+              description:
+                'How to promote your petition, reach your signature goal, and engage supporters.',
+            },
+            {
+              icon: '⚙️',
+              title: 'Technical Help',
+              description:
+                'Troubleshooting login issues, page errors, and platform problems.',
+            },
           ],
           columns: 2,
         }),
@@ -630,7 +691,7 @@ async function main() {
           items: [
             {
               q: 'How do I start a petition?',
-              a: "Click \"Start a Petition\" from any page. You'll go through a form: describe the issue, pick categories and a county, tell the full story, add media (optional), and set your identity preferences. Once submitted, it's reviewed within 24-48 hours.",
+              a: 'Click "Start a Petition" from any page. You\'ll go through a form: describe the issue, pick categories and a county, tell the full story, add media (optional), and set your identity preferences. Once submitted, it\'s reviewed within 24-48 hours.',
             },
             {
               q: 'What happens after I submit?',
@@ -642,7 +703,7 @@ async function main() {
             },
             {
               q: 'Can I edit my petition after publishing?',
-              a: "Yes, you can edit the description and add updates. You cannot change the title or category after launch.",
+              a: 'Yes, you can edit the description and add updates. You cannot change the title or category after launch.',
             },
             {
               q: 'What is a signature goal?',
@@ -660,7 +721,7 @@ async function main() {
           items: [
             {
               q: 'Can I sign anonymously?',
-              a: "You can display as \"Anonymous Citizen\" or use a pseudonym, but we verify your identity behind the scenes for security.",
+              a: 'You can display as "Anonymous Citizen" or use a pseudonym, but we verify your identity behind the scenes for security.',
             },
             {
               q: 'What is a trust score?',
@@ -685,7 +746,9 @@ async function main() {
   // Public Officials Portal seed data
   console.log('🏛️  Creating Public Officials Portal seed data...');
 
-  const officialRole = await prisma.role.findUnique({ where: { name: 'OFFICIAL' } });
+  const officialRole = await prisma.role.findUnique({
+    where: { name: 'OFFICIAL' },
+  });
 
   const senatorUser = await prisma.user.upsert({
     where: { phone: '+231770000010' },
@@ -728,7 +791,9 @@ async function main() {
 
   if (officialRole) {
     await prisma.userRoleAssignment.upsert({
-      where: { userId_roleId: { userId: senatorUser.id, roleId: officialRole.id } },
+      where: {
+        userId_roleId: { userId: senatorUser.id, roleId: officialRole.id },
+      },
       update: {},
       create: { userId: senatorUser.id, roleId: officialRole.id },
     });
@@ -811,7 +876,8 @@ async function main() {
       officialProfile: {
         create: {
           bio: 'Serving as City Mayor of Gbarnga, Bong County.',
-          verificationDocUrl: 'https://example.com/docs/gbarnga-mayor-certificate.pdf',
+          verificationDocUrl:
+            'https://example.com/docs/gbarnga-mayor-certificate.pdf',
           verificationDocType: 'ELECTION_CERTIFICATE',
           submittedAt: new Date(),
         },
@@ -823,7 +889,9 @@ async function main() {
   // dashboard/inbox/feed have data immediately after seeding
   for (const institutionId of [senatorInstitution.id, repInstitution.id]) {
     await prisma.petitionGovernmentResponse.upsert({
-      where: { petitionId_institutionId: { petitionId: petition.id, institutionId } },
+      where: {
+        petitionId_institutionId: { petitionId: petition.id, institutionId },
+      },
       update: {},
       create: {
         petitionId: petition.id,
@@ -831,9 +899,15 @@ async function main() {
         currentStage: 'UNDER_REVIEW',
         timeline: {
           create: [
-            { stage: 'RECEIVED', note: 'Routed via jurisdiction match (Montserrado County)' },
+            {
+              stage: 'RECEIVED',
+              note: 'Routed via jurisdiction match (Montserrado County)',
+            },
             { stage: 'ASSIGNED', note: 'Assigned to office for review' },
-            { stage: 'UNDER_REVIEW', note: 'Office is reviewing the petition details' },
+            {
+              stage: 'UNDER_REVIEW',
+              note: 'Office is reviewing the petition details',
+            },
           ],
         },
       },
@@ -843,4 +917,9 @@ async function main() {
   console.log('✅ Public Officials Portal seed data created');
 }
 
-main().finally(async () => prisma.$disconnect());
+main()
+  .catch((err: unknown) => {
+    console.error('Seed failed:', err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  })
+  .finally(async () => prisma.$disconnect());

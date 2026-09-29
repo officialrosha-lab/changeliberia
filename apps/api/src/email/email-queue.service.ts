@@ -37,7 +37,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generatePaymentConfirmation(
+      const template = this.templateService.generatePaymentConfirmation(
         recipientEmail,
         recipientName,
         data,
@@ -66,7 +66,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generatePaymentFailed(
+      const template = this.templateService.generatePaymentFailed(
         recipientEmail,
         recipientName,
         data,
@@ -95,7 +95,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generateSubscriptionWelcome(
+      const template = this.templateService.generateSubscriptionWelcome(
         recipientEmail,
         recipientName,
         data,
@@ -124,7 +124,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generateSubscriptionReceipt(
+      const template = this.templateService.generateSubscriptionReceipt(
         recipientEmail,
         recipientName,
         data,
@@ -153,7 +153,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generateSubscriptionCancellation(
+      const template = this.templateService.generateSubscriptionCancellation(
         recipientEmail,
         recipientName,
         data,
@@ -182,7 +182,7 @@ export class EmailQueueService {
         return false;
       }
 
-      const template = this.templateService!.generateRefund(
+      const template = this.templateService.generateRefund(
         recipientEmail,
         recipientName,
         data,
@@ -210,7 +210,7 @@ export class EmailQueueService {
     }
 
     try {
-      const success = await this.emailService!.sendEmail(template);
+      const success = await this.emailService.sendEmail(template);
       if (!success) {
         this.logger.warn(
           `Email failed to send: ${template.templateType} to ${template.recipientEmail}`,

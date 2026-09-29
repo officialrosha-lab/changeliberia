@@ -14,7 +14,9 @@ export class MembershipService {
   }
 
   async leave(userId: string) {
-    return this.prisma.membership.delete({ where: { userId } }).catch(() => null);
+    return this.prisma.membership
+      .delete({ where: { userId } })
+      .catch(() => null);
   }
 
   async status(userId: string) {

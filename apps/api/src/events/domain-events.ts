@@ -91,7 +91,7 @@ export class PetitionUpdatePublishedEvent extends DomainEvent {
   readonly entityType = 'petition';
 
   constructor(
-    public readonly entityId: string,   // PetitionUpdate id
+    public readonly entityId: string, // PetitionUpdate id
     public readonly petitionId: string,
     public readonly petitionTitle: string,
     public readonly updateTitle: string,

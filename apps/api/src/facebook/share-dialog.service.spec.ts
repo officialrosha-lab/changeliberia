@@ -11,7 +11,6 @@ import { EventBusService } from '../events/event-bus.service';
 describe('ShareDialogService', () => {
   let service: ShareDialogService;
   let facebookSdk: jest.Mocked<FacebookSDKService>;
-  let prismaService: any;
   let eventBusService: jest.Mocked<EventBusService>;
 
   const mockPetition = {
@@ -25,6 +24,23 @@ describe('ShareDialogService', () => {
     id: 'user-1',
     name: 'Test User',
     trustScore: 75,
+  };
+
+  const mockPrismaService = {
+    petition: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
+    },
+    shareLink: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+    },
+    facebookPixelEvent: {
+      create: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -41,22 +57,7 @@ describe('ShareDialogService', () => {
         },
         {
           provide: PrismaService,
-          useValue: {
-            petition: {
-              findUnique: jest.fn(),
-              update: jest.fn(),
-            },
-            user: {
-              findUnique: jest.fn(),
-            },
-            shareLink: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-            },
-            facebookPixelEvent: {
-              create: jest.fn(),
-            },
-          },
+          useValue: mockPrismaService,
         },
         {
           provide: EventBusService,
@@ -68,9 +69,12 @@ describe('ShareDialogService', () => {
     }).compile();
 
     service = moduleFixture.get<ShareDialogService>(ShareDialogService);
-    facebookSdk = moduleFixture.get(FacebookSDKService) as jest.Mocked<FacebookSDKService>;
-    prismaService = moduleFixture.get(PrismaService) as any;
-    eventBusService = moduleFixture.get(EventBusService) as jest.Mocked<EventBusService>;
+    facebookSdk = moduleFixture.get(FacebookSDKService);
+    eventBusService = moduleFixture.get(EventBusService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Share Dialog Configuration', () => {
@@ -116,14 +120,12 @@ describe('ShareDialogService', () => {
 
   describe('Record Share Completion', () => {
     it('should record share completion successfully', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
-      prismaService.shareLink.create.mockResolvedValue({
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.shareLink.create.mockResolvedValue({
         id: 'share-1',
         shortCode: 'abc12345',
-      } as any);
+      });
       eventBusService.publish.mockResolvedValue(undefined);
 
       const result = await service.recordShareCompletion(
@@ -134,13 +136,13 @@ describe('ShareDialogService', () => {
 
       expect(result.success).toBe(true);
       expect(result.shareId).toBeDefined();
-      expect(prismaService.shareLink.create).toHaveBeenCalled();
-      expect(prismaService.petition.update).toHaveBeenCalled();
+      expect(mockPrismaService.shareLink.create).toHaveBeenCalled();
+      expect(mockPrismaService.petition.update).toHaveBeenCalled();
       expect(eventBusService.publish).toHaveBeenCalled();
     });
 
     it('should handle missing petition', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(null);
+      mockPrismaService.petition.findUnique.mockResolvedValue(null);
 
       const result = await service.recordShareCompletion(
         'user-1',
@@ -153,10 +155,8 @@ describe('ShareDialogService', () => {
     });
 
     it('should handle missing user', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       const result = await service.recordShareCompletion(
         'invalid',
@@ -169,41 +169,35 @@ describe('ShareDialogService', () => {
     });
 
     it('should set shareDialogUsed flag correctly', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
-      prismaService.shareLink.create.mockResolvedValue({
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.shareLink.create.mockResolvedValue({
         id: 'share-1',
-      } as any);
+      });
 
       await service.recordShareCompletion('user-1', 'petition-1', 'dialog');
 
-      expect(prismaService.shareLink.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.shareLink.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           shareDialogUsed: true,
-        }),
+        }) as Record<string, unknown>,
       });
     });
 
     it('should estimate reach based on trust score', async () => {
       const userWithHighTrust = { ...mockUser, trustScore: 95 };
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.user.findUnique.mockResolvedValue(
-        userWithHighTrust as any,
-      );
-      prismaService.shareLink.create.mockResolvedValue({
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.user.findUnique.mockResolvedValue(userWithHighTrust);
+      mockPrismaService.shareLink.create.mockResolvedValue({
         id: 'share-1',
-      } as any);
+      });
 
       await service.recordShareCompletion('user-1', 'petition-1', 'dialog');
 
-      expect(prismaService.shareLink.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.shareLink.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          networkReachEstimate: expect.any(Number),
-        }),
+          networkReachEstimate: expect.any(Number) as number,
+        }) as Record<string, unknown>,
       });
     });
   });
@@ -227,21 +221,21 @@ describe('ShareDialogService', () => {
 
   describe('Share Dialog Impressions', () => {
     it('should track share dialog impression', async () => {
-      prismaService.facebookPixelEvent.create.mockResolvedValue({} as any);
+      mockPrismaService.facebookPixelEvent.create.mockResolvedValue({});
 
       await service.trackShareDialogImpression('user-1', 'petition-1');
 
-      expect(prismaService.facebookPixelEvent.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.facebookPixelEvent.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: 'user-1',
           petitionId: 'petition-1',
           eventType: 'ViewContent',
-        }),
+        }) as Record<string, unknown>,
       });
     });
 
     it('should handle impression tracking errors gracefully', async () => {
-      prismaService.facebookPixelEvent.create.mockRejectedValue(
+      mockPrismaService.facebookPixelEvent.create.mockRejectedValue(
         new Error('DB error'),
       );
 
@@ -269,11 +263,7 @@ describe('ShareDialogService', () => {
       const now = Date.now();
       const old = now - 10 * 60 * 1000; // 10 minutes ago
 
-      const result = service.validateShareCallback(
-        'petition-1',
-        'user-1',
-        old,
-      );
+      const result = service.validateShareCallback('petition-1', 'user-1', old);
 
       expect(result.valid).toBe(false);
       expect(result.error).toContain('expired');
@@ -282,10 +272,8 @@ describe('ShareDialogService', () => {
 
   describe('Share Analytics', () => {
     it('should get share analytics', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.shareLink.findMany.mockResolvedValue([
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.shareLink.findMany.mockResolvedValue([
         {
           userId: 'user-1',
           clickCount: 5,
@@ -298,7 +286,7 @@ describe('ShareDialogService', () => {
           conversions: 1,
           networkReachEstimate: 150,
         },
-      ] as any);
+      ]);
 
       const analytics = await service.getShareAnalytics('petition-1');
 
@@ -313,9 +301,7 @@ describe('ShareDialogService', () => {
     });
 
     it('should limit top sharers to 10', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
 
       const manyShares = Array.from({ length: 20 }, (_, i) => ({
         userId: `user-${i}`,
@@ -324,7 +310,7 @@ describe('ShareDialogService', () => {
         networkReachEstimate: 50 + i * 10,
       }));
 
-      prismaService.shareLink.findMany.mockResolvedValue(manyShares as any);
+      mockPrismaService.shareLink.findMany.mockResolvedValue(manyShares);
 
       const analytics = await service.getShareAnalytics('petition-1');
 
@@ -332,17 +318,15 @@ describe('ShareDialogService', () => {
     });
 
     it('should calculate conversion rate correctly', async () => {
-      prismaService.petition.findUnique.mockResolvedValue(
-        mockPetition as any,
-      );
-      prismaService.shareLink.findMany.mockResolvedValue([
+      mockPrismaService.petition.findUnique.mockResolvedValue(mockPetition);
+      mockPrismaService.shareLink.findMany.mockResolvedValue([
         {
           userId: 'user-1',
           clickCount: 10,
           conversions: 5,
           networkReachEstimate: 100,
         },
-      ] as any);
+      ]);
 
       const analytics = await service.getShareAnalytics('petition-1');
 

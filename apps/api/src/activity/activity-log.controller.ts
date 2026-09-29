@@ -1,17 +1,13 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Query,
-  Param,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, Param, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { UserRole } from '@prisma/client';
+import { ActivityLog, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { ActivityLoggerService } from './activity-logger.service';
+import {
+  ActivityLoggerService,
+  ActivityLogFilters,
+} from './activity-logger.service';
 
 /**
  * Admin Activity Log Controller
@@ -41,7 +37,7 @@ export class ActivityLogController {
     const pageNum = Math.max(1, parseInt(page || '1', 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit || '50', 10)));
 
-    const filters: any = {};
+    const filters: ActivityLogFilters = {};
     if (action) filters.action = action;
     if (entityType) filters.entityType = entityType;
     if (userId) filters.userId = userId;
@@ -67,7 +63,7 @@ export class ActivityLogController {
   ) {
     const limitNum = Math.min(200, Math.max(1, parseInt(limit || '50', 10)));
 
-    const filters: any = {};
+    const filters: ActivityLogFilters = {};
     if (action) filters.action = action;
     if (entityType) filters.entityType = entityType;
     if (startDate) filters.startDate = new Date(startDate);
@@ -90,7 +86,7 @@ export class ActivityLogController {
     @Query('endDate') endDate?: string,
     @Res() res?: Response,
   ) {
-    const filters: any = {};
+    const filters: ActivityLogFilters = {};
     if (action) filters.action = action;
     if (entityType) filters.entityType = entityType;
     if (status) filters.status = status;
@@ -125,7 +121,7 @@ export class ActivityLogController {
       'Created At',
     ];
 
-    const rows = logs.map((log: any) => [
+    const rows = logs.map((log: ActivityLog) => [
       log.id,
       log.userId || '',
       log.adminId || '',
@@ -141,7 +137,11 @@ export class ActivityLogController {
     const csv =
       headers.join(',') +
       '\n' +
-      rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      rows
+        .map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+        )
+        .join('\n');
 
     if (!res) {
       return csv;

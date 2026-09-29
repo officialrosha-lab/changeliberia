@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, Inject } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -22,14 +22,18 @@ import { PrismaService } from '../prisma/prisma.service';
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean);
-      return parsed.length > 0 ? parsed : [process.env.WEB_URL || 'http://localhost:3000'];
+      return parsed.length > 0
+        ? parsed
+        : [process.env.WEB_URL || 'http://localhost:3000'];
     })(),
     credentials: true,
   },
   namespace: 'petitions',
   transports: ['websocket', 'polling'],
 })
-export class PetitionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PetitionsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(PetitionsGateway.name);
   private connectedClients = new Map<string, { petitionId?: string }>();
@@ -59,7 +63,7 @@ export class PetitionsGateway implements OnGatewayConnection, OnGatewayDisconnec
     client_info.petitionId = petitionId;
     this.connectedClients.set(client.id, client_info);
 
-    client.join(`petition:${petitionId}`);
+    void client.join(`petition:${petitionId}`);
     this.logger.log(`Client ${client.id} subscribed to petition ${petitionId}`);
 
     // Send current petition data
@@ -161,9 +165,9 @@ export class PetitionsGateway implements OnGatewayConnection, OnGatewayDisconnec
    * Get pulse map data - petition hotspots with intensity
    */
   @SubscribeMessage('get_pulse_map')
-  async handleGetPulseMap(@ConnectedSocket() client: Socket) {
+  handleGetPulseMap(@ConnectedSocket() client: Socket) {
     try {
-      const hotspots = await this.getPulseMapData();
+      const hotspots = this.getPulseMapData();
       client.emit('pulse_map_data', {
         hotspots,
         timestamp: new Date().toISOString(),
@@ -177,7 +181,7 @@ export class PetitionsGateway implements OnGatewayConnection, OnGatewayDisconnec
   /**
    * Helper: Generate pulse map hotspot data
    */
-  private async getPulseMapData() {
+  private getPulseMapData() {
     // Sample hotspots - in production, query from Prisma
     const counties = [
       { name: 'Montserrado', lat: 6.3183, lng: -10.8085, intensity: 0.8 },

@@ -26,7 +26,9 @@ export class OfficialStaffService {
   ) {}
 
   private async assertIsOfficeholder(institutionId: string, userId: string) {
-    const institution = await this.prisma.institution.findUnique({ where: { id: institutionId } });
+    const institution = await this.prisma.institution.findUnique({
+      where: { id: institutionId },
+    });
     if (!institution) throw new NotFoundException('Institution not found');
     if (institution.holderUserId !== userId) {
       throw new ForbiddenException('Only the officeholder can manage staff');
@@ -34,12 +36,20 @@ export class OfficialStaffService {
     return institution;
   }
 
-  async invite(institutionId: string, officeholderId: string, dto: InviteStaffDto) {
+  async invite(
+    institutionId: string,
+    officeholderId: string,
+    dto: InviteStaffDto,
+  ) {
     await this.assertIsOfficeholder(institutionId, officeholderId);
 
-    const invitee = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+    const invitee = await this.prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
     if (!invitee) {
-      throw new BadRequestException('No Change Liberia account found for that phone number');
+      throw new BadRequestException(
+        'No Change Liberia account found for that phone number',
+      );
     }
     if (invitee.id === officeholderId) {
       throw new BadRequestException('You cannot invite yourself as staff');
@@ -49,7 +59,9 @@ export class OfficialStaffService {
       where: { institutionId_userId: { institutionId, userId: invitee.id } },
     });
     if (existing && existing.status !== 'REVOKED') {
-      throw new ConflictException('This person is already staff (or has a pending invite) for your office');
+      throw new ConflictException(
+        'This person is already staff (or has a pending invite) for your office',
+      );
     }
 
     const staff = existing
@@ -95,15 +107,27 @@ export class OfficialStaffService {
   async list(institutionId: string) {
     return this.prisma.officialStaffMember.findMany({
       where: { institutionId, status: { not: 'REVOKED' } },
-      include: { user: { select: { id: true, fullName: true, phone: true, email: true } } },
+      include: {
+        user: {
+          select: { id: true, fullName: true, phone: true, email: true },
+        },
+      },
       orderBy: { invitedAt: 'desc' },
     });
   }
 
-  async updatePermissions(institutionId: string, officeholderId: string, staffId: string, dto: UpdateStaffPermissionsDto) {
+  async updatePermissions(
+    institutionId: string,
+    officeholderId: string,
+    staffId: string,
+    dto: UpdateStaffPermissionsDto,
+  ) {
     await this.assertIsOfficeholder(institutionId, officeholderId);
-    const staff = await this.prisma.officialStaffMember.findUnique({ where: { id: staffId } });
-    if (!staff || staff.institutionId !== institutionId) throw new NotFoundException('Staff member not found');
+    const staff = await this.prisma.officialStaffMember.findUnique({
+      where: { id: staffId },
+    });
+    if (!staff || staff.institutionId !== institutionId)
+      throw new NotFoundException('Staff member not found');
 
     return this.prisma.officialStaffMember.update({
       where: { id: staffId },
@@ -113,8 +137,11 @@ export class OfficialStaffService {
 
   async revoke(institutionId: string, officeholderId: string, staffId: string) {
     await this.assertIsOfficeholder(institutionId, officeholderId);
-    const staff = await this.prisma.officialStaffMember.findUnique({ where: { id: staffId } });
-    if (!staff || staff.institutionId !== institutionId) throw new NotFoundException('Staff member not found');
+    const staff = await this.prisma.officialStaffMember.findUnique({
+      where: { id: staffId },
+    });
+    if (!staff || staff.institutionId !== institutionId)
+      throw new NotFoundException('Staff member not found');
 
     const updated = await this.prisma.officialStaffMember.update({
       where: { id: staffId },
@@ -138,9 +165,13 @@ export class OfficialStaffService {
    * officeholder.
    */
   async acceptInvite(userId: string, staffId: string) {
-    const staff = await this.prisma.officialStaffMember.findUnique({ where: { id: staffId } });
-    if (!staff || staff.userId !== userId) throw new NotFoundException('Invite not found');
-    if (staff.status !== 'INVITED') throw new BadRequestException('This invite is no longer pending');
+    const staff = await this.prisma.officialStaffMember.findUnique({
+      where: { id: staffId },
+    });
+    if (!staff || staff.userId !== userId)
+      throw new NotFoundException('Invite not found');
+    if (staff.status !== 'INVITED')
+      throw new BadRequestException('This invite is no longer pending');
 
     const updated = await this.prisma.officialStaffMember.update({
       where: { id: staffId },
@@ -153,9 +184,14 @@ export class OfficialStaffService {
     // a staff member would be blocked before their canX flags are even
     // considered. Fine-grained restriction still comes from the guard +
     // explicit controller checks, not from RBAC itself.
-    const officialRole = await this.prisma.role.findUnique({ where: { name: 'OFFICIAL' } });
+    const officialRole = await this.prisma.role.findUnique({
+      where: { name: 'OFFICIAL' },
+    });
     if (officialRole) {
-      await this.rolePermissionService.assignRoleToUser(userId, officialRole.id);
+      await this.rolePermissionService.assignRoleToUser(
+        userId,
+        officialRole.id,
+      );
     }
 
     return updated;
@@ -164,7 +200,9 @@ export class OfficialStaffService {
   async listMyInvites(userId: string) {
     return this.prisma.officialStaffMember.findMany({
       where: { userId, status: 'INVITED' },
-      include: { institution: { select: { id: true, name: true, category: true } } },
+      include: {
+        institution: { select: { id: true, name: true, category: true } },
+      },
       orderBy: { invitedAt: 'desc' },
     });
   }
@@ -176,7 +214,9 @@ export class OfficialStaffService {
    * relationship to the institution at all.
    */
   async resolveAccess(institutionId: string, userId: string) {
-    const institution = await this.prisma.institution.findUnique({ where: { id: institutionId } });
+    const institution = await this.prisma.institution.findUnique({
+      where: { id: institutionId },
+    });
     if (!institution) return null;
 
     if (institution.holderUserId === userId) {

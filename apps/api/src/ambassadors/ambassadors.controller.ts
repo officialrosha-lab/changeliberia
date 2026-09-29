@@ -1,10 +1,22 @@
-import { Controller, Post, Get, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { AmbassadorsService } from './ambassadors.service';
-import { CreateAmbassadorApplicationDto, UpdateAmbassadorApplicationDto } from './ambassadors.dto';
+import {
+  CreateAmbassadorApplicationDto,
+  UpdateAmbassadorApplicationDto,
+} from './ambassadors.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { ApplicationStatus, UserRole } from '@prisma/client';
 
 @Controller('ambassadors')
 export class AmbassadorsController {
@@ -28,7 +40,7 @@ export class AmbassadorsController {
   @Roles(UserRole.ADMIN)
   @Get('admin')
   async getApplications(@Query('status') status?: string) {
-    return this.service.findAll(status as any);
+    return this.service.findAll(status as ApplicationStatus | undefined);
   }
 
   /**

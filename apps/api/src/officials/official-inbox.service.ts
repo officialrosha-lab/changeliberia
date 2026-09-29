@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { GovernmentResponseStage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -25,10 +26,20 @@ export class OfficialInboxService {
       this.prisma.petitionGovernmentResponse.findMany({
         where: {
           institutionId,
-          ...(filters.stage ? { currentStage: filters.stage as any } : {}),
+          ...(filters.stage
+            ? { currentStage: filters.stage as GovernmentResponseStage }
+            : {}),
         },
         include: {
-          petition: { select: { id: true, title: true, summary: true, county: true, signaturesCount: true } },
+          petition: {
+            select: {
+              id: true,
+              title: true,
+              summary: true,
+              county: true,
+              signaturesCount: true,
+            },
+          },
         },
         orderBy: { updatedAt: 'desc' },
         take: window,
@@ -76,6 +87,8 @@ export class OfficialInboxService {
 
   /** Shared unread-count so the dashboard and inbox tab never disagree. */
   async getUnreadCount(holderUserId: string): Promise<number> {
-    return this.prisma.message.count({ where: { recipientId: holderUserId, isRead: false } });
+    return this.prisma.message.count({
+      where: { recipientId: holderUserId, isRead: false },
+    });
   }
 }

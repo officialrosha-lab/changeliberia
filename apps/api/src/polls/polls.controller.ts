@@ -6,7 +6,6 @@ import {
   Body,
   Param,
   Query,
-  Request,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
@@ -14,6 +13,8 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/roles.guard';
 import { PollsService } from './polls.service';
 import { VotingService } from './voting.service';
 import { CreatePollDto } from './dto/create-poll.dto';
@@ -34,12 +35,15 @@ export class PollsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async createPoll(@Body() createPollDto: CreatePollDto, @Request() req: any) {
-    if (!req.user?.id) {
+  async createPoll(
+    @Body() createPollDto: CreatePollDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    if (!user?.userId) {
       throw new BadRequestException('Authentication required');
     }
 
-    return this.pollsService.createPoll(createPollDto, req.user.id);
+    return this.pollsService.createPoll(createPollDto, user.userId);
   }
 
   /**
@@ -49,12 +53,15 @@ export class PollsController {
   @Throttle({ default: { limit: 3, ttl: 3600000 } })
   @Post('submit')
   @UseGuards(JwtAuthGuard)
-  async submitPoll(@Body() createPollDto: CreatePollDto, @Request() req: any) {
-    if (!req.user?.id) {
+  async submitPoll(
+    @Body() createPollDto: CreatePollDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    if (!user?.userId) {
       throw new BadRequestException('Authentication required');
     }
 
-    return this.pollsService.submitPoll(createPollDto, req.user.id);
+    return this.pollsService.submitPoll(createPollDto, user.userId);
   }
 
   /**
@@ -75,7 +82,10 @@ export class PollsController {
   @Post(':id/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async rejectPoll(@Param('id') pollId: string, @Body('reason') reason?: string) {
+  async rejectPoll(
+    @Param('id') pollId: string,
+    @Body('reason') reason?: string,
+  ) {
     return this.pollsService.rejectPoll(pollId, reason);
   }
 
@@ -93,7 +103,15 @@ export class PollsController {
     @Query('sort') sort?: string,
     @Query('search') search?: string,
   ) {
-    return this.pollsService.listPolls(category, county, status, limit, offset, sort, search);
+    return this.pollsService.listPolls(
+      category,
+      county,
+      status,
+      limit,
+      offset,
+      sort,
+      search,
+    );
   }
 
   /**
@@ -149,7 +167,7 @@ export class PollsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async archivePoll(@Param('id') pollId: string, @Request() req: any) {
+  async archivePoll(@Param('id') pollId: string) {
     await this.pollsService.archivePoll(pollId);
     return { success: true, message: 'Poll archived' };
   }

@@ -27,9 +27,10 @@ function isPrivateIPv4(ip: string): boolean {
 
 function isPrivateHost(hostname: string): boolean {
   // Strip IPv6 brackets (e.g. [::1] → ::1) so net.isIPv6 / checks work correctly
-  const host = hostname.startsWith('[') && hostname.endsWith(']')
-    ? hostname.slice(1, -1)
-    : hostname;
+  const host =
+    hostname.startsWith('[') && hostname.endsWith(']')
+      ? hostname.slice(1, -1)
+      : hostname;
   // Reject localhost names
   if (host === 'localhost' || host.endsWith('.local')) return true;
   if (net.isIPv4(host)) return isPrivateIPv4(host);
@@ -51,7 +52,8 @@ function isImageUrlOrBase64(value: unknown): boolean {
   if (base64ImagePattern.test(value)) return true;
   try {
     const parsed = new URL(value);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')
+      return false;
     if (isPrivateHost(parsed.hostname)) return false;
     return true;
   } catch {
@@ -60,7 +62,7 @@ function isImageUrlOrBase64(value: unknown): boolean {
 }
 
 function IsImageUrlOrBase64(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isImageUrlOrBase64',
       target: object.constructor,
@@ -86,7 +88,9 @@ export class PollOptionDto {
 
   @IsOptional()
   @IsString()
-  @IsImageUrlOrBase64({ message: 'imageUrl must be a valid URL or base64 image string' })
+  @IsImageUrlOrBase64({
+    message: 'imageUrl must be a valid URL or base64 image string',
+  })
   imageUrl?: string; // Base64 or URL — no MaxLength; resized base64 images exceed 2048 chars
 }
 

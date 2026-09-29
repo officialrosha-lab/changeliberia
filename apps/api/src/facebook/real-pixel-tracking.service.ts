@@ -1,6 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { FacebookSDKService } from './facebook-sdk.service';
+import {
+  ConversionEventData,
+  FacebookSDKService,
+} from './facebook-sdk.service';
+
+/**
+ * Optional PII passed alongside a pixel event, used to build a
+ * Conversions API `user_data` payload.
+ */
+export interface PixelEventMetadata {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+}
 
 /**
  * RealPixelTrackingService
@@ -22,12 +36,7 @@ export class RealPixelTrackingService {
   async trackViewContent(
     petitionId: string,
     userId?: string,
-    metadata?: {
-      email?: string;
-      phone?: string;
-      firstName?: string;
-      lastName?: string;
-    },
+    metadata?: PixelEventMetadata,
   ): Promise<{
     success: boolean;
     eventId?: string;
@@ -46,7 +55,6 @@ export class RealPixelTrackingService {
         'ViewContent',
         {
           contentName: petition.title,
-          contentType: 'petition',
           contentCategory: 'social_cause',
           value: 0,
           currency: 'USD',
@@ -62,13 +70,18 @@ export class RealPixelTrackingService {
       );
 
       if (result.success) {
-        await this.logPixelEvent('ViewContent', petitionId, userId, result.eventId);
+        await this.logPixelEvent(
+          'ViewContent',
+          petitionId,
+          userId,
+          result.eventId,
+        );
       }
 
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to track view content: ${(error as any)?.message}`,
+        `Failed to track view content: ${error instanceof Error ? error.message : undefined}`,
       );
       return { success: false };
     }
@@ -100,11 +113,11 @@ export class RealPixelTrackingService {
         'Share',
         {
           contentName: petition?.title || 'Petition',
-          contentType: 'petition',
           contentCategory: 'social_cause',
+          shareMethod,
           eventId: `share_${petitionId}_${userId}_${Date.now()}`,
           sourceUrl: `${process.env.APP_URL}/petitions/${petitionId}`,
-          email: user?.email,
+          email: user?.email ?? undefined,
           firstName: user?.fullName?.split(' ')[0],
           lastName: user?.fullName?.split(' ')[1],
         },
@@ -117,7 +130,9 @@ export class RealPixelTrackingService {
 
       return result;
     } catch (error) {
-      this.logger.error(`Failed to track share: ${(error as any)?.message}`);
+      this.logger.error(
+        `Failed to track share: ${error instanceof Error ? error.message : undefined}`,
+      );
       return { success: false };
     }
   }
@@ -128,12 +143,7 @@ export class RealPixelTrackingService {
   async trackLead(
     petitionId: string,
     userId: string,
-    metadata?: {
-      email?: string;
-      phone?: string;
-      firstName?: string;
-      lastName?: string;
-    },
+    metadata?: PixelEventMetadata,
   ): Promise<{
     success: boolean;
     eventId?: string;
@@ -148,7 +158,6 @@ export class RealPixelTrackingService {
         'Lead',
         {
           contentName: petition?.title || 'Petition',
-          contentType: 'petition',
           contentCategory: 'social_cause',
           value: 1,
           currency: 'USD',
@@ -168,7 +177,9 @@ export class RealPixelTrackingService {
 
       return result;
     } catch (error) {
-      this.logger.error(`Failed to track lead: ${(error as any)?.message}`);
+      this.logger.error(
+        `Failed to track lead: ${error instanceof Error ? error.message : undefined}`,
+      );
       return { success: false };
     }
   }
@@ -181,12 +192,7 @@ export class RealPixelTrackingService {
     userId: string,
     amount: number,
     currency: string = 'USD',
-    metadata?: {
-      email?: string;
-      phone?: string;
-      firstName?: string;
-      lastName?: string;
-    },
+    metadata?: PixelEventMetadata,
   ): Promise<{
     success: boolean;
     eventId?: string;
@@ -203,7 +209,6 @@ export class RealPixelTrackingService {
           value: amount,
           currency,
           contentName: petition?.title || 'Petition',
-          contentType: 'petition',
           contentCategory: 'donation',
           eventId: `purchase_${petitionId}_${userId}_${Date.now()}`,
           sourceUrl: `${process.env.APP_URL}/petitions/${petitionId}/donate`,
@@ -216,13 +221,18 @@ export class RealPixelTrackingService {
       );
 
       if (result.success) {
-        await this.logPixelEvent('Purchase', petitionId, userId, result.eventId);
+        await this.logPixelEvent(
+          'Purchase',
+          petitionId,
+          userId,
+          result.eventId,
+        );
       }
 
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to track purchase: ${(error as any)?.message}`,
+        `Failed to track purchase: ${error instanceof Error ? error.message : undefined}`,
       );
       return { success: false };
     }
@@ -235,7 +245,7 @@ export class RealPixelTrackingService {
     eventName: string,
     petitionId: string,
     userId: string,
-    eventData: Record<string, any>,
+    eventData: Partial<ConversionEventData> & Record<string, unknown>,
   ): Promise<{
     success: boolean;
     eventId?: string;
@@ -257,7 +267,7 @@ export class RealPixelTrackingService {
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to track custom event: ${(error as any)?.message}`,
+        `Failed to track custom event: ${error instanceof Error ? error.message : undefined}`,
       );
       return { success: false };
     }
@@ -275,7 +285,9 @@ export class RealPixelTrackingService {
     try {
       await this.prisma.facebookPixelEvent.create({
         data: {
-          eventId: eventId || `pixel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          eventId:
+            eventId ||
+            `pixel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           petitionId,
           userId: userId || null,
           eventType,
@@ -287,7 +299,7 @@ export class RealPixelTrackingService {
       });
     } catch (error) {
       this.logger.warn(
-        `Failed to log pixel event: ${(error as any)?.message}`,
+        `Failed to log pixel event: ${error instanceof Error ? error.message : undefined}`,
       );
     }
   }
@@ -321,7 +333,8 @@ export class RealPixelTrackingService {
       totalEvents: events.length,
       eventsByType,
       conversionRate: viewCount > 0 ? (conversionCount / viewCount) * 100 : 0,
-      lastEventAt: events.length > 0 ? events[events.length - 1].createdAt : null,
+      lastEventAt:
+        events.length > 0 ? events[events.length - 1].createdAt : null,
     };
   }
 
@@ -373,11 +386,11 @@ export class RealPixelTrackingService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to create custom audience: ${(error as any)?.message}`,
+        `Failed to create custom audience: ${error instanceof Error ? error.message : undefined}`,
       );
       return {
         success: false,
-        error: (error as any)?.message,
+        error: error instanceof Error ? error.message : undefined,
       };
     }
   }

@@ -107,7 +107,9 @@ export class MailerooWebhookController {
           await this.handleClicked(event);
           break;
         default:
-          this.logger.debug(`Unhandled or unrecognized Maileroo event: ${type}`);
+          this.logger.debug(
+            `Unhandled or unrecognized Maileroo event: ${type}`,
+          );
       }
 
       return { received: true };
@@ -119,7 +121,10 @@ export class MailerooWebhookController {
     }
   }
 
-  private isValidSignature(rawBody: Buffer | undefined, signature: string): boolean {
+  private isValidSignature(
+    rawBody: Buffer | undefined,
+    signature: string,
+  ): boolean {
     if (!rawBody || !this.webhookSecret) return false;
     const expected = createHmac('sha256', this.webhookSecret)
       .update(rawBody)

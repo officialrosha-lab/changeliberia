@@ -6,9 +6,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 
 export interface EncryptionConfig {
-  algorithm: string;
+  algorithm: 'aes-256-gcm';
   encryptionKey: string;
   keyDerivation: 'pbkdf2' | 'scrypt';
 }
@@ -20,17 +21,16 @@ export interface EncryptedData {
   encrypted: string;
   iv: string;
   authTag: string;
-  algorithm: string;
+  algorithm: 'aes-256-gcm';
 }
 
 @Injectable()
 export class EncryptionService {
-  private cipher = require('crypto');
   private config: EncryptionConfig;
   private encryptionKey: Buffer;
 
   constructor(configService: ConfigService) {
-    const encryptionKey = configService.get('ENCRYPTION_KEY');
+    const encryptionKey = configService.get<string>('ENCRYPTION_KEY');
 
     if (!encryptionKey) {
       throw new Error('ENCRYPTION_KEY environment variable not set');
@@ -50,15 +50,13 @@ export class EncryptionService {
    * Derive encryption key from master key
    */
   private deriveKey(masterKey: string): Buffer {
-    const crypto = require('crypto');
-
     if (this.config.keyDerivation === 'pbkdf2') {
       return crypto.pbkdf2Sync(
         masterKey,
         'change-liberia-salt', // Use a static salt for consistency, ideally store per-user
         100000,
         32,
-        'sha256'
+        'sha256',
       );
     }
 
@@ -72,13 +70,13 @@ export class EncryptionService {
   encrypt(plaintext: string, additionalData?: string): EncryptedData {
     try {
       // Generate random IV
-      const iv = this.cipher.randomBytes(16);
+      const iv = crypto.randomBytes(16);
 
       // Create cipher
-      const cipher = this.cipher.createCipheriv(
+      const cipher = crypto.createCipheriv(
         this.config.algorithm,
         this.encryptionKey,
-        iv
+        iv,
       );
 
       // Add additional authenticated data if provided
@@ -100,7 +98,9 @@ export class EncryptionService {
         algorithm: this.config.algorithm,
       };
     } catch (error) {
-      throw new Error(`Encryption failed: ${(error as Error).message}`);
+      throw new Error(`Encryption failed: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 
@@ -113,10 +113,10 @@ export class EncryptionService {
       const authTag = Buffer.from(encryptedData.authTag, 'hex');
 
       // Create decipher
-      const decipher = this.cipher.createDecipheriv(
+      const decipher = crypto.createDecipheriv(
         encryptedData.algorithm,
         this.encryptionKey,
-        iv
+        iv,
       );
 
       // Set authentication tag
@@ -133,7 +133,9 @@ export class EncryptionService {
 
       return plaintext;
     } catch (error) {
-      throw new Error(`Decryption failed: ${(error as Error).message}`);
+      throw new Error(`Decryption failed: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 
@@ -142,7 +144,7 @@ export class EncryptionService {
    */
   encryptObject<T extends Record<string, unknown>>(
     obj: T,
-    additionalData?: string
+    additionalData?: string,
   ): EncryptedData {
     const json = JSON.stringify(obj);
     return this.encrypt(json, additionalData);
@@ -153,7 +155,7 @@ export class EncryptionService {
    */
   decryptObject<T extends Record<string, unknown>>(
     encryptedData: EncryptedData,
-    additionalData?: string
+    additionalData?: string,
   ): T {
     const plaintext = this.decrypt(encryptedData, additionalData);
     return JSON.parse(plaintext) as T;
@@ -163,7 +165,6 @@ export class EncryptionService {
    * Hash value (one-way, for comparison)
    */
   hash(value: string, iterations: number = 100000): string {
-    const crypto = require('crypto');
     return crypto
       .pbkdf2Sync(value, 'compare-salt', iterations, 32, 'sha256')
       .toString('hex');
@@ -180,14 +181,17 @@ export class EncryptionService {
    * Generate random salt
    */
   generateSalt(length: number = 16): string {
-    return this.cipher.randomBytes(length).toString('hex');
+    return crypto.randomBytes(length).toString('hex');
   }
 
   /**
    * Hash with PBKDF2 and specific salt
    */
-  hashWithSalt(value: string, salt: string, iterations: number = 100000): string {
-    const crypto = require('crypto');
+  hashWithSalt(
+    value: string,
+    salt: string,
+    iterations: number = 100000,
+  ): string {
     return crypto
       .pbkdf2Sync(value, salt, iterations, 32, 'sha256')
       .toString('hex');
@@ -197,10 +201,7 @@ export class EncryptionService {
    * Encrypt PII (Personally Identifiable Information)
    * Common fields: SSN, passport number, driver license, etc.
    */
-  encryptPII(
-    field: string,
-    value: string
-  ): EncryptedData {
+  encryptPII(field: string, value: string): EncryptedData {
     // Use field name as additional authenticated data
     return this.encrypt(value, field);
   }
@@ -216,20 +217,14 @@ export class EncryptionService {
    * Encrypt payment data
    * Stripe tokens should be encrypted before storing
    */
-  encryptPaymentData(
-    paymentToken: string,
-    userId: string
-  ): EncryptedData {
+  encryptPaymentData(paymentToken: string, userId: string): EncryptedData {
     return this.encrypt(paymentToken, `payment:${userId}`);
   }
 
   /**
    * Decrypt payment data
    */
-  decryptPaymentData(
-    encryptedData: EncryptedData,
-    userId: string
-  ): string {
+  decryptPaymentData(encryptedData: EncryptedData, userId: string): string {
     return this.decrypt(encryptedData, `payment:${userId}`);
   }
 
@@ -238,7 +233,11 @@ export class EncryptionService {
    * Useful for logging/monitoring without exposing actual values
    */
   tokenizeSensitiveData(data: string): string {
-    const hash = this.cipher.createHash('sha256').update(data).digest().toString('hex');
+    const hash = crypto
+      .createHash('sha256')
+      .update(data)
+      .digest()
+      .toString('hex');
     return `tok_${hash.slice(0, 20)}`;
   }
 
@@ -257,7 +256,6 @@ export class EncryptionService {
     publicKey: string;
     privateKey: string;
   } {
-    const crypto = require('crypto');
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 4096,
       publicKeyEncoding: {
@@ -280,7 +278,6 @@ export class EncryptionService {
    * Encrypt data with public key (RSA)
    */
   encryptWithPublicKey(plaintext: string, publicKey: string): string {
-    const crypto = require('crypto');
     const buffer = Buffer.from(plaintext, 'utf8');
 
     const encrypted = crypto.publicEncrypt(
@@ -289,7 +286,7 @@ export class EncryptionService {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      buffer
+      buffer,
     );
 
     return encrypted.toString('base64');
@@ -299,7 +296,6 @@ export class EncryptionService {
    * Decrypt data with private key (RSA)
    */
   decryptWithPrivateKey(encrypted: string, privateKey: string): string {
-    const crypto = require('crypto');
     const buffer = Buffer.from(encrypted, 'base64');
 
     const decrypted = crypto.privateDecrypt(
@@ -308,7 +304,7 @@ export class EncryptionService {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      buffer
+      buffer,
     );
 
     return decrypted.toString('utf8');
@@ -318,7 +314,6 @@ export class EncryptionService {
    * Generate HMAC signature
    */
   generateSignature(data: string): string {
-    const crypto = require('crypto');
     return crypto
       .createHmac('sha256', this.encryptionKey)
       .update(data)
@@ -340,7 +335,6 @@ export class EncryptionService {
   private timingSafeEqual(a: string, b: string): boolean {
     if (a.length !== b.length) return false;
 
-    const crypto = require('crypto');
     try {
       return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
     } catch {

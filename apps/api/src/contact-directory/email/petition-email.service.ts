@@ -1,9 +1,17 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
 import { RoutingResult } from '../routing/smart-routing.service';
-import { PetitionStatus } from '@prisma/client';
+
+type PetitionWithCreator = Prisma.PetitionGetPayload<{
+  include: { creator: { select: { fullName: true; email: true } } };
+}>;
+
+type InstitutionWithDetails = Prisma.InstitutionGetPayload<{
+  include: { departments: true; contacts: true };
+}>;
 
 /**
  * Petition Email Service
@@ -104,7 +112,9 @@ export class PetitionEmailService {
       for (const recipientEmail of recipientEmails) {
         try {
           if (!this.emailService) {
-            this.logger.warn('EmailService not available - cannot send petition email');
+            this.logger.warn(
+              'EmailService not available - cannot send petition email',
+            );
             continue;
           }
 
@@ -184,7 +194,7 @@ export class PetitionEmailService {
   /**
    * Generate petition summary text
    */
-  private generatePetitionSummary(petition: any): string {
+  private generatePetitionSummary(petition: PetitionWithCreator): string {
     const lines = [
       petition.title,
       '',
@@ -202,9 +212,9 @@ export class PetitionEmailService {
    * Generate formatted email content (HTML and text)
    */
   private generateEmailContent(
-    petition: any,
+    petition: PetitionWithCreator,
     summary: string,
-    institution: any,
+    institution: InstitutionWithDetails,
     routingResult: RoutingResult,
   ): { html: string; text: string } {
     const signatureCount = petition.signaturesCount || 0;

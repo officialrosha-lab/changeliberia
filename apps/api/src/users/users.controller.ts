@@ -9,7 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PasswordProvider } from '../auth/password.provider';
 import { PrismaService } from '../prisma/prisma.service';
@@ -59,17 +66,31 @@ export class UsersController {
     @Req() req: { user: { userId: string } },
     @Body() body: { currentPassword: string; newPassword: string },
   ) {
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
-    if (!user?.passwordHash) throw new BadRequestException('No password set on this account');
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+    if (!user?.passwordHash)
+      throw new BadRequestException('No password set on this account');
 
-    const valid = await this.passwordProvider.verifyPassword(body.currentPassword, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    const valid = await this.passwordProvider.verifyPassword(
+      body.currentPassword,
+      user.passwordHash,
+    );
+    if (!valid)
+      throw new UnauthorizedException('Current password is incorrect');
 
-    const strength = this.passwordProvider.validatePasswordStrength(body.newPassword);
+    const strength = this.passwordProvider.validatePasswordStrength(
+      body.newPassword,
+    );
     if (!strength.isValid) throw new BadRequestException(strength.message);
 
-    const passwordHash = await this.passwordProvider.hashPassword(body.newPassword);
-    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    const passwordHash = await this.passwordProvider.hashPassword(
+      body.newPassword,
+    );
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
     return { success: true };
   }
 

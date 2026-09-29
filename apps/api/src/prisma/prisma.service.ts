@@ -1,8 +1,16 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
 
   async onModuleInit() {
@@ -85,7 +93,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
-        this.logger.warn(`Official-portal column guard skipped: ${sql.slice(0, 60)}`, err);
+        this.logger.warn(
+          `Official-portal column guard skipped: ${sql.slice(0, 60)}`,
+          err,
+        );
       }
     }
 
@@ -113,7 +124,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
-        this.logger.warn(`Impact-area column guard skipped: ${sql.slice(0, 60)}`, err);
+        this.logger.warn(
+          `Impact-area column guard skipped: ${sql.slice(0, 60)}`,
+          err,
+        );
       }
     }
 
@@ -129,7 +143,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
-        this.logger.warn(`Poll impact-area column guard skipped: ${sql.slice(0, 60)}`, err);
+        this.logger.warn(
+          `Poll impact-area column guard skipped: ${sql.slice(0, 60)}`,
+          err,
+        );
       }
     }
 
@@ -178,7 +195,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
-        this.logger.warn(`Message threading guard skipped: ${sql.slice(0, 60)}`, err);
+        this.logger.warn(
+          `Message threading guard skipped: ${sql.slice(0, 60)}`,
+          err,
+        );
       }
     }
 
@@ -201,7 +221,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       try {
         await this.$executeRawUnsafe(sql);
       } catch (err) {
-        this.logger.warn(`Staff/endorsement enum guard skipped: ${sql.slice(0, 60)}`, err);
+        this.logger.warn(
+          `Staff/endorsement enum guard skipped: ${sql.slice(0, 60)}`,
+          err,
+        );
       }
     }
 

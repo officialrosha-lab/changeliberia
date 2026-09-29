@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordProvider } from './password.provider';
@@ -16,7 +20,9 @@ export class PasswordResetService {
   /**
    * Generate a password reset token and send email to user
    */
-  async sendPasswordResetEmail(email: string): Promise<{ success: boolean; message: string }> {
+  async sendPasswordResetEmail(
+    email: string,
+  ): Promise<{ success: boolean; message: string }> {
     // Find user by email
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -26,7 +32,8 @@ export class PasswordResetService {
       // For security, don't reveal if email exists
       return {
         success: true,
-        message: 'If an account with that email exists, a password reset link will be sent.',
+        message:
+          'If an account with that email exists, a password reset link will be sent.',
       };
     }
 
@@ -66,7 +73,8 @@ export class PasswordResetService {
 
     return {
       success: true,
-      message: 'If an account with that email exists, a password reset link will be sent.',
+      message:
+        'If an account with that email exists, a password reset link will be sent.',
     };
   }
 
@@ -79,7 +87,8 @@ export class PasswordResetService {
     newPassword: string,
   ): Promise<{ success: boolean; message: string }> {
     // Validate password strength
-    const passwordValidation = this.passwordProvider.validatePasswordStrength(newPassword);
+    const passwordValidation =
+      this.passwordProvider.validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       throw new BadRequestException(passwordValidation.message);
     }
@@ -103,7 +112,9 @@ export class PasswordResetService {
 
     // Check if token was already used
     if (resetToken.used) {
-      throw new UnauthorizedException('Password reset link has already been used');
+      throw new UnauthorizedException(
+        'Password reset link has already been used',
+      );
     }
 
     // Check if email matches
@@ -135,14 +146,18 @@ export class PasswordResetService {
 
     return {
       success: true,
-      message: 'Password has been reset successfully. You can now login with your new password.',
+      message:
+        'Password has been reset successfully. You can now login with your new password.',
     };
   }
 
   /**
    * Verify that a password reset token is valid
    */
-  async validateResetToken(token: string, email: string): Promise<{ valid: boolean }> {
+  async validateResetToken(
+    token: string,
+    email: string,
+  ): Promise<{ valid: boolean }> {
     const tokenHash = this.hashToken(token);
 
     const resetToken = await this.prisma.passwordResetToken.findUnique({

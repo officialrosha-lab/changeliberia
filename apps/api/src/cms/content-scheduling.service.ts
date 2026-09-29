@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ContentSchedulingService {
@@ -96,7 +95,9 @@ export class ContentSchedulingService {
    */
   async getUpcomingSchedules(limit = 50) {
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysFromNow = new Date(
+      now.getTime() + 30 * 24 * 60 * 60 * 1000,
+    );
 
     return this.prisma.cMSSchedule.findMany({
       where: {

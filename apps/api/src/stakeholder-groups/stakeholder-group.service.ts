@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StakeholderGroupType } from '@prisma/client';
+import { StakeholderGroupType, PetitionStakeholderGroup } from '@prisma/client';
 
 @Injectable()
 export class StakeholderGroupService {
@@ -23,7 +23,7 @@ export class StakeholderGroupService {
     }
 
     const groupTypes = Object.values(StakeholderGroupType) as string[];
-    const groups: any[] = [];
+    const groups: PetitionStakeholderGroup[] = [];
 
     // Create empty group records first
     for (const groupType of groupTypes) {
@@ -76,7 +76,10 @@ export class StakeholderGroupService {
   /**
    * Get a specific stakeholder group with its members
    */
-  async getGroupWithMembers(petitionId: string, groupType: StakeholderGroupType) {
+  async getGroupWithMembers(
+    petitionId: string,
+    groupType: StakeholderGroupType,
+  ) {
     const group = await this.prisma.petitionStakeholderGroup.findUnique({
       where: {
         petitionId_groupType: { petitionId, groupType },

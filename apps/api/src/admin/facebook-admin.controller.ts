@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { UserRole, ChallengeStatus, BadgeType, Prisma } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -62,7 +62,7 @@ export class FacebookAdminController {
           select: { id: true, earnedAt: true },
         }),
         this.prisma.shareChallenge.findMany({
-          where: { status: 'ACTIVE' as any },
+          where: { status: ChallengeStatus.ACTIVE },
         }),
       ]);
 
@@ -88,9 +88,7 @@ export class FacebookAdminController {
       };
     } catch (error) {
       this.logger.error('Failed to get facebook dashboard', error);
-      throw new InternalServerErrorException(
-        'Failed to get dashboard metrics',
-      );
+      throw new InternalServerErrorException('Failed to get dashboard metrics');
     }
   }
 
@@ -105,7 +103,7 @@ export class FacebookAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = {};
+      const filters: Prisma.FacebookPixelEventWhereInput = {};
       if (type) filters.eventType = type;
       if (startDate || endDate) {
         filters.createdAt = {};
@@ -150,7 +148,7 @@ export class FacebookAdminController {
     @Query('limit') limit: string = '50',
   ) {
     try {
-      const filters: any = { source: 'facebook' };
+      const filters: Prisma.ShareLinkWhereInput = { source: 'facebook' };
       if (petitionId) filters.petitionId = petitionId;
 
       const shareLinks = await this.prisma.shareLink.findMany({
@@ -174,7 +172,10 @@ export class FacebookAdminController {
           totalReach,
           averageReach:
             shareLinks.length > 0 ? totalReach / shareLinks.length : 0,
-          totalClicks: shareLinks.reduce((sum, link) => sum + link.clickCount, 0),
+          totalClicks: shareLinks.reduce(
+            (sum, link) => sum + link.clickCount,
+            0,
+          ),
           totalConversions: shareLinks.reduce(
             (sum, link) => sum + link.conversions,
             0,
@@ -210,7 +211,8 @@ export class FacebookAdminController {
       return {
         ...shareLink,
         metrics: {
-          clickThroughRate: shareLink.clickCount / (shareLink.networkReachEstimate || 1),
+          clickThroughRate:
+            shareLink.clickCount / (shareLink.networkReachEstimate || 1),
           conversionRate,
           engagementScore: shareLink.clickCount + shareLink.conversions * 5, // 5x weight for conversions
         },
@@ -233,14 +235,27 @@ export class FacebookAdminController {
       const toggles = await this.prisma.featureToggle.findMany({
         where: {
           name: {
-            in: ['FACEBOOK_PIXEL_ID', 'FACEBOOK_API_VERSION', 'FACEBOOK_ACCESS_TOKEN'],
+            in: [
+              'FACEBOOK_PIXEL_ID',
+              'FACEBOOK_API_VERSION',
+              'FACEBOOK_ACCESS_TOKEN',
+            ],
           },
         },
       });
-      const config = Object.fromEntries(toggles.map((t) => [t.name, t.config])) as Record<string, string | null>;
-      const pixelId = config['FACEBOOK_PIXEL_ID'] || process.env.FACEBOOK_PIXEL_ID;
-      const apiVersion = config['FACEBOOK_API_VERSION'] || process.env.FACEBOOK_API_VERSION || '18.0';
-      const accessToken = (config['FACEBOOK_ACCESS_TOKEN'] || process.env.FACEBOOK_ACCESS_TOKEN) ? '***' : 'NOT_SET';
+      const config = Object.fromEntries(
+        toggles.map((t) => [t.name, t.config]),
+      ) as Record<string, string | null>;
+      const pixelId =
+        config['FACEBOOK_PIXEL_ID'] || process.env.FACEBOOK_PIXEL_ID;
+      const apiVersion =
+        config['FACEBOOK_API_VERSION'] ||
+        process.env.FACEBOOK_API_VERSION ||
+        '18.0';
+      const accessToken =
+        config['FACEBOOK_ACCESS_TOKEN'] || process.env.FACEBOOK_ACCESS_TOKEN
+          ? '***'
+          : 'NOT_SET';
 
       // Get recent events to test connectivity
       const recentEvents = await this.prisma.facebookPixelEvent.findMany({
@@ -276,9 +291,7 @@ export class FacebookAdminController {
   ) {
     try {
       if (dto.pixelId && dto.pixelId.length < 10) {
-        throw new InternalServerErrorException(
-          'Invalid Pixel ID format',
-        );
+        throw new InternalServerErrorException('Invalid Pixel ID format');
       }
 
       const values: Record<string, string | undefined> = {
@@ -319,9 +332,7 @@ export class FacebookAdminController {
     } catch (error) {
       if (error instanceof InternalServerErrorException) throw error;
       this.logger.error('Failed to update pixel config', error);
-      throw new InternalServerErrorException(
-        'Failed to update pixel config',
-      );
+      throw new InternalServerErrorException('Failed to update pixel config');
     }
   }
 
@@ -357,9 +368,7 @@ export class FacebookAdminController {
       };
     } catch (error) {
       this.logger.error('Failed to send test pixel event', error);
-      throw new InternalServerErrorException(
-        'Failed to send test pixel event',
-      );
+      throw new InternalServerErrorException('Failed to send test pixel event');
     }
   }
 
@@ -401,7 +410,7 @@ export class FacebookAdminController {
   async getBadgeStats(@Param('type') type: string) {
     try {
       const unlocks = await this.prisma.socialEngagementBadge.findMany({
-        where: { badgeType: type as any },
+        where: { badgeType: type as BadgeType },
         include: {
           user: { select: { id: true, fullName: true } },
           petition: { select: { id: true, title: true } },
@@ -431,7 +440,9 @@ export class FacebookAdminController {
   @Get('challenges')
   async listChallenges(@Query('status') status?: string) {
     try {
-      const filters = status ? { status: status as any } : { status: 'ACTIVE' as any };
+      const filters: Prisma.ShareChallengeWhereInput = status
+        ? { status: status as ChallengeStatus }
+        : { status: ChallengeStatus.ACTIVE };
 
       const challenges = await this.prisma.shareChallenge.findMany({
         where: filters,
@@ -487,9 +498,10 @@ export class FacebookAdminController {
         participation: {
           totalMembers: memberships.length,
           completed: completions.length,
-          completionRate: memberships.length > 0
-            ? (completions.length / memberships.length) * 100
-            : 0,
+          completionRate:
+            memberships.length > 0
+              ? (completions.length / memberships.length) * 100
+              : 0,
           progressDistribution: memberships.map((m) => ({
             userId: m.userId,
             progress: m.progress,
@@ -525,7 +537,10 @@ export class FacebookAdminController {
           where: { earnedAt: { gte: startDate } },
         }),
         this.prisma.shareChallenge.findMany({
-          where: { startDate: { lte: new Date() }, endDate: { gte: startDate } },
+          where: {
+            startDate: { lte: new Date() },
+            endDate: { gte: startDate },
+          },
         }),
       ]);
 
@@ -556,12 +571,13 @@ export class FacebookAdminController {
               ? Math.round(pixelEvents.length / numDays)
               : 0,
           avgDailyReach:
-            shareLinks.length > 0
-              ? Math.round(totalReach / numDays)
-              : 0,
+            shareLinks.length > 0 ? Math.round(totalReach / numDays) : 0,
         },
         engagement: {
-          totalClicks: shareLinks.reduce((sum, link) => sum + link.clickCount, 0),
+          totalClicks: shareLinks.reduce(
+            (sum, link) => sum + link.clickCount,
+            0,
+          ),
           totalConversions: shareLinks.reduce(
             (sum, link) => sum + link.conversions,
             0,

@@ -30,9 +30,12 @@ export class EmailService {
    * - 5-minute cooldown per recipient+type (prevents rapid resend attacks)
    * - 5 emails/day across all types per address (caps total daily spend)
    */
-  private async checkEmailRateLimit(recipient: string, emailType: EmailType): Promise<void> {
+  private async checkEmailRateLimit(
+    recipient: string,
+    emailType: EmailType,
+  ): Promise<void> {
     const COOLDOWN_MS = 5 * 60 * 1000; // 5 min cooldown per recipient+type
-    const DAILY_LIMIT = 5;             // max emails per address per 24 h
+    const DAILY_LIMIT = 5; // max emails per address per 24 h
 
     const recent = await this.prisma.emailLog.findFirst({
       where: {
@@ -51,7 +54,10 @@ export class EmailService {
         `Email cooldown enforced: ${emailType} to ${recipient} (retry in ${waitSecs}s)`,
       );
       throw new HttpException(
-        { message: `Please wait ${waitSecs} seconds before requesting another email.`, retryAfter: waitSecs },
+        {
+          message: `Please wait ${waitSecs} seconds before requesting another email.`,
+          retryAfter: waitSecs,
+        },
         429,
       );
     }
@@ -64,9 +70,14 @@ export class EmailService {
       },
     });
     if (dailyCount >= DAILY_LIMIT) {
-      this.logger.warn(`Daily email quota reached for ${recipient} (${dailyCount} sent today)`);
+      this.logger.warn(
+        `Daily email quota reached for ${recipient} (${dailyCount} sent today)`,
+      );
       throw new HttpException(
-        { message: 'Daily email limit reached for this address. Please try again tomorrow.' },
+        {
+          message:
+            'Daily email limit reached for this address. Please try again tomorrow.',
+        },
         429,
       );
     }
@@ -80,7 +91,7 @@ export class EmailService {
     recipient: string,
     userId: string | undefined,
     emailType: EmailType,
-    templateProps: any,
+    templateProps: Record<string, unknown>,
   ): Promise<QueuedEmailResult> {
     // Block flooding before any work is done
     await this.checkEmailRateLimit(recipient, emailType);
@@ -109,9 +120,9 @@ export class EmailService {
     }
 
     // Render template
-    const { html, text, subject } = await this.templateService.renderTemplate(
+    const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
-      templateProps,
+      templateProps as unknown as EmailTemplateProps,
     );
 
     // Create email log record
@@ -147,7 +158,7 @@ export class EmailService {
     userId: string,
     recipient: string,
     emailType: EmailType,
-    templateProps: any,
+    templateProps: Record<string, unknown>,
   ): Promise<QueuedEmailResult | null> {
     // Check preferences
     const { canSend, reason } = await this.preferenceService.canSendEmail(
@@ -185,9 +196,9 @@ export class EmailService {
     }
 
     // Render template
-    const { html, text, subject } = await this.templateService.renderTemplate(
+    const { html, text, subject } = this.templateService.renderTemplate(
       emailType,
-      templateProps,
+      templateProps as unknown as EmailTemplateProps,
     );
 
     // Create email log
@@ -236,10 +247,15 @@ export class EmailService {
         where: { id: emailLogId },
         // resendMessageId now holds whichever provider's message id — kept
         // as-is to avoid a schema migration for a rename.
-        data: { status: 'SENT', sentAt: new Date(), resendMessageId: result.id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          resendMessageId: result.id,
+        },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to send email ${emailLogId}: ${errorMessage}`);
       await this.prisma.emailLog.update({
         where: { id: emailLogId },
@@ -255,7 +271,9 @@ export class EmailService {
   async sendBulk(
     userIds: string[],
     emailType: EmailType,
-    getTemplatePropsForUser: (userId: string) => Promise<any>,
+    getTemplatePropsForUser: (
+      userId: string,
+    ) => Promise<Record<string, unknown>>,
   ): Promise<QueuedEmailResult[]> {
     const results: QueuedEmailResult[] = [];
 
@@ -273,8 +291,7 @@ export class EmailService {
         }
 
         // Get template props for this user
-        const templateProps =
-          await getTemplatePropsForUser(userId);
+        const templateProps = await getTemplatePropsForUser(userId);
 
         const result = await this.sendNotification(
           userId,
@@ -288,7 +305,7 @@ export class EmailService {
         }
       } catch (error) {
         this.logger.error(
-          `Failed to send email for user ${userId}: ${error}`,
+          `Failed to send email for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }

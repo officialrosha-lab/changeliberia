@@ -4,8 +4,10 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 export interface AuthSecurityConfig {
   jwtSecret: string;
@@ -36,7 +38,12 @@ export interface SessionSecurityInfo {
 }
 
 export interface AuthEvent {
-  type: 'login' | 'logout' | 'password_change' | 'failed_attempt' | 'token_refresh';
+  type:
+    | 'login'
+    | 'logout'
+    | 'password_change'
+    | 'failed_attempt'
+    | 'token_refresh';
   userId: string;
   timestamp: number;
   ipAddress: string;
@@ -49,7 +56,8 @@ export interface AuthEvent {
  * Default auth security configuration
  */
 export const DEFAULT_AUTH_CONFIG: AuthSecurityConfig = {
-  jwtSecret: process.env.JWT_SECRET || 'change-liberia-secret-key-change-in-production',
+  jwtSecret:
+    process.env.JWT_SECRET || 'change-liberia-secret-key-change-in-production',
   jwtExpiresIn: '1h',
   refreshTokenExpiresIn: '7d',
   maxLoginAttempts: 5,
@@ -63,17 +71,20 @@ export const DEFAULT_AUTH_CONFIG: AuthSecurityConfig = {
 @Injectable()
 export class AuthSecurityService {
   private config: AuthSecurityConfig;
-  private loginAttempts = new Map<string, { count: number; lockedUntil?: number }>();
+  private loginAttempts = new Map<
+    string,
+    { count: number; lockedUntil?: number }
+  >();
   private authEvents: AuthEvent[] = [];
-  private crypto = require('crypto');
 
   constructor(
     private jwtService: JwtService,
-    configService: ConfigService
+    configService: ConfigService,
   ) {
     this.config = {
       ...DEFAULT_AUTH_CONFIG,
-      jwtSecret: configService.get('JWT_SECRET') || DEFAULT_AUTH_CONFIG.jwtSecret,
+      jwtSecret:
+        configService.get('JWT_SECRET') || DEFAULT_AUTH_CONFIG.jwtSecret,
     };
 
     // Cleanup old events every hour
@@ -84,7 +95,6 @@ export class AuthSecurityService {
    * Hash password using bcrypt algorithm
    */
   async hashPassword(password: string): Promise<string> {
-    const bcrypt = require('bcrypt');
     const saltRounds = 12; // Increase cost factor
     return bcrypt.hash(password, saltRounds);
   }
@@ -93,7 +103,6 @@ export class AuthSecurityService {
    * Compare password with hash
    */
   async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const bcrypt = require('bcrypt');
     return bcrypt.compare(password, hash);
   }
 
@@ -107,7 +116,7 @@ export class AuthSecurityService {
     // Length check
     if (password.length < this.config.passwordMinLength) {
       feedback.push(
-        `Password must be at least ${this.config.passwordMinLength} characters`
+        `Password must be at least ${this.config.passwordMinLength} characters`,
       );
     } else {
       score += 1;
@@ -132,9 +141,12 @@ export class AuthSecurityService {
     }
 
     // Special characters check
-    if (this.config.passwordRequireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (
+      this.config.passwordRequireSpecialChars &&
+      !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)
+    ) {
       feedback.push('Include special characters');
-    } else if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    } else if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
       score += 1;
     }
 
@@ -155,9 +167,11 @@ export class AuthSecurityService {
     }
 
     // Check for sequential characters
-    if (/(?:012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(
-      password
-    )) {
+    if (
+      /(?:012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(
+        password,
+      )
+    ) {
       feedback.push('Avoid sequential characters');
       score = Math.max(0, score - 1);
     }
@@ -173,18 +187,19 @@ export class AuthSecurityService {
    * Generate refresh token
    */
   generateRefreshToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(payload as any, {
-      expiresIn: this.config.refreshTokenExpiresIn,
-    } as any);
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config
+        .refreshTokenExpiresIn as JwtSignOptions['expiresIn'],
+    });
   }
 
   /**
    * Generate access token
    */
   generateAccessToken(payload: Record<string, unknown>): string {
-    return this.jwtService.sign(payload as any, {
-      expiresIn: this.config.jwtExpiresIn,
-    } as any);
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config.jwtExpiresIn as JwtSignOptions['expiresIn'],
+    });
   }
 
   /**
@@ -192,7 +207,7 @@ export class AuthSecurityService {
    */
   verifyToken(token: string): Record<string, unknown> | null {
     try {
-      return this.jwtService.verify(token) as any;
+      return this.jwtService.verify<Record<string, unknown>>(token);
     } catch (error) {
       console.error('Token verification failed:', error);
       return null;
@@ -273,7 +288,7 @@ export class AuthSecurityService {
     // Log to console for alerts
     if (!event.success) {
       console.warn(
-        `[AUTH] ${event.type} failed for user ${event.userId}: ${event.reason}`
+        `[AUTH] ${event.type} failed for user ${event.userId}: ${event.reason}`,
       );
     }
   }
@@ -284,7 +299,7 @@ export class AuthSecurityService {
   getAuthEvents(userId: string, hours: number = 24): AuthEvent[] {
     const since = Date.now() - hours * 60 * 60 * 1000;
     return this.authEvents.filter(
-      (e) => e.userId === userId && e.timestamp > since
+      (e) => e.userId === userId && e.timestamp > since,
     );
   }
 
@@ -333,7 +348,7 @@ export class AuthSecurityService {
     if (passwordChanges.length > 0) {
       const lastPasswordChange = passwordChanges[passwordChanges.length - 1];
       const loginsAfter = events.filter(
-        (e) => e.type === 'login' && e.timestamp > lastPasswordChange.timestamp
+        (e) => e.type === 'login' && e.timestamp > lastPasswordChange.timestamp,
       );
       if (loginsAfter.length >= 2) {
         reasons.push('Multiple logins after password change');
@@ -356,7 +371,7 @@ export class AuthSecurityService {
    * Generate session ID for tracking
    */
   generateSessionId(): string {
-    return this.crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString('hex');
   }
 
   /**
@@ -367,7 +382,7 @@ export class AuthSecurityService {
     ipAddress: string,
     userAgent: string,
     sessionId: string,
-    deviceId?: string
+    deviceId?: string,
   ): SessionSecurityInfo {
     const now = Date.now();
     const expiresIn = 3600 * 1000; // 1 hour
@@ -397,14 +412,14 @@ export class AuthSecurityService {
    * Generate secure random token (for password reset, email verification, etc.)
    */
   generateSecureToken(length: number = 32): string {
-    return this.crypto.randomBytes(length).toString('hex');
+    return crypto.randomBytes(length).toString('hex');
   }
 
   /**
    * Hash token for storage
    */
   hashSecureToken(token: string): string {
-    return this.crypto.createHash('sha256').update(token).digest('hex');
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   /**

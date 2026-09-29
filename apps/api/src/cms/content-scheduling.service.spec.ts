@@ -2,6 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContentSchedulingService } from './content-scheduling.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+// `expect.objectContaining` is typed to return `any`, so nesting it as the
+// value of an object literal property trips no-unsafe-assignment. This
+// wraps it with the sample's own inferred type so the matcher stays
+// type-safe at the call site.
+function matching<T extends object>(sample: T): T {
+  return expect.objectContaining(sample) as unknown as T;
+}
+
 describe('ContentSchedulingService', () => {
   let module: TestingModule;
   let service: ContentSchedulingService;
@@ -60,16 +68,21 @@ describe('ContentSchedulingService', () => {
         createdBy: data.createdBy,
       });
 
-      const result = await service.scheduleAction(data.pageId, data.action, data.scheduledFor, data.createdBy);
+      const result = await service.scheduleAction(
+        data.pageId,
+        data.action,
+        data.scheduledFor,
+        data.createdBy,
+      );
 
       expect(prisma.cMSSchedule.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
+          data: matching({
             pageId: data.pageId,
             action: data.action,
             scheduledFor: data.scheduledFor,
           }),
-        })
+        }),
       );
 
       expect(result.action).toBe('publish');
@@ -94,7 +107,12 @@ describe('ContentSchedulingService', () => {
         createdBy: data.createdBy,
       });
 
-      const result = await service.scheduleAction(data.pageId, data.action, data.scheduledFor, data.createdBy);
+      const result = await service.scheduleAction(
+        data.pageId,
+        data.action,
+        data.scheduledFor,
+        data.createdBy,
+      );
 
       expect(result.action).toBe('unpublish');
     });
@@ -129,17 +147,17 @@ describe('ContentSchedulingService', () => {
 
       expect(prisma.cMSSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
+          where: matching({
             executed: false,
           }),
-        })
+        }),
       );
 
       expect(prisma.cMSPage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'page-1' },
-          data: expect.objectContaining({ published: true }),
-        })
+          data: matching({ published: true }),
+        }),
       );
 
       expect(prisma.cMSSchedule.update).toHaveBeenCalled();
@@ -174,8 +192,8 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSPage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'page-2' },
-          data: expect.objectContaining({ published: false }),
-        })
+          data: matching({ published: false }),
+        }),
       );
     });
 
@@ -232,15 +250,15 @@ describe('ContentSchedulingService', () => {
         },
       ]);
 
-      mockPrisma.cMSPage.update.mockRejectedValueOnce(new Error('Page not found'));
+      mockPrisma.cMSPage.update.mockRejectedValueOnce(
+        new Error('Page not found'),
+      );
 
       // Should not throw - errors are caught and logged
       await expect(service.executeScheduledActions()).resolves.not.toThrow();
     });
 
     it('should not execute future scheduled actions', async () => {
-      const future = new Date(Date.now() + 3600000); // 1 hour from now
-
       mockPrisma.cMSSchedule.findMany.mockResolvedValueOnce([]);
 
       await service.executeScheduledActions();
@@ -277,7 +295,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { pageId },
-        })
+        }),
       );
 
       expect(result).toHaveLength(2);
@@ -308,7 +326,7 @@ describe('ContentSchedulingService', () => {
       expect(prisma.cMSSchedule.delete).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: scheduleId },
-        })
+        }),
       );
 
       expect(result.id).toBe(scheduleId);

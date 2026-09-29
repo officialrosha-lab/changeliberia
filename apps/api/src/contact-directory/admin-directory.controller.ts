@@ -24,6 +24,7 @@ import {
   ActivityLogInput,
 } from '../activity/activity-logger.service';
 import { ContactDirectoryService } from './contact-directory.service';
+import { InstitutionType, InstitutionCategory } from '@prisma/client';
 import { SmartRoutingService } from './routing/smart-routing.service';
 import { BulkImportService } from '../bulk-import/bulk-import.service';
 import {
@@ -43,7 +44,7 @@ interface AuthUser {
 }
 
 @Controller('admin/directory')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
 @Roles(UserRole.ADMIN)
 export class AdminDirectoryController {
   constructor(
@@ -61,7 +62,8 @@ export class AdminDirectoryController {
     @Body() dto: CreateInstitutionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.createInstitution(dto);
+    const institution =
+      await this.contactDirectoryService.createInstitution(dto);
 
     this.logActivity(user, {
       action: 'CREATE_INSTITUTION',
@@ -82,10 +84,15 @@ export class AdminDirectoryController {
     @Query('verified') verified?: string,
     @Query('search') search?: string,
   ) {
-    const filters: any = {};
+    const filters: {
+      type?: InstitutionType;
+      category?: InstitutionCategory;
+      verified?: boolean;
+      search?: string;
+    } = {};
 
-    if (type) filters.type = type;
-    if (category) filters.category = category;
+    if (type) filters.type = type as InstitutionType;
+    if (category) filters.category = category as InstitutionCategory;
     if (verified !== undefined) filters.verified = verified === 'true';
     if (search) filters.search = search;
 
@@ -105,7 +112,10 @@ export class AdminDirectoryController {
     @Body() dto: UpdateInstitutionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.updateInstitution(id, dto);
+    const institution = await this.contactDirectoryService.updateInstitution(
+      id,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'UPDATE_INSTITUTION',
@@ -124,7 +134,8 @@ export class AdminDirectoryController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
   ) {
-    const institution = await this.contactDirectoryService.verifyInstitution(id);
+    const institution =
+      await this.contactDirectoryService.verifyInstitution(id);
 
     this.logActivity(user, {
       action: 'VERIFY_INSTITUTION',
@@ -198,7 +209,10 @@ export class AdminDirectoryController {
     @Body() dto: UpdateDepartmentDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const department = await this.contactDirectoryService.updateDepartment(id, dto);
+    const department = await this.contactDirectoryService.updateDepartment(
+      id,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'UPDATE_DEPARTMENT',
@@ -238,7 +252,10 @@ export class AdminDirectoryController {
     @Body() dto: CreateContactDirectoryDto,
     @CurrentUser() user: AuthUser,
   ) {
-    const contact = await this.contactDirectoryService.createContact(institutionId, dto);
+    const contact = await this.contactDirectoryService.createContact(
+      institutionId,
+      dto,
+    );
 
     this.logActivity(user, {
       action: 'CREATE_CONTACT',
@@ -285,10 +302,7 @@ export class AdminDirectoryController {
 
   @Delete('contacts/:id')
   @Permission(PermissionResource.DIRECTORY, PermissionAction.DELETE)
-  async deleteContact(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
-  ) {
+  async deleteContact(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     await this.contactDirectoryService.deleteContact(id);
 
     this.logActivity(user, {
@@ -310,7 +324,7 @@ export class AdminDirectoryController {
       throw new BadRequestException('tags query parameter required');
     }
 
-    const tagArray = tags.split(',').map(t => t.trim());
+    const tagArray = tags.split(',').map((t) => t.trim());
     return this.contactDirectoryService.searchByTags(tagArray);
   }
 
@@ -366,7 +380,7 @@ export class AdminDirectoryController {
 
   @Get('import/template')
   @Permission(PermissionResource.DIRECTORY, PermissionAction.READ)
-  async downloadTemplate() {
+  downloadTemplate() {
     const csvContent = this.bulkImportService.generateTemplateCSV();
 
     return {

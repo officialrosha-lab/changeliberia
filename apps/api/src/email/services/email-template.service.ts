@@ -1,8 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
 import {
-  EmailTemplateProps,
   EmailTemplatePropsMap,
+  EmailTemplateProps,
+  WelcomeEmailProps,
+  VerifyEmailProps,
+  PasswordResetEmailProps,
+  PetitionApprovedProps,
+  PetitionRejectedProps,
+  MilestoneReachedProps,
+  WeeklyDigestProps,
+  DonationReceivedProps,
+  MessageNotificationProps,
+  BroadcastNotificationProps,
+  OfficialVerifiedProps,
+  OfficialRejectedProps,
 } from '../templates/index';
 
 export interface RenderedTemplate {
@@ -20,10 +32,10 @@ export class EmailTemplateService {
    * Note: This is a simplified implementation that generates basic HTML.
    * For production, consider using proper email templating (EJS, Handlebars, etc.)
    */
-  async renderTemplate<T extends EmailType>(
+  renderTemplate<T extends EmailType>(
     templateType: T,
     props: EmailTemplatePropsMap[T],
-  ): Promise<RenderedTemplate> {
+  ): RenderedTemplate {
     try {
       const subject = this.getSubjectForType(templateType);
       const html = this.generateHtmlForTemplate(templateType, props);
@@ -32,7 +44,7 @@ export class EmailTemplateService {
       return { html, text, subject };
     } catch (error) {
       this.logger.error(
-        `Failed to render template ${templateType}: ${error}`,
+        `Failed to render template ${templateType}: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -74,9 +86,10 @@ export class EmailTemplateService {
    */
   private generateHtmlForTemplate(
     templateType: EmailType,
-    props: any,
+    props: EmailTemplateProps,
   ): string {
-    const recipientName = props?.recipientName || 'User';
+    const recipientName =
+      ('recipientName' in props && props.recipientName) || 'User';
     const appUrl = 'https://changeliberia.org';
 
     // Basic HTML wrapper with styling
@@ -100,32 +113,38 @@ export class EmailTemplateService {
     `;
 
     // Template-specific content
-    let content = '';
+    let content: string;
     switch (templateType) {
-      case EmailType.WELCOME:
+      case EmailType.WELCOME: {
+        const p = props as WelcomeEmailProps;
         content = `
           <p>Welcome to Change Liberia! We're excited to have you join our community.</p>
           <p>You can now create petitions, sign existing ones, and make your voice heard.</p>
-          <p><a href="${props?.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Get Started</a></p>
+          <p><a href="${p.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Get Started</a></p>
         `;
         break;
+      }
 
-      case EmailType.VERIFY_EMAIL:
+      case EmailType.VERIFY_EMAIL: {
+        const p = props as VerifyEmailProps;
         content = `
           <p>Please verify your email address to complete your registration.</p>
-          ${props?.verificationCode ? `<p>Your verification code is: <strong>${props.verificationCode}</strong></p>` : ''}
-          <p><a href="${props?.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Verify Email</a></p>
+          ${p.verificationCode ? `<p>Your verification code is: <strong>${p.verificationCode}</strong></p>` : ''}
+          <p><a href="${p.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Verify Email</a></p>
           <p style="font-size: 12px; color: #6b7280;">This link expires in 24 hours.</p>
         `;
         break;
+      }
 
-      case EmailType.PASSWORD_RESET:
+      case EmailType.PASSWORD_RESET: {
+        const p = props as PasswordResetEmailProps;
         content = `
           <p>We received a request to reset your password.</p>
-          <p><a href="${props?.resetUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Reset Password</a></p>
-          <p style="font-size: 12px; color: #6b7280;">This link expires in ${props?.expiresIn || 60} minutes.</p>
+          <p><a href="${p.resetUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Reset Password</a></p>
+          <p style="font-size: 12px; color: #6b7280;">This link expires in ${p.expiresIn || 60} minutes.</p>
         `;
         break;
+      }
 
       case EmailType.PASSWORD_RESET_CONFIRMATION:
         content = `
@@ -135,85 +154,109 @@ export class EmailTemplateService {
         `;
         break;
 
-      case EmailType.PETITION_APPROVED:
+      case EmailType.PETITION_APPROVED: {
+        const p = props as PetitionApprovedProps;
         content = `
-          <p>Great news! Your petition <strong>"${props?.petitionTitle || 'New Petition'}"</strong> has been approved.</p>
+          <p>Great news! Your petition <strong>"${p.petitionTitle || 'New Petition'}"</strong> has been approved.</p>
           <p>It is now live and people can sign it to support your cause.</p>
-          <p><a href="${props?.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
+          <p><a href="${p.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
         `;
         break;
+      }
 
-      case EmailType.PETITION_REJECTED:
+      case EmailType.PETITION_REJECTED: {
+        const p = props as PetitionRejectedProps;
         content = `
           <p>Your petition submission was reviewed and could not be approved at this time.</p>
-          <p><strong>Reason:</strong> ${props?.rejectionReason || 'Please review our guidelines'}</p>
+          <p><strong>Reason:</strong> ${p.reason || 'Please review our guidelines'}</p>
           <p>You may submit a revised version or contact our support team for more information.</p>
         `;
         break;
+      }
 
-      case EmailType.PETITION_MILESTONE_REACHED:
+      case EmailType.PETITION_MILESTONE_REACHED: {
+        const p = props as MilestoneReachedProps;
         content = `
-          <p>Congratulations! Your petition <strong>"${props?.petitionTitle || 'Petition'}"</strong> has reached a milestone:</p>
-          <p style="font-size: 18px; color: #059669; font-weight: bold;">${props?.currentSignatures || 0} signatures</p>
-          <p><a href="${props?.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
+          <p>Congratulations! Your petition <strong>"${p.petitionTitle || 'Petition'}"</strong> has reached a milestone:</p>
+          <p style="font-size: 18px; color: #059669; font-weight: bold;">${p.currentSignatures || 0} signatures</p>
+          <p><a href="${p.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
         `;
         break;
+      }
 
-      case EmailType.WEEKLY_DIGEST:
+      case EmailType.WEEKLY_DIGEST: {
+        const p = props as WeeklyDigestProps;
         content = `
           <p>Here are this week's trending petitions:</p>
           <ul style="list-style: none; padding: 0;">
-            ${props?.topPetitions?.map((p: any) => `
+            ${
+              p.petitions
+                ?.map(
+                  (petition) => `
               <li style="padding: 10px; background: #f9fafb; margin: 10px 0; border-left: 4px solid #059669;">
-                <strong>${p.title}</strong><br>
-                ${p.signatureCount} signatures
+                <strong>${petition.title}</strong><br>
+                ${petition.signatures} signatures
               </li>
-            `).join('') || '<li>No petitions available</li>'}
+            `,
+                )
+                .join('') || '<li>No petitions available</li>'
+            }
           </ul>
         `;
         break;
+      }
 
-      case EmailType.DONATION_RECEIVED:
+      case EmailType.DONATION_RECEIVED: {
+        const p = props as DonationReceivedProps;
         content = `
-          <p>Thank you for your generous donation of <strong>${props?.currency || '$'}${props?.donationAmount || 0}</strong> to <strong>"${props?.petitionTitle || 'our cause'}"</strong>.</p>
+          <p>Thank you for your generous donation of <strong>${p.currency || '$'}${p.amount || 0}</strong>${p.petitionTitle ? ` to <strong>"${p.petitionTitle}"</strong>` : ''}.</p>
           <p>Your contribution makes a real difference in creating change.</p>
-          <p style="font-size: 12px; color: #6b7280;">Receipt #: ${props?.receiptNumber || 'N/A'}</p>
+          <p style="font-size: 12px; color: #6b7280;"><a href="${p.receiptUrl}" style="color: #059669;">View receipt</a></p>
         `;
         break;
+      }
 
-      case EmailType.MESSAGE_NOTIFICATION:
+      case EmailType.MESSAGE_NOTIFICATION: {
+        const p = props as MessageNotificationProps;
         content = `
-          <p><strong>${props?.senderName || 'Someone'}</strong> sent you a message.</p>
-          <p><strong>Subject:</strong> ${props?.subject || 'No subject'}</p>
-          <p>${props?.messagePreview || 'Open the app to read the full message.'}</p>
-          <p><a href="${props?.messageUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Message</a></p>
+          <p><strong>${p.senderName || 'Someone'}</strong> sent you a message.</p>
+          <p><strong>Subject:</strong> ${p.subject || 'No subject'}</p>
+          <p>${p.messagePreview || 'Open the app to read the full message.'}</p>
+          <p><a href="${p.messageUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Message</a></p>
         `;
         break;
+      }
 
-      case EmailType.BROADCAST_NOTIFICATION:
+      case EmailType.BROADCAST_NOTIFICATION: {
+        const p = props as BroadcastNotificationProps;
         content = `
-          <p><strong>${props?.senderName || 'Admin'}</strong> sent a broadcast to the <strong>${props?.groupType || 'stakeholder group'}</strong>.</p>
-          <p>Delivered to <strong>${props?.recipientCount || 0}</strong> members with <strong>${props?.successCount || 0}</strong> successful sends.</p>
-          ${props?.failedCount ? `<p>${props.failedCount} messages failed to deliver.</p>` : ''}
-          <p><a href="${props?.broadcastUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Broadcast</a></p>
+          <p><strong>${p.senderName || 'Admin'}</strong> sent a broadcast to the <strong>${p.groupType || 'stakeholder group'}</strong>.</p>
+          <p>Delivered to <strong>${p.recipientCount || 0}</strong> members with <strong>${p.successCount || 0}</strong> successful sends.</p>
+          ${p.failedCount ? `<p>${p.failedCount} messages failed to deliver.</p>` : ''}
+          <p><a href="${p.broadcastUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Broadcast</a></p>
         `;
         break;
+      }
 
-      case EmailType.OFFICIAL_VERIFIED:
+      case EmailType.OFFICIAL_VERIFIED: {
+        const p = props as OfficialVerifiedProps;
         content = `
-          <p>Congratulations! Your official account for <strong>${props?.institutionName || 'your office'}</strong> has been verified.</p>
+          <p>Congratulations! Your official account for <strong>${p.institutionName || 'your office'}</strong> has been verified.</p>
           <p>You now have access to your official dashboard to view petitions and civic pulse activity in your jurisdiction and respond to constituents.</p>
           <p><a href="${appUrl}/official/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a></p>
         `;
         break;
+      }
 
-      case EmailType.OFFICIAL_REJECTED:
+      case EmailType.OFFICIAL_REJECTED: {
+        const p = props as OfficialRejectedProps;
         content = `
-          <p>Your official account application for <strong>${props?.institutionName || 'your office'}</strong> could not be approved at this time.</p>
-          ${props?.reason ? `<p><strong>Reason:</strong> ${props.reason}</p>` : ''}
+          <p>Your official account application for <strong>${p.institutionName || 'your office'}</strong> could not be approved at this time.</p>
+          ${p.reason ? `<p><strong>Reason:</strong> ${p.reason}</p>` : ''}
           <p>You may submit a revised application or contact our support team for more information.</p>
         `;
         break;
+      }
 
       default:
         content = `
@@ -230,48 +273,63 @@ export class EmailTemplateService {
    */
   private generateTextForTemplate(
     templateType: EmailType,
-    props: any,
+    props: EmailTemplateProps,
   ): string {
-    const recipientName = props?.recipientName || 'User';
+    const recipientName =
+      ('recipientName' in props && props.recipientName) || 'User';
     const appUrl = 'https://changeliberia.org';
 
     let text = `Hello ${recipientName},\n\n`;
 
     switch (templateType) {
-      case EmailType.WELCOME:
-        text += 'Welcome to Change Liberia! We\'re excited to have you join our community.\n\nYou can now create petitions, sign existing ones, and make your voice heard.\n\nVisit: ' + (props?.verifyUrl || appUrl);
+      case EmailType.WELCOME: {
+        const p = props as WelcomeEmailProps;
+        text +=
+          "Welcome to Change Liberia! We're excited to have you join our community.\n\nYou can now create petitions, sign existing ones, and make your voice heard.\n\nVisit: " +
+          (p.verifyUrl || appUrl);
         break;
+      }
 
-      case EmailType.VERIFY_EMAIL:
-        text += `Please verify your email address to complete your registration.\n\n${props?.verificationCode ? `Your verification code is: ${props.verificationCode}\n\n` : ''}Verify your email: ${props?.verifyUrl || appUrl}\n\nThis link expires in 24 hours.`;
+      case EmailType.VERIFY_EMAIL: {
+        const p = props as VerifyEmailProps;
+        text += `Please verify your email address to complete your registration.\n\n${p.verificationCode ? `Your verification code is: ${p.verificationCode}\n\n` : ''}Verify your email: ${p.verifyUrl || appUrl}\n\nThis link expires in 24 hours.`;
         break;
+      }
 
-      case EmailType.PASSWORD_RESET:
-        text += `We received a request to reset your password.\n\nReset your password: ${props?.resetUrl || appUrl}\n\nThis link expires in ${props?.expiresIn || 60} minutes.`;
+      case EmailType.PASSWORD_RESET: {
+        const p = props as PasswordResetEmailProps;
+        text += `We received a request to reset your password.\n\nReset your password: ${p.resetUrl || appUrl}\n\nThis link expires in ${p.expiresIn || 60} minutes.`;
         break;
+      }
 
-      case EmailType.MESSAGE_NOTIFICATION:
-        text += `You have a new message from ${props?.senderName || 'someone'}.
+      case EmailType.MESSAGE_NOTIFICATION: {
+        const p = props as MessageNotificationProps;
+        text += `You have a new message from ${p.senderName || 'someone'}.
 
-Subject: ${props?.subject || 'No subject'}
+Subject: ${p.subject || 'No subject'}
 
-${props?.messagePreview || 'Open the app to read the full message.'}
+${p.messagePreview || 'Open the app to read the full message.'}
 
-View message: ${props?.messageUrl || appUrl}`;
+View message: ${p.messageUrl || appUrl}`;
         break;
+      }
 
-      case EmailType.BROADCAST_NOTIFICATION:
-        text += `${props?.senderName || 'An admin'} sent a broadcast to ${props?.groupType || 'a stakeholder group'}.
+      case EmailType.BROADCAST_NOTIFICATION: {
+        const p = props as BroadcastNotificationProps;
+        text += `${p.senderName || 'An admin'} sent a broadcast to ${p.groupType || 'a stakeholder group'}.
 
-Delivered to ${props?.recipientCount || 0} members with ${props?.successCount || 0} successful messages.`;
-        if (props?.failedCount) {
-          text += `\nFailed deliveries: ${props.failedCount}`;
+Delivered to ${p.recipientCount || 0} members with ${p.successCount || 0} successful messages.`;
+        if (p.failedCount) {
+          text += `\nFailed deliveries: ${p.failedCount}`;
         }
-        text += `\n\nView broadcast: ${props?.broadcastUrl || appUrl}`;
+        text += `\n\nView broadcast: ${p.broadcastUrl || appUrl}`;
         break;
+      }
 
       default:
-        text += 'You have received a notification from Change Liberia.\n\nVisit: ' + appUrl;
+        text +=
+          'You have received a notification from Change Liberia.\n\nVisit: ' +
+          appUrl;
     }
 
     text += `\n\n---\nChange Liberia\nBuilding change together\n${appUrl}`;
@@ -292,4 +350,3 @@ Delivered to ${props?.recipientCount || 0} members with ${props?.successCount ||
       .trim();
   }
 }
-

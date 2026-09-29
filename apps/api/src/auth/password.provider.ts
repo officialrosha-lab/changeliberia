@@ -35,9 +35,10 @@ export class PasswordProvider {
    * @param password Password to validate
    * @returns Object with isValid boolean and message if invalid
    */
-  validatePasswordStrength(
-    password: string,
-  ): { isValid: boolean; message?: string } {
+  validatePasswordStrength(password: string): {
+    isValid: boolean;
+    message?: string;
+  } {
     if (!password || password.length < 8) {
       return {
         isValid: false,

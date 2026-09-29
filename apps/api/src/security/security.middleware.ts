@@ -3,8 +3,20 @@
  * Implements CORS, CSRF validation, rate limiting, and security headers
  */
 
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  HttpException,
+  HttpStatus,
+  INestApplication,
+} from '@nestjs/common';
 import { Response, Request, NextFunction } from 'express';
+import * as crypto from 'crypto';
+import { RequestUser } from '../auth/roles.guard';
+
+interface RequestWithUser extends Request {
+  user?: RequestUser;
+}
 
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -50,7 +62,9 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
     skipFailedRequests: false,
   },
   corsConfig: {
-    origins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3000',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
@@ -95,20 +109,37 @@ const rateLimitStore = new RateLimitStore();
  */
 @Injectable()
 export class CORSMiddleware implements NestMiddleware {
-  constructor(private config: CORSConfig = DEFAULT_SECURITY_CONFIG.corsConfig!) {}
+  constructor(
+    private config: CORSConfig = DEFAULT_SECURITY_CONFIG.corsConfig!,
+  ) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
     const origin = req.get('origin') || '';
 
     // Check if origin is allowed
-    if (this.config.origins.includes(origin) || this.config.origins.includes('*')) {
+    if (
+      this.config.origins.includes(origin) ||
+      this.config.origins.includes('*')
+    ) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
     }
 
-    res.setHeader('Access-Control-Allow-Methods', this.config.methods.join(', '));
-    res.setHeader('Access-Control-Allow-Headers', this.config.allowedHeaders.join(', '));
-    res.setHeader('Access-Control-Expose-Headers', this.config.exposedHeaders.join(', '));
-    res.setHeader('Access-Control-Allow-Credentials', String(this.config.credentials));
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      this.config.methods.join(', '),
+    );
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      this.config.allowedHeaders.join(', '),
+    );
+    res.setHeader(
+      'Access-Control-Expose-Headers',
+      this.config.exposedHeaders.join(', '),
+    );
+    res.setHeader(
+      'Access-Control-Allow-Credentials',
+      String(this.config.credentials),
+    );
     res.setHeader('Access-Control-Max-Age', String(this.config.maxAge));
 
     // Handle preflight requests
@@ -144,8 +175,12 @@ export class CSRFMiddleware implements NestMiddleware {
     }
 
     // Get CSRF token from header or body
+    const body = req.body as Record<string, unknown> | undefined;
+    const bodyToken = body?.['csrf-token'];
     const token =
-      req.get('X-CSRF-Token') || req.get('csrf-token') || req.body?.['csrf-token'];
+      req.get('X-CSRF-Token') ||
+      req.get('csrf-token') ||
+      (typeof bodyToken === 'string' ? bodyToken : undefined);
 
     if (!token) {
       throw new HttpException('CSRF token missing', HttpStatus.BAD_REQUEST);
@@ -153,14 +188,16 @@ export class CSRFMiddleware implements NestMiddleware {
 
     // Validate token
     if (!this.validateToken(token)) {
-      throw new HttpException('Invalid or expired CSRF token', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Invalid or expired CSRF token',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     next();
   }
 
   generateToken(sessionId: string): string {
-    const crypto = require('crypto');
     const token = crypto.randomBytes(32).toString('hex');
 
     this.csrfTokens.set(sessionId, {
@@ -193,28 +230,36 @@ export class CSRFMiddleware implements NestMiddleware {
  */
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  constructor(private config: RateLimitConfig = DEFAULT_SECURITY_CONFIG.rateLimitConfig!) {}
+  constructor(
+    private config: RateLimitConfig = DEFAULT_SECURITY_CONFIG.rateLimitConfig!,
+  ) {}
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: RequestWithUser, res: Response, next: NextFunction): void {
     const key = this.getClientKey(req);
 
-    if (rateLimitStore.isLimited(key, this.config.maxRequests, this.config.windowMs)) {
+    if (
+      rateLimitStore.isLimited(
+        key,
+        this.config.maxRequests,
+        this.config.windowMs,
+      )
+    ) {
       res.status(429);
       res.setHeader('Retry-After', Math.ceil(this.config.windowMs / 1000));
       throw new HttpException(
         this.config.message || 'Too many requests',
-        HttpStatus.TOO_MANY_REQUESTS
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
     next();
   }
 
-  private getClientKey(req: Request): string {
+  private getClientKey(req: RequestWithUser): string {
     // Try to get real IP from headers (for proxied requests)
     const forwarded = req.get('X-Forwarded-For');
     const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip || 'unknown';
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId = req.user?.userId || 'anonymous';
 
     return `${ip}:${userId}`;
   }
@@ -227,7 +272,10 @@ export class RateLimitMiddleware implements NestMiddleware {
 export class SecurityHeadersMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     // HSTS - Force HTTPS
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains',
+    );
 
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
@@ -244,7 +292,7 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     // Permissions Policy
     res.setHeader(
       'Permissions-Policy',
-      'geolocation=(), microphone=(), camera=(), payment=(), usb=()'
+      'geolocation=(), microphone=(), camera=(), payment=(), usb=()',
     );
 
     // CSP Header
@@ -256,7 +304,7 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
       "font-src 'self' https://fonts.gstatic.com data:; " +
       "connect-src 'self' https:; " +
       "frame-ancestors 'none'; " +
-      "upgrade-insecure-requests;";
+      'upgrade-insecure-requests;';
 
     res.setHeader('Content-Security-Policy', csp);
 
@@ -288,7 +336,10 @@ export class InputValidationMiddleware implements NestMiddleware {
 
       for (const pattern of XSS_PATTERNS) {
         if (pattern.test(bodyStr)) {
-          throw new HttpException('Request contains invalid content', HttpStatus.BAD_REQUEST);
+          throw new HttpException(
+            'Request contains invalid content',
+            HttpStatus.BAD_REQUEST,
+          );
         }
       }
     }
@@ -298,7 +349,10 @@ export class InputValidationMiddleware implements NestMiddleware {
 
     for (const pattern of XSS_PATTERNS) {
       if (pattern.test(queryStr)) {
-        throw new HttpException('Invalid query parameters', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Invalid query parameters',
+          HttpStatus.BAD_REQUEST,
+        );
       }
     }
 
@@ -311,13 +365,13 @@ export class InputValidationMiddleware implements NestMiddleware {
  */
 @Injectable()
 export class SecurityLoggingMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: RequestWithUser, res: Response, next: NextFunction): void {
     const startTime = Date.now();
 
     // Log security-relevant events
     const method = req.method;
     const path = req.path;
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId = req.user?.userId || 'anonymous';
     const ip = this.getClientIP(req);
 
     res.on('finish', () => {
@@ -327,7 +381,7 @@ export class SecurityLoggingMiddleware implements NestMiddleware {
       // Log failed auth attempts
       if (status === 401 || status === 403) {
         console.warn(
-          `[SECURITY] ${method} ${path} [${status}] User: ${userId} IP: ${ip} Duration: ${duration}ms`
+          `[SECURITY] ${method} ${path} [${status}] User: ${userId} IP: ${ip} Duration: ${duration}ms`,
         );
       }
 
@@ -338,7 +392,9 @@ export class SecurityLoggingMiddleware implements NestMiddleware {
 
       // Log slow requests (potential DDoS)
       if (duration > 30000) {
-        console.warn(`[SLOW-REQUEST] ${method} ${path} Duration: ${duration}ms`);
+        console.warn(
+          `[SLOW-REQUEST] ${method} ${path} Duration: ${duration}ms`,
+        );
       }
     });
 
@@ -355,8 +411,8 @@ export class SecurityLoggingMiddleware implements NestMiddleware {
  * Helper function to apply all security middleware to app
  */
 export function applySecurityMiddleware(
-  app: any,
-  config: SecurityConfig = DEFAULT_SECURITY_CONFIG
+  app: INestApplication,
+  config: SecurityConfig = DEFAULT_SECURITY_CONFIG,
 ): void {
   if (config.enableSecurityHeaders) {
     app.use(new SecurityHeadersMiddleware());

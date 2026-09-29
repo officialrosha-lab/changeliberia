@@ -15,6 +15,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
+interface AuthenticatedUser {
+  id: string;
+  role?: string;
+}
+
 @Controller('challenges')
 export class ChallengeController {
   private readonly logger = new Logger(ChallengeController.name);
@@ -40,9 +45,8 @@ export class ChallengeController {
     }
 
     try {
-      const challenges = await this.challengeService.getActiveChallenges(
-        petitionId,
-      );
+      const challenges =
+        await this.challengeService.getActiveChallenges(petitionId);
 
       return {
         success: true,
@@ -74,11 +78,9 @@ export class ChallengeController {
    */
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getUserChallenges(@CurrentUser() user: any) {
+  async getUserChallenges(@CurrentUser() user: AuthenticatedUser) {
     try {
-      const challenges = await this.challengeService.getUserChallenges(
-        user.id,
-      );
+      const challenges = await this.challengeService.getUserChallenges(user.id);
 
       return {
         success: true,
@@ -118,7 +120,7 @@ export class ChallengeController {
       challengeId: string;
       increment?: number;
     },
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     const { challengeId, increment = 1 } = progressData;
 
@@ -198,18 +200,12 @@ export class ChallengeController {
    */
   @Get('user/history')
   @UseGuards(JwtAuthGuard)
-  async getChallengeHistory(@CurrentUser() user: any) {
+  async getChallengeHistory(@CurrentUser() user: AuthenticatedUser) {
     try {
-      const challenges = await this.challengeService.getUserChallenges(
-        user.id,
-      );
+      const challenges = await this.challengeService.getUserChallenges(user.id);
 
-      const completedChallenges = challenges
-        .filter((c) => c.completed)
-        .sort((a, b) => {
-          // Sort by recent first (would need completedAt in data)
-          return 0;
-        });
+      // Sort by recent first (would need completedAt in data)
+      const completedChallenges = challenges.filter((c) => c.completed);
 
       return {
         success: true,
@@ -257,7 +253,7 @@ export class ChallengeController {
       endDate: string; // ISO date string
       rewardMultiplier?: number;
     },
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     const {
       petitionId,
@@ -332,22 +328,14 @@ export class ChallengeController {
    */
   @Get('petition/:petitionId/summary')
   @UseGuards(OptionalJwtAuthGuard)
-  async getPetitionChallengeSummary(
-    @Param('petitionId') petitionId: string,
-  ) {
+  async getPetitionChallengeSummary(@Param('petitionId') petitionId: string) {
     if (!petitionId) {
       throw new BadRequestException('petitionId is required');
     }
 
     try {
-      const challenges = await this.challengeService.getActiveChallenges(
-        petitionId,
-      );
-
-      const totalRewards = challenges.reduce(
-        (sum, c) => sum + c.rewardMultiplier,
-        0,
-      );
+      const challenges =
+        await this.challengeService.getActiveChallenges(petitionId);
 
       return {
         success: true,

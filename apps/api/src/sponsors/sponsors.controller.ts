@@ -44,7 +44,8 @@ export class AdminSponsorsController {
   @Post()
   async create(
     @Req() req: { user: RequestUser },
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
       logoUrl: string;
       websiteUrl?: string;
@@ -61,7 +62,11 @@ export class AdminSponsorsController {
       entityType: 'SPONSOR',
       entityId: sponsor.id,
       description: `Created sponsor ${sponsor.name}`,
-      changes: { logoUrl: sponsor.logoUrl, websiteUrl: sponsor.websiteUrl, type: sponsor.type },
+      changes: {
+        logoUrl: sponsor.logoUrl,
+        websiteUrl: sponsor.websiteUrl,
+        type: sponsor.type,
+      },
     });
 
     return sponsor;
@@ -71,7 +76,8 @@ export class AdminSponsorsController {
   async update(
     @Req() req: { user: RequestUser },
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       name?: string;
       logoUrl?: string;
       websiteUrl?: string;
@@ -95,10 +101,7 @@ export class AdminSponsorsController {
   }
 
   @Delete(':id')
-  async remove(
-    @Req() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async remove(@Req() req: { user: RequestUser }, @Param('id') id: string) {
     const result = await this.sponsors.remove(id);
 
     this.activityLogger.logAsync({

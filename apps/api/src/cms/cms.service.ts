@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -33,15 +34,18 @@ export class CMSService {
       },
     });
 
-    if (page && page.blocks) {
-      // Parse props from JSON strings
-      page.blocks = page.blocks.map((block: any) => ({
-        ...block,
-        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
-      }));
-    }
+    if (!page) return page;
 
-    return page;
+    return {
+      ...page,
+      blocks: page.blocks.map((block) => ({
+        ...block,
+        props:
+          typeof block.props === 'string'
+            ? (JSON.parse(block.props) as Record<string, unknown>)
+            : block.props,
+      })),
+    };
   }
 
   async getPageBySlug(slug: string) {
@@ -54,15 +58,18 @@ export class CMSService {
       },
     });
 
-    if (page && page.blocks) {
-      // Parse props from JSON strings
-      page.blocks = page.blocks.map((block: any) => ({
-        ...block,
-        props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
-      }));
-    }
+    if (!page) return page;
 
-    return page;
+    return {
+      ...page,
+      blocks: page.blocks.map((block) => ({
+        ...block,
+        props:
+          typeof block.props === 'string'
+            ? (JSON.parse(block.props) as Record<string, unknown>)
+            : block.props,
+      })),
+    };
   }
 
   async createBlock(
@@ -70,7 +77,7 @@ export class CMSService {
     data: {
       type: string;
       order: number;
-      props: Record<string, any>;
+      props: Record<string, unknown>;
     },
   ) {
     const block = await this.prisma.cMSBlock.create({
@@ -84,7 +91,10 @@ export class CMSService {
 
     return {
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string'
+          ? (JSON.parse(block.props) as Record<string, unknown>)
+          : block.props,
     };
   }
 
@@ -93,10 +103,10 @@ export class CMSService {
     data: {
       type?: string;
       order?: number;
-      props?: Record<string, any>;
+      props?: Record<string, unknown>;
     },
   ) {
-    const updateData: any = { ...data };
+    const updateData: Prisma.CMSBlockUpdateInput = { ...data };
     if (data.props) {
       updateData.props = JSON.stringify(data.props);
     }
@@ -107,7 +117,10 @@ export class CMSService {
 
     return {
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string'
+          ? (JSON.parse(block.props) as Record<string, unknown>)
+          : block.props,
     };
   }
 
@@ -124,13 +137,24 @@ export class CMSService {
     });
 
     // Parse props from JSON strings
-    return blocks.map((block: any) => ({
+    return blocks.map((block) => ({
       ...block,
-      props: typeof block.props === 'string' ? JSON.parse(block.props) : block.props,
+      props:
+        typeof block.props === 'string'
+          ? (JSON.parse(block.props) as Record<string, unknown>)
+          : block.props,
     }));
   }
 
-  async createPage(authorId: string, data: { title: string; slug: string; content?: string; blocks?: any[] }) {
+  async createPage(
+    authorId: string,
+    data: {
+      title: string;
+      slug: string;
+      content?: string;
+      blocks?: Array<{ type: string; props: Record<string, unknown> }>;
+    },
+  ) {
     const page = await this.prisma.cMSPage.create({
       data: {
         title: data.title,
@@ -172,8 +196,8 @@ export class CMSService {
       publishedAt?: Date;
     },
   ) {
-    const updateData: any = { ...data };
-    
+    const updateData: Prisma.CMSPageUpdateInput = { ...data };
+
     // Remove publishedAt from updateData if provided, handle separately
     if (data.publishedAt !== undefined) {
       updateData.publishedAt = data.publishedAt;

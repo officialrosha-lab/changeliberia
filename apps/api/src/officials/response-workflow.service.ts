@@ -33,7 +33,11 @@ export class ResponseWorkflowService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async assignToInstitution(petitionId: string, institutionId: string, note?: string) {
+  async assignToInstitution(
+    petitionId: string,
+    institutionId: string,
+    note?: string,
+  ) {
     const existing = await this.prisma.petitionGovernmentResponse.findUnique({
       where: { petitionId_institutionId: { petitionId, institutionId } },
     });
@@ -65,8 +69,14 @@ export class ResponseWorkflowService {
     });
     if (!response) throw new NotFoundException('Response record not found');
 
-    if (!isAdmin && (!requesterInstitutionId || response.institutionId !== requesterInstitutionId)) {
-      throw new ForbiddenException('This response belongs to a different institution');
+    if (
+      !isAdmin &&
+      (!requesterInstitutionId ||
+        response.institutionId !== requesterInstitutionId)
+    ) {
+      throw new ForbiddenException(
+        'This response belongs to a different institution',
+      );
     }
 
     const currentIndex = STAGE_ORDER.indexOf(response.currentStage);
@@ -89,7 +99,10 @@ export class ResponseWorkflowService {
     // Web push notification trigger — best-effort, never blocks the
     // stage transition itself.
     this.prisma.petition
-      .findUnique({ where: { id: response.petitionId }, select: { title: true } })
+      .findUnique({
+        where: { id: response.petitionId },
+        select: { title: true },
+      })
       .then((petition) => {
         if (!petition) return;
         this.eventEmitter.emit('petition.government-response-advanced', {
@@ -98,7 +111,9 @@ export class ResponseWorkflowService {
           stage: newStage,
         });
       })
-      .catch(() => {/* non-critical */});
+      .catch(() => {
+        /* non-critical */
+      });
 
     return updated;
   }

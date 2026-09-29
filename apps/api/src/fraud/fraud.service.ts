@@ -25,7 +25,10 @@ export class FraudService implements OnModuleInit {
         fraudRiskIndexGauge.set(latest.riskIndex);
       }
     } catch (err) {
-      console.warn('[FraudService] onModuleInit skipped — DB not ready:', err instanceof Error ? err.message : err);
+      console.warn(
+        '[FraudService] onModuleInit skipped — DB not ready:',
+        err instanceof Error ? err.message : err,
+      );
     }
   }
 

@@ -14,39 +14,55 @@ import { rawBodyMiddleware } from './common/middleware/raw-body.middleware';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
+import { Server } from 'socket.io';
 
 class RedisIoAdapter extends IoAdapter {
   private pubClient?: ReturnType<typeof createClient>;
   private subClient?: ReturnType<typeof createClient>;
 
-  createIOServer(port: number, options?: any) {
-    const server = super.createIOServer(port, options);
+  createIOServer(port: number, options?: unknown) {
+    const server = super.createIOServer(port, options) as Server;
 
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.pubClient = createClient({ url: redisUrl });
     this.subClient = this.pubClient.duplicate();
 
-    Promise.allSettled([this.pubClient.connect(), this.subClient.connect()])
-      .then(async ([pubResult, subResult]) => {
-        if (pubResult.status === 'fulfilled' && subResult.status === 'fulfilled') {
-          if (this.pubClient && this.subClient) {
-            server.adapter(createAdapter(this.pubClient, this.subClient));
-            console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
-          }
-        } else {
-          const error = pubResult.status === 'rejected' ? pubResult.reason : (subResult as PromiseRejectedResult).reason;
-          console.warn('[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter', error);
-          if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
-          if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
+    void Promise.allSettled([
+      this.pubClient.connect(),
+      this.subClient.connect(),
+    ]).then(async ([pubResult, subResult]) => {
+      if (
+        pubResult.status === 'fulfilled' &&
+        subResult.status === 'fulfilled'
+      ) {
+        if (this.pubClient && this.subClient) {
+          server.adapter(createAdapter(this.pubClient, this.subClient));
+          console.log('[RedisIoAdapter] Socket.IO Redis adapter connected');
         }
-      });
+      } else {
+        const error: unknown =
+          pubResult.status === 'rejected'
+            ? pubResult.reason
+            : (subResult as PromiseRejectedResult).reason;
+        console.warn(
+          '[RedisIoAdapter] Failed to connect to Redis, falling back to default adapter',
+          error,
+        );
+        if (this.pubClient?.isOpen)
+          await this.pubClient.disconnect().catch(() => {});
+        if (this.subClient?.isOpen)
+          await this.subClient.disconnect().catch(() => {});
+      }
+    });
 
     return server;
   }
 
   async closeRedisConnections(): Promise<void> {
-    if (this.pubClient?.isOpen) await this.pubClient.disconnect().catch(() => {});
-    if (this.subClient?.isOpen) await this.subClient.disconnect().catch(() => {});
+    if (this.pubClient?.isOpen)
+      await this.pubClient.disconnect().catch(() => {});
+    if (this.subClient?.isOpen)
+      await this.subClient.disconnect().catch(() => {});
   }
 }
 
@@ -54,7 +70,9 @@ function parseCorsOrigins(): boolean | string[] {
   const raw = process.env.CORS_ORIGIN?.trim();
   if (!raw) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('CORS_ORIGIN environment variable is required in production');
+      throw new Error(
+        'CORS_ORIGIN environment variable is required in production',
+      );
     }
     return ['http://localhost:3000'];
   }
@@ -211,7 +229,11 @@ async function ensureSchema(prisma: PrismaService) {
     `ALTER TABLE "PetitionMedia" ADD CONSTRAINT "PetitionMedia_petitionId_fkey" FOREIGN KEY ("petitionId") REFERENCES "Petition"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
   ];
   for (const sql of fks) {
-    try { await prisma.$executeRawUnsafe(sql); } catch { /* already exists */ }
+    try {
+      await prisma.$executeRawUnsafe(sql);
+    } catch {
+      /* already exists */
+    }
   }
 }
 
@@ -298,7 +320,11 @@ async function seedCmsPages(prisma: PrismaService) {
 
   const pages = [
     { title: 'About Us', slug: 'about', sections: aboutSections },
-    { title: 'How It Works', slug: 'how-it-works', sections: howItWorksSections },
+    {
+      title: 'How It Works',
+      slug: 'how-it-works',
+      sections: howItWorksSections,
+    },
     { title: 'Help Center', slug: 'help-center', sections: helpCenterSections },
   ];
 
@@ -334,7 +360,7 @@ async function bootstrap() {
   }
 
   const enableSwagger = isSwaggerEnabled();
-  
+
   // Webhook routes need raw buffer for signature verification — register before JSON parser.
   app.use('/api/v1/payments/webhook', rawBodyMiddleware());
   app.use('/api/v1/webhooks/maileroo', rawBodyMiddleware());
@@ -405,8 +431,12 @@ async function bootstrap() {
       await app.close().catch(() => {});
       process.exit(0);
     };
-    process.on('SIGTERM', () => { void cleanup(); });
-    process.on('SIGINT', () => { void cleanup(); });
+    process.on('SIGTERM', () => {
+      void cleanup();
+    });
+    process.on('SIGINT', () => {
+      void cleanup();
+    });
   }
 }
 

@@ -20,6 +20,12 @@ import { RbacModule } from '../rbac/rbac.module';
     CMSScheduler,
   ],
   controllers: [CMSController],
-  exports: [CMSService, FileUploadService, VersionHistoryService, ContentSchedulingService, CMSAnalyticsService],
+  exports: [
+    CMSService,
+    FileUploadService,
+    VersionHistoryService,
+    ContentSchedulingService,
+    CMSAnalyticsService,
+  ],
 })
 export class CMSModule {}

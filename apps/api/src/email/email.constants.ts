@@ -12,7 +12,12 @@ export const DEFAULT_EMAIL_CONFIG = {
 
 // Email type mappings for categories
 export const EMAIL_CATEGORIES: Record<string, string[]> = {
-  AUTHENTICATION: ['WELCOME', 'VERIFY_EMAIL', 'PASSWORD_RESET', 'PASSWORD_RESET_CONFIRMATION'],
+  AUTHENTICATION: [
+    'WELCOME',
+    'VERIFY_EMAIL',
+    'PASSWORD_RESET',
+    'PASSWORD_RESET_CONFIRMATION',
+  ],
   PETITION: [
     'PETITION_APPROVED',
     'PETITION_REJECTED',
