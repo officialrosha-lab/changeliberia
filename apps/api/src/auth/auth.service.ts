@@ -40,16 +40,12 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { phone: dto.phone },
-      });
-      if (!user) throw new UnauthorizedException('Invalid credentials');
+    const user = await this.prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
-      return this.issueToken(user.id, user.phone);
-    } catch (error) {
-      throw error;
-    }
+    return this.issueToken(user.id, user.phone);
   }
 
   requestOtp(phone: string) {
@@ -148,43 +144,39 @@ export class AuthService {
    * Email verification required only for new accounts (created within 24 hours)
    */
   async loginWithEmail(dto: EmailLoginDto) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
-      if (!user || !user.passwordHash) {
-        throw new UnauthorizedException('Invalid email or password');
-      }
-
-      // Check if email is confirmed - only enforce for new accounts (created within 24 hours)
-      if (!user.isEmailConfirmed) {
-        const createdAt = new Date(user.createdAt);
-        const now = new Date();
-        const hoursDiff =
-          (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-
-        // Only require verification for accounts less than 24 hours old
-        if (hoursDiff < 24) {
-          throw new UnauthorizedException(
-            "email_not_verified|Your email address needs to be verified. Please check your inbox for a verification link from Change Liberia. If you don't see it, you can request a new one below.",
-          );
-        }
-      }
-
-      const passwordValid = await this.passwordProvider.verifyPassword(
-        dto.password,
-        user.passwordHash,
-      );
-
-      if (!passwordValid) {
-        throw new UnauthorizedException('Invalid email or password');
-      }
-
-      return this.issueToken(user.id, user.phone);
-    } catch (error) {
-      throw error;
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('Invalid email or password');
     }
+
+    // Check if email is confirmed - only enforce for new accounts (created within 24 hours)
+    if (!user.isEmailConfirmed) {
+      const createdAt = new Date(user.createdAt);
+      const now = new Date();
+      const hoursDiff =
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+      // Only require verification for accounts less than 24 hours old
+      if (hoursDiff < 24) {
+        throw new UnauthorizedException(
+          "email_not_verified|Your email address needs to be verified. Please check your inbox for a verification link from Change Liberia. If you don't see it, you can request a new one below.",
+        );
+      }
+    }
+
+    const passwordValid = await this.passwordProvider.verifyPassword(
+      dto.password,
+      user.passwordHash,
+    );
+
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    return this.issueToken(user.id, user.phone);
   }
 
   /**
