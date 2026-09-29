@@ -651,6 +651,24 @@ export class RolePermissionService implements OnModuleInit {
         resource: PermissionResource.ENTITLEMENT,
         action: PermissionAction.DELETE,
       },
+
+      // Monetization (memberships, plans, and other paid products)
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.DELETE,
+      },
     ];
 
     // Create permissions

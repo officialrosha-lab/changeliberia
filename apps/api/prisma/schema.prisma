@@ -128,13 +128,14 @@ model User {
   pixelEvents             FacebookPixelEvent[]    @relation("FacebookPixelEvents")
 
   // RBAC relations
-  userRoles         UserRoleAssignment[] // New role-based access control
-  entitlementGrants EntitlementGrant[]
-  cmsPages          CMSPage[]            @relation("CMSPageAuthor")
-  cmsPageVersions   CMSPageVersion[]     @relation("CMSPageVersionAuthor") // Phase 3: Version history
-  cmsFiles          CMSFile[] // Phase 2: File uploads
-  cmsExperiments    CMSExperiment[] // Phase 4: A/B testing
-  cmsSchedules      CMSSchedule[]        @relation("CMSScheduleCreator") // Phase 3: Content scheduling
+  userRoles               UserRoleAssignment[] // New role-based access control
+  entitlementGrants       EntitlementGrant[]
+  membershipSubscriptions MembershipSubscription[] @relation("UserMembershipSubscriptions")
+  cmsPages                CMSPage[]                @relation("CMSPageAuthor")
+  cmsPageVersions         CMSPageVersion[]         @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  cmsFiles                CMSFile[] // Phase 2: File uploads
+  cmsExperiments          CMSExperiment[] // Phase 4: A/B testing
+  cmsSchedules            CMSSchedule[]            @relation("CMSScheduleCreator") // Phase 3: Content scheduling
 
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
@@ -1050,6 +1051,85 @@ model EntitlementGrant {
 }
 
 // ============================================================================
+// Monetization: Membership (Milestone 8)
+// ============================================================================
+//
+// The first paid product in this platform's monetization architecture — the
+// generic checkout/subscription shape later products (Organization billing,
+// Sponsorship, ...) follow. Deliberately separate from the existing free
+// `Membership` model (the supporter/advocate join table above) — a user can
+// hold both. A paid membership only ever unlocks optional advanced tools via
+// EntitlementGrant; it can never gate petition/Civic Pulse participation
+// (enforced statically by civic-principle.spec.ts, which this milestone
+// does not touch since Membership's routes are entirely separate from the
+// petition/poll controllers that test covers).
+//
+// Uses Decimal from day one, per the architecture plan — no Float ever
+// existed for this model, so there is no migration to run for it.
+
+enum MembershipInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum MembershipSubscriptionStatus {
+  PENDING // checkout session created, awaiting the provider's confirmation webhook
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+model MembershipPlan {
+  id              String             @id @default(cuid())
+  key             String             @unique // e.g. "SUPPORTER_MONTHLY"
+  name            String
+  description     String?
+  priceAmount     Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  interval        MembershipInterval
+  // JSON string[] of Entitlement.key, granted to the subscriber on
+  // activation and revoked on cancellation/expiration — see
+  // MembershipService.syncEntitlements().
+  entitlementKeys String             @default("[]") @db.Text()
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  subscriptions MembershipSubscription[]
+
+  @@index([active])
+}
+
+model MembershipSubscription {
+  id     String         @id @default(cuid())
+  userId String
+  user   User           @relation("UserMembershipSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   MembershipPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  // "STRIPE" | "MOMO" — a PaymentProviderName (apps/api/src/payments/providers/payment-provider.interface.ts)
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+// ============================================================================
 // WhatsApp Viral Growth System
 // ============================================================================
 
@@ -1352,6 +1432,7 @@ enum PermissionResource {
   INBOX
   RESPONSE
   ENTITLEMENT
+  MONETIZATION
 }
 
 model Permission {
