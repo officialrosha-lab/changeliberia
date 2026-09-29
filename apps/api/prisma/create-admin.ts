@@ -31,5 +31,10 @@ async function main() {
 }
 
 main()
-  .catch((err) => console.error('⚠️  create-admin failed (non-fatal):', err?.message ?? err))
+  .catch((err: unknown) =>
+    console.error(
+      '⚠️  create-admin failed (non-fatal):',
+      err instanceof Error ? err.message : err,
+    ),
+  )
   .finally(() => prisma.$disconnect());
