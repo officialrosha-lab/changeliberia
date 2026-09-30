@@ -7,6 +7,7 @@ import { OfficialConstituencyPanel } from '../../../components/official-constitu
 import { OfficialPetitionFeed } from '../../../components/official-petition-feed';
 import { OfficialCivicPulsePanel } from '../../../components/official-civic-pulse-panel';
 import { OfficialIssueTrendsPanel } from '../../../components/official-issue-trends-panel';
+import { OfficialCommunityPanel } from '../../../components/official-community-panel';
 import { OfficialAnalyticsPanel } from '../../../components/official-analytics-panel';
 import { OfficialInboxPanel } from '../../../components/official-inbox-panel';
 import { OfficialStaffPanel } from '../../../components/official-staff-panel';
@@ -18,6 +19,7 @@ const TABS = [
   ['feed', 'Assigned Issues'],
   ['pulse', 'Civic Pulse'],
   ['issues', 'Issues'],
+  ['community', 'Community'],
   ['reports', 'Reports'],
   ['analytics', 'Analytics'],
   ['inbox', 'Government Inbox'],
@@ -30,7 +32,7 @@ type Tab = (typeof TABS)[number][0];
 // fine at 5 tabs but degrades badly past ~8, which this milestone's new
 // Civic Pulse/Issues/Analytics tabs pushed past.
 const TAB_GROUPS: { label: string; keys: Tab[] }[] = [
-  { label: 'Constituency', keys: ['overview', 'constituency', 'feed', 'pulse', 'issues'] },
+  { label: 'Constituency', keys: ['overview', 'constituency', 'feed', 'pulse', 'issues', 'community'] },
   { label: 'Operations', keys: ['reports', 'analytics'] },
   { label: 'Engagement', keys: ['inbox'] },
   { label: 'Account', keys: ['staff'] },
@@ -106,6 +108,7 @@ export function OfficialDashboardClient() {
             {tab === 'feed' && <OfficialPetitionFeed />}
             {tab === 'pulse' && <OfficialCivicPulsePanel />}
             {tab === 'issues' && <OfficialIssueTrendsPanel />}
+            {tab === 'community' && <OfficialCommunityPanel />}
             {tab === 'reports' && <OfficialReportsPanel />}
             {tab === 'analytics' && <OfficialAnalyticsPanel />}
             {tab === 'inbox' && <OfficialInboxPanel />}

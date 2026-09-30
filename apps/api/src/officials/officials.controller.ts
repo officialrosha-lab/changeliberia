@@ -254,6 +254,16 @@ export class OfficialsController {
     return this.constituencyFeed.getIssueTrends(institution, period);
   }
 
+  @Get('me/constituency/community')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async getConstituencyCommunity(@CurrentUser() user: AuthUser) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    return this.constituencyFeed.getCommunityInsights(institution);
+  }
+
   @Get('me/reports')
   @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
   @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
