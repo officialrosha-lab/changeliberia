@@ -13,6 +13,7 @@ const COLS = [
       { href: '/leaders', label: 'Join the Movement' },
       { href: '/leaders', label: 'How It Works' },
       { href: '/apply', label: 'Become a Voice for Change' },
+      { href: '/membership', label: 'Become a member' },
     ],
   },
   {
@@ -29,6 +30,7 @@ const COLS = [
       { href: '/', label: 'Home' },
       { href: '/about', label: 'About us' },
       { href: '/dashboard', label: 'Dashboard' },
+      { href: '/transparency', label: 'Transparency' },
     ],
   },
   {
