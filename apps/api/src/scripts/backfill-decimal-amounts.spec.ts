@@ -16,6 +16,7 @@ describe('backfill-decimal-amounts', () => {
         'Refund.amount->amountDecimal',
         'OrderItem.unitPrice->unitPriceDecimal',
         'OrderItem.totalPrice->totalPriceDecimal',
+        'MoMoSubscriptionAuthorization.maxAmount->maxAmountDecimal',
       ]);
     });
   });
