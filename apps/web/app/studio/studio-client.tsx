@@ -100,7 +100,7 @@ export function StudioClient() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-neutral-300">
               Request professional services — campaign strategy, data work, or custom civic tooling. We&apos;ll
-              scope it, send a quote, and invoice you directly — no online checkout for this one.
+              scope it, send a quote, and invoice you — no checkout here, you&apos;ll pay the invoice once it&apos;s issued.
             </p>
           </div>
         </section>

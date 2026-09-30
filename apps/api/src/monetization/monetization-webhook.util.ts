@@ -2,6 +2,8 @@ import {
   ApiPlan,
   ApiSubscription,
   EventRegistration,
+  Invoice,
+  InvoiceStatus,
   MembershipSubscriptionStatus,
   PetitionPromotion,
   PlacementStatus,
@@ -190,6 +192,40 @@ export async function failEventRegistrationByProviderPaymentIntentId(
       status: 'CANCELLED',
       lastWebhookEventId: eventId,
     },
+  });
+}
+
+// ── Invoice self-pay (one-time, InvoiceStatus — no FAILED state; a failed
+// attempt just leaves the invoice ISSUED so the buyer can retry) ──────────
+
+export async function activateInvoicePayment(
+  prisma: PrismaService,
+  invoiceId: string,
+  params: { providerPaymentIntentId: string; eventId: string },
+): Promise<Invoice> {
+  return prisma.invoice.update({
+    where: { id: invoiceId },
+    data: {
+      status: InvoiceStatus.PAID,
+      paidAt: new Date(),
+      providerPaymentIntentId: params.providerPaymentIntentId,
+      lastWebhookEventId: params.eventId,
+    },
+  });
+}
+
+export async function failInvoicePaymentByProviderPaymentIntentId(
+  prisma: PrismaService,
+  providerPaymentIntentId: string,
+  eventId: string,
+): Promise<Invoice | null> {
+  const invoice = await prisma.invoice.findUnique({
+    where: { providerPaymentIntentId },
+  });
+  if (!invoice) return null;
+  return prisma.invoice.update({
+    where: { id: invoice.id },
+    data: { lastWebhookEventId: eventId },
   });
 }
 
