@@ -39,6 +39,8 @@ import {
   failResearchProductPurchaseByProviderPaymentIntentId,
   activateEventRegistration,
   failEventRegistrationByProviderPaymentIntentId,
+  activateInvoicePayment,
+  failInvoicePaymentByProviderPaymentIntentId,
   activateApiSubscription,
   cancelApiSubscriptionByProviderSubscriptionId,
   markApiSubscriptionPastDue,
@@ -1279,6 +1281,15 @@ export class WebhookEventHandlerService {
       );
       return true;
     }
+    if (metadata.invoiceId) {
+      const invoice = await activateInvoicePayment(
+        this.prisma,
+        metadata.invoiceId,
+        { providerPaymentIntentId: paymentIntentId, eventId },
+      );
+      this.logger.log(`Invoice ${invoice.number} paid (${paymentIntentId})`);
+      return true;
+    }
     return false;
   }
 
@@ -1328,6 +1339,17 @@ export class WebhookEventHandlerService {
     if (registration) {
       this.logger.warn(
         `Event registration ${registration.id} payment failed (${paymentIntentId})`,
+      );
+      return true;
+    }
+    const invoice = await failInvoicePaymentByProviderPaymentIntentId(
+      this.prisma,
+      paymentIntentId,
+      eventId,
+    );
+    if (invoice) {
+      this.logger.warn(
+        `Invoice ${invoice.number} payment failed (${paymentIntentId})`,
       );
       return true;
     }
