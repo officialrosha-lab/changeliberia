@@ -30,6 +30,19 @@ import {
   markOrganizationPastDue,
   markInstitutionPastDue,
 } from '../organizations/workspace-webhook.util';
+import {
+  activatePetitionPromotion,
+  failPetitionPromotionByProviderPaymentIntentId,
+  activateSponsorshipPurchase,
+  failSponsorshipPurchaseByProviderPaymentIntentId,
+  activateResearchProductPurchase,
+  failResearchProductPurchaseByProviderPaymentIntentId,
+  activateEventRegistration,
+  failEventRegistrationByProviderPaymentIntentId,
+  activateApiSubscription,
+  cancelApiSubscriptionByProviderSubscriptionId,
+  markApiSubscriptionPastDue,
+} from '../monetization/monetization-webhook.util';
 
 /**
  * Service to handle specific Stripe webhook event types
@@ -159,6 +172,18 @@ export class WebhookEventHandlerService {
         `Payment intent succeeded: ${paymentIntentId} (${amount} ${currency})`,
       );
 
+      // Milestone 10 one-time purchases (Promotion/Sponsorship/Research/
+      // Event) tag the resulting PaymentIntent via payment_intent_data.metadata
+      // on the Checkout Session (see the fix in stripe-provider.adapter.ts
+      // this milestone) — checked before the generic Payment-table lookup,
+      // same early-return pattern as the subscription-metadata dispatch in
+      // handleSubscriptionCreated below.
+      if (
+        await this.handleMonetizationPurchaseSucceeded(paymentIntent, eventId)
+      ) {
+        return;
+      }
+
       // Update payment record status
       const payment = await this.prisma.payment.findUnique({
         where: { stripePaymentIntentId: paymentIntentId },
@@ -238,6 +263,12 @@ export class WebhookEventHandlerService {
       this.logger.warn(
         `Payment intent failed: ${paymentIntentId} - ${lastPaymentError?.message}`,
       );
+
+      if (
+        await this.handleMonetizationPurchaseFailed(paymentIntentId, eventId)
+      ) {
+        return;
+      }
 
       const payment = await this.prisma.payment.findUnique({
         where: { stripePaymentIntentId: paymentIntentId },
@@ -444,6 +475,30 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      const apiSubscriptionId = subscription.metadata?.apiSubscriptionId;
+      if (apiSubscriptionId) {
+        await activateApiSubscription(
+          this.prisma,
+          this.entitlementsService,
+          apiSubscriptionId,
+          {
+            providerSubscriptionId: subscriptionId,
+            providerCustomerId: customerId,
+            currentPeriodStart: subscriptionPeriodStart
+              ? new Date(subscriptionPeriodStart * 1000)
+              : null,
+            currentPeriodEnd: subscriptionPeriodEnd
+              ? new Date(subscriptionPeriodEnd * 1000)
+              : null,
+            eventId,
+          },
+        );
+        this.logger.log(
+          `API subscription ${apiSubscriptionId} activated (${subscriptionId})`,
+        );
+        return;
+      }
+
       // Find user by Stripe customer ID
       const user = await this.prisma.user.findFirst({
         where: { stripeCustomerId: customerId },
@@ -560,6 +615,11 @@ export class WebhookEventHandlerService {
             subscriptionId,
             subscription.status,
             eventId,
+          )) ||
+          (await this.handleApiSubscriptionUpdated(
+            subscriptionId,
+            subscription.status,
+            eventId,
           ));
         if (!handled) {
           this.logger.warn(
@@ -673,6 +733,20 @@ export class WebhookEventHandlerService {
         if (institutionSubscription) {
           this.logger.log(
             `Institution subscription ${institutionSubscription.id} cancelled (${subscriptionId})`,
+          );
+          return;
+        }
+
+        const apiSubscription =
+          await cancelApiSubscriptionByProviderSubscriptionId(
+            this.prisma,
+            this.entitlementsService,
+            subscriptionId,
+            eventId,
+          );
+        if (apiSubscription) {
+          this.logger.log(
+            `API subscription ${apiSubscription.id} cancelled (${subscriptionId})`,
           );
           return;
         }
@@ -843,11 +917,12 @@ export class WebhookEventHandlerService {
 
       if (!subscription) {
         // Each mark*PastDue call is a no-op updateMany for tables with no
-        // matching row, so firing all three unconditionally is simpler and
+        // matching row, so firing all four unconditionally is simpler and
         // just as correct as a find-first lookup chain here.
         await markMembershipPastDue(this.prisma, subscriptionId, eventId);
         await markOrganizationPastDue(this.prisma, subscriptionId, eventId);
         await markInstitutionPastDue(this.prisma, subscriptionId, eventId);
+        await markApiSubscriptionPastDue(this.prisma, subscriptionId, eventId);
         this.logger.warn(`Subscription not found: ${subscriptionId}`);
         return;
       }
@@ -1108,6 +1183,155 @@ export class WebhookEventHandlerService {
       `Institution subscription ${institutionSubscription.id} updated (Stripe status: ${stripeStatus})`,
     );
     return true;
+  }
+
+  private async handleApiSubscriptionUpdated(
+    providerSubscriptionId: string,
+    stripeStatus: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const apiSubscription = await this.prisma.apiSubscription.findUnique({
+      where: { providerSubscriptionId },
+    });
+    if (!apiSubscription) return false;
+
+    if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
+      await markApiSubscriptionPastDue(
+        this.prisma,
+        providerSubscriptionId,
+        eventId,
+      );
+    } else if (stripeStatus === 'active') {
+      await this.prisma.apiSubscription.update({
+        where: { id: apiSubscription.id },
+        data: { status: 'ACTIVE', lastWebhookEventId: eventId },
+      });
+    } else {
+      await this.prisma.apiSubscription.update({
+        where: { id: apiSubscription.id },
+        data: { lastWebhookEventId: eventId },
+      });
+    }
+
+    this.logger.log(
+      `API subscription ${apiSubscription.id} updated (Stripe status: ${stripeStatus})`,
+    );
+    return true;
+  }
+
+  /**
+   * Milestone 10 dispatch for `payment_intent.succeeded` — tries each
+   * one-time-purchase metadata key in turn, same fallback-chain pattern as
+   * the subscription updaters above. Returns false (never logs) when none
+   * match, so the caller falls through to the generic Payment lookup.
+   */
+  private async handleMonetizationPurchaseSucceeded(
+    paymentIntent: StripePaymentIntent,
+    eventId: string,
+  ): Promise<boolean> {
+    const paymentIntentId = paymentIntent.id;
+    const metadata = paymentIntent.metadata ?? {};
+
+    if (metadata.promotionId) {
+      const promotion = await activatePetitionPromotion(
+        this.prisma,
+        metadata.promotionId,
+        {
+          providerPaymentIntentId: paymentIntentId,
+          eventId,
+        },
+      );
+      this.logger.log(
+        `Petition promotion ${promotion.id} activated (${paymentIntentId})`,
+      );
+      return true;
+    }
+    if (metadata.sponsorshipPurchaseId) {
+      const purchase = await activateSponsorshipPurchase(
+        this.prisma,
+        metadata.sponsorshipPurchaseId,
+        { providerPaymentIntentId: paymentIntentId, eventId },
+      );
+      this.logger.log(
+        `Sponsorship purchase ${purchase.id} activated (${paymentIntentId})`,
+      );
+      return true;
+    }
+    if (metadata.researchProductPurchaseId) {
+      const purchase = await activateResearchProductPurchase(
+        this.prisma,
+        metadata.researchProductPurchaseId,
+        { providerPaymentIntentId: paymentIntentId, eventId },
+      );
+      this.logger.log(
+        `Research product purchase ${purchase.id} activated (${paymentIntentId})`,
+      );
+      return true;
+    }
+    if (metadata.eventRegistrationId) {
+      const registration = await activateEventRegistration(
+        this.prisma,
+        metadata.eventRegistrationId,
+        { providerPaymentIntentId: paymentIntentId, eventId },
+      );
+      this.logger.log(
+        `Event registration ${registration.id} activated (${paymentIntentId})`,
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /** Failure-path counterpart to handleMonetizationPurchaseSucceeded above. */
+  private async handleMonetizationPurchaseFailed(
+    paymentIntentId: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const promotion = await failPetitionPromotionByProviderPaymentIntentId(
+      this.prisma,
+      paymentIntentId,
+      eventId,
+    );
+    if (promotion) {
+      this.logger.warn(
+        `Petition promotion ${promotion.id} payment failed (${paymentIntentId})`,
+      );
+      return true;
+    }
+    const sponsorship = await failSponsorshipPurchaseByProviderPaymentIntentId(
+      this.prisma,
+      paymentIntentId,
+      eventId,
+    );
+    if (sponsorship) {
+      this.logger.warn(
+        `Sponsorship purchase ${sponsorship.id} payment failed (${paymentIntentId})`,
+      );
+      return true;
+    }
+    const research = await failResearchProductPurchaseByProviderPaymentIntentId(
+      this.prisma,
+      paymentIntentId,
+      eventId,
+    );
+    if (research) {
+      this.logger.warn(
+        `Research product purchase ${research.id} payment failed (${paymentIntentId})`,
+      );
+      return true;
+    }
+    const registration = await failEventRegistrationByProviderPaymentIntentId(
+      this.prisma,
+      paymentIntentId,
+      eventId,
+    );
+    if (registration) {
+      this.logger.warn(
+        `Event registration ${registration.id} payment failed (${paymentIntentId})`,
+      );
+      return true;
+    }
+    return false;
   }
 
   /**
