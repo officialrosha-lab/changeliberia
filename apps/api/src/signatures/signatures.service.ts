@@ -21,6 +21,7 @@ import {
   LocationSource,
 } from './location-classification.service';
 import { IpRegionHintService } from './ip-region-hint.service';
+import { GeographyService } from '../geography/geography.service';
 
 @Injectable()
 export class SignaturesService {
@@ -34,6 +35,7 @@ export class SignaturesService {
     private readonly petitionsRealtime: PetitionsRealtimeService,
     private readonly locationClassification: LocationClassificationService,
     private readonly ipRegionHint: IpRegionHintService,
+    private readonly geographyService: GeographyService,
   ) {}
 
   findByUserAndPetition(userId: string, petitionId: string) {
@@ -109,6 +111,9 @@ export class SignaturesService {
             county: classificationInput.declaredCounty,
             district: classificationInput.declaredDistrict,
             community: classificationInput.declaredCommunity,
+            countyId: classificationInput.declaredCountyId,
+            electoralDistrictId:
+              classificationInput.declaredElectoralDistrictId,
             locationSource: classificationInput.locationSource,
             classification,
             confidenceScore,
@@ -263,6 +268,9 @@ export class SignaturesService {
             county: classificationInput.declaredCounty,
             district: classificationInput.declaredDistrict,
             community: classificationInput.declaredCommunity,
+            countyId: classificationInput.declaredCountyId,
+            electoralDistrictId:
+              classificationInput.declaredElectoralDistrictId,
             locationSource: classificationInput.locationSource,
             classification,
             confidenceScore,
@@ -413,6 +421,18 @@ export class SignaturesService {
       }
     }
 
+    // Geography dual-write: resolve the declared county/district to the
+    // canonical County/ElectoralDistrict FK ids alongside the free-text
+    // values above. Never throws on an unmatched value.
+    const resolvedCounty =
+      await this.geographyService.resolveCountyByName(declaredCounty);
+    const resolvedDistrict = resolvedCounty
+      ? await this.geographyService.resolveDistrictByName(
+          resolvedCounty.id,
+          declaredDistrict,
+        )
+      : null;
+
     return {
       petition: {
         impactScope: petition.impactScope,
@@ -426,6 +446,8 @@ export class SignaturesService {
       declaredCounty,
       declaredDistrict,
       declaredCommunity,
+      declaredCountyId: resolvedCounty?.id ?? null,
+      declaredElectoralDistrictId: resolvedDistrict?.id ?? null,
       locationSource,
       userVerificationStatus,
       ipRegionHint,

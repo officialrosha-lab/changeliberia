@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { apiPost } from '../lib/api';
+import { useCounties } from '../lib/use-counties';
 import { useAuthStore } from '../lib/store';
 import { PollOptionInput } from './poll-option-input';
 
@@ -15,12 +16,6 @@ const CATEGORIES = [
   'Environment',
   'Women & Gender',
   'Human Rights',
-];
-
-const COUNTIES = [
-  'Montserrado', 'Grand Cape Mount', 'Bomi', 'Gbarpolu', 'Lofa',
-  'Bong', 'Nimba', 'Margibi', 'Grand Bassa', 'River Gee',
-  'Grand Kru', 'Sinoe', 'Maryland',
 ];
 
 const SUGGESTIONS: Record<string, string[]> = {
@@ -39,6 +34,8 @@ const SUGGESTIONS: Record<string, string[]> = {
 type PollOption = { text: string; imageUrl?: string };
 
 export function AdminPollCreationPanel() {
+  const { counties: countyOptions } = useCounties();
+  const COUNTIES = countyOptions.map((c) => c.name);
   const token = useAuthStore((state) => state.token);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

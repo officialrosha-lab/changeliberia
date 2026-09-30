@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SmartRoutingService } from '../contact-directory/routing/smart-routing.service';
 import { StakeholderGroupService } from '../stakeholder-groups/stakeholder-group.service';
 import { ResponseWorkflowService } from '../officials/response-workflow.service';
+import { GeographyService } from '../geography/geography.service';
 import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
@@ -26,7 +27,33 @@ export class PetitionsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly stakeholderGroupService: StakeholderGroupService,
     private readonly responseWorkflow: ResponseWorkflowService,
+    private readonly geographyService: GeographyService,
   ) {}
+
+  /**
+   * Geography dual-write helper (Lawmaker Constituency Portal foundation):
+   * resolves free-text county/district to the canonical County/
+   * ElectoralDistrict FK ids. Never throws on an unmatched value — an
+   * unresolved county/district just leaves the FK null, same as today's
+   * behavior. Only MULTI_COUNTY's `counties: String[]` is left untouched;
+   * no FK model exists for that list yet.
+   */
+  private async resolvePetitionGeography(
+    county: string | null | undefined,
+    district: string | null | undefined,
+  ): Promise<{ countyId?: string; electoralDistrictId?: string }> {
+    const resolvedCounty =
+      await this.geographyService.resolveCountyByName(county);
+    if (!resolvedCounty) return {};
+    const resolvedDistrict = await this.geographyService.resolveDistrictByName(
+      resolvedCounty.id,
+      district,
+    );
+    return {
+      countyId: resolvedCounty.id,
+      electoralDistrictId: resolvedDistrict?.id,
+    };
+  }
 
   private async rankByRisk(
     petitions: Array<{
@@ -99,8 +126,17 @@ export class PetitionsService {
   }
 
   async create(userId: string, dto: CreatePetitionDto) {
+    const geography = await this.resolvePetitionGeography(
+      dto.county,
+      dto.district,
+    );
     const petition = await this.prisma.petition.create({
-      data: { ...dto, goal: dto.goal ?? 1000, creatorId: userId },
+      data: {
+        ...dto,
+        ...geography,
+        goal: dto.goal ?? 1000,
+        creatorId: userId,
+      },
     });
     await this.prisma.petitionStatusLog.create({
       data: { petitionId: petition.id, status: 'submitted' },
@@ -119,9 +155,18 @@ export class PetitionsService {
     if (!petition) throw new NotFoundException('Petition not found');
     if (petition.creatorId !== userId)
       throw new ForbiddenException('Not your petition');
+
+    const geography =
+      dto.county !== undefined || dto.district !== undefined
+        ? await this.resolvePetitionGeography(
+            dto.county ?? petition.county,
+            dto.district ?? petition.district,
+          )
+        : {};
+
     return this.prisma.petition.update({
       where: { id: petitionId },
-      data: { ...dto },
+      data: { ...dto, ...geography },
     });
   }
 

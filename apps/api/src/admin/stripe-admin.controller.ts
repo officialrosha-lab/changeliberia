@@ -58,6 +58,19 @@ export class StripeAdminController {
   }
 
   /**
+   * Decimal migration read cutover (Milestone 12) — same convention as
+   * PaymentService.resolveAmount: the Decimal column is authoritative once
+   * populated, falling back to the legacy Float only for a stray
+   * pre-backfill row.
+   */
+  private resolveAmount(
+    floatAmount: number,
+    decimalAmount: Prisma.Decimal | null,
+  ): number {
+    return decimalAmount ? decimalAmount.toNumber() : floatAmount;
+  }
+
+  /**
    * Get Stripe dashboard overview with key metrics
    */
   @Get('dashboard')
@@ -85,12 +98,18 @@ export class StripeAdminController {
           }),
         ]);
 
-      const totalRevenue = totalPayments.reduce((sum, p) => sum + p.amount, 0);
-      const monthlyRevenue = thisMonthPayments.reduce(
-        (sum, p) => sum + p.amount,
+      const totalRevenue = totalPayments.reduce(
+        (sum, p) => sum + this.resolveAmount(p.amount, p.amountDecimal),
         0,
       );
-      const refundAmount = refunds.reduce((sum, r) => sum + r.amount, 0);
+      const monthlyRevenue = thisMonthPayments.reduce(
+        (sum, p) => sum + this.resolveAmount(p.amount, p.amountDecimal),
+        0,
+      );
+      const refundAmount = refunds.reduce(
+        (sum, r) => sum + this.resolveAmount(r.amount, r.amountDecimal),
+        0,
+      );
 
       return {
         totalRevenue,
@@ -287,7 +306,7 @@ export class StripeAdminController {
       const updated = await this.prisma.subscription.update({
         where: { id },
         data: {
-          status: 'CANCELED' as SubscriptionStatus,
+          status: 'CANCELLED' as SubscriptionStatus,
           cancelledAt: new Date(),
         },
         include: { user: { select: { id: true, email: true } } },
@@ -334,6 +353,7 @@ export class StripeAdminController {
             select: {
               id: true,
               amount: true,
+              amountDecimal: true,
               currency: true,
               user: { select: { id: true, fullName: true, email: true } },
             },
@@ -375,7 +395,8 @@ export class StripeAdminController {
         );
       }
 
-      const refundAmount = dto.amount || payment.amount;
+      const refundAmount =
+        dto.amount || this.resolveAmount(payment.amount, payment.amountDecimal);
       let stripeRefundId = '';
 
       if (payment.stripePaymentIntentId && this.stripe) {
@@ -405,6 +426,7 @@ export class StripeAdminController {
         data: {
           paymentId: dto.paymentId,
           amount: refundAmount,
+          amountDecimal: new Prisma.Decimal(refundAmount),
           currency: payment.currency,
           reason: dto.reason,
           stripeRefundId,
@@ -448,13 +470,24 @@ export class StripeAdminController {
           status: 'COMPLETED' as PaymentStatus,
           completedAt: { gte: startDate },
         },
-        select: { amount: true, completedAt: true, currency: true },
+        select: {
+          amount: true,
+          amountDecimal: true,
+          completedAt: true,
+          currency: true,
+        },
         orderBy: { completedAt: 'asc' },
       });
 
       const subscriptions = await this.prisma.subscription.findMany({
         where: { createdAt: { gte: startDate } },
-        select: { amount: true, interval: true, createdAt: true, status: true },
+        select: {
+          amount: true,
+          amountDecimal: true,
+          interval: true,
+          createdAt: true,
+          status: true,
+        },
       });
 
       // Group revenue by day
@@ -463,7 +496,9 @@ export class StripeAdminController {
         const day = new Date(p.completedAt || new Date())
           .toISOString()
           .split('T')[0];
-        revenueByDay[day] = (revenueByDay[day] || 0) + p.amount;
+        revenueByDay[day] =
+          (revenueByDay[day] || 0) +
+          this.resolveAmount(p.amount, p.amountDecimal);
       });
 
       // Convert to revenueTrend array
@@ -474,7 +509,10 @@ export class StripeAdminController {
         }),
       );
 
-      const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+      const totalRevenue = payments.reduce(
+        (sum, p) => sum + this.resolveAmount(p.amount, p.amountDecimal),
+        0,
+      );
       const avgDailyRevenue = totalRevenue / numDays;
       const projectedMonthly = avgDailyRevenue * 30;
 
@@ -483,7 +521,7 @@ export class StripeAdminController {
         (s) => s.status === 'ACTIVE',
       );
       const mrrFromSubscriptions = activeSubscriptions.reduce(
-        (sum, s) => sum + (s.amount || 0),
+        (sum, s) => sum + this.resolveAmount(s.amount, s.amountDecimal),
         0,
       );
       const mrr = mrrFromSubscriptions;
@@ -564,7 +602,10 @@ export class StripeAdminController {
         subscriptions,
         totalSpent: payments
           .filter((p) => p.status === 'COMPLETED')
-          .reduce((sum, p) => sum + p.amount, 0),
+          .reduce(
+            (sum, p) => sum + this.resolveAmount(p.amount, p.amountDecimal),
+            0,
+          ),
       };
     } catch (error) {
       if (error instanceof NotFoundException) throw error;

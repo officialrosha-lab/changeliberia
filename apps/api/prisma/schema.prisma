@@ -67,30 +67,37 @@ enum PollStatus {
 }
 
 model User {
-  id                 String             @id @default(cuid())
-  email              String?            @unique
-  fullName           String
-  phone              String             @unique
-  passwordHash       String?
-  googleId           String?            @unique // Google OAuth ID
-  googleEmail        String? // Email from Google OAuth profile
-  authProvider       AuthProvider       @default(PHONE) // Primary auth method
-  isEmailConfirmed   Boolean            @default(false) // Email confirmation status
-  role               UserRole           @default(USER)
-  trustScore         Int                @default(0)
-  verificationStatus VerificationStatus @default(UNVERIFIED)
-  badgesEarned       String             @default("[]") // JSON array of badge names
-  bio                String?
-  avatarUrl          String?
-  gender             String?
-  age                Int?
-  address            String?
-  county             String?
-  district           String? // Impact Area profile match: district
-  community          String? // Impact Area profile match: community/town
-  stripeCustomerId   String?            @unique // Stripe customer ID for this user
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                  String             @id @default(cuid())
+  email               String?            @unique
+  fullName            String
+  phone               String             @unique
+  passwordHash        String?
+  googleId            String?            @unique // Google OAuth ID
+  googleEmail         String? // Email from Google OAuth profile
+  authProvider        AuthProvider       @default(PHONE) // Primary auth method
+  isEmailConfirmed    Boolean            @default(false) // Email confirmation status
+  role                UserRole           @default(USER)
+  trustScore          Int                @default(0)
+  verificationStatus  VerificationStatus @default(UNVERIFIED)
+  badgesEarned        String             @default("[]") // JSON array of badge names
+  bio                 String?
+  avatarUrl           String?
+  gender              String?
+  age                 Int?
+  address             String?
+  county              String?
+  district            String? // Impact Area profile match: district
+  community           String? // Impact Area profile match: community/town
+  // Geography (normalized): dual-written alongside county/district above
+  // during the migration rollout — see apps/api/src/geography. Nullable and
+  // additive; free-text columns remain the read fallback until cutover.
+  countyId            String?
+  countyRef           County?            @relation("UserCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict? @relation("UserDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
+  stripeCustomerId    String?            @unique // Stripe customer ID for this user
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   // Original relations
   petitions        Petition[]
@@ -121,12 +128,25 @@ model User {
   pixelEvents             FacebookPixelEvent[]    @relation("FacebookPixelEvents")
 
   // RBAC relations
-  userRoles       UserRoleAssignment[] // New role-based access control
-  cmsPages        CMSPage[]            @relation("CMSPageAuthor")
-  cmsPageVersions CMSPageVersion[]     @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  userRoles               UserRoleAssignment[] // New role-based access control
+  entitlementGrants       EntitlementGrant[]
+  membershipSubscriptions MembershipSubscription[] @relation("UserMembershipSubscriptions")
+  organizationMemberships OrganizationMembership[] @relation("UserOrganizationMemberships")
+
+  // Milestone 10: remaining monetization products
+  petitionPromotionsPurchased PetitionPromotion[]          @relation("PetitionPromotionPurchaser")
+  sponsorshipPurchases        SponsorshipPurchase[]        @relation("SponsorshipPurchaser")
+  researchProductPurchases    ResearchProductPurchase[]    @relation("ResearchProductPurchaser")
+  eventRegistrations          EventRegistration[]          @relation("EventRegistrant")
+  apiSubscriptions            ApiSubscription[]            @relation("ApiSubscriber")
+  serviceRequests             ProfessionalServiceRequest[] @relation("ServiceRequestRequester")
+  invoices                    Invoice[]                    @relation("InvoiceUser")
+
+  cmsPages        CMSPage[]        @relation("CMSPageAuthor")
+  cmsPageVersions CMSPageVersion[] @relation("CMSPageVersionAuthor") // Phase 3: Version history
   cmsFiles        CMSFile[] // Phase 2: File uploads
   cmsExperiments  CMSExperiment[] // Phase 4: A/B testing
-  cmsSchedules    CMSSchedule[]        @relation("CMSScheduleCreator") // Phase 3: Content scheduling
+  cmsSchedules    CMSSchedule[]    @relation("CMSScheduleCreator") // Phase 3: Content scheduling
 
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
@@ -174,6 +194,11 @@ model Petition {
   landmark            String? // Impact Area: optional landmark/street (COMMUNITY scope)
   impactScope         ImpactScope? // nullable for backward-compat with existing rows
   counties            String[]                     @default([]) // MULTI_COUNTY scope only
+  // Geography (normalized), dual-written alongside county/district above
+  countyId            String?
+  countyRef           County?                      @relation("PetitionCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict?           @relation("PetitionDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
   goal                Int                          @default(1000)
   status              PetitionStatus               @default(PENDING)
   signaturesCount     Int                          @default(0)
@@ -211,6 +236,11 @@ model Petition {
   stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
 
   media PetitionMedia[]
+
+  // Milestone 10: paid promotion — read-path placement/sort boost only.
+  // Never touches signaturesCount/status/governmentResponses; enforced by
+  // civic-principle.spec.ts.
+  promotions PetitionPromotion[]
 
   @@index([status, createdAt])
   @@index([impactScope, county, district])
@@ -328,6 +358,12 @@ model SignatureLocation {
   district       String?
   community      String?
   locationSource String  @default("unconfirmed") // "profile_match" | "user_confirmed" | "unconfirmed"
+
+  // Geography (normalized), dual-written alongside county/district above
+  countyId            String?
+  countyRef           County?            @relation("SignatureLocationCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict? @relation("SignatureLocationDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
 
   // Classification engine output — internal only, never exposed publicly,
   // never used to block participation.
@@ -667,6 +703,12 @@ model Donation {
   donorEmail            String?
   donorName             String?
   amount                Float
+  // Decimal migration Phase A (Milestone 7) — additive, dual-write target.
+  // No live write path creates a Donation row today (confirmed: zero
+  // `prisma.donation.create` call sites in src/), so there is nothing to
+  // dual-write into this column yet; it exists so the backfill script and
+  // future Phase B/C cutover cover this model uniformly with the others.
+  amountDecimal         Decimal?       @db.Decimal(12, 2)
   currency              String         @default("USD")
   description           String?
   stripePaymentIntentId String?
@@ -730,6 +772,12 @@ model Payment {
   contentId             String?
   content               Content?          @relation("ContentPayments", fields: [contentId], references: [id], onDelete: SetNull)
   amount                Float
+  // Decimal migration Phase A (Milestone 7): additive dual-write target,
+  // nullable until backfilled — see apps/api/src/scripts/backfill-decimal-amounts.ts.
+  // Both columns store the same major-unit (dollars) value as `amount`;
+  // Stripe/MoMo minor-unit (cents) conversion happens only at the provider
+  // API boundary, never in these stored values.
+  amountDecimal         Decimal?          @db.Decimal(12, 2)
   currency              String            @default("USD")
   status                PaymentStatus     @default(PENDING)
   paymentMethod         PaymentMethod     @default(CARD)
@@ -798,6 +846,7 @@ model Subscription {
   contentId            String?
   content              Content?                       @relation("ContentSubscriptions", fields: [contentId], references: [id], onDelete: SetNull)
   amount               Float
+  amountDecimal        Decimal?                       @db.Decimal(12, 2)
   currency             String                         @default("USD")
   interval             String                         @default("monthly") // monthly, quarterly, yearly
   status               SubscriptionStatus             @default(ACTIVE)
@@ -838,6 +887,11 @@ model MoMoSubscriptionAuthorization {
   preapprovalId         String       @unique // MoMo pre-approval reference
   phoneNumber           String // User's phone number
   maxAmount             Float // Maximum amount that can be charged
+  // Decimal migration — additive dual-write target, same convention as
+  // Payment/Subscription/Refund/OrderItem above. Added in Milestone 12
+  // alongside the read cutover rather than left as the one remaining
+  // Float money field on this model.
+  maxAmountDecimal      Decimal?     @db.Decimal(12, 2)
   validityTimeInSeconds Int // How long pre-approval is valid
   status                String       @default("PENDING") // PENDING, APPROVED, REJECTED
   expiresAt             DateTime // When pre-approval expires
@@ -853,6 +907,7 @@ model Refund {
   paymentId      String
   payment        Payment   @relation("PaymentRefunds", fields: [paymentId], references: [id], onDelete: Cascade)
   amount         Float
+  amountDecimal  Decimal?  @db.Decimal(12, 2)
   currency       String    @default("USD")
   reason         String
   stripeRefundId String?   @unique
@@ -867,15 +922,20 @@ model Refund {
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  paymentId   String
-  payment     Payment  @relation("PaymentItems", fields: [paymentId], references: [id], onDelete: Cascade)
-  description String
-  quantity    Int      @default(1)
-  unitPrice   Float
-  totalPrice  Float
-  metadata    String?  @db.Text() // JSON: item details
-  createdAt   DateTime @default(now())
+  id                String   @id @default(cuid())
+  paymentId         String
+  payment           Payment  @relation("PaymentItems", fields: [paymentId], references: [id], onDelete: Cascade)
+  description       String
+  quantity          Int      @default(1)
+  unitPrice         Float
+  // No live write path creates OrderItem rows today (confirmed: zero
+  // `prisma.orderItem.create` call sites in src/) — same rationale as
+  // Donation.amountDecimal above.
+  unitPriceDecimal  Decimal? @db.Decimal(12, 2)
+  totalPrice        Float
+  totalPriceDecimal Decimal? @db.Decimal(12, 2)
+  metadata          String?  @db.Text() // JSON: item details
+  createdAt         DateTime @default(now())
 
   @@index([paymentId])
 }
@@ -952,6 +1012,660 @@ model FeatureToggle {
   updatedAt   DateTime @updatedAt
 
   @@index([name])
+}
+
+// ============================================================================
+// Entitlements (Monetization foundation, Milestone 6)
+// ============================================================================
+//
+// A catalog of gateable capabilities (ENTITLEMENT_* keys) plus the grants
+// that hand them to a user/organization/institution. Deliberately does not
+// pre-materialize plan-derived entitlements into grant rows — a grant here
+// means "hand-issued" (admin override, trial, or a purchase's fulfillment);
+// EntitlementsService.hasEntitlement() additionally live-joins active
+// subscriptions so a lapsed subscription can't leave a stale grant behind.
+//
+// Civic-principle guardrail (non-negotiable, enforced by
+// civic-principle.e2e-spec.ts): EntitlementGuard must never gate petition
+// create/sign/follow/view, Civic Pulse participate/view, or a verified
+// lawmaker's basic officials/me/constituency routes.
+
+enum EntitlementScope {
+  USER
+  ORGANIZATION
+  INSTITUTION
+}
+
+model Entitlement {
+  id        String             @id @default(cuid())
+  key       String             @unique // e.g. "ENTITLEMENT_PETITION_BOOST"
+  name      String
+  scope     EntitlementScope
+  createdAt DateTime           @default(now())
+  grants    EntitlementGrant[]
+}
+
+model EntitlementGrant {
+  id            String      @id @default(cuid())
+  entitlementId String
+  entitlement   Entitlement @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  // Exactly one of these is set, matching the entitlement's scope.
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Was a loose string until the Organization model landed in Milestone 9
+  // (no existing rows used it, so promoting to a real FK here was zero-risk).
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  institutionId  String?
+  institution    Institution?  @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  source    String // "MANUAL_ADMIN" | "SUBSCRIPTION" | "MEMBERSHIP_PLAN" | "ORGANIZATION_PLAN" | "INSTITUTION_PLAN" | "TRIAL"
+  sourceId  String? // loose reference to the granting record, e.g. a subscription id
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+
+  @@index([entitlementId, userId])
+  @@index([entitlementId, institutionId])
+  @@index([entitlementId, organizationId])
+  @@index([expiresAt])
+}
+
+// ============================================================================
+// Monetization: Membership (Milestone 8)
+// ============================================================================
+//
+// The first paid product in this platform's monetization architecture — the
+// generic checkout/subscription shape later products (Organization billing,
+// Sponsorship, ...) follow. Deliberately separate from the existing free
+// `Membership` model (the supporter/advocate join table above) — a user can
+// hold both. A paid membership only ever unlocks optional advanced tools via
+// EntitlementGrant; it can never gate petition/Civic Pulse participation
+// (enforced statically by civic-principle.spec.ts, which this milestone
+// does not touch since Membership's routes are entirely separate from the
+// petition/poll controllers that test covers).
+//
+// Uses Decimal from day one, per the architecture plan — no Float ever
+// existed for this model, so there is no migration to run for it.
+
+enum MembershipInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum MembershipSubscriptionStatus {
+  PENDING // checkout session created, awaiting the provider's confirmation webhook
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+model MembershipPlan {
+  id              String             @id @default(cuid())
+  key             String             @unique // e.g. "SUPPORTER_MONTHLY"
+  name            String
+  description     String?
+  priceAmount     Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  interval        MembershipInterval
+  // JSON string[] of Entitlement.key, granted to the subscriber on
+  // activation and revoked on cancellation/expiration — see
+  // MembershipService.syncEntitlements().
+  entitlementKeys String             @default("[]") @db.Text()
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  subscriptions MembershipSubscription[]
+
+  @@index([active])
+}
+
+model MembershipSubscription {
+  id     String         @id @default(cuid())
+  userId String
+  user   User           @relation("UserMembershipSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   MembershipPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  // "STRIPE" | "MOMO" — a PaymentProviderName (apps/api/src/payments/providers/payment-provider.interface.ts)
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+// ============================================================================
+// Milestone 9: Organization + Institution billing
+//
+// WorkspacePlan is a shared catalog for both product lines rather than two
+// near-identical models — an "advanced workspace tooling" plan for an NGO
+// org and one for a government institution are the same shape (price,
+// interval, entitlement keys, optional seat limit), just scoped differently.
+// MembershipPlan stays a separate model rather than folding into this one:
+// individual membership and workspace billing are different products with
+// different lifecycles, and merging them now (per the Milestone 8 "consider
+// a shared Plan" note) would be a premature abstraction with no real payoff
+// — see membership-webhook.util.ts for the same reasoning applied there.
+// ============================================================================
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model WorkspacePlan {
+  id              String             @id @default(cuid())
+  key             String             @unique // e.g. "ORG_TEAM_MONTHLY", "INSTITUTION_ADVANCED_MONTHLY"
+  name            String
+  description     String?
+  scope           EntitlementScope // ORGANIZATION | INSTITUTION — which product line this plan belongs to
+  priceAmount     Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  interval        MembershipInterval
+  seatLimit       Int? // null = unlimited seats; only meaningful for ORGANIZATION-scoped plans
+  entitlementKeys String             @default("[]") @db.Text()
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organizationSubscriptions OrganizationSubscription[]
+  institutionSubscriptions  InstitutionSubscription[]
+
+  @@index([scope, active])
+}
+
+model Organization {
+  id            String       @id @default(cuid())
+  name          String
+  slug          String       @unique
+  // Optional link for the NGO/CSO directory-linkage case (plan §B3) — the
+  // Institution directory entity keeps its own separate, admin-seeded
+  // lifecycle; this is a loose association, not a merge of the two models.
+  institutionId String?      @unique
+  institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  memberships       OrganizationMembership[]
+  subscriptions     OrganizationSubscription[]
+  entitlementGrants EntitlementGrant[]
+
+  // Milestone 10
+  serviceRequests ProfessionalServiceRequest[]
+  invoices        Invoice[]
+
+  @@index([institutionId])
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation("UserOrganizationMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @default(MEMBER)
+  createdAt      DateTime         @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model OrganizationSubscription {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId         String
+  plan           WorkspacePlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([status])
+}
+
+model InstitutionSubscription {
+  id            String        @id @default(cuid())
+  institutionId String        @unique
+  institution   Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  planId        String
+  plan          WorkspacePlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ============================================================================
+// Milestone 10: remaining monetization products (Promotion, Sponsorship,
+// Research, Studio, Events, API billing, Invoice)
+//
+// Two small shared status enums instead of one generic one: PlacementStatus
+// for the two time-bound "buy a slot" products (a promotion or a sponsorship
+// is live for a window, then expires), PurchaseStatus for the two one-shot
+// "buy a thing" products (a research report or an event seat is either paid
+// for or it isn't — no ACTIVE/EXPIRED lifecycle). Forcing both into one
+// enum would leave irrelevant values on every row; these are honest about
+// what each product actually is.
+// ============================================================================
+
+enum PlacementStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PromotionPlacement {
+  FEATURED_HOME
+  TRENDING_BOOST
+  CATEGORY_TOP
+}
+
+// No separate catalog model — per the architecture plan's own schema sketch
+// this is just {petitionId, purchaserUserId, amount, status, startsAt,
+// endsAt, placement}. Pricing per placement is admin-configurable via
+// FeatureFlagService config JSON (PETITION_PROMOTION_PRICING), the same
+// mechanism ConstituencyFeedService already uses for its thresholds —
+// not a new catalog model for what's really just a small price table.
+//
+// Never touches Petition.signaturesCount/status/governmentResponses — only
+// read-path placement/sort. Enforced by civic-principle.spec.ts.
+model PetitionPromotion {
+  id              String             @id @default(cuid())
+  petitionId      String
+  petition        Petition           @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  purchaserUserId String
+  purchaser       User               @relation("PetitionPromotionPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  amount          Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  placement       PromotionPlacement
+  status          PlacementStatus    @default(PENDING)
+  startsAt        DateTime?
+  endsAt          DateTime?
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([petitionId, status])
+  @@index([status, endsAt])
+}
+
+model SponsorshipPackage {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  description  String?
+  priceAmount  Decimal  @db.Decimal(12, 2)
+  currency     String   @default("USD")
+  durationDays Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  purchases SponsorshipPurchase[]
+
+  @@index([active])
+}
+
+model SponsorshipPurchase {
+  id              String             @id @default(cuid())
+  packageId       String
+  package         SponsorshipPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  purchaserUserId String
+  purchaser       User               @relation("SponsorshipPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  status          PlacementStatus    @default(PENDING)
+  startsAt        DateTime?
+  endsAt          DateTime?
+
+  // Set once an admin fulfills the purchase with an actual logo-wall entry —
+  // see the Sponsor.purchase back-relation comment.
+  sponsorId String?  @unique
+  sponsor   Sponsor? @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ResearchProduct {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String?
+  priceAmount Decimal  @db.Decimal(12, 2)
+  currency    String   @default("USD")
+  fileUrl     String? // access-gated download, only ever returned to a completed purchaser
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchases ResearchProductPurchase[]
+
+  @@index([active])
+}
+
+model ResearchProductPurchase {
+  id              String          @id @default(cuid())
+  productId       String
+  product         ResearchProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaserUserId String
+  purchaser       User            @relation("ResearchProductPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  status          PurchaseStatus  @default(PENDING)
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaserUserId, status])
+  @@index([status])
+}
+
+enum EventRegistrationStatus {
+  REGISTERED
+  CANCELLED
+  ATTENDED
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  location    String?
+  priceAmount Decimal? @db.Decimal(12, 2) // null = free event
+  currency    String   @default("USD")
+  capacity    Int?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  registrations EventRegistration[]
+
+  @@index([active, startsAt])
+}
+
+model EventRegistration {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation("EventRegistrant", fields: [userId], references: [id], onDelete: Cascade)
+
+  status         EventRegistrationStatus @default(REGISTERED)
+  purchaseStatus PurchaseStatus          @default(COMPLETED) // COMPLETED immediately for free events
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+}
+
+model ApiPlan {
+  id              String             @id @default(cuid())
+  key             String             @unique
+  name            String
+  description     String?
+  priceAmount     Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  interval        MembershipInterval
+  requestsPerDay  Int
+  entitlementKeys String             @default("[]") @db.Text()
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  subscriptions ApiSubscription[]
+
+  @@index([active])
+}
+
+model ApiSubscription {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation("ApiSubscriber", fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   ApiPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys ApiKey[]
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+model ApiKey {
+  id             String          @id @default(cuid())
+  subscriptionId String
+  subscription   ApiSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Only a SHA-256 hash is stored — the raw key is shown once at creation
+  // and never persisted, same secret-handling discipline as every other
+  // credential in this codebase. keyPrefix is a short, non-secret slice
+  // shown in the UI so a user can tell their keys apart.
+  keyHash    String       @unique
+  keyPrefix  String
+  status     ApiKeyStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  createdAt  DateTime     @default(now())
+  revokedAt  DateTime?
+
+  usage ApiUsageDaily[]
+
+  @@index([subscriptionId])
+}
+
+model ApiUsageDaily {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  apiKey       ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date()
+  requestCount Int      @default(0)
+
+  @@unique([apiKeyId, date])
+}
+
+enum ServiceRequestStatus {
+  SUBMITTED
+  SCOPING
+  QUOTED
+  IN_PROGRESS
+  DELIVERED
+  CLOSED
+  DECLINED
+}
+
+// "Change Liberia Studio" — professional-services intake, modeled on the
+// existing officials apply/review flow (a status pipeline + an audit-log
+// side table, not a payment-webhook-driven purchase). Billing for a
+// scoped-and-quoted engagement goes through Invoice below once QUOTED,
+// since this kind of B2B service work is normally invoiced and paid
+// out-of-band (bank transfer, PO) rather than an instant card checkout.
+model ProfessionalServiceRequest {
+  id              String        @id @default(cuid())
+  requesterUserId String
+  requester       User          @relation("ServiceRequestRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  institutionId   String?
+  institution     Institution?  @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+
+  title        String
+  description  String               @db.Text()
+  status       ServiceRequestStatus @default(SUBMITTED)
+  quotedAmount Decimal?             @db.Decimal(12, 2)
+  currency     String               @default("USD")
+  adminNotes   String?              @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusLogs ServiceRequestStatusLog[]
+  invoices   Invoice[]
+
+  @@index([status])
+  @@index([organizationId])
+  @@index([institutionId])
+}
+
+model ServiceRequestStatusLog {
+  id              String                     @id @default(cuid())
+  requestId       String
+  request         ProfessionalServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromStatus      ServiceRequestStatus?
+  toStatus        ServiceRequestStatus
+  changedByUserId String?
+  note            String?
+  createdAt       DateTime                   @default(now())
+
+  @@index([requestId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+}
+
+// The platform's first real invoice model. Deliberately scoped to Studio
+// service-request billing for this milestone rather than also being
+// auto-generated for every Sponsorship/Research/Event/API card purchase —
+// those already have a receipt via the existing Payment/PaymentIntent
+// trail, and forcing an Invoice row per small self-serve purchase would be
+// scope creep beyond what B2B service billing actually needs. Extending
+// invoice generation to the other purchase types is a clean, additive
+// follow-up if/when finance actually needs it.
+model Invoice {
+  id     String        @id @default(cuid())
+  number String        @unique // human-readable, e.g. "INV-000123"
+  status InvoiceStatus @default(DRAFT)
+
+  userId         String?
+  user           User?         @relation("InvoiceUser", fields: [userId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  institutionId  String?
+  institution    Institution?  @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+
+  serviceRequestId String?
+  serviceRequest   ProfessionalServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+
+  currency    String    @default("USD")
+  totalAmount Decimal   @db.Decimal(12, 2)
+  issuedAt    DateTime?
+  dueAt       DateTime?
+  paidAt      DateTime?
+  notes       String?   @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineItems InvoiceLineItem[]
+
+  @@index([status])
+  @@index([organizationId])
+  @@index([institutionId])
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int      @default(1)
+  unitAmount  Decimal  @db.Decimal(12, 2)
+  totalAmount Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
 }
 
 // ============================================================================
@@ -1256,6 +1970,9 @@ enum PermissionResource {
   OFFICIAL
   INBOX
   RESPONSE
+  ENTITLEMENT
+  MONETIZATION
+  ORGANIZATION
 }
 
 model Permission {
@@ -1354,6 +2071,71 @@ enum OfficialVerificationStatus {
   VERIFIED
   REJECTED
   SUSPENDED
+  UNDER_REVIEW // periodic re-verification in progress (e.g. term renewal), distinct from the initial PENDING_REVIEW intake state
+  REVOKED // lost office (term ended, recall) — terminal, distinct from the temporary/admin-initiated SUSPENDED
+}
+
+// --- Geography (Lawmaker Constituency Portal foundation) ---------------
+// Canonical Liberian administrative geography, additive alongside the
+// free-text county/district columns already present on Institution,
+// Petition, User, Poll, PollVote, and SignatureLocation. Those columns are
+// dual-written during rollout (see apps/api/src/geography and
+// apps/api/src/scripts/backfill-geography.ts) and remain a display-cache
+// fallback after cutover — see the Lawmakers Portal implementation plan.
+//
+// A "senatorial constituency" is intentionally NOT modeled separately: in
+// Liberia each of the 15 counties elects 2 senators at-large, so it is
+// isomorphic to County. Sub-district (community/landmark) geography stays
+// free text — Liberia has no administrative register at that granularity.
+model County {
+  id      String  @id @default(cuid())
+  name    String  @unique // canonical Title Case, e.g. "Montserrado"
+  code    String  @unique // stable short code, e.g. "MO"
+  capital String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  districts ElectoralDistrict[]
+
+  institutions       Institution[]       @relation("InstitutionCounty")
+  petitions          Petition[]          @relation("PetitionCounty")
+  polls              Poll[]              @relation("PollCounty")
+  pollVotes          PollVote[]          @relation("PollVoteCounty")
+  users              User[]              @relation("UserCounty")
+  signatureLocations SignatureLocation[] @relation("SignatureLocationCounty")
+
+  @@index([name])
+}
+
+// Electoral districts are seeded incrementally by an admin (see
+// AdminGeographyController), never bundled as a static fabricated dataset —
+// Liberia's National Elections Commission periodically redraws district
+// lines and no verified authoritative source was available at build time.
+// `verifiedAt` is null until an admin confirms the row.
+model ElectoralDistrict {
+  id        String @id @default(cuid())
+  countyId  String
+  county    County @relation(fields: [countyId], references: [id], onDelete: Restrict)
+  name      String
+  number    Int?
+  seatCount Int    @default(1) // representatives elected from this district, normally 1
+
+  source     String? // provenance note, e.g. "NEC gazette 2023" or "manual entry"
+  verifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  institutions       Institution[]       @relation("InstitutionDistrict")
+  petitions          Petition[]          @relation("PetitionDistrict")
+  polls              Poll[]              @relation("PollDistrict")
+  pollVotes          PollVote[]          @relation("PollVoteDistrict")
+  users              User[]              @relation("UserDistrict")
+  signatureLocations SignatureLocation[] @relation("SignatureLocationDistrict")
+
+  @@unique([countyId, name])
+  @@index([countyId])
 }
 
 model Institution {
@@ -1393,16 +2175,40 @@ model Institution {
   officialStatus OfficialVerificationStatus @default(UNVERIFIED)
   slug           String?                    @unique
 
+  // Geography (normalized), dual-written alongside county/district above.
+  // Drives Lawmaker Constituency Portal jurisdiction scoping — see
+  // apps/api/src/officials/jurisdiction-rules.ts.
+  countyId            String?
+  countyRef           County?            @relation("InstitutionCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict? @relation("InstitutionDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
+
   officialProfile     InstitutionOfficialProfile?
   statusLogs          InstitutionStatusLog[]
   governmentResponses PetitionGovernmentResponse[]
   staffMembers        OfficialStaffMember[]
+
+  // Lawmaker Constituency Portal: automated periodic reports
+  constituencyReportPreference ConstituencyReportPreference?
+  constituencyReports          ConstituencyReport[]
+
+  entitlementGrants EntitlementGrant[]
+
+  // Milestone 9: Organization + Institution billing
+  organization Organization?
+  subscription InstitutionSubscription?
+
+  // Milestone 10
+  serviceRequests ProfessionalServiceRequest[]
+  invoices        Invoice[]
 
   @@index([type, category, verified])
   @@index([verified, createdAt])
   @@index([name])
   @@index([category, county, district])
   @@index([officialStatus])
+  @@index([category, countyId])
+  @@index([category, electoralDistrictId])
 }
 
 enum OfficialStaffRole {
@@ -1589,6 +2395,87 @@ model GovernmentResponseTimelineEntry {
   @@index([responseId, createdAt])
 }
 
+// --- Lawmaker Constituency Portal: automated periodic reports --------
+// Mirrors the existing FraudJob DB-backed job pattern (QUEUED/PROCESSING/
+// COMPLETED/FAILED + attempts/error) rather than introducing a new queue
+// system — see apps/api/src/officials/constituency-report.scheduler.ts.
+
+enum ConstituencyReportPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum ConstituencyReportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Per-institution opt-in for each automated report cadence. A tiny
+// separate model (not booleans on Institution) so it carries its own
+// updatedAt/updatedBy for audit, matching how InstitutionStatusLog keeps
+// status changes separate from the Institution row itself.
+model ConstituencyReportPreference {
+  id               String      @id @default(cuid())
+  institutionId    String      @unique
+  institution      Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  weeklyEnabled    Boolean     @default(false)
+  monthlyEnabled   Boolean     @default(true)
+  quarterlyEnabled Boolean     @default(false)
+  annualEnabled    Boolean     @default(false)
+  updatedAt        DateTime    @updatedAt
+  updatedByUserId  String?
+}
+
+model ConstituencyReport {
+  id            String                   @id @default(cuid())
+  institutionId String
+  institution   Institution              @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  period        ConstituencyReportPeriod
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        ConstituencyReportStatus @default(QUEUED)
+  attempts      Int                      @default(0)
+  error         String?                  @db.Text()
+  generatedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+
+  files      ConstituencyReportFile[]
+  deliveries ConstituencyReportDelivery[]
+
+  @@index([institutionId, period, periodStart])
+  @@index([status])
+}
+
+model ConstituencyReportFile {
+  id        String             @id @default(cuid())
+  reportId  String
+  report    ConstituencyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  format    String // "PDF" | "CSV"
+  filePath  String // local disk path — see constituency-report-storage.service.ts
+  fileSize  Int?
+  createdAt DateTime           @default(now())
+
+  @@index([reportId])
+}
+
+model ConstituencyReportDelivery {
+  id          String             @id @default(cuid())
+  reportId    String
+  report      ConstituencyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  channel     String             @default("EMAIL") // only channel at launch; string not enum so a future channel doesn't need a migration
+  recipientId String // User.id (holder or staff member with canGenerateReports/canView)
+  status      String             @default("PENDING") // PENDING | SENT | FAILED
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime           @default(now())
+
+  @@index([reportId])
+}
+
 model InstitutionDepartment {
   id            String             @id @default(cuid())
   institutionId String
@@ -1758,6 +2645,11 @@ model Sponsor {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Milestone 10: optional link to the paid purchase that produced this
+  // logo-wall entry. A free/static Sponsor row (admin-added directly, as
+  // today) simply has no linked purchase — this never becomes required.
+  purchase SponsorshipPurchase?
 }
 
 model Supporter {
@@ -1938,6 +2830,7 @@ enum EmailType {
   BROADCAST_NOTIFICATION
   OFFICIAL_VERIFIED
   OFFICIAL_REJECTED
+  CONSTITUENCY_REPORT_READY
 }
 
 enum EmailStatus {
@@ -2030,6 +2923,12 @@ model Poll {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
+  // Geography (normalized), dual-written alongside county/district above
+  countyId            String?
+  countyRef           County?            @relation("PollCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict? @relation("PollDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
+
   options PollOption[]
   votes   PollVote[]
 
@@ -2059,24 +2958,29 @@ model PollOption {
 }
 
 model PollVote {
-  id          String     @id @default(cuid())
-  pollId      String
-  poll        Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  optionId    String
-  option      PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  userId      String? // null for anonymous votes
-  user        User?      @relation("PollVoter", fields: [userId], references: [id], onDelete: SetNull)
-  sessionId   String // Browser session ID
-  ipHash      String // Hash of IP address
-  fingerprint String // Session fingerprint (user-agent + IP)
+  id                  String             @id @default(cuid())
+  pollId              String
+  poll                Poll               @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId            String
+  option              PollOption         @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId              String? // null for anonymous votes
+  user                User?              @relation("PollVoter", fields: [userId], references: [id], onDelete: SetNull)
+  sessionId           String // Browser session ID
+  ipHash              String // Hash of IP address
+  fingerprint         String // Session fingerprint (user-agent + IP)
   // Petition Location Verification & Impact Area System (Phase 2):
   // auto-filled from the voter's profile when logged in; null for anonymous
   // votes. No separate confirmation flow (unlike petition signing) — this is
   // a lighter-weight geographic participation signal, not a classification.
-  county      String?
-  district    String?
-  community   String?
-  createdAt   DateTime   @default(now())
+  county              String?
+  district            String?
+  community           String?
+  // Geography (normalized), dual-written alongside county/district above
+  countyId            String?
+  countyRef           County?            @relation("PollVoteCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  electoralDistrictId String?
+  electoralDistrict   ElectoralDistrict? @relation("PollVoteDistrict", fields: [electoralDistrictId], references: [id], onDelete: SetNull)
+  createdAt           DateTime           @default(now())
 
   @@unique([pollId, sessionId]) // One vote per session per poll
   @@index([pollId])
