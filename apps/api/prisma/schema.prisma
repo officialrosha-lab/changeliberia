@@ -887,6 +887,11 @@ model MoMoSubscriptionAuthorization {
   preapprovalId         String       @unique // MoMo pre-approval reference
   phoneNumber           String // User's phone number
   maxAmount             Float // Maximum amount that can be charged
+  // Decimal migration — additive dual-write target, same convention as
+  // Payment/Subscription/Refund/OrderItem above. Added in Milestone 12
+  // alongside the read cutover rather than left as the one remaining
+  // Float money field on this model.
+  maxAmountDecimal      Decimal?     @db.Decimal(12, 2)
   validityTimeInSeconds Int // How long pre-approval is valid
   status                String       @default("PENDING") // PENDING, APPROVED, REJECTED
   expiresAt             DateTime // When pre-approval expires
