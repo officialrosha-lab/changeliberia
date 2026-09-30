@@ -1,33 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { InstitutionsManager, ContactsManager, CSVImporter, RoutingAnalytics } from '../../../components/admin-directory';
-import { apiGet } from '../../../lib/api';
-import { useAuthStore } from '../../../lib/store';
-
-type Phase = 'loading' | 'denied' | 'ok';
+import { useAdminGuard } from '../../../lib/use-admin-guard';
 
 export default function AdminDirectoryPage() {
-  const token = useAuthStore((s) => s.token);
-  const [asyncPhase, setAsyncPhase] = useState<Phase>('loading');
-  const phase: Phase = !token ? 'denied' : asyncPhase;
+  const { phase, token } = useAdminGuard();
   const [activeTab, setActiveTab] = useState<'institutions' | 'contacts' | 'import' | 'analytics'>('institutions');
-
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const me = await apiGet<{ role: string }>('/users/me', token);
-        if (cancelled) return;
-        setAsyncPhase(me.role === 'ADMIN' ? 'ok' : 'denied');
-      } catch {
-        if (!cancelled) setAsyncPhase('denied');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [token]);
 
   if (phase === 'loading') {
     return (

@@ -6,6 +6,7 @@ import {
   Subscription,
   PaymentStatus,
   SubscriptionStatus,
+  Prisma,
 } from '@prisma/client';
 import { MoMoService } from './providers/momo.service';
 import * as crypto from 'crypto';
@@ -162,6 +163,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           stripePaymentIntentId: intent.id,
@@ -237,6 +239,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           paymentMethod: 'MOBILE_MONEY',
@@ -409,6 +412,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           status: 'PENDING' as PaymentStatus,
           stripeCheckoutId: session.id,
@@ -582,6 +586,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           interval: dto.recurringInterval,
           status: 'ACTIVE' as SubscriptionStatus,
@@ -655,6 +660,7 @@ export class PaymentService {
           userId: dto.userId,
           petitionId: dto.petitionId,
           amount: dto.amount,
+          amountDecimal: new Prisma.Decimal(dto.amount),
           currency: dto.currency,
           interval: dto.recurringInterval,
           status: 'PENDING' as SubscriptionStatus, // Wait for pre-approval confirmation
@@ -676,6 +682,7 @@ export class PaymentService {
           preapprovalId,
           phoneNumber: dto.phoneNumber,
           maxAmount: dto.amount * 12,
+          maxAmountDecimal: new Prisma.Decimal(dto.amount * 12),
           validityTimeInSeconds,
           status: 'PENDING',
           expiresAt: preApproval.expiresAt,
@@ -706,8 +713,12 @@ export class PaymentService {
       }
 
       let updated = stored;
+      const storedAmount = this.resolveAmount(
+        stored.amount,
+        stored.amountDecimal,
+      );
 
-      if (amount && amount !== stored.amount) {
+      if (amount && amount !== storedAmount) {
         // Create new price and update
         const product = await this.getStripe().products.create({
           name: 'Updated Donation',
@@ -742,7 +753,7 @@ export class PaymentService {
 
         updated = await this.prisma.subscription.update({
           where: { id: subscriptionId },
-          data: { amount },
+          data: { amount, amountDecimal: new Prisma.Decimal(amount) },
         });
       }
 
@@ -855,6 +866,11 @@ export class PaymentService {
         data: {
           paymentId,
           amount: payment.amount,
+          // Prefer the payment's own already-backfilled Decimal value when
+          // present, so a refund never reconstructs a Decimal from a Float
+          // that itself may already be stale relative to its sibling.
+          amountDecimal:
+            payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
           currency: payment.currency,
           reason,
           stripeRefundId: refund.id,
@@ -871,7 +887,7 @@ export class PaymentService {
       return {
         refundId: stored.id,
         paymentId: stored.paymentId,
-        amount: stored.amount,
+        amount: this.resolveAmount(stored.amount, stored.amountDecimal),
         currency: stored.currency,
         reason: stored.reason,
         status: stored.status,
@@ -968,6 +984,19 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Decimal migration read cutover (Milestone 12): the Decimal column is
+   * now the authoritative source once it's populated, falling back to the
+   * legacy Float only for a stray pre-backfill row. The wire shape stays a
+   * plain number either way — nothing downstream needs to change.
+   */
+  private resolveAmount(
+    floatAmount: number,
+    decimalAmount: Prisma.Decimal | null,
+  ): number {
+    return decimalAmount ? decimalAmount.toNumber() : floatAmount;
+  }
+
   private formatPaymentHistory(payment: Payment): PaymentHistoryResponse {
     const paymentType =
       payment.paymentMethod === 'MOBILE_MONEY'
@@ -980,7 +1009,7 @@ export class PaymentService {
 
     return {
       paymentId: payment.id,
-      amount: payment.amount,
+      amount: this.resolveAmount(payment.amount, payment.amountDecimal),
       currency: payment.currency,
       status: payment.status,
       type: paymentType,
@@ -1011,7 +1040,10 @@ export class PaymentService {
       id: subscription.id,
       petitionId: subscription.petitionId,
       userId: subscription.userId,
-      amount: subscription.amount,
+      amount: this.resolveAmount(
+        subscription.amount,
+        subscription.amountDecimal,
+      ),
       currency: subscription.currency,
       interval: subscription.interval,
       status: subscription.status,

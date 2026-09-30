@@ -7,6 +7,9 @@ import { PaymentController } from './payment.controller';
 import { PaymentWebhookService } from './payment-webhook.service';
 import { WebhookEventHandlerService } from './webhook-event-handler.service';
 import { MoMoModule } from './momo.module';
+import { StripeProviderAdapter } from './providers/stripe-provider.adapter';
+import { MoMoProviderAdapter } from './providers/momo-provider.adapter';
+import { DecimalConsistencyScheduler } from './decimal-consistency.scheduler';
 
 @Module({
   imports: [PrismaModule, EmailModule, ActivityModule, MoMoModule],
@@ -15,7 +18,15 @@ import { MoMoModule } from './momo.module';
     PaymentService,
     PaymentWebhookService,
     WebhookEventHandlerService,
+    StripeProviderAdapter,
+    MoMoProviderAdapter,
+    DecimalConsistencyScheduler,
   ],
-  exports: [PaymentService, PaymentWebhookService],
+  exports: [
+    PaymentService,
+    PaymentWebhookService,
+    StripeProviderAdapter,
+    MoMoProviderAdapter,
+  ],
 })
 export class PaymentModule {}

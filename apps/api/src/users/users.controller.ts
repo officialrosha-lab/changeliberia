@@ -20,6 +20,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PasswordProvider } from '../auth/password.provider';
 import { PrismaService } from '../prisma/prisma.service';
+import { GeographyService } from '../geography/geography.service';
 
 class UpdateProfileDto {
   @IsOptional() @IsString() @MaxLength(120) fullName?: string;
@@ -39,6 +40,7 @@ export class UsersController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordProvider: PasswordProvider,
+    private readonly geographyService: GeographyService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -53,9 +55,39 @@ export class UsersController {
     @Req() req: { user: { userId: string } },
     @Body() body: UpdateProfileDto,
   ) {
+    // Geography dual-write: resolve free-text county/district to the
+    // canonical County/ElectoralDistrict rows. Only re-resolve when the
+    // profile update actually touches county/district; otherwise leave the
+    // existing FKs untouched.
+    let geography: { countyId?: string; electoralDistrictId?: string } = {};
+    if (body.county !== undefined || body.district !== undefined) {
+      let county = body.county;
+      let district = body.district;
+      if (county === undefined || district === undefined) {
+        const existing = await this.prisma.user.findUnique({
+          where: { id: req.user.userId },
+          select: { county: true, district: true },
+        });
+        county = county ?? existing?.county ?? undefined;
+        district = district ?? existing?.district ?? undefined;
+      }
+      const resolvedCounty =
+        await this.geographyService.resolveCountyByName(county);
+      const resolvedDistrict = resolvedCounty
+        ? await this.geographyService.resolveDistrictByName(
+            resolvedCounty.id,
+            district,
+          )
+        : null;
+      geography = {
+        countyId: resolvedCounty?.id,
+        electoralDistrictId: resolvedDistrict?.id,
+      };
+    }
+
     return this.prisma.user.update({
       where: { id: req.user.userId },
-      data: body,
+      data: { ...body, ...geography },
     });
   }
 

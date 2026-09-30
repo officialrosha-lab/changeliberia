@@ -2,24 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { apiPost } from '../lib/api';
-
-const LIBERIAN_COUNTIES = [
-  'Bomi',
-  'Bong',
-  'Gbarpolu',
-  'Grand Bassa',
-  'Grand Cape Mount',
-  'Gredo',
-  'Lofa',
-  'Margibi',
-  'Maryland',
-  'Montserrado',
-  'Nimba',
-  'River Cess',
-  'River Gee',
-  'Sinoe',
-  'Not specified',
-];
+import { useCounties } from '../lib/use-counties';
 
 interface FormErrors {
   fullName?: string;
@@ -31,6 +14,8 @@ interface FormErrors {
 }
 
 export function AmbassadorApplicationForm() {
+  const { counties: countyOptions } = useCounties();
+  const LIBERIAN_COUNTIES = [...countyOptions.map((c) => c.name), 'Not specified'];
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);

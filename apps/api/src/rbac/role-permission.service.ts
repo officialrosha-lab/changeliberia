@@ -633,6 +633,60 @@ export class RolePermissionService implements OnModuleInit {
         action: PermissionAction.UPDATE,
       },
       { resource: PermissionResource.RESPONSE, action: PermissionAction.READ },
+
+      // Entitlements (Monetization foundation)
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.ENTITLEMENT,
+        action: PermissionAction.DELETE,
+      },
+
+      // Monetization (memberships, plans, and other paid products)
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.MONETIZATION,
+        action: PermissionAction.DELETE,
+      },
+
+      // Organizations (multi-seat teams, workspace plan catalog)
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.DELETE,
+      },
     ];
 
     // Create permissions

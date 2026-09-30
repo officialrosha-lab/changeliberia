@@ -8,6 +8,7 @@ import {
 import { Prisma, PollStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
+import { GeographyService } from '../geography/geography.service';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { PollResponse, PollListResponse } from './dto/poll-response.dto';
 import { slugify } from '../common/utils/slugify';
@@ -45,6 +46,7 @@ export class PollsService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
+    private readonly geographyService: GeographyService,
   ) {}
 
   /**
@@ -56,6 +58,28 @@ export class PollsService {
       imageUrl: option.imageUrl || undefined,
       order: index + 1,
     }));
+  }
+
+  /**
+   * Geography dual-write helper (shared by createPoll/submitPoll): resolves
+   * free-text county/district to the canonical County/ElectoralDistrict FK
+   * ids. Never throws on an unmatched value.
+   */
+  private async resolvePollGeography(
+    county: string | null | undefined,
+    district: string | null | undefined,
+  ): Promise<{ countyId?: string; electoralDistrictId?: string }> {
+    const resolvedCounty =
+      await this.geographyService.resolveCountyByName(county);
+    if (!resolvedCounty) return {};
+    const resolvedDistrict = await this.geographyService.resolveDistrictByName(
+      resolvedCounty.id,
+      district,
+    );
+    return {
+      countyId: resolvedCounty.id,
+      electoralDistrictId: resolvedDistrict?.id,
+    };
   }
 
   /**
@@ -78,6 +102,11 @@ export class PollsService {
       counter++;
     }
 
+    const geography = await this.resolvePollGeography(
+      createPollDto.county,
+      createPollDto.district,
+    );
+
     // Create poll with options (admin direct creation = ACTIVE status)
     const poll = await this.prisma.poll.create({
       data: {
@@ -88,6 +117,7 @@ export class PollsService {
         county: createPollDto.county || null,
         district: createPollDto.district || null,
         community: createPollDto.community || null,
+        ...geography,
         createdBy,
         status: 'ACTIVE', // Admin direct creation is immediately active
         expiresAt: new Date(createPollDto.expiresAt),
@@ -134,6 +164,11 @@ export class PollsService {
         counter++;
       }
 
+      const geography = await this.resolvePollGeography(
+        createPollDto.county,
+        createPollDto.district,
+      );
+
       // Create poll with PENDING status
       const poll = await this.prisma.poll.create({
         data: {
@@ -144,6 +179,7 @@ export class PollsService {
           county: createPollDto.county || null,
           district: createPollDto.district || null,
           community: createPollDto.community || null,
+          ...geography,
           createdBy: submittedBy,
           status: PollStatus.PENDING,
           expiresAt: new Date(createPollDto.expiresAt),
