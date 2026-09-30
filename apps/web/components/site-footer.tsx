@@ -25,6 +25,17 @@ const COLS = [
     ],
   },
   {
+    title: 'Marketplace',
+    links: [
+      { href: '/marketplace', label: 'Browse all' },
+      { href: '/sponsorships', label: 'Sponsorships' },
+      { href: '/research', label: 'Research products' },
+      { href: '/events', label: 'Events' },
+      { href: '/developers', label: 'API access' },
+      { href: '/studio', label: 'Change Liberia Studio' },
+    ],
+  },
+  {
     title: 'About',
     links: [
       { href: '/', label: 'Home' },
@@ -51,7 +62,7 @@ export function SiteFooter() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:py-16">
 
           {/* Top row: brand + columns */}
-          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-[220px_1fr_1fr_1fr_1fr] md:gap-10">
+          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 md:gap-10 lg:grid-cols-[220px_1fr_1fr_1fr_1fr_1fr]">
 
             {/* Brand column */}
             <div className="flex flex-col gap-3">
