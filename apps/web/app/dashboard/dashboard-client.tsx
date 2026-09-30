@@ -387,6 +387,27 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 </Link>
               </div>
             </div>
+            <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-100">Marketplace</p>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-400">
+                    Optional paid tools that fund the platform — sponsorships, research products, events, API
+                    access, and Studio services.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    <Link href="/promotions" className="hover:underline">My promotions</Link>
+                    <Link href="/invoices" className="hover:underline">My invoices</Link>
+                  </div>
+                </div>
+                <Link
+                  href="/marketplace"
+                  className="inline-flex rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                >
+                  Browse marketplace
+                </Link>
+              </div>
+            </div>
             {user.role === 'ADMIN' && (
               <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
