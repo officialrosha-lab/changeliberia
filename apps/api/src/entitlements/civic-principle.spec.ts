@@ -62,6 +62,7 @@ describe('Civic principle: free-forever routes carry no EntitlementGuard', () =>
     expectNoEntitlementGate(OfficialsController, 'getConstituencyPetitions');
     expectNoEntitlementGate(OfficialsController, 'getConstituencyPolls');
     expectNoEntitlementGate(OfficialsController, 'getConstituencyIssues');
+    expectNoEntitlementGate(OfficialsController, 'getConstituencyCommunity');
     expectNoEntitlementGate(OfficialsController, 'getDashboard');
     expectNoEntitlementGate(OfficialsController, 'getFeed');
     expectNoEntitlementGate(OfficialsController, 'getInbox');

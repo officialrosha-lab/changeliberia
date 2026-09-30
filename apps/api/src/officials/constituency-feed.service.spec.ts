@@ -47,6 +47,10 @@ describe('ConstituencyFeedService', () => {
     signature: {
       groupBy: jest.fn<Promise<unknown[]>, [Record<string, unknown>]>(),
     },
+    signatureLocation: {
+      groupBy: jest.fn<Promise<unknown[]>, [Record<string, unknown>]>(),
+      count: jest.fn<Promise<number>, [Record<string, unknown>]>(),
+    },
     poll: {
       findMany: jest.fn<Promise<unknown[]>, [Record<string, unknown>]>(),
       count: jest.fn<Promise<number>, [Record<string, unknown>]>(),
@@ -60,6 +64,8 @@ describe('ConstituencyFeedService', () => {
     mockPrisma.petition.findMany.mockResolvedValue([]);
     mockPrisma.petition.count.mockResolvedValue(0);
     mockPrisma.signature.groupBy.mockResolvedValue([]);
+    mockPrisma.signatureLocation.groupBy.mockResolvedValue([]);
+    mockPrisma.signatureLocation.count.mockResolvedValue(0);
     mockPrisma.poll.findMany.mockResolvedValue([]);
     mockPrisma.poll.count.mockResolvedValue(0);
     service = new ConstituencyFeedService(
@@ -198,6 +204,73 @@ describe('ConstituencyFeedService', () => {
           },
         }),
       );
+    });
+  });
+
+  describe('getCommunityInsights', () => {
+    it('REGRESSION: a Representative with a district scopes signatureLocation queries by BOTH county and district, not county alone', async () => {
+      const institution = makeInstitution({
+        category: InstitutionCategory.REPRESENTATIVE,
+        county: 'Montserrado',
+        district: 'District #10',
+      });
+
+      await service.getCommunityInsights(institution);
+
+      const expectedPetitionWhere = {
+        county: 'Montserrado',
+        district: 'District #10',
+        status: 'APPROVED',
+      };
+      expect(mockPrisma.signatureLocation.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          by: ['county'],
+          where: expect.objectContaining({
+            signature: { petition: expectedPetitionWhere },
+          }) as unknown,
+        }),
+      );
+      expect(mockPrisma.signatureLocation.count).toHaveBeenCalledWith({
+        where: {
+          classification: 'DIASPORA_SUPPORTER',
+          signature: { petition: expectedPetitionWhere },
+        },
+      });
+    });
+
+    it('returns an empty result with scope: null for an office with no jurisdiction', async () => {
+      const institution = makeInstitution({
+        category: InstitutionCategory.EXECUTIVE_OFFICE,
+      });
+
+      const result = await service.getCommunityInsights(institution);
+
+      expect(result).toEqual({
+        scope: null,
+        byCounty: [],
+        byDistrict: [],
+        byCommunity: [],
+        diasporaTotal: 0,
+      });
+      expect(mockPrisma.signatureLocation.groupBy).not.toHaveBeenCalled();
+    });
+
+    it('shapes groupBy rows into {label, count} and passes through the diaspora count', async () => {
+      const institution = makeInstitution({ county: 'Montserrado' });
+      mockPrisma.signatureLocation.groupBy
+        .mockResolvedValueOnce([
+          { county: 'Montserrado', _count: { _all: 12 } },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ community: 'Sinkor', _count: { _all: 5 } }]);
+      mockPrisma.signatureLocation.count.mockResolvedValue(3);
+
+      const result = await service.getCommunityInsights(institution);
+
+      expect(result.byCounty).toEqual([{ label: 'Montserrado', count: 12 }]);
+      expect(result.byDistrict).toEqual([]);
+      expect(result.byCommunity).toEqual([{ label: 'Sinkor', count: 5 }]);
+      expect(result.diasporaTotal).toBe(3);
     });
   });
 });
