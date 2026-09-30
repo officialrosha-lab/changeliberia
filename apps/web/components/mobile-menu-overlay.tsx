@@ -13,6 +13,8 @@ const EXPLORE_ITEMS = [
   { href: '/petitions',     icon: '🔍', label: 'Browse causes' },
   { href: '/#donate',       icon: '💛', label: 'Donate' },
   { href: '/#how-it-works', icon: '💡', label: 'How it works' },
+  { href: '/membership',    icon: '🤝', label: 'Membership' },
+  { href: '/transparency',  icon: '📊', label: 'Transparency' },
 ];
 
 export function MobileMenuOverlay() {
