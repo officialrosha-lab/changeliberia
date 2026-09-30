@@ -24,6 +24,9 @@ import { ServiceRequestsController } from './service-requests.controller';
 import { AdminServiceRequestsController } from './admin-service-requests.controller';
 import { InvoicesController } from './invoices.controller';
 import { AdminInvoicesController } from './admin-invoices.controller';
+import { MonetizationAggregatesService } from './monetization-aggregates.service';
+import { AdminMonetizationDashboardController } from './admin-monetization-dashboard.controller';
+import { PublicTransparencyController } from './public-transparency.controller';
 
 @Module({
   imports: [PrismaModule, ActivityModule, AdminModule, PaymentModule],
@@ -42,6 +45,8 @@ import { AdminInvoicesController } from './admin-invoices.controller';
     AdminServiceRequestsController,
     InvoicesController,
     AdminInvoicesController,
+    AdminMonetizationDashboardController,
+    PublicTransparencyController,
   ],
   providers: [
     PetitionPromotionsService,
@@ -51,6 +56,7 @@ import { AdminInvoicesController } from './admin-invoices.controller';
     ApiBillingService,
     InvoicesService,
     ServiceRequestsService,
+    MonetizationAggregatesService,
   ],
   exports: [
     PetitionPromotionsService,
@@ -60,6 +66,7 @@ import { AdminInvoicesController } from './admin-invoices.controller';
     ApiBillingService,
     InvoicesService,
     ServiceRequestsService,
+    MonetizationAggregatesService,
   ],
 })
 export class MonetizationModule {}
