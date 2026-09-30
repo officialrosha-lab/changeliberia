@@ -1651,6 +1651,12 @@ model Invoice {
   paidAt      DateTime?
   notes       String?   @db.Text()
 
+  // Self-serve online payment — an ISSUED invoice can be paid directly via
+  // Stripe Checkout instead of only ever admin-marked-paid out of band.
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
