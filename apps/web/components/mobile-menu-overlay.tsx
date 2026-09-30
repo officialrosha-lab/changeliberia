@@ -15,6 +15,7 @@ const EXPLORE_ITEMS = [
   { href: '/#how-it-works', icon: '💡', label: 'How it works' },
   { href: '/membership',    icon: '🤝', label: 'Membership' },
   { href: '/transparency',  icon: '📊', label: 'Transparency' },
+  { href: '/marketplace',   icon: '🛍️', label: 'Marketplace' },
 ];
 
 export function MobileMenuOverlay() {
