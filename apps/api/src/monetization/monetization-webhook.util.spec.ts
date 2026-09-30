@@ -6,11 +6,13 @@ import {
 import {
   activateApiSubscription,
   activateEventRegistration,
+  activateInvoicePayment,
   activatePetitionPromotion,
   activateResearchProductPurchase,
   activateSponsorshipPurchase,
   cancelApiSubscriptionByProviderSubscriptionId,
   failEventRegistrationByProviderPaymentIntentId,
+  failInvoicePaymentByProviderPaymentIntentId,
   failPetitionPromotionByProviderPaymentIntentId,
   failResearchProductPurchaseByProviderPaymentIntentId,
   failSponsorshipPurchaseByProviderPaymentIntentId,
@@ -36,6 +38,10 @@ describe('monetization-webhook.util', () => {
       update: jest.fn<Promise<unknown>, [unknown]>(),
     },
     eventRegistration: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    invoice: {
       findUnique: jest.fn<Promise<unknown>, [unknown]>(),
       update: jest.fn<Promise<unknown>, [unknown]>(),
     },
@@ -229,6 +235,66 @@ describe('monetization-webhook.util', () => {
             purchaseStatus: PurchaseStatus.FAILED,
             status: 'CANCELLED',
           }) as unknown,
+        }),
+      );
+    });
+  });
+
+  describe('activateInvoicePayment', () => {
+    it('marks the invoice PAID and stamps paidAt', async () => {
+      mockPrisma.invoice.update.mockResolvedValue({
+        id: 'inv-1',
+        status: 'PAID',
+      });
+      const result = await activateInvoicePayment(
+        mockPrisma as never,
+        'inv-1',
+        {
+          providerPaymentIntentId: 'pi_1',
+          eventId: 'evt_1',
+        },
+      );
+      expect(result.status).toBe('PAID');
+      expect(mockPrisma.invoice.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'inv-1' },
+          data: expect.objectContaining({
+            status: 'PAID',
+            providerPaymentIntentId: 'pi_1',
+            lastWebhookEventId: 'evt_1',
+          }) as unknown,
+        }),
+      );
+    });
+  });
+
+  describe('failInvoicePaymentByProviderPaymentIntentId', () => {
+    it('returns null when no invoice matches', async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue(null);
+      const result = await failInvoicePaymentByProviderPaymentIntentId(
+        mockPrisma as never,
+        'pi_ghost',
+        'evt_1',
+      );
+      expect(result).toBeNull();
+    });
+
+    it('REGRESSION: leaves the invoice ISSUED (not a terminal FAILED state) so the buyer can retry payment', async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        status: 'ISSUED',
+      });
+      mockPrisma.invoice.update.mockResolvedValue({ id: 'inv-1' });
+
+      await failInvoicePaymentByProviderPaymentIntentId(
+        mockPrisma as never,
+        'pi_1',
+        'evt_1',
+      );
+
+      expect(mockPrisma.invoice.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { lastWebhookEventId: 'evt_1' },
         }),
       );
     });

@@ -10,8 +10,13 @@ describe('InvoicesService', () => {
       update: jest.fn<Promise<unknown>, [unknown]>(),
       findMany: jest.fn<Promise<unknown[]>, [unknown]>(),
     },
+    user: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+    },
   };
   const mockActivityLogger = { logAsync: jest.fn() };
+  const mockStripeProvider = { createCheckoutSession: jest.fn() };
+  const mockMomoProvider = { createCheckoutSession: jest.fn() };
 
   let service: InvoicesService;
 
@@ -20,6 +25,8 @@ describe('InvoicesService', () => {
     service = new InvoicesService(
       mockPrisma as never,
       mockActivityLogger as never,
+      mockStripeProvider as never,
+      mockMomoProvider as never,
     );
   });
 
@@ -75,6 +82,75 @@ describe('InvoicesService', () => {
       });
       await expect(service.markPaid('inv-1', 'admin-1')).rejects.toThrow(
         'Only an issued invoice',
+      );
+    });
+  });
+
+  describe('pay', () => {
+    const payDto = {
+      successUrl: 'https://app/success',
+      cancelUrl: 'https://app/cancel',
+    };
+
+    it('throws NotFoundException for an unknown invoice', async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue(null);
+      await expect(service.pay('ghost', 'user-1', payDto)).rejects.toThrow(
+        'not found',
+      );
+    });
+
+    it("REGRESSION: refuses to pay an invoice that isn't the caller's own", async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        userId: 'someone-else',
+        status: InvoiceStatus.ISSUED,
+      });
+      await expect(service.pay('inv-1', 'user-1', payDto)).rejects.toThrow(
+        'does not belong to you',
+      );
+    });
+
+    it('rejects paying a non-issued invoice', async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        userId: 'user-1',
+        status: InvoiceStatus.DRAFT,
+      });
+      await expect(service.pay('inv-1', 'user-1', payDto)).rejects.toThrow(
+        'Only an issued invoice can be paid',
+      );
+    });
+
+    it('creates a Stripe checkout session for the invoice total and returns its URL', async () => {
+      mockPrisma.invoice.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        number: 'INV-000001',
+        userId: 'user-1',
+        status: InvoiceStatus.ISSUED,
+        totalAmount: new Prisma.Decimal(1200),
+        currency: 'USD',
+        provider: 'STRIPE',
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'buyer@example.com',
+      });
+      mockStripeProvider.createCheckoutSession.mockResolvedValue({
+        url: 'https://checkout.stripe.com/session-1',
+      });
+
+      const result = await service.pay('inv-1', 'user-1', payDto);
+
+      expect(result).toEqual({
+        checkoutUrl: 'https://checkout.stripe.com/session-1',
+      });
+      expect(mockStripeProvider.createCheckoutSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 1200,
+          currency: 'USD',
+          customerEmail: 'buyer@example.com',
+          metadata: { invoiceId: 'inv-1', userId: 'user-1' },
+        }),
       );
     });
   });
