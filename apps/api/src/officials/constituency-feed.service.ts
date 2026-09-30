@@ -361,6 +361,81 @@ export class ConstituencyFeedService {
       })),
     };
   }
+
+  /**
+   * Constituency-scoped equivalent of
+   * `PetitionsService.getCommunityInsights` — that method stays a
+   * per-petition view (its own doc comment says so); this aggregates the
+   * same county/district/community/diaspora breakdown across every
+   * APPROVED petition in the officeholder's scope, for the dashboard's
+   * Community tab. Same aggregate-only privacy note applies: grouped
+   * counts only, never a per-signature or per-signer view.
+   */
+  async getCommunityInsights(institution: Institution, limit = 8) {
+    const scope = this.constituencyScope.buildScopeFilter(institution);
+    if (!scope) {
+      return {
+        scope: null,
+        byCounty: [] as { label: string; count: number }[],
+        byDistrict: [] as { label: string; count: number }[],
+        byCommunity: [] as { label: string; count: number }[],
+        diasporaTotal: 0,
+      };
+    }
+
+    const where = { ...scope, status: PetitionStatus.APPROVED };
+
+    const [byCounty, byDistrict, byCommunity, diasporaTotal] =
+      await Promise.all([
+        this.prisma.signatureLocation.groupBy({
+          by: ['county'],
+          where: { county: { not: null }, signature: { petition: where } },
+          _count: { _all: true },
+          orderBy: { _count: { county: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.groupBy({
+          by: ['district'],
+          where: { district: { not: null }, signature: { petition: where } },
+          _count: { _all: true },
+          orderBy: { _count: { district: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.groupBy({
+          by: ['community'],
+          where: {
+            community: { not: null },
+            signature: { petition: where },
+          },
+          _count: { _all: true },
+          orderBy: { _count: { community: 'desc' } },
+          take: limit,
+        }),
+        this.prisma.signatureLocation.count({
+          where: {
+            classification: 'DIASPORA_SUPPORTER',
+            signature: { petition: where },
+          },
+        }),
+      ]);
+
+    return {
+      scope,
+      byCounty: byCounty.map((r) => ({
+        label: r.county as string,
+        count: r._count._all,
+      })),
+      byDistrict: byDistrict.map((r) => ({
+        label: r.district as string,
+        count: r._count._all,
+      })),
+      byCommunity: byCommunity.map((r) => ({
+        label: r.community as string,
+        count: r._count._all,
+      })),
+      diasporaTotal,
+    };
+  }
 }
 
 function emptyPagination() {
