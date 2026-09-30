@@ -9,6 +9,9 @@ import {
   InvoicesPanel,
   EntitlementsPanel,
   TransparencyConfigPanel,
+  PetitionPromotionsPanel,
+  SponsorshipPurchasesPanel,
+  ServiceRequestsPanel,
 } from '../../../components/admin-monetization';
 import { useAdminGuard } from '../../../lib/use-admin-guard';
 
@@ -16,6 +19,9 @@ const TABS = [
   ['overview', 'Overview'],
   ['plans', 'Plans'],
   ['subscriptions', 'Subscriptions'],
+  ['promotions', 'Petition Promotions'],
+  ['sponsorship-purchases', 'Sponsorship Purchases'],
+  ['service-requests', 'Studio Requests'],
   ['invoices', 'Invoices'],
   ['entitlements', 'Entitlement Grants'],
   ['transparency', 'Transparency Config'],
@@ -97,6 +103,9 @@ export default function AdminMonetizationPage() {
         {activeTab === 'overview' && <OverviewPanel />}
         {activeTab === 'plans' && <PlanCatalogsTab />}
         {activeTab === 'subscriptions' && <SubscriptionsPanel />}
+        {activeTab === 'promotions' && <PetitionPromotionsPanel />}
+        {activeTab === 'sponsorship-purchases' && <SponsorshipPurchasesPanel />}
+        {activeTab === 'service-requests' && <ServiceRequestsPanel />}
         {activeTab === 'invoices' && <InvoicesPanel />}
         {activeTab === 'entitlements' && <EntitlementsPanel />}
         {activeTab === 'transparency' && <TransparencyConfigPanel />}
