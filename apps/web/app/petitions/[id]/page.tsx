@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { apiGet } from '../../../lib/api';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
+import { PetitionPromotePanel } from '../../../components/petition-promote-panel';
 import { CommunityInsightsPanel } from '../../../components/community-insights-panel';
 import { PetitionEndorsements } from '../../../components/petition-endorsements';
 import { PetitionMilestones } from '../../../components/petition-milestones';
@@ -175,10 +176,13 @@ export async function generateMetadata({
 
 export default async function PetitionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ checkout?: string }>;
 }) {
   const { id } = await params;
+  const { checkout: checkoutResult } = await searchParams;
   const [petition, updates, comments, statusLogs] = await Promise.all([
     apiGet<Petition>(`/petitions/${id}`).catch(() => null),
     apiGet<PetitionUpdate[]>(`/petitions/${id}/updates`).catch(() => []),
@@ -236,6 +240,17 @@ export default async function PetitionPage({
 
           {/* LEFT — main content */}
           <div className="space-y-5">
+
+            {checkoutResult === 'success' && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+                Thanks! Your payment is processing — the promotion will activate once it&apos;s confirmed.
+              </div>
+            )}
+            {checkoutResult === 'cancelled' && (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
+                Checkout was cancelled — no charge was made.
+              </div>
+            )}
 
             {/* Title card */}
             <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
@@ -409,6 +424,8 @@ export default async function PetitionPage({
             <CommunityInsightsPanel petitionId={petition.id} />
 
             <PetitionEndorsements petitionId={petition.id} />
+
+            <PetitionPromotePanel petitionId={petition.id} />
 
             {/* Updates */}
             <Card rounded="3xl" className="p-6 shadow-sm md:p-8">

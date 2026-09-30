@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PetitionGovernmentPanel } from '../../../components/petition-government';
+import { PetitionPromotePanel } from '../../../components/petition-promote-panel';
 import { OfficialResponseTimeline } from '../../../components/official-response-timeline';
 import { CommunityInsightsPanel } from '../../../components/community-insights-panel';
 import { PetitionEndorsements } from '../../../components/petition-endorsements';
@@ -56,6 +58,8 @@ export function PetitionClientPage({ id }: { id: string }) {
   const [updates, setUpdates] = useState<PetitionUpdate[]>([]);
   const [comments, setComments] = useState<PetitionComment[]>([]);
   const [state, setState] = useState<'loading' | 'found' | 'not-found'>('loading');
+  const searchParams = useSearchParams();
+  const checkoutResult = searchParams.get('checkout');
 
   useEffect(() => {
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -136,6 +140,16 @@ export function PetitionClientPage({ id }: { id: string }) {
         <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8 lg:gap-10">
 
           <div className="space-y-5">
+            {checkoutResult === 'success' && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+                Thanks! Your payment is processing — the promotion will activate once it&apos;s confirmed.
+              </div>
+            )}
+            {checkoutResult === 'cancelled' && (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
+                Checkout was cancelled — no charge was made.
+              </div>
+            )}
             <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
@@ -197,6 +211,8 @@ export function PetitionClientPage({ id }: { id: string }) {
             <CommunityInsightsPanel petitionId={petition.id} />
 
             <PetitionEndorsements petitionId={petition.id} />
+
+            <PetitionPromotePanel petitionId={petition.id} />
 
             <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <PetitionMilestones
