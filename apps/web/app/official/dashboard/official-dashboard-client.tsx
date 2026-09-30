@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { OfficialGuard } from '../../../components/official-guard';
 import { OfficialDashboardOverview } from '../../../components/official-dashboard-overview';
 import { OfficialConstituencyPanel } from '../../../components/official-constituency-panel';
@@ -12,6 +13,7 @@ import { OfficialAnalyticsPanel } from '../../../components/official-analytics-p
 import { OfficialInboxPanel } from '../../../components/official-inbox-panel';
 import { OfficialStaffPanel } from '../../../components/official-staff-panel';
 import { OfficialReportsPanel } from '../../../components/official-reports-panel';
+import { OfficialBillingPanel } from '../../../components/official-billing-panel';
 
 const TABS = [
   ['overview', 'Overview'],
@@ -24,6 +26,7 @@ const TABS = [
   ['analytics', 'Analytics'],
   ['inbox', 'Government Inbox'],
   ['staff', 'Office Staff'],
+  ['billing', 'Billing'],
 ] as const;
 
 type Tab = (typeof TABS)[number][0];
@@ -35,15 +38,24 @@ const TAB_GROUPS: { label: string; keys: Tab[] }[] = [
   { label: 'Constituency', keys: ['overview', 'constituency', 'feed', 'pulse', 'issues', 'community'] },
   { label: 'Operations', keys: ['reports', 'analytics'] },
   { label: 'Engagement', keys: ['inbox'] },
-  { label: 'Account', keys: ['staff'] },
+  { label: 'Account', keys: ['staff', 'billing'] },
 ];
+
+const TAB_KEYS: readonly Tab[] = TABS.map(([k]) => k);
+function isTab(value: string | null): value is Tab {
+  return value !== null && (TAB_KEYS as readonly string[]).includes(value);
+}
 
 function labelFor(key: Tab): string {
   return TABS.find(([k]) => k === key)?.[1] ?? key;
 }
 
 export function OfficialDashboardClient() {
-  const [tab, setTab] = useState<Tab>('overview');
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const requested = searchParams.get('tab');
+    return isTab(requested) ? requested : 'overview';
+  });
   const activeLabel = labelFor(tab);
 
   return (
@@ -113,6 +125,9 @@ export function OfficialDashboardClient() {
             {tab === 'analytics' && <OfficialAnalyticsPanel />}
             {tab === 'inbox' && <OfficialInboxPanel />}
             {tab === 'staff' && <OfficialStaffPanel />}
+            {tab === 'billing' && (
+              <OfficialBillingPanel checkoutResult={searchParams.get('checkout')} />
+            )}
           </div>
         </div>
       </main>
