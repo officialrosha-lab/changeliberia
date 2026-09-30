@@ -4,3 +4,6 @@ export { SubscriptionsPanel } from './subscriptions-panel';
 export { InvoicesPanel } from './invoices-panel';
 export { EntitlementsPanel } from './entitlements-panel';
 export { TransparencyConfigPanel } from './transparency-config-panel';
+export { PetitionPromotionsPanel } from './petition-promotions-panel';
+export { SponsorshipPurchasesPanel } from './sponsorship-purchases-panel';
+export { ServiceRequestsPanel } from './service-requests-panel';
