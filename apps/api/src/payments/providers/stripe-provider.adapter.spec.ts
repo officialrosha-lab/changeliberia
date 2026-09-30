@@ -147,6 +147,35 @@ describe('StripeProviderAdapter', () => {
     expect(calls[0][0].subscription_data).toBeUndefined();
   });
 
+  it('REGRESSION: tags the resulting PaymentIntent with the same metadata for one-time (non-recurring) checkout sessions (needed so webhook handlers, e.g. PetitionPromotionService, can recognize it) — session-level metadata alone does not propagate to the PaymentIntent Stripe creates underneath', async () => {
+    stripe.checkout.sessions.create.mockResolvedValue({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.com/cs_1',
+      amount_total: 5000,
+      currency: 'usd',
+      payment_status: 'unpaid',
+    });
+
+    await adapter.createCheckoutSession({
+      amount: 50,
+      currency: 'USD',
+      description: 'Petition promotion',
+      successUrl: 'https://example.com/ok',
+      cancelUrl: 'https://example.com/cancel',
+      metadata: { promotionId: 'promo_1' },
+    });
+
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { promotionId: 'promo_1' },
+        payment_intent_data: { metadata: { promotionId: 'promo_1' } },
+      }),
+    );
+    const calls = stripe.checkout.sessions.create.mock
+      .calls as unknown as Record<string, unknown>[][];
+    expect(calls[0][0].subscription_data).toBeUndefined();
+  });
+
   it('chargeOneTime always returns a PENDING charge', async () => {
     stripe.paymentIntents.create.mockResolvedValue({
       id: 'pi_1',
