@@ -22,6 +22,7 @@ import { PaymentModule } from './payments/payment.module';
 import { RbacModule } from './rbac/rbac.module';
 import { EntitlementsModule } from './entitlements/entitlements.module';
 import { MembershipsModule } from './memberships/memberships.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { ContactDirectoryModule } from './contact-directory/contact-directory.module';
 import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
@@ -54,6 +55,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     RbacModule,
     EntitlementsModule,
     MembershipsModule,
+    OrganizationsModule,
     ContactDirectoryModule,
     ModeratorModule,
     CMSModule,
