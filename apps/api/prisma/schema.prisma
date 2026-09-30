@@ -132,11 +132,21 @@ model User {
   entitlementGrants       EntitlementGrant[]
   membershipSubscriptions MembershipSubscription[] @relation("UserMembershipSubscriptions")
   organizationMemberships OrganizationMembership[] @relation("UserOrganizationMemberships")
-  cmsPages                CMSPage[]                @relation("CMSPageAuthor")
-  cmsPageVersions         CMSPageVersion[]         @relation("CMSPageVersionAuthor") // Phase 3: Version history
-  cmsFiles                CMSFile[] // Phase 2: File uploads
-  cmsExperiments          CMSExperiment[] // Phase 4: A/B testing
-  cmsSchedules            CMSSchedule[]            @relation("CMSScheduleCreator") // Phase 3: Content scheduling
+
+  // Milestone 10: remaining monetization products
+  petitionPromotionsPurchased PetitionPromotion[]          @relation("PetitionPromotionPurchaser")
+  sponsorshipPurchases        SponsorshipPurchase[]        @relation("SponsorshipPurchaser")
+  researchProductPurchases    ResearchProductPurchase[]    @relation("ResearchProductPurchaser")
+  eventRegistrations          EventRegistration[]          @relation("EventRegistrant")
+  apiSubscriptions            ApiSubscription[]            @relation("ApiSubscriber")
+  serviceRequests             ProfessionalServiceRequest[] @relation("ServiceRequestRequester")
+  invoices                    Invoice[]                    @relation("InvoiceUser")
+
+  cmsPages        CMSPage[]        @relation("CMSPageAuthor")
+  cmsPageVersions CMSPageVersion[] @relation("CMSPageVersionAuthor") // Phase 3: Version history
+  cmsFiles        CMSFile[] // Phase 2: File uploads
+  cmsExperiments  CMSExperiment[] // Phase 4: A/B testing
+  cmsSchedules    CMSSchedule[]    @relation("CMSScheduleCreator") // Phase 3: Content scheduling
 
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
@@ -226,6 +236,11 @@ model Petition {
   stakeholderGroups PetitionStakeholderGroup[] @relation("StakeholderGroups")
 
   media PetitionMedia[]
+
+  // Milestone 10: paid promotion — read-path placement/sort boost only.
+  // Never touches signaturesCount/status/governmentResponses; enforced by
+  // civic-principle.spec.ts.
+  promotions PetitionPromotion[]
 
   @@index([status, createdAt])
   @@index([impactScope, county, district])
@@ -1188,6 +1203,10 @@ model Organization {
   subscriptions     OrganizationSubscription[]
   entitlementGrants EntitlementGrant[]
 
+  // Milestone 10
+  serviceRequests ProfessionalServiceRequest[]
+  invoices        Invoice[]
+
   @@index([institutionId])
 }
 
@@ -1253,6 +1272,395 @@ model InstitutionSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+}
+
+// ============================================================================
+// Milestone 10: remaining monetization products (Promotion, Sponsorship,
+// Research, Studio, Events, API billing, Invoice)
+//
+// Two small shared status enums instead of one generic one: PlacementStatus
+// for the two time-bound "buy a slot" products (a promotion or a sponsorship
+// is live for a window, then expires), PurchaseStatus for the two one-shot
+// "buy a thing" products (a research report or an event seat is either paid
+// for or it isn't — no ACTIVE/EXPIRED lifecycle). Forcing both into one
+// enum would leave irrelevant values on every row; these are honest about
+// what each product actually is.
+// ============================================================================
+
+enum PlacementStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PromotionPlacement {
+  FEATURED_HOME
+  TRENDING_BOOST
+  CATEGORY_TOP
+}
+
+// No separate catalog model — per the architecture plan's own schema sketch
+// this is just {petitionId, purchaserUserId, amount, status, startsAt,
+// endsAt, placement}. Pricing per placement is admin-configurable via
+// FeatureFlagService config JSON (PETITION_PROMOTION_PRICING), the same
+// mechanism ConstituencyFeedService already uses for its thresholds —
+// not a new catalog model for what's really just a small price table.
+//
+// Never touches Petition.signaturesCount/status/governmentResponses — only
+// read-path placement/sort. Enforced by civic-principle.spec.ts.
+model PetitionPromotion {
+  id              String             @id @default(cuid())
+  petitionId      String
+  petition        Petition           @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  purchaserUserId String
+  purchaser       User               @relation("PetitionPromotionPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  amount          Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  placement       PromotionPlacement
+  status          PlacementStatus    @default(PENDING)
+  startsAt        DateTime?
+  endsAt          DateTime?
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([petitionId, status])
+  @@index([status, endsAt])
+}
+
+model SponsorshipPackage {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  description  String?
+  priceAmount  Decimal  @db.Decimal(12, 2)
+  currency     String   @default("USD")
+  durationDays Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  purchases SponsorshipPurchase[]
+
+  @@index([active])
+}
+
+model SponsorshipPurchase {
+  id              String             @id @default(cuid())
+  packageId       String
+  package         SponsorshipPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  purchaserUserId String
+  purchaser       User               @relation("SponsorshipPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  status          PlacementStatus    @default(PENDING)
+  startsAt        DateTime?
+  endsAt          DateTime?
+
+  // Set once an admin fulfills the purchase with an actual logo-wall entry —
+  // see the Sponsor.purchase back-relation comment.
+  sponsorId String?  @unique
+  sponsor   Sponsor? @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ResearchProduct {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String?
+  priceAmount Decimal  @db.Decimal(12, 2)
+  currency    String   @default("USD")
+  fileUrl     String? // access-gated download, only ever returned to a completed purchaser
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchases ResearchProductPurchase[]
+
+  @@index([active])
+}
+
+model ResearchProductPurchase {
+  id              String          @id @default(cuid())
+  productId       String
+  product         ResearchProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaserUserId String
+  purchaser       User            @relation("ResearchProductPurchaser", fields: [purchaserUserId], references: [id], onDelete: Cascade)
+  status          PurchaseStatus  @default(PENDING)
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaserUserId, status])
+  @@index([status])
+}
+
+enum EventRegistrationStatus {
+  REGISTERED
+  CANCELLED
+  ATTENDED
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  location    String?
+  priceAmount Decimal? @db.Decimal(12, 2) // null = free event
+  currency    String   @default("USD")
+  capacity    Int?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  registrations EventRegistration[]
+
+  @@index([active, startsAt])
+}
+
+model EventRegistration {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation("EventRegistrant", fields: [userId], references: [id], onDelete: Cascade)
+
+  status         EventRegistrationStatus @default(REGISTERED)
+  purchaseStatus PurchaseStatus          @default(COMPLETED) // COMPLETED immediately for free events
+
+  provider                String  @default("STRIPE")
+  providerPaymentIntentId String? @unique
+  lastWebhookEventId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+}
+
+model ApiPlan {
+  id              String             @id @default(cuid())
+  key             String             @unique
+  name            String
+  description     String?
+  priceAmount     Decimal            @db.Decimal(12, 2)
+  currency        String             @default("USD")
+  interval        MembershipInterval
+  requestsPerDay  Int
+  entitlementKeys String             @default("[]") @db.Text()
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  subscriptions ApiSubscription[]
+
+  @@index([active])
+}
+
+model ApiSubscription {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation("ApiSubscriber", fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   ApiPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status MembershipSubscriptionStatus @default(PENDING)
+
+  provider               String  @default("STRIPE")
+  providerCustomerId     String?
+  providerSubscriptionId String? @unique
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  lastWebhookEventId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys ApiKey[]
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+model ApiKey {
+  id             String          @id @default(cuid())
+  subscriptionId String
+  subscription   ApiSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Only a SHA-256 hash is stored — the raw key is shown once at creation
+  // and never persisted, same secret-handling discipline as every other
+  // credential in this codebase. keyPrefix is a short, non-secret slice
+  // shown in the UI so a user can tell their keys apart.
+  keyHash    String       @unique
+  keyPrefix  String
+  status     ApiKeyStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  createdAt  DateTime     @default(now())
+  revokedAt  DateTime?
+
+  usage ApiUsageDaily[]
+
+  @@index([subscriptionId])
+}
+
+model ApiUsageDaily {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  apiKey       ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date()
+  requestCount Int      @default(0)
+
+  @@unique([apiKeyId, date])
+}
+
+enum ServiceRequestStatus {
+  SUBMITTED
+  SCOPING
+  QUOTED
+  IN_PROGRESS
+  DELIVERED
+  CLOSED
+  DECLINED
+}
+
+// "Change Liberia Studio" — professional-services intake, modeled on the
+// existing officials apply/review flow (a status pipeline + an audit-log
+// side table, not a payment-webhook-driven purchase). Billing for a
+// scoped-and-quoted engagement goes through Invoice below once QUOTED,
+// since this kind of B2B service work is normally invoiced and paid
+// out-of-band (bank transfer, PO) rather than an instant card checkout.
+model ProfessionalServiceRequest {
+  id              String        @id @default(cuid())
+  requesterUserId String
+  requester       User          @relation("ServiceRequestRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  institutionId   String?
+  institution     Institution?  @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+
+  title        String
+  description  String               @db.Text()
+  status       ServiceRequestStatus @default(SUBMITTED)
+  quotedAmount Decimal?             @db.Decimal(12, 2)
+  currency     String               @default("USD")
+  adminNotes   String?              @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusLogs ServiceRequestStatusLog[]
+  invoices   Invoice[]
+
+  @@index([status])
+  @@index([organizationId])
+  @@index([institutionId])
+}
+
+model ServiceRequestStatusLog {
+  id              String                     @id @default(cuid())
+  requestId       String
+  request         ProfessionalServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromStatus      ServiceRequestStatus?
+  toStatus        ServiceRequestStatus
+  changedByUserId String?
+  note            String?
+  createdAt       DateTime                   @default(now())
+
+  @@index([requestId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+}
+
+// The platform's first real invoice model. Deliberately scoped to Studio
+// service-request billing for this milestone rather than also being
+// auto-generated for every Sponsorship/Research/Event/API card purchase —
+// those already have a receipt via the existing Payment/PaymentIntent
+// trail, and forcing an Invoice row per small self-serve purchase would be
+// scope creep beyond what B2B service billing actually needs. Extending
+// invoice generation to the other purchase types is a clean, additive
+// follow-up if/when finance actually needs it.
+model Invoice {
+  id     String        @id @default(cuid())
+  number String        @unique // human-readable, e.g. "INV-000123"
+  status InvoiceStatus @default(DRAFT)
+
+  userId         String?
+  user           User?         @relation("InvoiceUser", fields: [userId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  institutionId  String?
+  institution    Institution?  @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+
+  serviceRequestId String?
+  serviceRequest   ProfessionalServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+
+  currency    String    @default("USD")
+  totalAmount Decimal   @db.Decimal(12, 2)
+  issuedAt    DateTime?
+  dueAt       DateTime?
+  paidAt      DateTime?
+  notes       String?   @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineItems InvoiceLineItem[]
+
+  @@index([status])
+  @@index([organizationId])
+  @@index([institutionId])
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int      @default(1)
+  unitAmount  Decimal  @db.Decimal(12, 2)
+  totalAmount Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
 }
 
 // ============================================================================
@@ -1785,6 +2193,10 @@ model Institution {
   organization Organization?
   subscription InstitutionSubscription?
 
+  // Milestone 10
+  serviceRequests ProfessionalServiceRequest[]
+  invoices        Invoice[]
+
   @@index([type, category, verified])
   @@index([verified, createdAt])
   @@index([name])
@@ -2228,6 +2640,11 @@ model Sponsor {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Milestone 10: optional link to the paid purchase that produced this
+  // logo-wall entry. A free/static Sponsor row (admin-added directly, as
+  // today) simply has no linked purchase — this never becomes required.
+  purchase SponsorshipPurchase?
 }
 
 model Supporter {

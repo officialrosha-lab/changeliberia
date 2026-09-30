@@ -45,6 +45,29 @@ describe('WebhookEventHandlerService', () => {
       findUnique: jest.fn<Promise<unknown>, [unknown]>(),
       updateMany: jest.fn<Promise<unknown>, [unknown]>(),
     },
+    apiSubscription: {
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      updateMany: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    petitionPromotion: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      findUniqueOrThrow: jest.fn<Promise<unknown>, [unknown]>(),
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    sponsorshipPurchase: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      findUniqueOrThrow: jest.fn<Promise<unknown>, [unknown]>(),
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    researchProductPurchase: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    eventRegistration: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+    },
   };
 
   const mockActivityLogger = { logAsync: jest.fn() };
@@ -148,6 +171,110 @@ describe('WebhookEventHandlerService', () => {
         expect.objectContaining({ where: { id: 'is-1' } }),
       );
       expect(mockPrisma.subscription.upsert).not.toHaveBeenCalled();
+    });
+
+    it('REGRESSION (Milestone 10): activates an ApiSubscription instead of the generic donation Subscription when metadata carries apiSubscriptionId', async () => {
+      mockPrisma.apiSubscription.update.mockResolvedValue({
+        id: 'api-sub-1',
+        userId: 'user-1',
+        plan: { entitlementKeys: '[]' },
+      });
+
+      const subscription = {
+        id: 'sub_1',
+        customer: 'cus_1',
+        metadata: { apiSubscriptionId: 'api-sub-1' },
+        items: {
+          data: [{ current_period_start: 1000, current_period_end: 2000 }],
+        },
+      } as unknown as StripeSubscription;
+
+      await service.handleWebhookEvent({
+        type: 'customer.subscription.created',
+        data: { object: subscription },
+      } as never);
+
+      expect(mockPrisma.apiSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'api-sub-1' } }),
+      );
+      expect(mockPrisma.subscription.upsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('payment_intent.succeeded — Milestone 10 one-time purchase dispatch', () => {
+    it('activates a PetitionPromotion instead of the generic Payment lookup when metadata carries promotionId', async () => {
+      mockPrisma.petitionPromotion.findUniqueOrThrow.mockResolvedValue({
+        id: 'promo-1',
+        startsAt: null,
+        endsAt: null,
+      });
+      mockPrisma.petitionPromotion.update.mockResolvedValue({ id: 'promo-1' });
+
+      const paymentIntent = {
+        id: 'pi_1',
+        amount: 5000,
+        currency: 'usd',
+        metadata: { promotionId: 'promo-1' },
+      } as never;
+
+      await service.handleWebhookEvent({
+        type: 'payment_intent.succeeded',
+        data: { object: paymentIntent },
+      } as never);
+
+      expect(mockPrisma.petitionPromotion.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'promo-1' } }),
+      );
+      expect(mockPrisma.payment.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('activates an EventRegistration instead of the generic Payment lookup when metadata carries eventRegistrationId', async () => {
+      mockPrisma.eventRegistration.update.mockResolvedValue({ id: 'reg-1' });
+
+      const paymentIntent = {
+        id: 'pi_2',
+        amount: 5000,
+        currency: 'usd',
+        metadata: { eventRegistrationId: 'reg-1' },
+      } as never;
+
+      await service.handleWebhookEvent({
+        type: 'payment_intent.succeeded',
+        data: { object: paymentIntent },
+      } as never);
+
+      expect(mockPrisma.eventRegistration.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'reg-1' } }),
+      );
+      expect(mockPrisma.payment.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('payment_intent.payment_failed — Milestone 10 one-time purchase dispatch', () => {
+    it('marks a ResearchProductPurchase FAILED when metadata-linked via providerPaymentIntentId, bypassing the generic Payment lookup', async () => {
+      mockPrisma.petitionPromotion.findUnique.mockResolvedValue(null);
+      mockPrisma.sponsorshipPurchase.findUnique.mockResolvedValue(null);
+      mockPrisma.researchProductPurchase.findUnique.mockResolvedValue({
+        id: 'rpp-1',
+      });
+      mockPrisma.researchProductPurchase.update.mockResolvedValue({
+        id: 'rpp-1',
+      });
+
+      const paymentIntent = {
+        id: 'pi_3',
+        last_payment_error: { message: 'card declined' },
+      } as never;
+
+      await service.handleWebhookEvent({
+        type: 'payment_intent.payment_failed',
+        data: { object: paymentIntent },
+      } as never);
+
+      expect(mockPrisma.researchProductPurchase.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'rpp-1' } }),
+      );
+      expect(mockPrisma.payment.findUnique).not.toHaveBeenCalled();
     });
   });
 

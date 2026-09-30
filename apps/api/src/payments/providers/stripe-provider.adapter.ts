@@ -114,16 +114,17 @@ export class StripeProviderAdapter implements PaymentProvider {
       cancel_url: params.cancelUrl,
       customer_email: params.customerEmail,
       metadata: params.metadata,
-      // For subscription mode, Checkout Session metadata does NOT carry
-      // over to the Subscription object Stripe creates — only
-      // subscription_data.metadata does. Callers that need to recognize
-      // the resulting `customer.subscription.created` webhook (e.g.
-      // MembershipService, to tell a membership subscription apart from a
-      // donation one) rely on this being set identically to the session's
-      // own metadata.
-      ...(params.recurringInterval && {
-        subscription_data: { metadata: params.metadata },
-      }),
+      // Checkout Session metadata does NOT carry over to the object Stripe
+      // actually creates underneath — only `subscription_data.metadata`
+      // (subscription mode) or `payment_intent_data.metadata` (payment
+      // mode) does. Callers that need to recognize the resulting
+      // `customer.subscription.created` or `payment_intent.succeeded`
+      // webhook (e.g. MembershipService for a subscription, or
+      // PetitionPromotionService for a one-time purchase) rely on this
+      // being set identically to the session's own metadata.
+      ...(params.recurringInterval
+        ? { subscription_data: { metadata: params.metadata } }
+        : { payment_intent_data: { metadata: params.metadata } }),
     });
     return {
       id: session.id,
