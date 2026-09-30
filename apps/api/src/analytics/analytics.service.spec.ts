@@ -328,6 +328,41 @@ describe('AnalyticsService', () => {
     });
   });
 
+  describe('Decimal migration read cutover (Milestone 12)', () => {
+    it('REGRESSION: prefers amountDecimal over the legacy Float amount when both are present and disagree', async () => {
+      mockPrisma.petition.findUnique.mockResolvedValue({
+        ...mockPetition,
+        payments: [
+          { id: 'pay-1', amount: 999, amountDecimal: { toNumber: () => 50 } },
+          {
+            id: 'pay-2',
+            amount: 999,
+            amountDecimal: { toNumber: () => 100 },
+          },
+        ],
+      } as any);
+      mockPrisma.facebookPixelEvent.count.mockResolvedValue(0);
+
+      const metrics = await service.getPetitionMetrics('petition-1');
+
+      expect(metrics.totalDonationAmount).toBe(150);
+    });
+
+    it('falls back to the legacy Float amount when amountDecimal is null (a stray pre-backfill row)', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        payments: [{ id: 'pay-1', amount: 50, amountDecimal: null }],
+      } as any);
+      mockPrisma.shareLink.count.mockResolvedValue(0);
+      mockPrisma.shareCompletion.count.mockResolvedValue(0);
+      mockPrisma.facebookPixelEvent.findFirst.mockResolvedValue(null);
+
+      const metrics = await service.getUserEngagementMetrics('user-1');
+
+      expect(metrics.totalDonated).toBe(50);
+    });
+  });
+
   describe('Dashboard Overview', () => {
     it('should generate dashboard overview', async () => {
       mockPrisma.petition.count

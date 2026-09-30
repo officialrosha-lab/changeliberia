@@ -1,10 +1,12 @@
 /**
- * One-off backfill for the Decimal migration (Milestone 7, Phase A): copies
- * every Float amount column into its new nullable Decimal(12,2) sibling —
+ * One-off backfill for the Decimal migration (Milestone 7 Phase A, extended
+ * in Milestone 12 to cover MoMoSubscriptionAuthorization): copies every
+ * Float amount column into its new nullable Decimal(12,2) sibling —
  * `Payment.amount` → `amountDecimal`, `Subscription.amount` →
  * `amountDecimal`, `Donation.amount` → `amountDecimal`, `Refund.amount` →
  * `amountDecimal`, `OrderItem.unitPrice`/`totalPrice` →
- * `unitPriceDecimal`/`totalPriceDecimal`.
+ * `unitPriceDecimal`/`totalPriceDecimal`,
+ * `MoMoSubscriptionAuthorization.maxAmount` → `maxAmountDecimal`.
  *
  * This is a direct numeric cast, not a unit conversion: every one of these
  * columns already stores major units (dollars) — confirmed against
@@ -51,6 +53,11 @@ export const BACKFILL_TARGETS: BackfillTarget[] = [
     table: 'OrderItem',
     floatColumn: 'totalPrice',
     decimalColumn: 'totalPriceDecimal',
+  },
+  {
+    table: 'MoMoSubscriptionAuthorization',
+    floatColumn: 'maxAmount',
+    decimalColumn: 'maxAmountDecimal',
   },
 ];
 

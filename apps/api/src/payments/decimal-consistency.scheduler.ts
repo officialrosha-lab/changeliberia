@@ -32,6 +32,11 @@ const DRIFT_TARGETS: DriftTarget[] = [
     floatColumn: 'totalPrice',
     decimalColumn: 'totalPriceDecimal',
   },
+  {
+    table: 'MoMoSubscriptionAuthorization',
+    floatColumn: 'maxAmount',
+    decimalColumn: 'maxAmountDecimal',
+  },
 ];
 
 interface DriftRow {
@@ -46,13 +51,28 @@ interface DriftReport {
   rows: DriftRow[];
 }
 
+interface MissingReport {
+  table: string;
+  column: string;
+  count: number;
+  sampleIds: string[];
+}
+
 /**
- * Flags rows where the Decimal migration's dual-written column (Milestone
- * 7 Phase A) has drifted from the original Float column by more than
- * rounding noise — the backstop the architecture plan calls for before any
- * read cutover (Milestone 12) can be trusted. Runs daily; any drift is a
- * bug in a write path, not something to auto-correct, so this only
- * reports via ActivityLoggerService for manual review.
+ * Flags two distinct dual-write failure modes for the Decimal migration
+ * (Milestone 7 Phase A dual-write, Milestone 12 Phase B read cutover):
+ *
+ * 1. Drift — the Decimal column is populated but disagrees with its Float
+ *    counterpart by more than rounding noise. Always a bug in a write path
+ *    (the two columns should be set from the same value in the same call).
+ * 2. Missing — the Decimal column is still NULL. Before the one-off
+ *    backfill runs this is expected; after it runs, a NULL here means some
+ *    write path creates rows without dual-writing (the exact class of bug
+ *    the admin refund endpoint had before Milestone 12) — the read cutover
+ *    can't be trusted as long as this can happen silently.
+ *
+ * Runs daily; neither condition is auto-corrected, only reported via
+ * ActivityLoggerService for manual review.
  */
 @Injectable()
 export class DecimalConsistencyScheduler {
@@ -65,19 +85,31 @@ export class DecimalConsistencyScheduler {
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async checkConsistency() {
-    const reports = await this.findDrift();
-    const totalDrifted = reports.reduce((sum, r) => sum + r.rows.length, 0);
+    const driftReports = await this.findDrift();
+    const missingReports = await this.findMissingDualWrites();
+    const totalDrifted = driftReports.reduce(
+      (sum, r) => sum + r.rows.length,
+      0,
+    );
+    const totalMissing = missingReports.reduce((sum, r) => sum + r.count, 0);
 
-    if (totalDrifted === 0) {
-      this.logger.debug('Decimal consistency check: no drift found');
-      return;
+    if (totalDrifted === 0 && totalMissing === 0) {
+      this.logger.debug('Decimal consistency check: no issues found');
+      return { driftReports, missingReports };
     }
 
-    this.logger.warn(
-      `Decimal consistency check found ${totalDrifted} drifted row(s) across ${reports.length} column(s)`,
-    );
+    if (totalDrifted > 0) {
+      this.logger.warn(
+        `Decimal consistency check found ${totalDrifted} drifted row(s) across ${driftReports.length} column(s)`,
+      );
+    }
+    if (totalMissing > 0) {
+      this.logger.warn(
+        `Decimal consistency check found ${totalMissing} row(s) with a missing dual-write across ${missingReports.length} column(s)`,
+      );
+    }
 
-    for (const report of reports) {
+    for (const report of driftReports) {
       this.activityLogger.logAsync({
         action: 'DECIMAL_DRIFT_DETECTED',
         entityType: report.table.toUpperCase(),
@@ -90,6 +122,44 @@ export class DecimalConsistencyScheduler {
           count: report.rows.length,
         },
       });
+    }
+
+    for (const report of missingReports) {
+      this.activityLogger.logAsync({
+        action: 'DECIMAL_DUAL_WRITE_MISSING',
+        entityType: report.table.toUpperCase(),
+        description: `${report.count} ${report.table}.${report.column} row(s) have no Decimal value — some write path is not dual-writing`,
+        status: 'FAILED',
+        changes: {
+          table: report.table,
+          column: report.column,
+          sampleRowIds: report.sampleIds,
+          count: report.count,
+        },
+      });
+    }
+
+    return { driftReports, missingReports };
+  }
+
+  async findMissingDualWrites(): Promise<MissingReport[]> {
+    const reports: MissingReport[] = [];
+
+    for (const target of DRIFT_TARGETS) {
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT id
+        FROM ${Prisma.raw(`"${target.table}"`)}
+        WHERE ${Prisma.raw(`"${target.decimalColumn}"`)} IS NULL
+      `);
+
+      if (rows.length > 0) {
+        reports.push({
+          table: target.table,
+          column: target.decimalColumn,
+          count: rows.length,
+          sampleIds: rows.slice(0, 10).map((r) => r.id),
+        });
+      }
     }
 
     return reports;
