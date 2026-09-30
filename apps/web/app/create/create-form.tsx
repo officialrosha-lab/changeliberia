@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiPost, apiPostFormData } from '../../lib/api';
+import { useCounties } from '../../lib/use-counties';
 import { useAuthStore } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
 import { Card } from '../../components/ui/card';
@@ -99,12 +100,6 @@ const CATEGORIES = [
   { id: 'human-rights', label: '✊ Human Rights' },
 ];
 
-const COUNTIES = [
-  'Bomi', 'Bong', 'Gbarpolu', 'Grand Bassa', 'Grand Cape Mount',
-  'Grand Gedeh', 'Grand Kru', 'Lofa', 'Margibi', 'Maryland',
-  'Montserrado', 'Nimba', 'River Cess', 'River Gee', 'Sinoe',
-];
-
 const STEPS = [
   { n: 1, label: 'Issue details' },
   { n: 2, label: 'Categories & location' },
@@ -128,6 +123,8 @@ export function CreatePetitionForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const pendingPayload = useRef<PetitionPayload | null>(null);
+  const { counties: countyOptions } = useCounties();
+  const COUNTIES = countyOptions.map((c) => c.name);
   const [draft] = useState<PetitionDraft | null>(() => loadDraft());
   const [draftRestored, setDraftRestored] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; summary?: string; description?: string }>({});

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EmailService } from './services/email.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { EmailTrackingService } from './services/email-tracking.service';
@@ -14,7 +13,17 @@ import {
 import { MailerooWebhookController } from './webhooks/maileroo-webhook.controller';
 
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  // ScheduleModule.forRoot() is already registered once, globally, in
+  // AppModule — registering it again here (as this module previously did)
+  // created a second ScheduleExplorer that re-scanned every @Cron-decorated
+  // provider app-wide and registered a second CronJob for each one, so
+  // EVERY cron job in the app (not just this module's) silently fired
+  // twice per tick. Confirmed live: a single on-demand constituency report
+  // request was picked up and fully processed twice within the same
+  // minute (duplicate files, duplicate emails). Do not re-add forRoot()
+  // here; ScheduleModule's `global: true` already makes SchedulerRegistry
+  // injectable everywhere without a second registration.
+  imports: [],
   providers: [
     EmailService,
     EmailTemplateService,

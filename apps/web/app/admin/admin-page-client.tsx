@@ -33,7 +33,7 @@ import { AdminPollCreationPanel } from '../../components/admin-poll-creation-pan
 import { ErrorBoundary } from '../../components/error-boundary';
 import { Card } from '../../components/ui/card';
 import { apiGet } from '../../lib/api';
-import { useAuthStore } from '../../lib/store';
+import { useAdminGuard } from '../../lib/use-admin-guard';
 
 type FraudEvent = { id: string; details: string; createdAt: string };
 type FraudRule = {
@@ -63,14 +63,12 @@ type PendingIdDoc = {
   user: { fullName: string; phone: string };
 };
 
-type Me = { role: string };
-
 export function AdminPageClient() {
-  const token = useAuthStore((s) => s.token);
-  const hydrated = useAuthStore((s) => s.hydrated);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
-  const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
-  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
+  const { phase: guardPhase, token } = useAdminGuard();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'monetization' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const phase = guardPhase !== 'ok' ? guardPhase : dataLoaded ? 'ok' : 'loading';
   const [pending, setPending] = useState<{ id: string; title: string; category?: string | null; summary: string }[]>([]);
   const [pendingPolls, setPendingPolls] = useState<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creatorName: string; creatorEmail: string }[]>([]);
   const [pendingIds, setPendingIds] = useState<PendingIdDoc[]>([]);
@@ -82,16 +80,10 @@ export function AdminPageClient() {
   });
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (guardPhase !== 'ok' || !token) return;
     let cancelled = false;
     void (async () => {
       try {
-        const me = await apiGet<Me>('/users/me', token);
-        if (cancelled) return;
-        if (me.role !== 'ADMIN') {
-          setAsyncPhase('denied');
-          return;
-        }
         const [p, polls, ids, f, r, a] = await Promise.all([
           apiGet<{ id: string; title: string; category?: string | null; summary: string }[]>('/admin/petitions/pending', token),
           apiGet<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>('/admin/polls/pending', token),
@@ -111,17 +103,17 @@ export function AdminPageClient() {
         setFlags(f);
         setRules(r);
         setAnalytics(a);
-        setAsyncPhase('ok');
+        setDataLoaded(true);
       } catch {
-        if (!cancelled) setAsyncPhase('denied');
+        if (!cancelled) setLoadError(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [token, hydrated]);
+  }, [token, guardPhase]);
 
-  if (!hydrated) {
+  if (guardPhase === 'loading' && !token) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Admin Panel</h1>
@@ -161,6 +153,17 @@ export function AdminPageClient() {
     );
   }
 
+  if (phase === 'loading' && loadError) {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="text-3xl font-bold">Admin Panel</h1>
+        <p className="mt-4 text-zinc-600">
+          Could not load the dashboard right now. Please refresh the page to try again.
+        </p>
+      </main>
+    );
+  }
+
   if (phase === 'loading') {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
@@ -186,6 +189,7 @@ export function AdminPageClient() {
             [
               ['dashboard', 'Dashboard'],
               ['directory', 'Directory'],
+              ['monetization', 'Monetization'],
               ['polls', 'Pending Polls'],
               ['users', 'Users'],
               ['analytics', 'Analytics'],
@@ -281,6 +285,17 @@ export function AdminPageClient() {
           <p className="text-zinc-600 dark:text-neutral-400">
             <Link href="/admin/directory" className="text-emerald-600 hover:underline font-medium dark:text-emerald-400">
               Go to Directory Management →
+            </Link>
+          </p>
+        </div>
+      )}
+
+      {/* Monetization Tab */}
+      {activeTab === 'monetization' && (
+        <div className="space-y-4">
+          <p className="text-zinc-600 dark:text-neutral-400">
+            <Link href="/admin/monetization" className="text-emerald-600 hover:underline font-medium dark:text-emerald-400">
+              Go to Monetization Dashboard →
             </Link>
           </p>
         </div>

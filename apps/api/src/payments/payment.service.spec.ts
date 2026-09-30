@@ -437,6 +437,28 @@ describe('PaymentService', () => {
       expect(result.amount).toBe(75);
     });
 
+    it('REGRESSION (Milestone 12 read cutover): does not issue a spurious Stripe price change when the requested amount already matches the Decimal-sourced stored amount', async () => {
+      const stored = {
+        id: 'sub-1',
+        stripeSubscriptionId: 'sub_test123',
+        // The stale Float column disagrees with the Decimal column — the
+        // comparison must use the Decimal-resolved value (50), not the
+        // Float (999), or this would wrongly detect a change and call out
+        // to Stripe for a no-op price update.
+        amount: 999,
+        amountDecimal: { toNumber: () => 50 },
+        currency: 'USD',
+        interval: 'monthly' as const,
+      };
+
+      prisma.subscription.findUnique.mockResolvedValue(stored as any);
+
+      const result = await service.updateSubscription('sub-1', 50);
+
+      expect(stripe.products.create).not.toHaveBeenCalled();
+      expect(result.amount).toBe(50);
+    });
+
     it('should cancel subscription', async () => {
       const stored = {
         id: 'sub-1',
@@ -529,6 +551,31 @@ describe('PaymentService', () => {
         }),
       );
     });
+
+    it('REGRESSION (Milestone 12 read cutover): prefers amountDecimal over the legacy Float amount', async () => {
+      prisma.payment.findMany.mockResolvedValue([
+        {
+          id: 'payment-1',
+          amount: 999,
+          amountDecimal: { toNumber: () => 50 },
+          currency: 'USD',
+        },
+      ] as any);
+
+      const history = await service.getUserPaymentHistory('user-1');
+
+      expect(history[0].amount).toBe(50);
+    });
+
+    it('falls back to the legacy Float amount when amountDecimal is null', async () => {
+      prisma.payment.findMany.mockResolvedValue([
+        { id: 'payment-1', amount: 50, amountDecimal: null, currency: 'USD' },
+      ] as any);
+
+      const history = await service.getUserPaymentHistory('user-1');
+
+      expect(history[0].amount).toBe(50);
+    });
   });
 
   describe('Refunds', () => {
@@ -562,6 +609,34 @@ describe('PaymentService', () => {
         charge: 'ch_test123',
         reason: 'requested_by_customer',
       });
+    });
+
+    it('REGRESSION (Milestone 12 read cutover): refund response amount prefers the stored Decimal value', async () => {
+      const payment = {
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
+        amount: 999,
+        currency: 'USD',
+      };
+
+      prisma.payment.findUnique.mockResolvedValue(payment as any);
+      prisma.refund.create.mockResolvedValue({
+        id: 'refund-1',
+        paymentId: 'payment-1',
+        amount: 999,
+        amountDecimal: { toNumber: () => 50 },
+        currency: 'USD',
+        reason: 'requested_by_customer',
+        status: 'succeeded',
+        createdAt: new Date(),
+      } as any);
+
+      const result = await service.refundPayment(
+        'payment-1',
+        'requested_by_customer',
+      );
+
+      expect(result.amount).toBe(50);
     });
 
     it('should throw error for non-existent payment', async () => {

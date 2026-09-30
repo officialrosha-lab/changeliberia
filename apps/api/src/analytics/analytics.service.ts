@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface ConversionFunnel {
@@ -100,6 +101,19 @@ export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
+   * Decimal migration read cutover (Milestone 12) — same convention as
+   * PaymentService.resolveAmount: the Decimal column is authoritative once
+   * populated, falling back to the legacy Float only for a stray
+   * pre-backfill row.
+   */
+  private resolveAmount(
+    floatAmount: number,
+    decimalAmount: Prisma.Decimal | null,
+  ): number {
+    return decimalAmount ? decimalAmount.toNumber() : floatAmount || 0;
+  }
+
+  /**
    * Get conversion funnel for a specific petition
    */
   async getConversionFunnel(
@@ -176,7 +190,7 @@ export class AnalyticsService {
     );
 
     const totalDonationAmount = petition.payments.reduce(
-      (sum, d) => sum + (d.amount || 0),
+      (sum, d) => sum + this.resolveAmount(d.amount, d.amountDecimal),
       0,
     );
 
@@ -220,7 +234,7 @@ export class AnalyticsService {
     });
 
     const totalDonated = user.payments.reduce(
-      (sum, d) => sum + (d.amount || 0),
+      (sum, d) => sum + this.resolveAmount(d.amount, d.amountDecimal),
       0,
     );
     const engagementLevel = this.calculateEngagementLevel(
@@ -296,7 +310,9 @@ export class AnalyticsService {
       where,
     });
 
-    const amounts = donations.map((d) => d.amount).filter((a) => a > 0);
+    const amounts = donations
+      .map((d) => this.resolveAmount(d.amount, d.amountDecimal))
+      .filter((a) => a > 0);
     amounts.sort((a, b) => a - b);
 
     const donorCount = new Set(
@@ -342,7 +358,10 @@ export class AnalyticsService {
           donorCount: new Set(),
         };
       }
-      donationsByContent[contentId].totalAmount += d.amount;
+      donationsByContent[contentId].totalAmount += this.resolveAmount(
+        d.amount,
+        d.amountDecimal,
+      );
       if (d.donorUserId) {
         donationsByContent[contentId].donorCount.add(d.donorUserId);
       }

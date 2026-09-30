@@ -20,6 +20,10 @@ import { FacebookModule } from './facebook/facebook.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentModule } from './payments/payment.module';
 import { RbacModule } from './rbac/rbac.module';
+import { EntitlementsModule } from './entitlements/entitlements.module';
+import { MembershipsModule } from './memberships/memberships.module';
+import { OrganizationsModule } from './organizations/organizations.module';
+import { MonetizationModule } from './monetization/monetization.module';
 import { ContactDirectoryModule } from './contact-directory/contact-directory.module';
 import { ModeratorModule } from './moderator/moderator.module';
 import { CMSModule } from './cms/cms.module';
@@ -36,6 +40,7 @@ import { MessagesModule } from './messages/messages.module';
 import { StakeholderGroupModule } from './stakeholder-groups/stakeholder-group.module';
 import { BroadcastModule } from './broadcast/broadcast.module';
 import { OfficialsModule } from './officials/officials.module';
+import { GeographyModule } from './geography/geography.module';
 import { EndorsementsModule } from './endorsements/endorsements.module';
 import { PushModule } from './push/push.module';
 import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
@@ -49,6 +54,10 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     NotificationsModule,
     NotificationModule, // user-facing /notifications HTTP routes
     RbacModule,
+    EntitlementsModule,
+    MembershipsModule,
+    OrganizationsModule,
+    MonetizationModule,
     ContactDirectoryModule,
     ModeratorModule,
     CMSModule,
@@ -78,6 +87,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     FeedbackModule,
     ActivityModule,
     OfficialsModule, // Public Officials Portal
+    GeographyModule, // Canonical County/ElectoralDistrict catalog (Lawmaker Constituency Portal foundation)
     EndorsementsModule, // Public Officials Portal: community leader endorsements
     PushModule, // Web push notifications
     ChangeLiberiaGraphQLModule, // Read-only GraphQL API for research/civil-society consumers
