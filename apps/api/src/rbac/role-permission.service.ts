@@ -669,6 +669,24 @@ export class RolePermissionService implements OnModuleInit {
         resource: PermissionResource.MONETIZATION,
         action: PermissionAction.DELETE,
       },
+
+      // Organizations (multi-seat teams, workspace plan catalog)
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.CREATE,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.READ,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.UPDATE,
+      },
+      {
+        resource: PermissionResource.ORGANIZATION,
+        action: PermissionAction.DELETE,
+      },
     ];
 
     // Create permissions

@@ -31,6 +31,20 @@ describe('WebhookEventHandlerService', () => {
       upsert: jest.fn<Promise<unknown>, [unknown]>(),
       findUnique: jest.fn<Promise<unknown>, [unknown]>(),
     },
+    membershipSubscription: {
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      updateMany: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    organizationSubscription: {
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      updateMany: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    institutionSubscription: {
+      update: jest.fn<Promise<unknown>, [unknown]>(),
+      findUnique: jest.fn<Promise<unknown>, [unknown]>(),
+      updateMany: jest.fn<Promise<unknown>, [unknown]>(),
+    },
   };
 
   const mockActivityLogger = { logAsync: jest.fn() };
@@ -80,6 +94,60 @@ describe('WebhookEventHandlerService', () => {
           }) as unknown,
         }),
       );
+    });
+
+    it('REGRESSION (Milestone 9): activates an OrganizationSubscription instead of the generic donation Subscription when metadata carries organizationSubscriptionId', async () => {
+      mockPrisma.organizationSubscription.update.mockResolvedValue({
+        id: 'os-1',
+        organizationId: 'org-1',
+        plan: { entitlementKeys: '[]' },
+      });
+
+      const subscription = {
+        id: 'sub_1',
+        customer: 'cus_1',
+        metadata: { organizationSubscriptionId: 'os-1' },
+        items: {
+          data: [{ current_period_start: 1000, current_period_end: 2000 }],
+        },
+      } as unknown as StripeSubscription;
+
+      await service.handleWebhookEvent({
+        type: 'customer.subscription.created',
+        data: { object: subscription },
+      } as never);
+
+      expect(mockPrisma.organizationSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'os-1' } }),
+      );
+      expect(mockPrisma.subscription.upsert).not.toHaveBeenCalled();
+    });
+
+    it('REGRESSION (Milestone 9): activates an InstitutionSubscription instead of the generic donation Subscription when metadata carries institutionSubscriptionId', async () => {
+      mockPrisma.institutionSubscription.update.mockResolvedValue({
+        id: 'is-1',
+        institutionId: 'inst-1',
+        plan: { entitlementKeys: '[]' },
+      });
+
+      const subscription = {
+        id: 'sub_1',
+        customer: 'cus_1',
+        metadata: { institutionSubscriptionId: 'is-1' },
+        items: {
+          data: [{ current_period_start: 1000, current_period_end: 2000 }],
+        },
+      } as unknown as StripeSubscription;
+
+      await service.handleWebhookEvent({
+        type: 'customer.subscription.created',
+        data: { object: subscription },
+      } as never);
+
+      expect(mockPrisma.institutionSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'is-1' } }),
+      );
+      expect(mockPrisma.subscription.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -195,6 +263,36 @@ describe('WebhookEventHandlerService', () => {
             amountDecimal: new Prisma.Decimal(50),
           }) as unknown,
         }),
+      );
+    });
+
+    it('REGRESSION (Milestone 9): marks membership, organization, and institution subscriptions past due when no generic Subscription matches', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue(null);
+
+      const invoice = {
+        id: 'in_1',
+        parent: { subscription_details: { subscription: 'sub_1' } },
+        amount_due: 5000,
+        currency: 'usd',
+      } as unknown as StripeInvoice;
+
+      await service.handleWebhookEvent({
+        type: 'invoice.payment_failed',
+        data: { object: invoice },
+      } as never);
+
+      expect(mockPrisma.membershipSubscription.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { providerSubscriptionId: 'sub_1' } }),
+      );
+      expect(
+        mockPrisma.organizationSubscription.updateMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { providerSubscriptionId: 'sub_1' } }),
+      );
+      expect(
+        mockPrisma.institutionSubscription.updateMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { providerSubscriptionId: 'sub_1' } }),
       );
     });
   });

@@ -52,6 +52,7 @@ import { OfficialStaffController } from './official-staff.controller';
     ResponseWorkflowService,
     ConstituencyScopeService,
     ConstituencyFeedService,
+    OfficialOwnershipGuard,
   ],
 })
 export class OfficialsModule {}

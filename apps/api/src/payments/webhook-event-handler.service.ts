@@ -22,6 +22,14 @@ import {
   cancelMembershipSubscriptionByProviderSubscriptionId,
   markMembershipPastDue,
 } from '../memberships/membership-webhook.util';
+import {
+  activateOrganizationSubscription,
+  activateInstitutionSubscription,
+  cancelOrganizationSubscriptionByProviderSubscriptionId,
+  cancelInstitutionSubscriptionByProviderSubscriptionId,
+  markOrganizationPastDue,
+  markInstitutionPastDue,
+} from '../organizations/workspace-webhook.util';
 
 /**
  * Service to handle specific Stripe webhook event types
@@ -383,6 +391,59 @@ export class WebhookEventHandlerService {
         return;
       }
 
+      // Same disambiguation for Organization- and Institution-scoped
+      // workspace subscriptions (Milestone 9) — see
+      // OrganizationsService.subscribe / InstitutionSubscriptionsService.subscribe.
+      const organizationSubscriptionId =
+        subscription.metadata?.organizationSubscriptionId;
+      if (organizationSubscriptionId) {
+        await activateOrganizationSubscription(
+          this.prisma,
+          this.entitlementsService,
+          organizationSubscriptionId,
+          {
+            providerSubscriptionId: subscriptionId,
+            providerCustomerId: customerId,
+            currentPeriodStart: subscriptionPeriodStart
+              ? new Date(subscriptionPeriodStart * 1000)
+              : null,
+            currentPeriodEnd: subscriptionPeriodEnd
+              ? new Date(subscriptionPeriodEnd * 1000)
+              : null,
+            eventId,
+          },
+        );
+        this.logger.log(
+          `Organization subscription ${organizationSubscriptionId} activated (${subscriptionId})`,
+        );
+        return;
+      }
+
+      const institutionSubscriptionId =
+        subscription.metadata?.institutionSubscriptionId;
+      if (institutionSubscriptionId) {
+        await activateInstitutionSubscription(
+          this.prisma,
+          this.entitlementsService,
+          institutionSubscriptionId,
+          {
+            providerSubscriptionId: subscriptionId,
+            providerCustomerId: customerId,
+            currentPeriodStart: subscriptionPeriodStart
+              ? new Date(subscriptionPeriodStart * 1000)
+              : null,
+            currentPeriodEnd: subscriptionPeriodEnd
+              ? new Date(subscriptionPeriodEnd * 1000)
+              : null,
+            eventId,
+          },
+        );
+        this.logger.log(
+          `Institution subscription ${institutionSubscriptionId} activated (${subscriptionId})`,
+        );
+        return;
+      }
+
       // Find user by Stripe customer ID
       const user = await this.prisma.user.findFirst({
         where: { stripeCustomerId: customerId },
@@ -484,11 +545,27 @@ export class WebhookEventHandlerService {
       });
 
       if (!dbSubscription) {
-        await this.handleMembershipSubscriptionUpdated(
-          subscriptionId,
-          subscription.status,
-          eventId,
-        );
+        const handled =
+          (await this.handleMembershipSubscriptionUpdated(
+            subscriptionId,
+            subscription.status,
+            eventId,
+          )) ||
+          (await this.handleOrganizationSubscriptionUpdated(
+            subscriptionId,
+            subscription.status,
+            eventId,
+          )) ||
+          (await this.handleInstitutionSubscriptionUpdated(
+            subscriptionId,
+            subscription.status,
+            eventId,
+          ));
+        if (!handled) {
+          this.logger.warn(
+            `Subscription not found in database: ${subscriptionId}`,
+          );
+        }
         return;
       }
 
@@ -565,15 +642,44 @@ export class WebhookEventHandlerService {
             subscriptionId,
             eventId,
           );
-        if (!membershipSubscription) {
-          this.logger.warn(
-            `Subscription not found in database: ${subscriptionId}`,
-          );
-        } else {
+        if (membershipSubscription) {
           this.logger.log(
             `Membership subscription ${membershipSubscription.id} cancelled (${subscriptionId})`,
           );
+          return;
         }
+
+        const organizationSubscription =
+          await cancelOrganizationSubscriptionByProviderSubscriptionId(
+            this.prisma,
+            this.entitlementsService,
+            subscriptionId,
+            eventId,
+          );
+        if (organizationSubscription) {
+          this.logger.log(
+            `Organization subscription ${organizationSubscription.id} cancelled (${subscriptionId})`,
+          );
+          return;
+        }
+
+        const institutionSubscription =
+          await cancelInstitutionSubscriptionByProviderSubscriptionId(
+            this.prisma,
+            this.entitlementsService,
+            subscriptionId,
+            eventId,
+          );
+        if (institutionSubscription) {
+          this.logger.log(
+            `Institution subscription ${institutionSubscription.id} cancelled (${subscriptionId})`,
+          );
+          return;
+        }
+
+        this.logger.warn(
+          `Subscription not found in database: ${subscriptionId}`,
+        );
         return;
       }
 
@@ -736,7 +842,12 @@ export class WebhookEventHandlerService {
       });
 
       if (!subscription) {
+        // Each mark*PastDue call is a no-op updateMany for tables with no
+        // matching row, so firing all three unconditionally is simpler and
+        // just as correct as a find-first lookup chain here.
         await markMembershipPastDue(this.prisma, subscriptionId, eventId);
+        await markOrganizationPastDue(this.prisma, subscriptionId, eventId);
+        await markInstitutionPastDue(this.prisma, subscriptionId, eventId);
         this.logger.warn(`Subscription not found: ${subscriptionId}`);
         return;
       }
@@ -887,29 +998,27 @@ export class WebhookEventHandlerService {
   }
 
   /**
-   * Fallback for customer.subscription.updated when no generic (donation)
-   * Subscription row matches — checks MembershipSubscription instead.
-   * Membership plans have a fixed price (no amount to reconcile here), so
-   * the only thing worth tracking off this event is status: Stripe moving
-   * a subscription to past_due/unpaid, or recovering it back to active.
+   * Fallbacks for customer.subscription.updated when no generic (donation)
+   * Subscription row matches — checked in order: MembershipSubscription,
+   * then OrganizationSubscription, then InstitutionSubscription. Every one
+   * of these plan types has a fixed price (no amount to reconcile here), so
+   * the only thing worth tracking off this event is status: Stripe moving a
+   * subscription to past_due/unpaid, or recovering it back to active.
    * Entitlements are only granted/revoked on activation/cancellation, not
-   * on every status wobble, so this never touches EntitlementGrant.
+   * on every status wobble, so none of these touch EntitlementGrant.
+   * Each returns false (rather than logging) when its table has no match,
+   * so the caller can try the next one and only warn once all three miss.
    */
   private async handleMembershipSubscriptionUpdated(
     providerSubscriptionId: string,
     stripeStatus: string,
     eventId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const membershipSubscription =
       await this.prisma.membershipSubscription.findUnique({
         where: { providerSubscriptionId },
       });
-    if (!membershipSubscription) {
-      this.logger.warn(
-        `Subscription not found in database: ${providerSubscriptionId}`,
-      );
-      return;
-    }
+    if (!membershipSubscription) return false;
 
     if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
       await markMembershipPastDue(this.prisma, providerSubscriptionId, eventId);
@@ -928,6 +1037,77 @@ export class WebhookEventHandlerService {
     this.logger.log(
       `Membership subscription ${membershipSubscription.id} updated (Stripe status: ${stripeStatus})`,
     );
+    return true;
+  }
+
+  private async handleOrganizationSubscriptionUpdated(
+    providerSubscriptionId: string,
+    stripeStatus: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const organizationSubscription =
+      await this.prisma.organizationSubscription.findUnique({
+        where: { providerSubscriptionId },
+      });
+    if (!organizationSubscription) return false;
+
+    if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
+      await markOrganizationPastDue(
+        this.prisma,
+        providerSubscriptionId,
+        eventId,
+      );
+    } else if (stripeStatus === 'active') {
+      await this.prisma.organizationSubscription.update({
+        where: { id: organizationSubscription.id },
+        data: { status: 'ACTIVE', lastWebhookEventId: eventId },
+      });
+    } else {
+      await this.prisma.organizationSubscription.update({
+        where: { id: organizationSubscription.id },
+        data: { lastWebhookEventId: eventId },
+      });
+    }
+
+    this.logger.log(
+      `Organization subscription ${organizationSubscription.id} updated (Stripe status: ${stripeStatus})`,
+    );
+    return true;
+  }
+
+  private async handleInstitutionSubscriptionUpdated(
+    providerSubscriptionId: string,
+    stripeStatus: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const institutionSubscription =
+      await this.prisma.institutionSubscription.findUnique({
+        where: { providerSubscriptionId },
+      });
+    if (!institutionSubscription) return false;
+
+    if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') {
+      await markInstitutionPastDue(
+        this.prisma,
+        providerSubscriptionId,
+        eventId,
+      );
+    } else if (stripeStatus === 'active') {
+      await this.prisma.institutionSubscription.update({
+        where: { id: institutionSubscription.id },
+        data: { status: 'ACTIVE', lastWebhookEventId: eventId },
+      });
+    } else {
+      await this.prisma.institutionSubscription.update({
+        where: { id: institutionSubscription.id },
+        data: { lastWebhookEventId: eventId },
+      });
+    }
+
+    this.logger.log(
+      `Institution subscription ${institutionSubscription.id} updated (Stripe status: ${stripeStatus})`,
+    );
+    return true;
   }
 
   /**
