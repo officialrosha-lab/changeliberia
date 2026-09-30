@@ -371,6 +371,22 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                 </div>
               )}
             </div>
+            <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-neutral-100">Organizations</p>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-400">
+                    Run an NGO or team workspace — invite teammates, and optionally upgrade for more seats.
+                  </p>
+                </div>
+                <Link
+                  href="/organizations"
+                  className="inline-flex rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                >
+                  My organizations
+                </Link>
+              </div>
+            </div>
             {user.role === 'ADMIN' && (
               <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
