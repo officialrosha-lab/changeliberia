@@ -24,12 +24,20 @@ const datetimeField: Pick<PlanField, 'toApiValue' | 'fromApiValue'> = {
     typeof value === 'string' ? new Date(value).toISOString().slice(0, 16) : '',
 };
 
-function priceCell(row: PlanRow, key: string): string {
-  if (key !== 'priceAmount') return String(row[key] ?? '—');
-  const amount = row.priceAmount;
-  if (amount === null || amount === undefined) return 'Free';
-  const currency = typeof row.currency === 'string' ? row.currency : 'USD';
-  return `${currency} ${String(amount)}`;
+function formatCell(row: PlanRow, key: string): string {
+  if (key === 'priceAmount') {
+    const amount = row.priceAmount;
+    if (amount === null || amount === undefined) return 'Free';
+    const currency = typeof row.currency === 'string' ? row.currency : 'USD';
+    return `${currency} ${String(amount)}`;
+  }
+  if (key === 'startsAt' || key === 'endsAt') {
+    const value = row[key];
+    const date = typeof value === 'string' ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  return String(row[key] ?? '—');
 }
 
 const CATALOGS = [
@@ -196,7 +204,7 @@ export function PlanCatalogsTab() {
         createFields={catalog.createFields as PlanField[]}
         updateFields={updateFields}
         columns={catalog.columns as unknown as string[]}
-        formatCell={priceCell}
+        formatCell={formatCell}
       />
     </div>
   );
