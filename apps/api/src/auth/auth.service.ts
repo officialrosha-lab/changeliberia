@@ -31,11 +31,21 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
     const user = await this.prisma.user.upsert({
       where: { phone: dto.phone },
       update: { fullName: dto.fullName, email: dto.email },
       create: { fullName: dto.fullName, phone: dto.phone, email: dto.email },
     });
+    if (!existing && user.email) {
+      this.eventEmitter.emit('user.created', {
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+      });
+    }
     return this.issueToken(user.id, user.phone);
   }
 
@@ -162,7 +172,7 @@ export class AuthService {
       // Only require verification for accounts less than 24 hours old
       if (hoursDiff < 24) {
         throw new UnauthorizedException(
-          "email_not_verified|Your email address needs to be verified. Please check your inbox for a verification link from Change Liberia. If you don't see it, you can request a new one below.",
+          "email_not_verified|Your email address needs to be verified. Please check your inbox for a verification code from Change Liberia. If you don't see it, you can request a new one below.",
         );
       }
     }
@@ -229,6 +239,14 @@ export class AuthService {
       },
     });
 
+    if (newUser.email) {
+      this.eventEmitter.emit('user.created', {
+        userId: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+      });
+    }
+
     return this.issueToken(newUser.id, newUser.phone);
   }
 
@@ -277,9 +295,9 @@ export class AuthService {
    * Verify email token and mark email as confirmed
    * Returns JWT token if successful
    */
-  async verifyEmailToken(email: string, token: string) {
-    // Verify the token with email verification service
-    await this.emailVerificationService.verifyEmail(email, token);
+  async verifyEmailToken(email: string, code: string) {
+    // Verify the code with email verification service
+    await this.emailVerificationService.verifyEmail(email, code);
 
     // Find user and mark email as confirmed
     const user = await this.prisma.user.findUnique({
