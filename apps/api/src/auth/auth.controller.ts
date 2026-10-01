@@ -79,10 +79,10 @@ export class AuthController {
     return this.emailVerificationService.sendVerificationEmail(body.email);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
   @Post('verify-email')
   async verifyEmail(@Body() body: VerifyEmailDto) {
-    return this.authService.verifyEmailToken(body.email, body.token);
+    return this.authService.verifyEmailToken(body.email, body.code);
   }
 
   @Throttle({ default: { limit: 2, ttl: 300000 } })

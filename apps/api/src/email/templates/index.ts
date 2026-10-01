@@ -97,13 +97,11 @@ export interface BroadcastNotificationProps {
 export interface WelcomeEmailProps {
   recipientName: string;
   appUrl: string;
-  verifyUrl: string;
 }
 
 export interface VerifyEmailProps {
   recipientName: string;
   verificationCode: string;
-  verifyUrl: string;
 }
 
 export interface PasswordResetEmailProps {
