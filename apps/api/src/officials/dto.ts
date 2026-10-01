@@ -21,6 +21,7 @@ const INDIVIDUAL_OFFICE_CATEGORIES = [
   InstitutionCategory.COMMISSIONER,
   InstitutionCategory.DISTRICT_COMMISSIONER,
   InstitutionCategory.EXECUTIVE_OFFICE,
+  InstitutionCategory.NGO,
 ];
 
 export { INDIVIDUAL_OFFICE_CATEGORIES };
