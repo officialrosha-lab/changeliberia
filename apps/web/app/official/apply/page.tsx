@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { apiGet, apiPost } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-// Individual offices only — the backend DTO rejects org-level categories
-// (MINISTRY/AGENCY); those are claimed from the directory instead.
+// Self-service categories only — the backend DTO rejects the remaining
+// org-level categories (MINISTRY/AGENCY/PARLIAMENT/etc.); those are
+// pre-seeded by an admin and claimed from the directory instead, since
+// there's no equivalent authoritative registry for individual offices or
+// for NGOs.
 const CATEGORIES = [
   ['SENATOR', 'Senator'],
   ['REPRESENTATIVE', 'Representative'],
@@ -15,6 +18,7 @@ const CATEGORIES = [
   ['COMMISSIONER', 'Commissioner'],
   ['DISTRICT_COMMISSIONER', 'District Commissioner'],
   ['EXECUTIVE_OFFICE', 'National Executive Office'],
+  ['NGO', 'NGO / Civil Society Organization'],
 ] as const;
 
 interface ClaimableInstitution {
@@ -165,6 +169,7 @@ export default function OfficialApplyPage() {
 
   const inputClass =
     'mt-1 w-full rounded-2xl border border-zinc-300 dark:border-neutral-700 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200';
+  const isNgo = form.category === 'NGO';
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12">
@@ -191,6 +196,7 @@ export default function OfficialApplyPage() {
           <span className="block font-semibold text-zinc-900 dark:text-white">Create new office</span>
           <span className="mt-0.5 block text-xs text-zinc-500 dark:text-neutral-400">
             For elected/appointed officials — Senator, Representative, Mayor, Superintendent…
+            — or an NGO / civil society organization.
           </span>
         </button>
         <button
@@ -215,12 +221,14 @@ export default function OfficialApplyPage() {
       {mode === 'create' ? (
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Office / title</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
+              {isNgo ? 'Organization name' : 'Office / title'}
+            </label>
             <input
               required
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
-              placeholder="e.g. Senator, Montserrado County"
+              placeholder={isNgo ? 'e.g. Liberia Civic Watch' : 'e.g. Senator, Montserrado County'}
               className={inputClass}
             />
           </div>
@@ -239,7 +247,8 @@ export default function OfficialApplyPage() {
               ))}
             </select>
             <p className="mt-1 text-xs text-zinc-400 dark:text-neutral-500">
-              Representing a ministry or agency? Use &quot;Claim existing institution&quot; above.
+              Representing a government ministry or agency? Use &quot;Claim existing institution&quot;
+              above — NGOs and civil society organizations should apply here instead.
             </p>
           </div>
 
@@ -263,7 +272,9 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Official government email</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
+              {isNgo ? 'Organization email' : 'Official government email'}
+            </label>
             <input
               required
               type="email"
@@ -274,16 +285,20 @@ export default function OfficialApplyPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {!isNgo && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Political party (optional)</label>
+                <input
+                  value={form.politicalParty}
+                  onChange={(e) => update('politicalParty', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            )}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Political party (optional)</label>
-              <input
-                value={form.politicalParty}
-                onChange={(e) => update('politicalParty', e.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Office phone</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
+                {isNgo ? 'Organization phone' : 'Office phone'}
+              </label>
               <input
                 value={form.phone}
                 onChange={(e) => update('phone', e.target.value)}
@@ -293,7 +308,9 @@ export default function OfficialApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">Bio</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
+              {isNgo ? 'About the organization (mission, focus area)' : 'Bio'}
+            </label>
             <textarea
               rows={4}
               value={form.bio}
@@ -304,12 +321,16 @@ export default function OfficialApplyPage() {
 
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-neutral-300">
-              Appointment / election verification document URL
+              {isNgo ? 'Registration certificate URL' : 'Appointment / election verification document URL'}
             </label>
             <input
               value={form.verificationDocUrl}
               onChange={(e) => update('verificationDocUrl', e.target.value)}
-              placeholder="Link to a certificate of election / appointment letter"
+              placeholder={
+                isNgo
+                  ? 'Link to your NGO registration certificate'
+                  : 'Link to a certificate of election / appointment letter'
+              }
               className={inputClass}
             />
           </div>
