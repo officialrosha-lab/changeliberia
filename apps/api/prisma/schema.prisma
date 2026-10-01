@@ -2622,7 +2622,8 @@ model CMSTemplate {
 model EmailVerificationToken {
   id        String   @id @default(cuid())
   email     String
-  token     String   @unique // Hashed token
+  token     String   @unique // SHA-256 hash of `${code}:${email}` — a 6-digit verification code, salted per-email
+  attempts  Int      @default(0) // incorrect-guess counter; capped in EmailVerificationService.verifyEmail
   expiresAt DateTime
   createdAt DateTime @default(now())
   verified  Boolean  @default(false)

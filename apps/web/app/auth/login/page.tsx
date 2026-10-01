@@ -106,7 +106,7 @@ function LoginPageClient() {
       {showVerificationMessage && (
         <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 dark:bg-blue-950/40 dark:border-blue-800">
           <p className="text-sm text-blue-800 dark:text-blue-200">
-            <span className="font-semibold">Verification email sent!</span> Check your email for a verification link to confirm your account before logging in.
+            <span className="font-semibold">Verification email sent!</span> Check your email for a verification code to confirm your account before logging in.
           </p>
         </div>
       )}
