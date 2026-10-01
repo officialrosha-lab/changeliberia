@@ -17,6 +17,11 @@ const COLS = [
     ],
   },
   {
+    title: 'For officials & organizations',
+    description: 'Verification for government officials, lawmakers, and NGOs.',
+    links: [{ href: '/official/apply', label: 'Apply now', cta: true }],
+  },
+  {
     title: 'Learn',
     links: [
       { href: '/how-it-works', label: 'How it works' },
@@ -62,7 +67,7 @@ export function SiteFooter() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:py-16">
 
           {/* Top row: brand + columns */}
-          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 md:gap-10 lg:grid-cols-[220px_1fr_1fr_1fr_1fr_1fr]">
+          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 md:gap-10 lg:grid-cols-[220px_1fr_1fr_1fr_1fr_1fr_1fr]">
 
             {/* Brand column */}
             <div className="flex flex-col gap-3">
@@ -81,15 +86,29 @@ export function SiteFooter() {
                 <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-900 dark:text-neutral-50">
                   {col.title}
                 </h3>
+                {'description' in col && col.description && (
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-neutral-400">
+                    {col.description}
+                  </p>
+                )}
                 <ul className="mt-3 space-y-2 text-xs text-zinc-500 dark:text-neutral-400 sm:text-sm">
                   {col.links.map((l) => (
                     <li key={l.href + l.label}>
-                      <Link
-                        href={l.href}
-                        className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                      >
-                        {l.label}
-                      </Link>
+                      {'cta' in l && l.cta ? (
+                        <Link
+                          href={l.href}
+                          className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                        >
+                          {l.label}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={l.href}
+                          className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                        >
+                          {l.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
