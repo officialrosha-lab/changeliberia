@@ -120,9 +120,18 @@ export class EmailTemplateService {
       case EmailType.WELCOME: {
         const p = props as WelcomeEmailProps;
         content = `
-          <p>Welcome to Change Liberia! We're excited to have you join our community.</p>
-          <p>You can now create petitions, sign existing ones, and make your voice heard.</p>
-          <p><a href="${p.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Get Started</a></p>
+          <p>I'm Michael Quaresma Harijgens, the founder of Change Liberia.</p>
+          <p>I started this platform because too many Liberians — at home and across the diaspora — have something to say about the country we're building, but no clear, trusted place to say it where it actually reaches the people who can act on it. Change Liberia exists so your voice doesn't disappear into a comment section. It goes into a petition, a record, a pressure point that officials and institutions are expected to respond to.</p>
+          <p>You're now part of that. Whatever brought you here — a specific issue in your community, a county-wide concern, or just wanting to see how this works — thank you for trusting us with it.</p>
+          <p>A couple of things to get you started:</p>
+          <ul style="padding-left: 20px; margin: 0 0 16px 0;">
+            <li>Check your inbox for a verification code — you'll need it to activate your account.</li>
+            <li>Browse petitions already underway, or start your own in minutes.</li>
+          </ul>
+          <p>If you ever have feedback, a problem to report, or just want to tell me why you joined, reply to this email — our team (including me) reads every one.</p>
+          <p><a href="${p.appUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Get Started</a></p>
+          <p style="margin-top: 24px;">Welcome aboard.</p>
+          <p style="margin: 4px 0 0 0;"><strong>— Michael Quaresma Harijgens</strong><br/>Founder, Change Liberia</p>
         `;
         break;
       }
@@ -130,10 +139,9 @@ export class EmailTemplateService {
       case EmailType.VERIFY_EMAIL: {
         const p = props as VerifyEmailProps;
         content = `
-          <p>Please verify your email address to complete your registration.</p>
-          ${p.verificationCode ? `<p>Your verification code is: <strong>${p.verificationCode}</strong></p>` : ''}
-          <p><a href="${p.verifyUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Verify Email</a></p>
-          <p style="font-size: 12px; color: #6b7280;">This link expires in 24 hours.</p>
+          <p>Use this code to verify your email address on Change Liberia:</p>
+          <p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; text-align: center; margin: 24px 0; color: #059669;">${p.verificationCode}</p>
+          <p style="font-size: 12px; color: #6b7280;">This code expires in 15 minutes. Enter it at changeliberia.org/auth/verify-email.</p>
         `;
         break;
       }
@@ -297,14 +305,22 @@ export class EmailTemplateService {
       case EmailType.WELCOME: {
         const p = props as WelcomeEmailProps;
         text +=
-          "Welcome to Change Liberia! We're excited to have you join our community.\n\nYou can now create petitions, sign existing ones, and make your voice heard.\n\nVisit: " +
-          (p.verifyUrl || appUrl);
+          "I'm Michael Quaresma Harijgens, the founder of Change Liberia.\n\n" +
+          "I started this platform because too many Liberians — at home and across the diaspora — have something to say about the country we're building, but no clear, trusted place to say it where it actually reaches the people who can act on it. Change Liberia exists so your voice doesn't disappear into a comment section. It goes into a petition, a record, a pressure point that officials and institutions are expected to respond to.\n\n" +
+          "You're now part of that. Whatever brought you here — a specific issue in your community, a county-wide concern, or just wanting to see how this works — thank you for trusting us with it.\n\n" +
+          'A couple of things to get you started:\n' +
+          "- Check your inbox for a verification code — you'll need it to activate your account.\n" +
+          '- Browse petitions already underway, or start your own in minutes.\n\n' +
+          'If you ever have feedback, a problem to report, or just want to tell me why you joined, reply to this email — our team (including me) reads every one.\n\n' +
+          `Get started: ${p.appUrl || appUrl}\n\n` +
+          'Welcome aboard.\n\n' +
+          '— Michael Quaresma Harijgens\nFounder, Change Liberia';
         break;
       }
 
       case EmailType.VERIFY_EMAIL: {
         const p = props as VerifyEmailProps;
-        text += `Please verify your email address to complete your registration.\n\n${p.verificationCode ? `Your verification code is: ${p.verificationCode}\n\n` : ''}Verify your email: ${p.verifyUrl || appUrl}\n\nThis link expires in 24 hours.`;
+        text += `Use this code to verify your email address on Change Liberia:\n\n${p.verificationCode}\n\nThis code expires in 15 minutes. Enter it at changeliberia.org/auth/verify-email.`;
         break;
       }
 
