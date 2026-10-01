@@ -75,8 +75,11 @@ export function EmailSignupForm() {
       localStorage.setItem('emailVerificationSent', 'true');
       localStorage.setItem('pendingVerificationEmail', email);
       
-      setMessage('Account created! Check your email to verify your account.');
-      window.setTimeout(() => router.push('/auth/login?emailVerificationSent=true'), 1500);
+      setMessage('Account created! Check your email for a verification code.');
+      window.setTimeout(
+        () => router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`),
+        1500,
+      );
     } catch (error) {
       setIsError(true);
       setMessage(

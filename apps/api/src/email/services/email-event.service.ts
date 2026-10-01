@@ -17,7 +17,7 @@ interface UserCreatedEvent {
 interface EmailVerificationRequestedEvent {
   userId: string;
   email: string;
-  verifyUrl: string;
+  verificationCode: string;
   fullName: string;
 }
 
@@ -324,15 +324,15 @@ export class EmailEventService {
     event: EmailVerificationRequestedEvent,
   ): Promise<void> {
     try {
-      const { userId, email, verifyUrl, fullName } = event;
+      const { userId, email, verificationCode, fullName } = event;
       await this.emailService.sendTransactional(
         email,
         userId,
         EmailType.VERIFY_EMAIL,
         {
           recipientName: fullName,
-          verifyUrl,
-          expiresIn: '24 hours',
+          verificationCode,
+          expiresIn: '15 minutes',
         },
       );
       this.logger.log(`Email verification sent to ${email}`);

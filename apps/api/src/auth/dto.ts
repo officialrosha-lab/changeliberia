@@ -46,7 +46,7 @@ export class SendVerificationEmailDto {
 
 export class VerifyEmailDto {
   @IsEmail() email!: string;
-  @IsString() token!: string;
+  @IsString() code!: string;
 }
 
 export class ResendVerificationEmailDto {

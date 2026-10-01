@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomBytes } from 'crypto';
-import { createHash } from 'crypto';
+import { randomInt, createHash } from 'crypto';
+
+const MAX_VERIFY_ATTEMPTS = 5;
 
 @Injectable()
 export class EmailVerificationService {
@@ -34,12 +35,13 @@ export class EmailVerificationService {
       throw new BadRequestException('Email is already registered');
     }
 
-    // Generate a random token (32 bytes = 64 hex characters)
-    const token = randomBytes(32).toString('hex');
-    const tokenHash = this.hashToken(token);
+    // Generate a 6-digit numeric code
+    const code = String(randomInt(100000, 1000000));
+    const tokenHash = this.hashCode(code, email);
 
-    // Set expiration to 24 hours from now
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Codes are short and user-entered, so they expire much sooner than the
+    // old 24h link did.
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     // Delete any existing tokens for this email
     await this.prisma.emailVerificationToken.deleteMany({
@@ -56,12 +58,10 @@ export class EmailVerificationService {
     });
 
     // Send verification email via the Maileroo-backed EmailService (EmailEventService listens for this)
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-
     this.eventEmitter.emit('user.email.verification-requested', {
       userId: existingUser?.id,
       email,
-      verifyUrl: verificationUrl,
+      verificationCode: code,
       fullName: existingUser?.fullName,
     });
 
@@ -72,41 +72,46 @@ export class EmailVerificationService {
   }
 
   /**
-   * Verify the email token
+   * Verify the email against a submitted 6-digit code
    */
   async verifyEmail(
     email: string,
-    token: string,
+    code: string,
   ): Promise<{ success: boolean; message: string }> {
-    const tokenHash = this.hashToken(token);
-
-    // Find the verification token
+    // Codes are short and guessable, so (unlike the old opaque-token lookup)
+    // we find the active attempt by email first and compare hashes, which
+    // lets us count and cap wrong guesses per code.
     const verificationToken =
-      await this.prisma.emailVerificationToken.findUnique({
-        where: { token: tokenHash },
+      await this.prisma.emailVerificationToken.findFirst({
+        where: { email, verified: false },
       });
 
     if (!verificationToken) {
-      throw new UnauthorizedException('Invalid verification token');
+      throw new UnauthorizedException('Invalid or expired verification code');
     }
 
-    // Check if token is expired
     if (verificationToken.expiresAt < new Date()) {
-      // Delete expired token
       await this.prisma.emailVerificationToken.delete({
         where: { id: verificationToken.id },
       });
-      throw new UnauthorizedException('Verification link has expired');
+      throw new UnauthorizedException('Verification code has expired');
     }
 
-    // Check if email matches
-    if (verificationToken.email !== email) {
-      throw new UnauthorizedException('Email does not match token');
+    if (verificationToken.attempts >= MAX_VERIFY_ATTEMPTS) {
+      await this.prisma.emailVerificationToken.delete({
+        where: { id: verificationToken.id },
+      });
+      throw new UnauthorizedException(
+        'Too many incorrect attempts. Request a new code.',
+      );
     }
 
-    // Check if already verified
-    if (verificationToken.verified) {
-      throw new BadRequestException('Email has already been verified');
+    if (this.hashCode(code, email) !== verificationToken.token) {
+      await this.prisma.emailVerificationToken.update({
+        where: { id: verificationToken.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new UnauthorizedException('Incorrect verification code');
     }
 
     // Mark as verified
@@ -142,10 +147,10 @@ export class EmailVerificationService {
   }
 
   /**
-   * Hash token using SHA-256
+   * Hash a code, salted per-email, using SHA-256
    */
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+  private hashCode(code: string, email: string): string {
+    return createHash('sha256').update(`${code}:${email}`).digest('hex');
   }
 
   /**
