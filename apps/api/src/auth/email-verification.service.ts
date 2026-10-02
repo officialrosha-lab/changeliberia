@@ -97,8 +97,22 @@ export class EmailVerificationService {
       throw new UnauthorizedException('Verification code has expired');
     }
 
-    if (verificationToken.attempts >= MAX_VERIFY_ATTEMPTS) {
-      await this.prisma.emailVerificationToken.delete({
+    // Atomically claim one attempt slot: the `attempts < MAX` condition and
+    // the increment happen as a single DB operation, so concurrent requests
+    // can't all read the same stale `attempts` value, each conclude they're
+    // still under the cap, and all get to test a guess before any of their
+    // increments land — closing a brute-force path the previous
+    // read-then-write check left open.
+    const { count } = await this.prisma.emailVerificationToken.updateMany({
+      where: {
+        id: verificationToken.id,
+        attempts: { lt: MAX_VERIFY_ATTEMPTS },
+      },
+      data: { attempts: { increment: 1 } },
+    });
+
+    if (count === 0) {
+      await this.prisma.emailVerificationToken.deleteMany({
         where: { id: verificationToken.id },
       });
       throw new UnauthorizedException(
@@ -107,10 +121,6 @@ export class EmailVerificationService {
     }
 
     if (this.hashCode(code, email) !== verificationToken.token) {
-      await this.prisma.emailVerificationToken.update({
-        where: { id: verificationToken.id },
-        data: { attempts: { increment: 1 } },
-      });
       throw new UnauthorizedException('Incorrect verification code');
     }
 
