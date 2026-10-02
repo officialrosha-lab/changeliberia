@@ -214,13 +214,11 @@ export function PetitionClientPage({ id }: { id: string }) {
 
             <PetitionPromotePanel petitionId={petition.id} />
 
-            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
-              <PetitionMilestones
-                petitionId={petition.id}
-                currentSignatures={petition.signaturesCount}
-                goal={petition.goal}
-              />
-            </Card>
+            <PetitionMilestones
+              petitionId={petition.id}
+              currentSignatures={petition.signaturesCount}
+              goal={petition.goal}
+            />
 
             <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
               <h2 className="text-xl font-extrabold text-zinc-900 dark:text-neutral-50">Updates</h2>
