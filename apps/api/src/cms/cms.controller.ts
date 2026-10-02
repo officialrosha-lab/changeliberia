@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -14,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { IsString, IsOptional } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
@@ -276,6 +278,27 @@ export class CMSController {
     @Body('alt') alt?: string,
   ) {
     return this.fileUploadService.uploadFile(file, user.id, alt);
+  }
+
+  /**
+   * Serve a previously uploaded file's bytes by its stored filename.
+   * Public (images/docs referenced in published pages need to load for
+   * anonymous visitors) — the filename itself is an unguessable,
+   * timestamp-suffixed name, not a sequential ID.
+   */
+  @Get('files/:filename')
+  async serveFile(@Param('filename') filename: string, @Res() res: Response) {
+    if (!filename || filename.includes('/') || filename.includes('..')) {
+      throw new NotFoundException('File not found');
+    }
+    const obj = await this.fileUploadService.getFileBuffer(filename);
+    if (!obj) throw new NotFoundException('File not found');
+    res.setHeader(
+      'Content-Type',
+      obj.contentType ?? 'application/octet-stream',
+    );
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(obj.buffer);
   }
 
   /**
