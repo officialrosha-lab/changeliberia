@@ -20,6 +20,14 @@ export class CaptchaService {
     if (provider === 'hcaptcha') {
       return this.verifyHCaptcha(token, remoteIp);
     }
+    // The mock provider accepts a hardcoded, publicly-visible token — fine
+    // for local dev without real captcha credentials, but in production it
+    // would let anyone trivially bypass the fraud system's highest-risk
+    // signature challenges. Fail closed instead of falling back to it.
+    if (process.env.NODE_ENV === 'production') {
+      captchaVerificationsTotal.labels('mock', 'failure').inc();
+      return { success: false, score: 0, provider: 'mock' };
+    }
     const success = token === 'human-verified';
     captchaVerificationsTotal
       .labels('mock', success ? 'success' : 'failure')
