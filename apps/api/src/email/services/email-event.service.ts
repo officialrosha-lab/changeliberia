@@ -12,6 +12,9 @@ interface UserCreatedEvent {
   userId: string;
   email: string;
   fullName: string;
+  /** Only true for the email/password signup path — the only one that
+   *  actually sends a verification code afterward. */
+  requiresEmailVerification?: boolean;
 }
 
 interface EmailVerificationRequestedEvent {
@@ -302,7 +305,7 @@ export class EmailEventService {
 
   private async onUserCreated(event: UserCreatedEvent): Promise<void> {
     try {
-      const { userId, email, fullName } = event;
+      const { userId, email, fullName, requiresEmailVerification } = event;
       await this.emailService.sendTransactional(
         email,
         userId,
@@ -310,6 +313,7 @@ export class EmailEventService {
         {
           recipientName: fullName,
           appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+          requiresEmailVerification: requiresEmailVerification ?? false,
         },
       );
       this.logger.log(`Welcome email sent to ${email}`);
