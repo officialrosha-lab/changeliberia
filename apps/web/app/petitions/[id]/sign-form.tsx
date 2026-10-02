@@ -700,7 +700,7 @@ export function SignForm({
       )}
 
       {!hasSigned && (
-        <div className="fixed bottom-16 left-0 right-0 z-50 border-t border-zinc-200 bg-white p-3 md:hidden safe-bottom">
+        <div className="fixed bottom-16 left-0 right-0 z-50 border-t border-zinc-200 p-3 md:hidden safe-bottom">
           <button
             type="button"
             onClick={() => document.getElementById('signer-name')?.focus()}
