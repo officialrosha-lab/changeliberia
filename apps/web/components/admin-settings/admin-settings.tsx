@@ -29,6 +29,7 @@ interface SystemSettings {
   donationsEnabled: boolean;
   platformDonationsEnabled: boolean;
   petitionDonationsEnabled: boolean;
+  promotionsEnabled: boolean;
 }
 
 export function AdminSettings() {
@@ -465,6 +466,28 @@ export function AdminSettings() {
                     checked={settings.petitionDonationsEnabled}
                     onChange={(e) =>
                       setSettings({ ...settings, petitionDonationsEnabled: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Promotion Settings */}
+            <div className="border-t border-zinc-200 dark:border-neutral-700 pt-4 mt-4">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-neutral-50 mb-4">Promotion Features</h3>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-neutral-800/50">
+                  <div>
+                    <label className="text-sm font-semibold text-zinc-700 dark:text-neutral-300">Petition Promotions</label>
+                    <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-1">Turn on once the payment gateway is configured — hides &quot;Promote this petition&quot; everywhere while off</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.promotionsEnabled}
+                    onChange={(e) =>
+                      setSettings({ ...settings, promotionsEnabled: e.target.checked })
                     }
                     className="w-4 h-4 rounded"
                   />
