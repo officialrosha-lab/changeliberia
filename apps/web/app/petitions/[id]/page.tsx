@@ -413,13 +413,11 @@ export default async function PetitionPage({
               petitionType={petition.petitionType}
             />
 
-            <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
-              <PetitionMilestones
-                petitionId={petition.id}
-                currentSignatures={petition.signaturesCount}
-                goal={petition.goal}
-              />
-            </Card>
+            <PetitionMilestones
+              petitionId={petition.id}
+              currentSignatures={petition.signaturesCount}
+              goal={petition.goal}
+            />
 
             <CommunityInsightsPanel petitionId={petition.id} />
 

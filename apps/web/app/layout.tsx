@@ -80,6 +80,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfairDisplay.variable}`}>
       <head>
+        {/* Inlined (not in globals.css) so it's part of the initial HTML and
+            still applies if the main stylesheet never arrives — a dropped
+            request on a slow connection otherwise leaves <img>/<svg> at
+            their raw pixel size, blowing out the layout width. */}
+        <style dangerouslySetInnerHTML={{ __html: 'img,svg,video{max-width:100%;height:auto}' }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
