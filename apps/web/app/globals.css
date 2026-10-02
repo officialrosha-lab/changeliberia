@@ -45,6 +45,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Safety net for media on slow/flaky connections: if a page paints before
+   Tailwind's stylesheet finishes loading (or a request drops entirely —
+   common on the mobile networks much of this site's audience uses), a raw
+   <img>/<svg>/<video> still has no intrinsic size limit and can render at
+   its native pixel dimensions, blowing out the layout width. This keeps
+   media capped to its container no matter what else has loaded. */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
