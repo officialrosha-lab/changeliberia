@@ -13,7 +13,7 @@ import { PetitionsResolver } from './petitions.resolver';
       autoSchemaFile: join(process.cwd(), 'src/graphql/schema.gql'),
       sortSchema: true,
       playground: process.env.NODE_ENV !== 'production',
-      introspection: true,
+      introspection: process.env.NODE_ENV !== 'production',
       path: '/graphql',
     }),
   ],

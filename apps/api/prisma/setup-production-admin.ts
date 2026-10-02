@@ -5,9 +5,9 @@
  * Usage: tsx prisma/setup-production-admin.ts
  * Environment variables:
  * - DATABASE_URL: PostgreSQL connection string (default from .env)
- * - ADMIN_EMAIL: Admin email (default: mharygens@gmail.com)
+ * - ADMIN_EMAIL: Admin email (required in production)
  * - ADMIN_PHONE: Admin phone (default: +231000000001)
- * - ADMIN_PASSWORD: Admin password (default: Admin231$)
+ * - ADMIN_PASSWORD: Admin password (required in production)
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -18,13 +18,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🔧 Setting up production admin user...\n');
 
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd && (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD)) {
+    throw new Error(
+      'ADMIN_EMAIL and ADMIN_PASSWORD must both be set in production; refusing to create/reset the admin account with a default credential.',
+    );
+  }
+
   const email = process.env.ADMIN_EMAIL ?? 'mharygens@gmail.com';
   const phone = process.env.ADMIN_PHONE ?? '+231000000001';
-  const password = process.env.ADMIN_PASSWORD ?? 'Admin231$';
+  const password = process.env.ADMIN_PASSWORD ?? 'dev-only-admin-password';
 
   console.log(`📧 Email: ${email}`);
   console.log(`📱 Phone: ${phone}`);
-  console.log(`🔐 Password: ${password}\n`);
+  console.log('🔐 Password: (hidden)\n');
 
   const passwordHash = await bcrypt.hash(password, 10);
 
