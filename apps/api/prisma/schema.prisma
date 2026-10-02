@@ -2465,7 +2465,7 @@ model ConstituencyReportFile {
   reportId  String
   report    ConstituencyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   format    String // "PDF" | "CSV"
-  filePath  String // local disk path — see constituency-report-storage.service.ts
+  filePath  String // bare filename — resolved against the bucket, see constituency-report-storage.service.ts
   fileSize  Int?
   createdAt DateTime           @default(now())
 

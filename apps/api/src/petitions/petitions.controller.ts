@@ -16,11 +16,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { createReadStream, existsSync } from 'fs';
-import { extname } from 'path';
 import type { Response } from 'express';
 import type { MemoryUploadedFile } from '../verification/uploaded-file.types';
 import { PetitionMediaStorageService } from './petition-media-storage.service';
+import { S3StorageService } from '../storage/s3-storage.service';
 import { UserRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -46,6 +45,7 @@ export class PetitionsController {
     private readonly mediaStorage: PetitionMediaStorageService,
     private readonly activityLogger: ActivityLoggerService,
     private readonly impactAreaReport: ImpactAreaReportService,
+    private readonly s3: S3StorageService,
   ) {}
 
   @Get()
@@ -79,24 +79,16 @@ export class PetitionsController {
   }
 
   @Get('media/:filename')
-  serveMedia(@Param('filename') filename: string, @Res() res: Response) {
-    const abs = this.mediaStorage.resolveSafe(filename);
-    if (!abs || !existsSync(abs))
-      throw new NotFoundException('Media not found');
-    const ext = extname(filename).toLowerCase();
-    const ct: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.webp': 'image/webp',
-      '.gif': 'image/gif',
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.mov': 'video/quicktime',
-    };
-    res.setHeader('Content-Type', ct[ext] ?? 'application/octet-stream');
+  async serveMedia(@Param('filename') filename: string, @Res() res: Response) {
+    const key = this.mediaStorage.safeKey(filename);
+    const obj = key ? await this.s3.getObject(key) : null;
+    if (!obj) throw new NotFoundException('Media not found');
+    res.setHeader(
+      'Content-Type',
+      obj.contentType ?? 'application/octet-stream',
+    );
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    createReadStream(abs).pipe(res);
+    res.send(obj.buffer);
   }
 
   @Get(':id')
