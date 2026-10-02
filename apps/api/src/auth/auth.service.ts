@@ -7,6 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
 import { randomBytes } from 'crypto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   LoginDto,
@@ -31,19 +33,37 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
-    const existing = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-    });
-    const user = await this.prisma.user.upsert({
-      where: { phone: dto.phone },
-      update: { fullName: dto.fullName, email: dto.email },
-      create: { fullName: dto.fullName, phone: dto.phone, email: dto.email },
-    });
-    if (!existing && user.email) {
+    // create() first rather than check-then-upsert: the unique constraint on
+    // `phone` makes "was this a new signup" an atomic DB-level fact instead
+    // of a race between a separate findUnique and the write — two concurrent
+    // requests for the same phone can otherwise both see "no existing user"
+    // and both fire user.created, double-sending the welcome email.
+    let user: User;
+    let isNewUser = false;
+    try {
+      user = await this.prisma.user.create({
+        data: { fullName: dto.fullName, phone: dto.phone, email: dto.email },
+      });
+      isNewUser = true;
+    } catch (err) {
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        user = await this.prisma.user.update({
+          where: { phone: dto.phone },
+          data: { fullName: dto.fullName, email: dto.email },
+        });
+      } else {
+        throw err;
+      }
+    }
+    if (isNewUser && user.email) {
       this.eventEmitter.emit('user.created', {
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
+        requiresEmailVerification: false,
       });
     }
     return this.issueToken(user.id, user.phone);
@@ -138,6 +158,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
+      requiresEmailVerification: true,
     });
     await this.emailVerificationService.sendVerificationEmail(dto.email);
 
@@ -244,6 +265,7 @@ export class AuthService {
         userId: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
+        requiresEmailVerification: false,
       });
     }
 

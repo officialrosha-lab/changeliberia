@@ -125,7 +125,7 @@ export class EmailTemplateService {
           <p>You're now part of that. Whatever brought you here — a specific issue in your community, a county-wide concern, or just wanting to see how this works — thank you for trusting us with it.</p>
           <p>A couple of things to get you started:</p>
           <ul style="padding-left: 20px; margin: 0 0 16px 0;">
-            <li>Check your inbox for a verification code — you'll need it to activate your account.</li>
+            ${p.requiresEmailVerification ? "<li>Check your inbox for a verification code — you'll need it to activate your account.</li>" : ''}
             <li>Browse petitions already underway, or start your own in minutes.</li>
           </ul>
           <p>If you ever have feedback, a problem to report, or just want to tell me why you joined, reply to this email — our team (including me) reads every one.</p>
@@ -309,7 +309,9 @@ export class EmailTemplateService {
           "I started this platform because too many Liberians — at home and across the diaspora — have something to say about the country we're building, but no clear, trusted place to say it where it actually reaches the people who can act on it. Change Liberia exists so your voice doesn't disappear into a comment section. It goes into a petition, a record, a pressure point that officials and institutions are expected to respond to.\n\n" +
           "You're now part of that. Whatever brought you here — a specific issue in your community, a county-wide concern, or just wanting to see how this works — thank you for trusting us with it.\n\n" +
           'A couple of things to get you started:\n' +
-          "- Check your inbox for a verification code — you'll need it to activate your account.\n" +
+          (p.requiresEmailVerification
+            ? "- Check your inbox for a verification code — you'll need it to activate your account.\n"
+            : '') +
           '- Browse petitions already underway, or start your own in minutes.\n\n' +
           'If you ever have feedback, a problem to report, or just want to tell me why you joined, reply to this email — our team (including me) reads every one.\n\n' +
           `Get started: ${p.appUrl || appUrl}\n\n` +

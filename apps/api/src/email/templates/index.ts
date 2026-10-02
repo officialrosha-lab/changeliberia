@@ -97,6 +97,10 @@ export interface BroadcastNotificationProps {
 export interface WelcomeEmailProps {
   recipientName: string;
   appUrl: string;
+  /** Only the email/password signup path sends a verification code — phone
+   *  OTP and Google OAuth accounts are verified by that flow itself, so the
+   *  welcome email shouldn't tell those users to go look for a code. */
+  requiresEmailVerification?: boolean;
 }
 
 export interface VerifyEmailProps {
