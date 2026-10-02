@@ -7,17 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
 import { randomBytes } from 'crypto';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  LoginDto,
-  SignupDto,
-  EmailSignupDto,
-  EmailLoginDto,
-  GoogleAuthCallbackDto,
-} from './dto';
-import { OtpProvider } from './otp.provider';
+import { EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { PasswordProvider } from './password.provider';
 import { EmailVerificationService } from './email-verification.service';
 
@@ -26,73 +17,10 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-    private readonly otpProvider: OtpProvider,
     private readonly passwordProvider: PasswordProvider,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
-
-  async signup(dto: SignupDto) {
-    // create() first rather than check-then-upsert: the unique constraint on
-    // `phone` makes "was this a new signup" an atomic DB-level fact instead
-    // of a race between a separate findUnique and the write — two concurrent
-    // requests for the same phone can otherwise both see "no existing user"
-    // and both fire user.created, double-sending the welcome email.
-    let user: User;
-    let isNewUser = false;
-    try {
-      user = await this.prisma.user.create({
-        data: { fullName: dto.fullName, phone: dto.phone, email: dto.email },
-      });
-      isNewUser = true;
-    } catch (err) {
-      if (
-        err instanceof PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
-        user = await this.prisma.user.update({
-          where: { phone: dto.phone },
-          data: { fullName: dto.fullName, email: dto.email },
-        });
-      } else {
-        throw err;
-      }
-    }
-    if (isNewUser && user.email) {
-      this.eventEmitter.emit('user.created', {
-        userId: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        requiresEmailVerification: false,
-      });
-    }
-    return this.issueToken(user.id, user.phone);
-  }
-
-  async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-    });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    return this.issueToken(user.id, user.phone);
-  }
-
-  requestOtp(phone: string) {
-    this.otpProvider.sendOtp(phone);
-    return { success: true };
-  }
-
-  async verifyOtp(phone: string, code: string) {
-    const ok = this.otpProvider.verifyOtp(phone, code);
-    if (!ok) throw new UnauthorizedException('Invalid OTP code');
-    const user = await this.prisma.user.upsert({
-      where: { phone },
-      update: {},
-      create: { phone, fullName: 'New User' },
-    });
-    return this.issueToken(user.id, user.phone);
-  }
 
   private issueToken(sub: string, phone: string) {
     return {

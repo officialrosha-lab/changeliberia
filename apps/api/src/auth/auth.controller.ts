@@ -5,10 +5,6 @@ import { AuthService } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetService } from './password-reset.service';
 import {
-  LoginDto,
-  OtpRequestDto,
-  OtpVerifyDto,
-  SignupDto,
   EmailSignupDto,
   EmailLoginDto,
   SendVerificationEmailDto,
@@ -34,32 +30,7 @@ export class AuthController {
     private readonly passwordResetService: PasswordResetService,
   ) {}
 
-  // Phone-based authentication (existing)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @Post('signup')
-  signup(@Body() dto: SignupDto) {
-    return this.authService.signup(dto);
-  }
-
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
-  }
-
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @Post('otp/request')
-  requestOtp(@Body() dto: OtpRequestDto) {
-    return this.authService.requestOtp(dto.phone);
-  }
-
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @Post('otp/verify')
-  verifyOtp(@Body() dto: OtpVerifyDto) {
-    return this.authService.verifyOtp(dto.phone, dto.code);
-  }
-
-  // Email-based authentication (new)
+  // Email-based authentication
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup/email')
   async signupWithEmail(@Body() dto: EmailSignupDto) {

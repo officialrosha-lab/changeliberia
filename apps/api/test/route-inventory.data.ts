@@ -136,10 +136,6 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'GET', path: '/analytics/broadcasts', controller: 'AnalyticsController', category: 'admin-read' },
 
   // auth/auth.controller.ts
-  { method: 'POST', path: '/auth/signup', controller: 'AuthController', category: 'guard-only-write', note: 'phone signup path; not used for the throwaway account' },
-  { method: 'POST', path: '/auth/login', controller: 'AuthController', category: 'guard-only-write' },
-  { method: 'POST', path: '/auth/otp/request', controller: 'AuthController', category: 'guard-only-write', note: 'would send a real SMS via Twilio — never execute' },
-  { method: 'POST', path: '/auth/otp/verify', controller: 'AuthController', category: 'guard-only-write' },
   { method: 'POST', path: '/auth/signup/email', controller: 'AuthController', category: 'execute-once', note: 'creates the one throwaway test account' },
   { method: 'POST', path: '/auth/login/email', controller: 'AuthController', category: 'execute-once', note: 'logs in the throwaway test account' },
   { method: 'POST', path: '/auth/send-verification-email', controller: 'AuthController', category: 'guard-only-write' },
