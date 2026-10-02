@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
@@ -13,7 +14,18 @@ function BottomNavContent() {
   return <BottomNav />;
 }
 
+// Embeddable petition widget — rendered bare inside third-party <iframe>s,
+// so it skips the site header/nav/bottom-nav chrome entirely.
+const EMBED_ROUTE = /^\/petitions\/[^/]+\/embed$/;
+
 export function RootLayoutClient({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isEmbedRoute = EMBED_ROUTE.test(pathname ?? '');
+
+  if (isEmbedRoute) {
+    return <LayoutProvider>{children}</LayoutProvider>;
+  }
+
   return (
     <LayoutProvider>
       <a href="#main-content" className="skip-link">

@@ -47,9 +47,20 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  return NextResponse.next();
+  // Clickjacking protection for every page except the embeddable petition
+  // widget, which exists specifically to be framed by third-party sites.
+  const response = NextResponse.next();
+  const isEmbedRoute = /^\/petitions\/[^/]+\/embed$/.test(pathname);
+  if (!isEmbedRoute) {
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+    response.headers.set('Content-Security-Policy', "frame-ancestors 'self'");
+  }
+  return response;
 }
 
 export const config = {
-  matcher: ['/api/v1/:path*'],
+  // Covers /api/v1/* (the proxy branch above) and every page route (the
+  // framing-headers branch below) in one matcher — Next.js excludes nothing
+  // by default, so static assets are carved out explicitly.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
