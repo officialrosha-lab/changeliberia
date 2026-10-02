@@ -1,12 +1,5 @@
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
-export class SignupDto {
-  @IsString() fullName!: string;
-  @IsString() phone!: string;
-  @IsOptional() @IsEmail() email?: string;
-  @IsOptional() @MinLength(6) password?: string;
-}
-
 export class EmailSignupDto {
   @IsString() fullName!: string;
   @IsOptional() @IsString() phone?: string;
@@ -17,20 +10,6 @@ export class EmailSignupDto {
 export class EmailLoginDto {
   @IsEmail() email!: string;
   @IsString() password!: string;
-}
-
-export class LoginDto {
-  @IsString() phone!: string;
-  @IsOptional() @IsString() password?: string;
-}
-
-export class OtpRequestDto {
-  @IsString() phone!: string;
-}
-
-export class OtpVerifyDto {
-  @IsString() phone!: string;
-  @IsString() code!: string;
 }
 
 export class GoogleAuthCallbackDto {

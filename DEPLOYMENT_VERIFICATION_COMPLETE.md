@@ -68,7 +68,7 @@ Dockerfile: Updated with correct environment variables
 ```json
 {
   "id": "cmokk26wt0000108atapc0cb7",
-  "email": "mharygens@gmail.com",
+  "email": "[redacted]",
   "role": "ADMIN",
   "phoneNumber": "+23100000001",
   "status": "VERIFIED"
