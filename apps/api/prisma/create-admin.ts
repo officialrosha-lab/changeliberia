@@ -4,8 +4,17 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd && (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD)) {
+    // Runs on every deploy (see package.json's start script) and would
+    // otherwise upsert a hardcoded default password onto the admin
+    // account whenever these aren't set — refuse instead of doing that.
+    throw new Error(
+      'ADMIN_EMAIL and ADMIN_PASSWORD must both be set in production; refusing to create/reset the admin account with a default credential.',
+    );
+  }
   const email = process.env.ADMIN_EMAIL ?? 'mharygens@gmail.com';
-  const password = process.env.ADMIN_PASSWORD ?? 'Admin231$';
+  const password = process.env.ADMIN_PASSWORD ?? 'dev-only-admin-password';
   const passwordHash = await bcrypt.hash(password, 10);
 
   const admin = await prisma.user.upsert({

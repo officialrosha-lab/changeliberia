@@ -32,16 +32,14 @@ export function middleware(request: NextRequest) {
 
     return fetch(newRequest).then((response) => {
       // Create a new response with the same status and body
+      // The backend already sets its own CORS headers, scoped to the
+      // configured CORS_ORIGIN allowlist — pass them through as-is rather
+      // than overwriting them with a wildcard here.
       const newResponse = new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
         headers: new Headers(response.headers),
       });
-
-      // Allow CORS
-      newResponse.headers.set('Access-Control-Allow-Origin', '*');
-      newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-      newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
       return newResponse;
     });
