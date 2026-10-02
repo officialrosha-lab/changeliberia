@@ -5,7 +5,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
-import { OtpProvider } from './otp.provider';
 import { PasswordProvider } from './password.provider';
 import { RolesGuard } from './roles.guard';
 import { EmailVerificationService } from './email-verification.service';
@@ -20,7 +19,6 @@ import { PasswordResetService } from './password-reset.service';
     AuthService,
     JwtStrategy,
     GoogleStrategy,
-    OtpProvider,
     PasswordProvider,
     RolesGuard,
     EmailVerificationService,
