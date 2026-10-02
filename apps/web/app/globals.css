@@ -50,10 +50,16 @@ body {
    common on the mobile networks much of this site's audience uses), a raw
    <img>/<svg>/<video> still has no intrinsic size limit and can render at
    its native pixel dimensions, blowing out the layout width. This keeps
-   media capped to its container no matter what else has loaded. */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
+   media capped to its container no matter what else has loaded.
+   Wrapped in Tailwind's own "base" layer — unlayered CSS always wins over
+   layered CSS regardless of specificity, so left unlayered this rule was
+   overriding every sizing utility class on every img/svg/video on the
+   site, not just filling in when Tailwind's own stylesheet is missing. */
+@layer base {
+  img, svg, video {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 .safe-top {
