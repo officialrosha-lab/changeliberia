@@ -83,8 +83,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Inlined (not in globals.css) so it's part of the initial HTML and
             still applies if the main stylesheet never arrives — a dropped
             request on a slow connection otherwise leaves <img>/<svg> at
-            their raw pixel size, blowing out the layout width. */}
-        <style dangerouslySetInnerHTML={{ __html: 'img,svg,video{max-width:100%;height:auto}' }} />
+            their raw pixel size, blowing out the layout width. Wrapped in
+            Tailwind's "base" layer (same name it uses — CSS layers merge by
+            name regardless of which stylesheet declares them) so sizing
+            utility classes, which live in the higher-priority "utilities"
+            layer, still win when a specific size is intended; unlayered CSS
+            always beats layered CSS regardless of specificity, so without
+            this it silently overrode every sized img/svg on the site. */}
+        <style dangerouslySetInnerHTML={{ __html: '@layer base{img,svg,video{max-width:100%;height:auto}}' }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
