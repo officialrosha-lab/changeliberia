@@ -15,7 +15,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole, VerificationType } from '@prisma/client';
-import { createReadStream, existsSync } from 'fs';
 import { extname } from 'path';
 import type { Response } from 'express';
 import { memoryStorage } from 'multer';
@@ -26,6 +25,7 @@ import { SubmitIdDocumentBodyDto } from './dto';
 import { IdDocumentStorageService } from './id-document-storage.service';
 import type { MemoryUploadedFile } from './uploaded-file.types';
 import { VerificationService } from './verification.service';
+import { S3StorageService } from '../storage/s3-storage.service';
 
 @Controller('verification')
 export class VerificationController {
@@ -33,6 +33,7 @@ export class VerificationController {
     private readonly service: VerificationService,
     private readonly prisma: PrismaService,
     private readonly idStorage: IdDocumentStorageService,
+    private readonly s3: S3StorageService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -149,21 +150,22 @@ export class VerificationController {
       return;
     }
 
-    const abs = this.idStorage.resolveSafeAbsolutePath(diskName);
-    if (!abs || !existsSync(abs)) throw new NotFoundException('File not found');
+    const obj = await this.s3.getObject(this.idStorage.safeKey(diskName));
+    if (!obj) throw new NotFoundException('File not found');
 
     const ext = extname(diskName).toLowerCase();
     const ct =
-      ext === '.pdf'
+      obj.contentType ??
+      (ext === '.pdf'
         ? 'application/pdf'
         : ext === '.png'
           ? 'image/png'
           : ext === '.jpg' || ext === '.jpeg'
             ? 'image/jpeg'
-            : 'application/octet-stream';
+            : 'application/octet-stream');
     res.setHeader('Content-Type', ct);
     res.setHeader('Content-Disposition', `inline; filename="${diskName}"`);
-    createReadStream(abs).pipe(res);
+    res.send(obj.buffer);
   }
 
   @UseGuards(JwtAuthGuard)
