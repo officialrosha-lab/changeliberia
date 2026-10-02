@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { apiPost } from '../lib/api';
+import { apiGet, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -19,6 +19,24 @@ export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
   const token = useAuthStore((s) => s.token);
   const [pending, setPending] = useState<Placement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [promotionsEnabled, setPromotionsEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<{ promotionsEnabled: boolean }>('/settings/system')
+      .then((settings) => {
+        if (cancelled) return;
+        setPromotionsEnabled(settings.promotionsEnabled);
+      })
+      .catch(() => {/* default stays off — never show a checkout button we can't confirm is live */})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handlePromote(placement: Placement) {
     if (!token) return;
@@ -41,6 +59,8 @@ export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
       setPending(null);
     }
   }
+
+  if (loading || !promotionsEnabled) return null;
 
   return (
     <Card rounded="3xl" className="p-6 shadow-sm md:p-8">
