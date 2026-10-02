@@ -102,6 +102,8 @@ export function SignForm({
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedShort, setCopiedShort] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [petitionUrl, setPetitionUrl] = useState('');
   const [shortUrl, setShortUrl] = useState<string | null>(null);
 
@@ -199,6 +201,9 @@ export function SignForm({
   }, [petitionId]);
 
   const progress = Math.min(100, Math.round((count / goal) * 100));
+
+  const embedUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia.org'}/petitions/${petitionId}/embed`;
+  const embedSnippet = `<iframe src="${embedUrl}" width="400" height="540" style="border:none;max-width:100%;" loading="lazy" title="${title.replace(/"/g, '&quot;')} — Change Liberia petition"></iframe>`;
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -654,6 +659,42 @@ export function SignForm({
               </span>
               <span className="text-[10px] font-medium text-zinc-600 dark:text-neutral-400">Email</span>
             </a>
+          </div>
+
+          {/* Embed code — read-only widget for third-party sites */}
+          <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={() => setShowEmbed((v) => !v)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              <span aria-hidden>{'</>'}</span> {showEmbed ? 'Hide embed code' : 'Get embed code'}
+            </button>
+            {showEmbed && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-zinc-500 dark:text-neutral-400">
+                  Paste this on your own site to show a live, read-only petition widget.
+                </p>
+                <textarea
+                  readOnly
+                  rows={3}
+                  value={embedSnippet}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 font-mono text-[11px] text-zinc-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(embedSnippet);
+                    setCopiedEmbed(true);
+                    setTimeout(() => setCopiedEmbed(false), 2000);
+                  }}
+                  className="w-full rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  {copiedEmbed ? 'Copied!' : 'Copy embed code'}
+                </button>
+              </div>
+            )}
           </div>
         </Card>
       )}
