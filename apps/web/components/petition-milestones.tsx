@@ -124,7 +124,7 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
             return (
               <div
                 key={threshold}
-                className={`flex items-center gap-3 p-4 rounded-lg transition ${
+                className={`flex items-center gap-2 p-4 rounded-lg transition ${
                   achieved
                     ? 'bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800'
                     : isCurrent
@@ -133,8 +133,8 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
                 }`}
               >
                 {/* Icon & Target */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-2xl">{getMilestoneIcon(threshold)}</span>
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span className="shrink-0 text-xl">{getMilestoneIcon(threshold)}</span>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white">
                       {threshold.toLocaleString()} Signatures
@@ -154,19 +154,19 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
                 </div>
 
                 {/* Status Badge */}
-                <div>
+                <div className="shrink-0">
                   {achieved ? (
-                    <div className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    <div className="flex items-center gap-1 bg-green-600 text-white px-2.5 py-1 rounded-full text-sm font-semibold">
                       <CheckCircle2 className="w-4 h-4" />
                       Done
                     </div>
                   ) : isCurrent ? (
-                    <div className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
+                    <div className="flex items-center gap-1 bg-blue-600 text-white px-2.5 py-1 rounded-full text-sm font-semibold animate-pulse">
                       <Target className="w-4 h-4" />
                       Active
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500 px-3 py-1 dark:text-neutral-400">Locked</div>
+                    <div className="text-xs text-gray-500 px-2.5 py-1 dark:text-neutral-400">Locked</div>
                   )}
                 </div>
               </div>
