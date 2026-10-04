@@ -545,7 +545,7 @@ async function main() {
               details: [
                 'Independent moderation process',
                 'Declined petitions receive a reason',
-                'You can appeal a decision',
+                'You can revise and resubmit',
                 'Review criteria are publicly documented',
               ],
             },
@@ -563,14 +563,14 @@ async function main() {
             },
             {
               icon: '🏛️',
-              title: 'Government Delivery',
+              title: 'You Submit to Government',
               description:
-                'When you reach your signature goal, your petition is formally submitted to the relevant government body with a full accountability report.',
+                'When you reach your signature goal, you can submit your petition directly to a government or NGO contact — pick one from our directory, or enter one yourself.',
               details: [
-                'Automatic routing to right authority',
-                'Full petition & signatures delivered',
-                'Public tracking of government response',
-                'Follow-up engagement on outcomes',
+                'Choose the contact yourself, or use our directory',
+                'Download a PDF report or signature CSV to back up your case',
+                "Track status from your petition's government panel",
+                'Submit again to a different contact if needed',
               ],
             },
           ],
@@ -605,7 +605,7 @@ async function main() {
             },
             {
               q: 'Is there a signature goal?',
-              a: 'You can set a signature target (e.g., 500, 1000). The default is 1000. Once reached, your petition is submitted to the relevant government body.',
+              a: 'You can set a signature target (e.g., 500, 1000). The default is 1000. Once reached, you can submit your petition directly to a government or NGO contact.',
             },
             {
               q: 'Can diaspora Liberians sign?',
@@ -613,7 +613,7 @@ async function main() {
             },
             {
               q: 'What if my petition is rejected?',
-              a: "You'll receive a detailed reason. You can appeal the decision or revise and resubmit your petition.",
+              a: "You'll receive a detailed reason. You can revise and resubmit your petition.",
             },
           ],
         }),
@@ -713,7 +713,7 @@ async function main() {
           items: [
             {
               q: 'What is Change Liberia?',
-              a: 'Change Liberia is a civic petition platform built for Liberians at home and in the diaspora. It lets any citizen raise a verifiable public issue, collect signatures, and have it formally delivered to the right government body — with a public accountability trail.',
+              a: 'Change Liberia is a civic petition platform built for Liberians at home and in the diaspora. It lets any citizen raise a verifiable public issue, collect signatures, and submit it directly to the right government body themselves.',
             },
             {
               q: 'Do I need to create an account?',
@@ -751,7 +751,7 @@ async function main() {
             },
             {
               q: 'Why was my petition rejected?',
-              a: 'Common reasons: the issue is not civic/political, offensive language, spam, or duplicate petition. You can appeal or revise and resubmit.',
+              a: 'Common reasons: the issue is not civic/political, offensive language, spam, or duplicate petition. You can revise and resubmit.',
             },
             {
               q: 'Can I edit my petition after publishing?',
