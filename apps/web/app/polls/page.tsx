@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { apiGet } from '../../lib/api';
 import { PollCard, type PollSummary } from '../../components/poll-card';
 
@@ -13,6 +15,8 @@ const SORT_OPTIONS = [
 type SortValue = typeof SORT_OPTIONS[number]['value'];
 
 export default function PollsPage() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category');
   const [sort, setSort] = useState<SortValue>('recent');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -36,6 +40,7 @@ export default function PollsPage() {
     setLoadError(false);
     const params = new URLSearchParams({ status: 'ACTIVE', sort });
     if (debouncedSearch) params.set('search', debouncedSearch);
+    if (category) params.set('category', category);
     apiGet<PollSummary[]>(`/polls?${params}`)
       .then(setPolls)
       .catch(() => {
@@ -43,7 +48,7 @@ export default function PollsPage() {
         setLoadError(true);
       })
       .finally(() => setLoading(false));
-  }, [sort, debouncedSearch]);
+  }, [sort, debouncedSearch, category]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -54,6 +59,16 @@ export default function PollsPage() {
         <p className="mt-3 max-w-2xl text-base text-zinc-600 dark:text-zinc-300">
           Browse public sentiment polls and see what Liberians are voting on in real time.
         </p>
+        {category && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              Category: {category}
+            </span>
+            <Link href="/polls" className="text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+              Clear
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
