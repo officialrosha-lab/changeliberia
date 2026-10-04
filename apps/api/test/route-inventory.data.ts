@@ -144,9 +144,10 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'POST', path: '/auth/forgot-password', controller: 'AuthController', category: 'guard-only-write', note: 'would email a reset link to the throwaway account — fine to actually hit once, but not looped' },
   { method: 'POST', path: '/auth/validate-reset-token', controller: 'AuthController', category: 'guard-only-write' },
   { method: 'POST', path: '/auth/reset-password', controller: 'AuthController', category: 'guard-only-write' },
-  { method: 'GET', path: '/auth/google', controller: 'AuthController', category: 'guard-only-write', note: 'OAuth redirect; expect 302/3xx not 500' },
-  { method: 'GET', path: '/auth/google/callback', controller: 'AuthController', category: 'guard-only-write', note: 'no real OAuth code available; expect 400/401 not 500' },
   { method: 'POST', path: '/auth/google/callback', controller: 'AuthController', category: 'guard-only-write' },
+  { method: 'POST', path: '/auth/refresh', controller: 'AuthController', category: 'guard-only-write' },
+  { method: 'POST', path: '/auth/logout', controller: 'AuthController', category: 'guard-only-write' },
+  { method: 'POST', path: '/auth/logout-all', controller: 'AuthController', category: 'guard-only-write', note: 'requires a valid access token' },
 
   // broadcast/broadcast.controller.ts
   { method: 'POST', path: '/admin/broadcast/group/:groupId', controller: 'BroadcastController', category: 'admin-read', paramFallback: 'fake' },

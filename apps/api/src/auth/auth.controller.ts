@@ -1,9 +1,12 @@
-import { Body, Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Body, Controller, Post, UseGuards, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
+import type { Request } from 'express';
+import { AuthService, RequestMeta } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetService } from './password-reset.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from './current-user.decorator';
+import type { RequestUser } from './roles.guard';
 import {
   EmailSignupDto,
   EmailLoginDto,
@@ -20,6 +23,19 @@ class GoogleCallbackDto {
   @IsString()
   @IsNotEmpty()
   token!: string;
+}
+
+class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken!: string;
+}
+
+function requestMeta(req: Request): RequestMeta {
+  return {
+    userAgent: req.get('user-agent') ?? undefined,
+    ipAddress: req.ip,
+  };
 }
 
 @Controller('auth')
@@ -39,8 +55,29 @@ export class AuthController {
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login/email')
-  async loginWithEmail(@Body() dto: EmailLoginDto) {
-    return this.authService.loginWithEmail(dto);
+  async loginWithEmail(@Body() dto: EmailLoginDto, @Req() req: Request) {
+    return this.authService.loginWithEmail(dto, requestMeta(req));
+  }
+
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Post('refresh')
+  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
+    return this.authService.refreshToken(dto.refreshToken, requestMeta(req));
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('logout')
+  async logout(@Body() dto: RefreshTokenDto) {
+    await this.authService.logout(dto.refreshToken);
+    return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('logout-all')
+  async logoutAll(@CurrentUser() user: RequestUser) {
+    await this.authService.logoutAll(user.userId);
+    return { success: true };
   }
 
   // Email verification flow
@@ -52,8 +89,12 @@ export class AuthController {
 
   @Throttle({ default: { limit: 10, ttl: 300000 } })
   @Post('verify-email')
-  async verifyEmail(@Body() body: VerifyEmailDto) {
-    return this.authService.verifyEmailToken(body.email, body.code);
+  async verifyEmail(@Body() body: VerifyEmailDto, @Req() req: Request) {
+    return this.authService.verifyEmailToken(
+      body.email,
+      body.code,
+      requestMeta(req),
+    );
   }
 
   @Throttle({ default: { limit: 2, ttl: 300000 } })
@@ -95,22 +136,14 @@ export class AuthController {
     );
   }
 
-  // Google OAuth (new)
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  googleAuth() {
-    // Google OAuth redirect - handled by passport
-  }
-
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req: { user: { accessToken: string } }) {
-    return req.user;
-  }
-
-  // Google Identity Services (One-Tap) — receives an ID token from the frontend
+  // Google Identity Services (One-Tap) — receives an ID token from the frontend.
+  // (The redirect-flow GET /auth/google + GET /auth/google/callback endpoints
+  // were removed as dead code — apps/web only ever calls this One-Tap flow.)
   @Post('google/callback')
-  async googleTokenCallback(@Body() dto: GoogleCallbackDto) {
-    return this.authService.verifyGoogleToken(dto.token);
+  async googleTokenCallback(
+    @Body() dto: GoogleCallbackDto,
+    @Req() req: Request,
+  ) {
+    return this.authService.verifyGoogleToken(dto.token, requestMeta(req));
   }
 }
