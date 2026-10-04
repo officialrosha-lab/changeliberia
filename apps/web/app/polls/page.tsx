@@ -18,6 +18,7 @@ export default function PollsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [polls, setPolls] = useState<PollSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search input
@@ -32,11 +33,15 @@ export default function PollsPage() {
     // list doesn't show stale results while the new sort/search fetch runs.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    setLoadError(false);
     const params = new URLSearchParams({ status: 'ACTIVE', sort });
     if (debouncedSearch) params.set('search', debouncedSearch);
     apiGet<PollSummary[]>(`/polls?${params}`)
       .then(setPolls)
-      .catch(() => setPolls([]))
+      .catch(() => {
+        setPolls([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, [sort, debouncedSearch]);
 
@@ -94,6 +99,12 @@ export default function PollsPage() {
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-52 animate-pulse rounded-3xl border border-zinc-100 bg-zinc-50 dark:border-neutral-800 dark:bg-neutral-900" />
           ))
+        ) : loadError ? (
+          <div className="col-span-full rounded-3xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-950">
+            <p className="text-sm text-red-700 dark:text-red-400">
+              Couldn&apos;t load polls right now. Please try again in a moment.
+            </p>
+          </div>
         ) : polls.length === 0 ? (
           <div className="col-span-full rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
             <p className="text-zinc-500 dark:text-zinc-400">
