@@ -247,11 +247,19 @@ export function ProfileSettings() {
           Danger Zone
         </h3>
         <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-          These actions are permanent and cannot be undone.
+          Deleting your account is permanent and cannot be undone. Email us and we&apos;ll process your
+          request — see our{' '}
+          <a href="/privacy" className="underline hover:no-underline">
+            Privacy Policy
+          </a>{' '}
+          for what deletion means for your data.
         </p>
-        <button className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600">
-          Delete Account
-        </button>
+        <a
+          href={`mailto:privacy@changeliberia.org?subject=${encodeURIComponent('Delete my account')}&body=${encodeURIComponent(`Please delete my Change Liberia account.\n\nAccount email: ${user?.email ?? ''}`)}`}
+          className="inline-flex rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
+        >
+          Request account deletion
+        </a>
       </div>
     </div>
   );
