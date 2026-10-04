@@ -194,13 +194,13 @@ export default function CollectSignaturesPage() {
             </h2>
             <div className="mt-6 space-y-4 text-base leading-relaxed text-zinc-600 dark:text-neutral-400">
               <p>
-                Once your petition reaches its signature goal, the Change Liberia team reviews it for delivery. We identify the right authority based on the issue type — a national ministry, county government, the legislature, or a regulatory agency.
+                Once your petition reaches its signature goal, you can submit it yourself directly to a government or NGO contact — pick one from our directory, or enter a contact&apos;s email address if you already have the right one.
               </p>
               <p>
-                The petition is then formally submitted with a delivery receipt and a request for a public response within 30 days. The entire process is recorded on your petition&apos;s timeline, visible to all supporters.
+                From there, you can track the submission&apos;s status right on your petition&apos;s government panel — submitted, acknowledged, under review, approved, or rejected — and download a PDF report or signature CSV to back up your case when you present it.
               </p>
               <p>
-                If the authority responds, we publish it alongside the petition. If they do not respond within the deadline, that silence is also publicly recorded. Either way, you have created a permanent, verifiable public record of your civic action.
+                Either way, you&apos;ve created a public, verifiable record that real people organized around this issue and acted on it — something no single person could do alone.
               </p>
             </div>
           </div>
