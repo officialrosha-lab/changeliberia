@@ -13,8 +13,8 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { existsSync, createReadStream } from 'fs';
 import type { Response } from 'express';
+import { S3StorageService } from '../storage/s3-storage.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
 import { Permission } from '../rbac/decorators/permission.decorator';
@@ -79,6 +79,7 @@ export class OfficialsController {
     private readonly constituencyFeed: ConstituencyFeedService,
     private readonly constituencyReport: ConstituencyReportService,
     private readonly prisma: PrismaService,
+    private readonly s3: S3StorageService,
   ) {}
 
   @Post('apply')
@@ -363,21 +364,57 @@ export class OfficialsController {
     const institution = await this.officialsService.getMyInstitution(
       user.userId,
     );
-    const abs = await this.constituencyReport.getReportFile(
+    const key = await this.constituencyReport.getReportFile(
       institution.id,
       reportId,
       normalizedFormat,
     );
-    if (!existsSync(abs)) throw new NotFoundException('Report file not found');
+    const obj = await this.s3.getObject(key);
+    if (!obj) throw new NotFoundException('Report file not found');
     res.setHeader(
       'Content-Type',
-      normalizedFormat === 'PDF' ? 'application/pdf' : 'text/csv',
+      obj.contentType ??
+        (normalizedFormat === 'PDF' ? 'application/pdf' : 'text/csv'),
     );
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="constituency-report-${reportId}.${normalizedFormat.toLowerCase()}"`,
     );
-    createReadStream(abs).pipe(res);
+    res.send(obj.buffer);
+  }
+
+  /**
+   * Matches the URL embedded in the CONSTITUENCY_REPORT_READY email.
+   * Note: like the download route above, this still requires a Bearer
+   * token — a bare click from an email client won't authenticate. Real
+   * fix needs a frontend page (or a signed, token-less URL scheme) to
+   * deep-link into; out of scope here, this just makes the route behave
+   * like every other authenticated download instead of a hard 404.
+   */
+  @Get('me/reports/files/:filename')
+  @UseGuards(JwtAuthGuard, PermissionGuard, OfficialOwnershipGuard)
+  @Permission(PermissionResource.OFFICIAL, PermissionAction.READ)
+  async downloadReportByFilename(
+    @CurrentUser() user: AuthUser,
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    const institution = await this.officialsService.getMyInstitution(
+      user.userId,
+    );
+    const { key, format } =
+      await this.constituencyReport.getReportFileByFilename(
+        institution.id,
+        filename,
+      );
+    const obj = await this.s3.getObject(key);
+    if (!obj) throw new NotFoundException('Report file not found');
+    res.setHeader(
+      'Content-Type',
+      obj.contentType ?? (format === 'PDF' ? 'application/pdf' : 'text/csv'),
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(obj.buffer);
   }
 
   @Get('me/feed')
