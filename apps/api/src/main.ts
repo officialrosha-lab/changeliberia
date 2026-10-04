@@ -3,8 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { Application } from 'express';
 import * as express from 'express';
-import { mkdirSync } from 'fs';
-import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { validateEnvOrThrow } from './config/env-validation';
@@ -383,10 +381,6 @@ async function bootstrap() {
   await ensureSchema(prisma);
   await seedCmsPages(prisma);
   const httpServer = app.getHttpAdapter().getInstance() as Application;
-
-  const uploadsRoot = join(process.cwd(), 'uploads');
-  mkdirSync(join(uploadsRoot, 'id-documents'), { recursive: true });
-  mkdirSync(join(uploadsRoot, 'petition-media'), { recursive: true });
 
   httpServer.get('/metrics', async (_req, res) => {
     res.set('Content-Type', metricsRegister.contentType);

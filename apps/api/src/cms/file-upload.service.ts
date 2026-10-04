@@ -1,16 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3StorageService } from '../storage/s3-storage.service';
+import { apiPublicBaseUrl } from '../storage/public-base-url';
 import * as path from 'path';
-import * as fs from 'fs';
+
+const KEY_PREFIX = 'cms-files/';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadDir = path.join(process.cwd(), 'uploads');
+  private readonly publicBase: string;
 
-  constructor(private readonly prisma: PrismaService) {
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly s3: S3StorageService,
+  ) {
+    this.publicBase = apiPublicBaseUrl(process.env.CMS_FILES_PUBLIC_BASE_URL);
+    if (process.env.NODE_ENV === 'production' && !this.s3.isConfigured()) {
+      throw new Error(
+        'MEDIA_BUCKET_* environment variables must be set in production — refusing to fall back to ephemeral local disk for CMS files.',
+      );
     }
   }
 
@@ -27,10 +35,12 @@ export class FileUploadService {
     const ext = path.extname(file.originalname);
     const name = path.basename(file.originalname, ext);
     const filename = `${name}-${timestamp}${ext}`;
-    const filepath = path.join(this.uploadDir, filename);
 
-    // Write file to disk
-    fs.writeFileSync(filepath, file.buffer);
+    await this.s3.putObject(
+      `${KEY_PREFIX}${filename}`,
+      file.buffer,
+      file.mimetype,
+    );
 
     // Save metadata to database
     const cmsFile = await this.prisma.cMSFile.create({
@@ -39,7 +49,7 @@ export class FileUploadService {
         originalName: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        url: `/uploads/${filename}`,
+        url: `${this.publicBase}/api/v1/cms/files/${filename}`,
         uploadedBy: userId,
         alt: alt || null,
         tags: '[]',
@@ -50,7 +60,7 @@ export class FileUploadService {
   }
 
   /**
-   * Get all files uploaded by a user
+   * Get user's uploaded files
    */
   async getUserFiles(userId: string, limit = 50) {
     return this.prisma.cMSFile.findMany({
@@ -61,7 +71,14 @@ export class FileUploadService {
   }
 
   /**
-   * Delete a file from disk and database
+   * Fetch a file's bytes by its stored filename, for serving.
+   */
+  async getFileBuffer(filename: string) {
+    return this.s3.getObject(`${KEY_PREFIX}${filename}`);
+  }
+
+  /**
+   * Delete a file from storage and database
    */
   async deleteFile(fileId: string) {
     const file = await this.prisma.cMSFile.findUnique({
@@ -77,13 +94,8 @@ export class FileUploadService {
       throw new Error(`File is in use by ${file.usageCount} blocks`);
     }
 
-    // Delete from disk
-    const filepath = path.join(this.uploadDir, file.filename);
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
-    }
-
-    // Delete from database
+    // Delete from database (object left in the bucket — not worth a
+    // best-effort remote delete call failing this operation)
     return this.prisma.cMSFile.delete({ where: { id: fileId } });
   }
 

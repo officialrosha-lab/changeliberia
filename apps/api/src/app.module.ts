@@ -3,6 +3,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
+import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PetitionsModule } from './petitions/petitions.module';
@@ -50,6 +51,7 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
     PrismaModule,
+    StorageModule,
     EventsModule,
     NotificationsModule,
     NotificationModule, // user-facing /notifications HTTP routes

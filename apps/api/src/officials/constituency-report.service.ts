@@ -153,11 +153,27 @@ export class ConstituencyReportService {
     }
     const file = report.files[0];
     if (!file) throw new NotFoundException('Report file not found');
-    const absPath = this.storage.resolveSafe(
-      file.filePath.split('/').pop() as string,
-    );
-    if (!absPath) throw new NotFoundException('Report file not found');
-    return absPath;
+    const key = this.storage.safeKey(file.filePath.split('/').pop() as string);
+    if (!key) throw new NotFoundException('Report file not found');
+    return key;
+  }
+
+  /**
+   * Same ownership check as getReportFile, but looked up by the stored
+   * filename instead of a reportId+format pair — used by the
+   * CONSTITUENCY_REPORT_READY email's direct download link.
+   */
+  async getReportFileByFilename(institutionId: string, filename: string) {
+    const file = await this.prisma.constituencyReportFile.findFirst({
+      where: { filePath: filename, report: { institutionId } },
+      include: { report: true },
+    });
+    if (!file || file.report.status !== ConstituencyReportStatus.COMPLETED) {
+      throw new NotFoundException('Report file not found');
+    }
+    const key = this.storage.safeKey(filename);
+    if (!key) throw new NotFoundException('Report file not found');
+    return { key, format: file.format as 'PDF' | 'CSV' };
   }
 
   /** Enqueues QUEUED report rows for every VERIFIED institution opted into `period`. */
