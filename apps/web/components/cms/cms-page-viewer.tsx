@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import DOMPurify from 'isomorphic-dompurify';
 import { apiGet } from '../../lib/api';
 
 interface CMSPage {
@@ -14,13 +15,6 @@ interface CMSPage {
   ogDescription: string | null;
   ogImage: string | null;
   publishedAt: string | null;
-}
-
-function sanitizeHtml(html: string) {
-  return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/on[a-z]+="[^"]*"/gi, '')
-    .replace(/javascript:/gi, '#');
 }
 
 export function CMSPageViewer() {
@@ -88,7 +82,7 @@ export function CMSPageViewer() {
         )}
       </header>
 
-      <section className="prose prose-zinc dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }} />
+      <section className="prose prose-zinc dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }} />
     </article>
   );
 }
