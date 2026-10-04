@@ -100,7 +100,10 @@ export function ModeratorStats() {
           <p className="text-sm text-purple-700 font-semibold dark:text-purple-400">Rejections</p>
           <p className="text-3xl font-bold text-purple-900 mt-2 dark:text-purple-200">{stats.petitionsRejected}</p>
           <p className="text-xs text-purple-600 mt-1 dark:text-purple-400">
-            {((stats.petitionsRejected / stats.petitionsReviewed) * 100).toFixed(1)}% of reviewed
+            {stats.petitionsReviewed > 0
+              ? ((stats.petitionsRejected / stats.petitionsReviewed) * 100).toFixed(1)
+              : 0}
+            % of reviewed
           </p>
         </div>
       </div>
