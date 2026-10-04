@@ -425,7 +425,11 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
       } catch { /* ignore */ }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      if (msg.toLowerCase().includes('already voted') || msg.includes('401')) {
+      // Only the actual "already voted" rejection gets the friendly message
+      // below — other 401s from this endpoint (rate-limiting, an expired
+      // token) are real, different problems and would be misleadingly
+      // reported as a duplicate vote if matched on status code alone.
+      if (msg.toLowerCase().includes('already voted')) {
         setAlreadyVoted(true);
       } else {
         setError(msg || 'Vote failed. Please try again.');
