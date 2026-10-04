@@ -38,8 +38,8 @@ Once the service is created, go to **Settings → Variables** and add these:
 
 ```
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@monorail.proxy.rlwy.net:35769/railway
-REDIS_URL=redis://default:YOUR_PASSWORD@zephyr.proxy.rlwy.net:16708
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@YOUR_HOST:5432/railway
+REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_HOST:PORT
 RESEND_API_KEY=re_your_resend_api_key_here
 MAIL_FROM=noreply@changeliberia.org
 JWT_SECRET=your_jwt_secret_here_min_32_chars_base64
