@@ -164,8 +164,8 @@ export function AmbassadorApplicationForm() {
           placeholder="Your full name"
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.fullName
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         />
         {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>}
@@ -185,8 +185,8 @@ export function AmbassadorApplicationForm() {
           placeholder="your@email.com"
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.email
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         />
         {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
@@ -206,8 +206,8 @@ export function AmbassadorApplicationForm() {
           placeholder="+231 ..."
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.phone
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         />
         {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
@@ -225,8 +225,8 @@ export function AmbassadorApplicationForm() {
           onChange={handleChange}
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.location
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         >
           <option value="">Select your county</option>
@@ -251,7 +251,7 @@ export function AmbassadorApplicationForm() {
           value={formData.occupation}
           onChange={handleChange}
           placeholder="e.g., Teacher, Farmer, Trader"
-          className="mt-2 w-full rounded-lg border border-zinc-200 px-4 py-2.5 text-sm transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700"
+          className="mt-2 w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
         />
       </div>
 
@@ -269,8 +269,8 @@ export function AmbassadorApplicationForm() {
           rows={4}
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.motivation
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         />
         <div className="mt-1 flex items-center justify-between">
@@ -293,8 +293,8 @@ export function AmbassadorApplicationForm() {
           rows={4}
           className={`mt-2 w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
             errors.growthPlan
-              ? 'border-red-300 bg-red-50/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20'
-              : 'border-zinc-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700'
+              ? 'border-red-300 bg-red-50/30 text-zinc-900 placeholder-zinc-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-900/40 dark:bg-red-950/20 dark:text-neutral-100 dark:placeholder-neutral-500'
+              : 'border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500'
           }`}
         />
         <div className="mt-1 flex items-center justify-between">
@@ -315,7 +315,7 @@ export function AmbassadorApplicationForm() {
           value={formData.socialLinks}
           onChange={handleChange}
           placeholder="e.g., @yourtwitter, instagram.com/yourprofile"
-          className="mt-2 w-full rounded-lg border border-zinc-200 px-4 py-2.5 text-sm transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700"
+          className="mt-2 w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
         />
         <p className="mt-1 text-xs text-zinc-500 dark:text-neutral-400">Help us learn more about you</p>
       </div>
