@@ -19,6 +19,7 @@ export function OfficialInboxPanel() {
   const token = useAuthStore((s) => s.token);
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -26,7 +27,14 @@ export function OfficialInboxPanel() {
     void (async () => {
       try {
         const result = await apiGet<{ data: InboxItem[] }>('/officials/me/inbox', token);
-        if (!cancelled) setItems(result.data);
+        if (!cancelled) {
+          setItems(result.data);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load inbox');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -37,6 +45,14 @@ export function OfficialInboxPanel() {
   }, [token]);
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading inbox…</p>;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
