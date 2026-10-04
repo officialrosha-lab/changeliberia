@@ -146,6 +146,18 @@ export function DevelopersClient() {
     }
   }
 
+  async function handleCopyRawKey() {
+    if (!newRawKey) return;
+    try {
+      await navigator.clipboard.writeText(newRawKey);
+      setNewRawKey(null);
+    } catch {
+      // Don't dismiss on a failed copy — this key is never shown again, so
+      // losing it here means the user has to revoke and regenerate.
+      setError('Could not copy the key automatically. Please select and copy it manually before leaving this page.');
+    }
+  }
+
   async function handleRevokeKey(keyId: string) {
     if (!token) return;
     setError(null);
@@ -236,10 +248,7 @@ export function DevelopersClient() {
                               variant="secondary"
                               size="sm"
                               className="mt-2"
-                              onClick={() => {
-                                void navigator.clipboard.writeText(newRawKey);
-                                setNewRawKey(null);
-                              }}
+                              onClick={() => void handleCopyRawKey()}
                             >
                               Copy &amp; dismiss
                             </Button>
