@@ -38,11 +38,11 @@ Once the service is created, go to **Settings → Variables** and add these:
 
 ```
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres:TmYbbaDnOKeKQMHENYiHwXQAdybmVcSJ@monorail.proxy.rlwy.net:35769/railway
-REDIS_URL=redis://default:nrAEBUqvMsoIzkSXhyJdwNywjENRnPie@zephyr.proxy.rlwy.net:16708
-RESEND_API_KEY=re_3puwiQi1_DPNqBm1WSYbVe6SCWBw9QuKS
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@YOUR_HOST:5432/railway
+REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_HOST:PORT
+RESEND_API_KEY=re_your_resend_api_key_here
 MAIL_FROM=noreply@changeliberia.org
-JWT_SECRET=ikhAQpkucj+uRwKrNUbWY4jIEy2TsRtGnJagu7jpkCA=
+JWT_SECRET=your_jwt_secret_here_min_32_chars_base64
 CORS_ORIGIN=https://changeliberia.org,https://changeliberia-web.vercel.app,http://localhost:3000
 PORT=4000
 ENABLE_SWAGGER=true

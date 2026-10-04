@@ -289,7 +289,7 @@ bash scripts/test-email-system.sh
 3. Send test email:
 ```bash
 curl -X POST https://api.resend.com/emails \
-  -H "Authorization: Bearer re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx" \
+  -H "Authorization: Bearer re_your_resend_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
     "from": "noreply@changeliberia.org",

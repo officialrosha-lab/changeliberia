@@ -2,7 +2,7 @@
 
 **Production Domain**: https://changeliberia-web.vercel.app/
 **Email Domain**: changeliberia.org (custom domain)
-**Resend API Key**: re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx
+**Resend API Key**: re_your_resend_api_key_here
 
 ---
 
@@ -71,7 +71,7 @@ TTL: 3600
 ### API Server (.env)
 ```bash
 # Email Configuration
-RESEND_API_KEY="re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx"
+RESEND_API_KEY="re_your_resend_api_key_here"
 MAIL_FROM="noreply@changeliberia.org"
 MAIL_REPLY_TO="support@changeliberia.org"
 EMAIL_PROVIDER="production"  # Changed from "development"
@@ -148,7 +148,7 @@ NEXT_PUBLIC_API_URL="https://changeliberia-web.vercel.app/api/v1"
 
 ```bash
 curl -X POST https://api.resend.com/emails \
-  -H "Authorization: Bearer re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx" \
+  -H "Authorization: Bearer re_your_resend_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
     "from": "noreply@changeliberia.org",

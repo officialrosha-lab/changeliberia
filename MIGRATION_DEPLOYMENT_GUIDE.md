@@ -57,7 +57,7 @@ If you have direct database access:
 
 ```bash
 # Connect to production database
-psql "postgresql://postgres:TmYbbaDnOKeKQMHENYiHwXQAdybmVcSJ@monorail.proxy.rlwy.net:35769/railway"
+psql "postgresql://postgres:YOUR_PASSWORD@YOUR_HOST:5432/railway"
 
 # Check current tables
 \dt

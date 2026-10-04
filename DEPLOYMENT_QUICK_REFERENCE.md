@@ -99,7 +99,7 @@ Variables tab → Add all API variables
 
 DATABASE_URL=[from PostgreSQL service]
 REDIS_URL=[from Redis service]
-RESEND_API_KEY=re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx
+RESEND_API_KEY=re_your_resend_api_key_here
 MAIL_FROM=noreply@changeliberia.org
 # ... add all others (see detailed guide)
 

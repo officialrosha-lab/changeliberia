@@ -11,7 +11,7 @@
 ### API Server: apps/api/.env.local
 ```bash
 # Email Configuration ✓
-RESEND_API_KEY=re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx
+RESEND_API_KEY=re_your_resend_api_key_here
 MAIL_FROM=noreply@changeliberia.org
 MAIL_REPLY_TO=support@changeliberia.org
 RESEND_WEBHOOK_SECRET=whsec_test_xxxxx

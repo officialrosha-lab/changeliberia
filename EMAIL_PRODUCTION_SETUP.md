@@ -6,7 +6,7 @@
 
 ```bash
 # Email Configuration
-RESEND_API_KEY=re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx
+RESEND_API_KEY=re_your_resend_api_key_here
 MAIL_FROM=noreply@changeliberia.org
 MAIL_REPLY_TO=support@changeliberia.org
 RESEND_WEBHOOK_SECRET=whsec_test_xxxxx  # Get from Resend webhook setup
@@ -499,11 +499,11 @@ curl -X POST https://api.changeliberia.org/api/v1/email/test-send \
 ```bash
 # 1. Verify API key format
 #    Should start with: re_
-#    Current key: re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx ✓
+#    Current key: re_your_resend_api_key_here ✓
 
 # 2. Check environment variable
 echo $RESEND_API_KEY
-# Should output: re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx
+# Should output: re_your_resend_api_key_here
 
 # 3. Verify in Resend dashboard
 #    https://resend.com/api-keys
@@ -511,7 +511,7 @@ echo $RESEND_API_KEY
 
 # 4. Test API key directly
 curl -X GET https://api.resend.com/audiences \
-  -H "Authorization: Bearer re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx"
+  -H "Authorization: Bearer re_your_resend_api_key_here"
 # Should return 200, not 401
 ```
 
@@ -687,7 +687,7 @@ If issues arise:
    
    # Test Resend API key
    curl https://api.resend.com/audiences \
-     -H "Authorization: Bearer re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx"
+     -H "Authorization: Bearer re_your_resend_api_key_here"
    
    # Test Redis
    redis-cli ping

@@ -4,7 +4,7 @@
 
 ### Environment Setup
 - [ ] **API Server Configuration**
-  - [ ] RESEND_API_KEY set to: `re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx`
+  - [ ] RESEND_API_KEY set to: `re_your_resend_api_key_here`
   - [ ] MAIL_FROM set to: `noreply@changeliberia.org`
   - [ ] MAIL_REPLY_TO set to: `support@changeliberia.org`
   - [ ] REDIS_URL configured (local or production Redis)
@@ -34,7 +34,7 @@
 
 ### Resend Configuration
 - [ ] **API Key Validation**
-  - [ ] API Key format verified: `re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx` ✓
+  - [ ] API Key format verified: `re_your_resend_api_key_here` ✓
   - [ ] API key tested: `curl -H "Authorization: Bearer <KEY>" https://api.resend.com/audiences`
   - [ ] Response shows 200 (not 401/403)
 

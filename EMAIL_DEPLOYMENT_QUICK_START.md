@@ -10,7 +10,7 @@
 
 ### Step 1.1: Verify Resend API Key
 ```bash
-API_KEY="re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx"
+API_KEY="re_your_resend_api_key_here"
 
 # Test that API key works
 curl -H "Authorization: Bearer $API_KEY" \

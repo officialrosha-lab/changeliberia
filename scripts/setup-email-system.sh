@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 
 # Configuration
-RESEND_API_KEY="${RESEND_API_KEY:-re_V39tR44W_PmhRUhmg9k79ZrUpCe6F7AKx}"
+RESEND_API_KEY="${RESEND_API_KEY:-re_your_resend_api_key_here}"
 MAIL_FROM="${MAIL_FROM:-noreply@changeliberia.org}"
 MAIL_REPLY_TO="${MAIL_REPLY_TO:-support@changeliberia.org}"
 REDIS_URL="${REDIS_URL:-redis://localhost:6379}"

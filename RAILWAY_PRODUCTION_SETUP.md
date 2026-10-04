@@ -151,14 +151,14 @@ REDIS_URL="redis://default:password@host:6379"
 # ============================================================================
 # EMAIL CONFIGURATION
 # ============================================================================
-RESEND_API_KEY="re_3puwiQi1_DPNqBm1WSYbVe6SCWBw9QuKS"
+RESEND_API_KEY="re_your_resend_api_key_here"
 MAIL_FROM="noreply@changeliberia.org"
 EMAIL_REPLY_TO="support@changeliberia.org"
 
 # ============================================================================
 # SECURITY
 # ============================================================================
-JWT_SECRET="ikhAQpkucj+uRwKrNUbWY4jIEy2TsRtGnJagu7jpkCA="
+JWT_SECRET="your_jwt_secret_here_min_32_chars_base64"
 JWT_EXPIRES_IN="7d"
 
 # ============================================================================
