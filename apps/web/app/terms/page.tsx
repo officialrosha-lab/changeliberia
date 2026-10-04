@@ -233,8 +233,10 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-neutral-50 mb-4">12. Termination</h2>
           <p className="text-sm">
             We may suspend or permanently terminate your access to Change Liberia at any time for violations of
-            these Terms, without prior notice. You may close your account at any time via your account settings.
-            Sections 4, 9, 10, 11, and 13 survive termination.
+            these Terms, without prior notice. You may request account closure at any time by emailing{' '}
+            <a href="mailto:privacy@changeliberia.org" className="text-emerald-600 dark:text-emerald-400 underline">
+              privacy@changeliberia.org
+            </a>. Sections 4, 9, 10, 11, and 13 survive termination.
           </p>
         </section>
 
