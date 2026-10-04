@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 
 interface PendingEndorsement {
   id: string;
@@ -21,6 +22,7 @@ export function AdminEndorsementsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const toast = useToast();
 
   const load = async () => {
     if (!token) return;
@@ -47,6 +49,8 @@ export function AdminEndorsementsPanel() {
     try {
       await apiPatch(`/admin/endorsements/${id}/approve`, {}, token);
       setRows((r) => r.filter((row) => row.id !== id));
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to approve endorsement', 'error');
     } finally {
       setBusyId(null);
     }
@@ -58,6 +62,8 @@ export function AdminEndorsementsPanel() {
     try {
       await apiPatch(`/admin/endorsements/${id}/reject`, { notes: notes[id] }, token);
       setRows((r) => r.filter((row) => row.id !== id));
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to reject endorsement', 'error');
     } finally {
       setBusyId(null);
     }
