@@ -32,10 +32,16 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
   useEffect(() => {
     const fetchMilestones = async () => {
       try {
-          const response = await apiGet<{ success: boolean; count: number; milestones: Milestone[] }>(
-            `/growth/petition/${petitionId}/milestones`,
-          );
-          setMilestones(response.milestones || []);
+        const response = await apiGet<{ success: boolean; count: number; milestones: Milestone[] }>(
+          `/growth/petition/${petitionId}/milestones`,
+        );
+        setMilestones(response.milestones || []);
+      } catch {
+        // Non-fatal: the badge grid below is driven by the hardcoded
+        // thresholds plus the currentSignatures/goal props, not this
+        // fetch — a failure here only loses the per-badge "Achieved on"
+        // date, not the milestone progress itself.
+        setMilestones([]);
       } finally {
         setLoading(false);
       }
