@@ -140,6 +140,7 @@ export function CreatePetitionForm() {
   const [authFullName, setAuthFullName] = useState('');
   const [authPhone, setAuthPhone] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authNotice, setAuthNotice] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
   // New fields — initialized from a saved draft when one exists
@@ -522,22 +523,34 @@ export function CreatePetitionForm() {
   async function handleAuthSubmit(e: FormEvent) {
     e.preventDefault();
     setAuthError('');
+    setAuthNotice('');
     setAuthSubmitting(true);
     try {
-      let data: { accessToken: string };
       if (authTab === 'login') {
-        data = await apiPost<{ accessToken: string }>('/auth/login/email', { email: authEmail, password: authPassword });
+        const data = await apiPost<{ accessToken: string }>('/auth/login/email', { email: authEmail, password: authPassword });
+        setToken(data.accessToken);
+        setShowAuthModal(false);
+        if (pendingPayload.current) {
+          await doSubmitPetition(pendingPayload.current, data.accessToken);
+          pendingPayload.current = null;
+        }
       } else {
-        data = await apiPost<{ accessToken: string }>('/auth/signup/email', { fullName: authFullName, phone: authPhone, email: authEmail, password: authPassword });
-      }
-      setToken(data.accessToken);
-      setShowAuthModal(false);
-      if (pendingPayload.current) {
-        await doSubmitPetition(pendingPayload.current, data.accessToken);
-        pendingPayload.current = null;
+        // Signup creates an unverified account and emails a verification
+        // code — it never returns an access token, so there's nothing to
+        // log in with yet. Switch to the login tab instead of closing the
+        // modal; the pending petition payload stays queued until the user
+        // verifies and signs in here.
+        await apiPost('/auth/signup/email', { fullName: authFullName, phone: authPhone, email: authEmail, password: authPassword });
+        setAuthTab('login');
+        setAuthPassword('');
+        setAuthNotice('Account created! Check your email for a verification code, then sign in here to finish submitting your petition.');
       }
     } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Authentication failed. Please try again.');
+      let message = err instanceof Error ? err.message : 'Authentication failed. Please try again.';
+      if (message.startsWith('email_not_verified|')) {
+        message = message.split('|')[1] || 'Your email needs to be verified before you can sign in.';
+      }
+      setAuthError(message);
     } finally {
       setAuthSubmitting(false);
     }
@@ -1025,7 +1038,7 @@ export function CreatePetitionForm() {
             </div>
             <div className="flex border-b border-zinc-100 dark:border-neutral-800">
               {(['login', 'signup'] as const).map((tab) => (
-                <button key={tab} type="button" onClick={() => { setAuthTab(tab); setAuthError(''); }}
+                <button key={tab} type="button" onClick={() => { setAuthTab(tab); setAuthError(''); setAuthNotice(''); }}
                   className={`flex-1 py-3 text-sm font-semibold transition ${authTab === tab ? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
                   {tab === 'login' ? 'Log in' : 'Sign up'}
                 </button>
@@ -1060,6 +1073,9 @@ export function CreatePetitionForm() {
                   placeholder="••••••••"
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
               </div>
+              {authNotice && (
+                <p className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{authNotice}</p>
+              )}
               {authError && (
                 <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">{authError}</p>
               )}
@@ -1067,7 +1083,7 @@ export function CreatePetitionForm() {
                 className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 py-3 text-sm font-bold text-zinc-900 shadow-sm transition hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600">
                 {authSubmitting
                   ? (authTab === 'login' ? 'Signing in…' : 'Creating account…')
-                  : (authTab === 'login' ? 'Sign in & submit petition' : 'Create account & submit petition')}
+                  : (authTab === 'login' ? 'Sign in & submit petition' : 'Create account')}
               </button>
               <p className="text-center text-xs text-zinc-500 dark:text-neutral-400">
                 {authTab === 'login' ? (
