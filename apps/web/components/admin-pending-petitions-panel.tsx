@@ -31,6 +31,8 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Record<string, string | null>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const toast = useToast();
 
   const handleCategoryChange = (id: string, category: string | null) => {
@@ -40,16 +42,30 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   async function approve(id: string) {
     if (!token) return;
     const category = selectedCategory[id] ?? rows.find((p) => p.id === id)?.category ?? null;
-    await apiPatch(`/petitions/${id}/approve`, { category: category || undefined }, token);
-    setRows((r) => r.filter((p) => p.id !== id));
-    setExpandedId(null);
+    setApprovingId(id);
+    try {
+      await apiPatch(`/petitions/${id}/approve`, { category: category || undefined }, token);
+      setRows((r) => r.filter((p) => p.id !== id));
+      setExpandedId(null);
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to approve petition', 'error');
+    } finally {
+      setApprovingId(null);
+    }
   }
 
   async function rejectPetition(id: string) {
     if (!token) return;
-    await apiPatch(`/petitions/${id}/reject`, {}, token);
-    setRows((r) => r.filter((p) => p.id !== id));
-    setExpandedId(null);
+    setRejectingId(id);
+    try {
+      await apiPatch(`/petitions/${id}/reject`, {}, token);
+      setRows((r) => r.filter((p) => p.id !== id));
+      setExpandedId(null);
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to reject petition', 'error');
+    } finally {
+      setRejectingId(null);
+    }
   }
 
   async function deletePetition(id: string) {
@@ -158,18 +174,18 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       <button
                         type="button"
                         onClick={() => approve(p.id)}
-                        disabled={!token}
+                        disabled={!token || approvingId === p.id}
                         className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                       >
-                        Approve
+                        {approvingId === p.id ? 'Approving…' : 'Approve'}
                       </button>
                       <button
                         type="button"
                         onClick={() => rejectPetition(p.id)}
-                        disabled={!token}
+                        disabled={!token || rejectingId === p.id}
                         className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                       >
-                        Reject
+                        {rejectingId === p.id ? 'Rejecting…' : 'Reject'}
                       </button>
                       <button
                         type="button"
@@ -196,18 +212,18 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                     <button
                       type="button"
                       onClick={() => approve(p.id)}
-                      disabled={!token}
+                      disabled={!token || approvingId === p.id}
                       className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                     >
-                      Approve
+                      {approvingId === p.id ? 'Approving…' : 'Approve'}
                     </button>
                     <button
                       type="button"
                       onClick={() => rejectPetition(p.id)}
-                      disabled={!token}
+                      disabled={!token || rejectingId === p.id}
                       className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                     >
-                      Reject
+                      {rejectingId === p.id ? 'Rejecting…' : 'Reject'}
                     </button>
                     <button
                       type="button"

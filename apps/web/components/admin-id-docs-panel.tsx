@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiPatch, getApiBase } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 import { Card } from './ui/card';
 
 type PendingDoc = {
@@ -26,11 +27,20 @@ function formatDocType(type: string): string {
 export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] }) {
   const token = useAuthStore((s) => s.token);
   const [docs, setDocs] = useState(initialDocs);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const toast = useToast();
 
   async function review(id: string, status: 'APPROVED' | 'REJECTED') {
     if (!token) return;
-    await apiPatch(`/admin/id-documents/${id}`, { status }, token);
-    setDocs((prev) => prev.filter((d) => d.id !== id));
+    setReviewingId(id);
+    try {
+      await apiPatch(`/admin/id-documents/${id}`, { status }, token);
+      setDocs((prev) => prev.filter((d) => d.id !== id));
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to review document', 'error');
+    } finally {
+      setReviewingId(null);
+    }
   }
 
   function isLocallyStoredUpload(url: string): boolean {
@@ -89,18 +99,18 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
               <button
                 type="button"
                 onClick={() => review(d.id, 'APPROVED')}
-                disabled={!token}
+                disabled={!token || reviewingId === d.id}
                 className="rounded-lg bg-emerald-600 px-3 py-1 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                Approve
+                {reviewingId === d.id ? 'Saving…' : 'Approve'}
               </button>
               <button
                 type="button"
                 onClick={() => review(d.id, 'REJECTED')}
-                disabled={!token}
+                disabled={!token || reviewingId === d.id}
                 className="rounded-lg border border-zinc-300 px-3 py-1 text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
-                Reject
+                {reviewingId === d.id ? 'Saving…' : 'Reject'}
               </button>
             </div>
           </li>
