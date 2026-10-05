@@ -203,19 +203,4 @@ export class VerificationController {
       },
     });
   }
-
-  /** @deprecated Use POST /verification/id-document — trust is applied when admin approves. */
-  @UseGuards(JwtAuthGuard)
-  @Post('id')
-  verifyIdLegacy(
-    @Req() req: { user: { userId: string } },
-    @Body() body: { fileUrl: string; type: string },
-  ) {
-    return this.service.applyEvent(
-      req.user.userId,
-      VerificationType.ID_UPLOAD,
-      30,
-      `ID verified (${body.type})`,
-    );
-  }
 }

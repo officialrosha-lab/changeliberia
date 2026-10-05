@@ -82,6 +82,13 @@ export class MailerooWebhookController {
         this.logger.warn('Invalid or missing Maileroo webhook signature');
         throw new UnauthorizedException('Invalid webhook signature');
       }
+    } else if (process.env.NODE_ENV === 'production') {
+      this.logger.error(
+        'MAILEROO_WEBHOOK_SECRET is not configured — rejecting webhook in production',
+      );
+      throw new UnauthorizedException(
+        'Webhook signature verification is not configured',
+      );
     }
 
     const type = event.event_type;

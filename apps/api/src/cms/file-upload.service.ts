@@ -1,10 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3StorageService } from '../storage/s3-storage.service';
 import { apiPublicBaseUrl } from '../storage/public-base-url';
-import * as path from 'path';
 
 const KEY_PREFIX = 'cms-files/';
+
+// Extension is derived from the validated mimetype, never from the
+// client-supplied original filename — matches the fileFilter allowlist in
+// cms.controller.ts's upload route.
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'application/pdf': '.pdf',
+};
 
 @Injectable()
 export class FileUploadService {
@@ -30,11 +41,10 @@ export class FileUploadService {
       throw new Error('No file provided');
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    const filename = `${name}-${timestamp}${ext}`;
+    // Unguessable filename; extension comes from the validated mimetype,
+    // not the client-supplied original filename.
+    const ext = EXTENSION_BY_MIME[file.mimetype] ?? '';
+    const filename = `${randomUUID()}${ext}`;
 
     await this.s3.putObject(
       `${KEY_PREFIX}${filename}`,

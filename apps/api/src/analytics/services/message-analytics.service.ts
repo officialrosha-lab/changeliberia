@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface MessageMetrics {
@@ -277,6 +276,7 @@ export class MessageAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ userId: string; userEmail: string; count: number }>> {
+    const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit) || 5));
     const results = await this.prisma.$queryRaw<
       Array<{ senderId: string; count: bigint }>
     >`
@@ -285,7 +285,7 @@ export class MessageAnalyticsService {
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY "senderId"
       ORDER BY COUNT(*) DESC
-      LIMIT ${Prisma.raw(String(limit))}
+      LIMIT ${safeLimit}
     `;
 
     // Fetch user emails
@@ -314,6 +314,7 @@ export class MessageAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ userId: string; userEmail: string; count: number }>> {
+    const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit) || 5));
     const results = await this.prisma.$queryRaw<
       Array<{ recipientId: string; count: bigint }>
     >`
@@ -322,7 +323,7 @@ export class MessageAnalyticsService {
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY "recipientId"
       ORDER BY COUNT(*) DESC
-      LIMIT ${Prisma.raw(String(limit))}
+      LIMIT ${safeLimit}
     `;
 
     // Fetch user emails

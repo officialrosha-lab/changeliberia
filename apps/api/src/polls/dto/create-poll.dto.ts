@@ -97,10 +97,12 @@ export class PollOptionDto {
 export class CreatePollDto {
   @IsString()
   @MinLength(5)
+  @MaxLength(200)
   title!: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   description?: string;
 
   @IsString()

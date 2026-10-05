@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailType } from '@prisma/client';
+import { escapeHtml } from '../../common/utils/escape-html';
 import {
   EmailTemplateProps,
   WelcomeEmailProps,
@@ -90,8 +91,9 @@ export class EmailTemplateService {
     templateType: EmailType,
     props: EmailTemplateProps,
   ): string {
-    const recipientName =
-      ('recipientName' in props && props.recipientName) || 'User';
+    const recipientName = escapeHtml(
+      ('recipientName' in props && props.recipientName) || 'User',
+    );
     const appUrl = 'https://changeliberia.org';
 
     // Basic HTML wrapper with styling
@@ -167,7 +169,7 @@ export class EmailTemplateService {
       case EmailType.PETITION_APPROVED: {
         const p = props as PetitionApprovedProps;
         content = `
-          <p>Great news! Your petition <strong>"${p.petitionTitle || 'New Petition'}"</strong> has been approved.</p>
+          <p>Great news! Your petition <strong>"${escapeHtml(p.petitionTitle || 'New Petition')}"</strong> has been approved.</p>
           <p>It is now live and people can sign it to support your cause.</p>
           <p><a href="${p.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
         `;
@@ -178,7 +180,7 @@ export class EmailTemplateService {
         const p = props as PetitionRejectedProps;
         content = `
           <p>Your petition submission was reviewed and could not be approved at this time.</p>
-          <p><strong>Reason:</strong> ${p.reason || 'Please review our guidelines'}</p>
+          <p><strong>Reason:</strong> ${escapeHtml(p.reason || 'Please review our guidelines')}</p>
           <p>You may submit a revised version or contact our support team for more information.</p>
         `;
         break;
@@ -187,7 +189,7 @@ export class EmailTemplateService {
       case EmailType.PETITION_MILESTONE_REACHED: {
         const p = props as MilestoneReachedProps;
         content = `
-          <p>Congratulations! Your petition <strong>"${p.petitionTitle || 'Petition'}"</strong> has reached a milestone:</p>
+          <p>Congratulations! Your petition <strong>"${escapeHtml(p.petitionTitle || 'Petition')}"</strong> has reached a milestone:</p>
           <p style="font-size: 18px; color: #059669; font-weight: bold;">${p.currentSignatures || 0} signatures</p>
           <p><a href="${p.petitionUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Petition</a></p>
         `;
@@ -204,7 +206,7 @@ export class EmailTemplateService {
                 ?.map(
                   (petition) => `
               <li style="padding: 10px; background: #f9fafb; margin: 10px 0; border-left: 4px solid #059669;">
-                <strong>${petition.title}</strong><br>
+                <strong>${escapeHtml(petition.title)}</strong><br>
                 ${petition.signatures} signatures
               </li>
             `,
@@ -219,7 +221,7 @@ export class EmailTemplateService {
       case EmailType.DONATION_RECEIVED: {
         const p = props as DonationReceivedProps;
         content = `
-          <p>Thank you for your generous donation of <strong>${p.currency || '$'}${p.amount || 0}</strong>${p.petitionTitle ? ` to <strong>"${p.petitionTitle}"</strong>` : ''}.</p>
+          <p>Thank you for your generous donation of <strong>${escapeHtml(p.currency || '$')}${p.amount || 0}</strong>${p.petitionTitle ? ` to <strong>"${escapeHtml(p.petitionTitle)}"</strong>` : ''}.</p>
           <p>Your contribution makes a real difference in creating change.</p>
           <p style="font-size: 12px; color: #6b7280;"><a href="${p.receiptUrl}" style="color: #059669;">View receipt</a></p>
         `;
@@ -229,9 +231,9 @@ export class EmailTemplateService {
       case EmailType.MESSAGE_NOTIFICATION: {
         const p = props as MessageNotificationProps;
         content = `
-          <p><strong>${p.senderName || 'Someone'}</strong> sent you a message.</p>
-          <p><strong>Subject:</strong> ${p.subject || 'No subject'}</p>
-          <p>${p.messagePreview || 'Open the app to read the full message.'}</p>
+          <p><strong>${escapeHtml(p.senderName || 'Someone')}</strong> sent you a message.</p>
+          <p><strong>Subject:</strong> ${escapeHtml(p.subject || 'No subject')}</p>
+          <p>${escapeHtml(p.messagePreview || 'Open the app to read the full message.')}</p>
           <p><a href="${p.messageUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Message</a></p>
         `;
         break;
@@ -240,7 +242,7 @@ export class EmailTemplateService {
       case EmailType.BROADCAST_NOTIFICATION: {
         const p = props as BroadcastNotificationProps;
         content = `
-          <p><strong>${p.senderName || 'Admin'}</strong> sent a broadcast to the <strong>${p.groupType || 'stakeholder group'}</strong>.</p>
+          <p><strong>${escapeHtml(p.senderName || 'Admin')}</strong> sent a broadcast to the <strong>${escapeHtml(p.groupType || 'stakeholder group')}</strong>.</p>
           <p>Delivered to <strong>${p.recipientCount || 0}</strong> members with <strong>${p.successCount || 0}</strong> successful sends.</p>
           ${p.failedCount ? `<p>${p.failedCount} messages failed to deliver.</p>` : ''}
           <p><a href="${p.broadcastUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Broadcast</a></p>
@@ -251,7 +253,7 @@ export class EmailTemplateService {
       case EmailType.OFFICIAL_VERIFIED: {
         const p = props as OfficialVerifiedProps;
         content = `
-          <p>Congratulations! Your official account for <strong>${p.institutionName || 'your office'}</strong> has been verified.</p>
+          <p>Congratulations! Your official account for <strong>${escapeHtml(p.institutionName || 'your office')}</strong> has been verified.</p>
           <p>You now have access to your official dashboard to view petitions and civic pulse activity in your jurisdiction and respond to constituents.</p>
           <p><a href="${appUrl}/official/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a></p>
         `;
@@ -261,8 +263,8 @@ export class EmailTemplateService {
       case EmailType.OFFICIAL_REJECTED: {
         const p = props as OfficialRejectedProps;
         content = `
-          <p>Your official account application for <strong>${p.institutionName || 'your office'}</strong> could not be approved at this time.</p>
-          ${p.reason ? `<p><strong>Reason:</strong> ${p.reason}</p>` : ''}
+          <p>Your official account application for <strong>${escapeHtml(p.institutionName || 'your office')}</strong> could not be approved at this time.</p>
+          ${p.reason ? `<p><strong>Reason:</strong> ${escapeHtml(p.reason)}</p>` : ''}
           <p>You may submit a revised application or contact our support team for more information.</p>
         `;
         break;
@@ -271,7 +273,7 @@ export class EmailTemplateService {
       case EmailType.CONSTITUENCY_REPORT_READY: {
         const p = props as ConstituencyReportReadyProps;
         content = `
-          <p>Your ${p.period?.toLowerCase() || 'constituency'} report for <strong>${p.institutionName || 'your office'}</strong> is ready.</p>
+          <p>Your ${escapeHtml(p.period?.toLowerCase() || 'constituency')} report for <strong>${escapeHtml(p.institutionName || 'your office')}</strong> is ready.</p>
           <p>Covering <strong>${p.periodStart} – ${p.periodEnd}</strong>: petitions, signatures, and issue trends for your constituency.</p>
           <p><a href="${p.reportUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Report</a></p>
         `;
