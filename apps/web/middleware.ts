@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Forces the Node.js middleware runtime rather than Edge. This proxy relies
+// on Node's fetch/Headers implementation correctly preserving multiple
+// distinct Set-Cookie response headers (verified directly: Node's
+// `Headers` iterates one entry per Set-Cookie value, which is how
+// NextResponse serializes them back onto the wire) — the three auth
+// cookies set on login must arrive at the browser as three separate
+// Set-Cookie lines, not collapsed into one comma-joined value.
+export const runtime = 'nodejs';
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
