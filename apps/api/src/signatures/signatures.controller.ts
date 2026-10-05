@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CreateSignatureDto } from './dto';
 import { SignaturesService } from './signatures.service';
@@ -33,6 +34,7 @@ export class SignaturesController {
     return { signed: !!existing };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(OptionalJwtAuthGuard)
   @Post()
   async create(
