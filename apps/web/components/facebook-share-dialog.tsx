@@ -27,13 +27,13 @@ export function FacebookShareDialog({
   const [loading, setLoading] = useState(false);
   const [shared, setShared] = useState(false);
   const [estimatedReach] = useState(networkSize);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // Fire-and-forget: recording a share must never block the share itself,
   // and the endpoint requires auth — anonymous shares simply go unrecorded.
   const recordShare = () => {
-    if (!token) return;
-    apiPost('/facebook/record-share', { petitionId, method: 'dialog' }, token).catch(() => null);
+    if (!isAuthenticated) return;
+    apiPost('/facebook/record-share', { petitionId, method: 'dialog' }).catch(() => null);
   };
 
   const handleFacebookShare = async () => {

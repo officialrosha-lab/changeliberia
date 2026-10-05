@@ -46,22 +46,22 @@ interface ShareLink {
 }
 
 export function AdminFacebookReach() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [links, setLinks] = useState<ShareLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLinks = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<{ links: ShareLink[] }>('/admin/facebook/share-links', token);
+      const result = await apiGet<{ links: ShareLink[] }>('/admin/facebook/share-links');
       setLinks(result.links || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchLinks();

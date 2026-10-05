@@ -31,7 +31,7 @@ function inputClass() {
 }
 
 export function EntitlementsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [newKey, setNewKey] = useState('');
@@ -46,9 +46,9 @@ export function EntitlementsPanel() {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
-    apiGet<Entitlement[]>('/admin/entitlements', token)
+    apiGet<Entitlement[]>('/admin/entitlements')
       .then((data) => {
         if (!cancelled) setEntitlements(data);
       })
@@ -58,12 +58,12 @@ export function EntitlementsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token, reloadKey]);
+  }, [isAuthenticated, reloadKey]);
 
   async function handleCreateEntitlement() {
-    if (!token || !newKey || !newName) return;
+    if (!isAuthenticated || !newKey || !newName) return;
     try {
-      await apiPost('/admin/entitlements', { key: newKey, name: newName, scope: newScope }, token);
+      await apiPost('/admin/entitlements', { key: newKey, name: newName, scope: newScope });
       setNewKey('');
       setNewName('');
       setReloadKey((k) => k + 1);
@@ -73,9 +73,9 @@ export function EntitlementsPanel() {
   }
 
   async function handleLookupGrants() {
-    if (!token || !targetId) return;
+    if (!isAuthenticated || !targetId) return;
     try {
-      const data = await apiGet<EntitlementGrant[]>(`/admin/entitlements/${targetType === 'userId' ? 'users' : 'institutions'}/${targetId}/grants`, token);
+      const data = await apiGet<EntitlementGrant[]>(`/admin/entitlements/${targetType === 'userId' ? 'users' : 'institutions'}/${targetId}/grants`);
       setGrants(data);
       setError(null);
     } catch (err) {
@@ -84,12 +84,11 @@ export function EntitlementsPanel() {
   }
 
   async function handleGrant() {
-    if (!token || !targetId || !grantEntitlementKey) return;
+    if (!isAuthenticated || !targetId || !grantEntitlementKey) return;
     try {
       await apiPost(
         '/admin/entitlements/grants',
         { entitlementKey: grantEntitlementKey, [targetType]: targetId, source: grantSource },
-        token,
       );
       setGrantEntitlementKey('');
       await handleLookupGrants();
@@ -99,9 +98,9 @@ export function EntitlementsPanel() {
   }
 
   async function handleRevoke(grantId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiDelete(`/admin/entitlements/grants/${grantId}`, token);
+      await apiDelete(`/admin/entitlements/grants/${grantId}`);
       await handleLookupGrants();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke grant');

@@ -40,7 +40,7 @@ const STATUS_LABEL: Record<ServiceRequestStatus, string> = {
 };
 
 export function StudioClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
 
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
@@ -52,10 +52,10 @@ export function StudioClient() {
   const [submitted, setSubmitted] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<ServiceRequest[]>('/service-requests/me', token);
+      const data = await apiGet<ServiceRequest[]>('/service-requests/me');
       setRequests(data);
       setError(null);
     } catch (err) {
@@ -63,19 +63,19 @@ export function StudioClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated || !isAuthenticated) return;
     void load();
-  }, [hydrated, token, load]);
+  }, [hydrated, isAuthenticated, load]);
 
   async function handleSubmit() {
-    if (!token || !title.trim() || !description.trim()) return;
+    if (!isAuthenticated || !title.trim() || !description.trim()) return;
     setError(null);
     setSubmitting(true);
     try {
-      await apiPost('/service-requests', { title: title.trim(), description: description.trim() }, token);
+      await apiPost('/service-requests', { title: title.trim(), description: description.trim() });
       setTitle('');
       setDescription('');
       setSubmitted(true);
@@ -106,7 +106,7 @@ export function StudioClient() {
         </section>
 
         <div className="mx-auto max-w-2xl px-4 py-12">
-          {!token ? (
+          {!isAuthenticated ? (
             <Card rounded="2xl" className="p-8 text-center">
               <p className="text-sm text-zinc-600 dark:text-neutral-400">Log in to request Studio services.</p>
               <Link

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useAuthStore, useMenuStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
-import { apiGet } from '../lib/api';
+import { apiGet, apiPost } from '../lib/api';
 
 const EXPLORE_ITEMS = [
   { href: '/petitions',     icon: '🔍', label: 'Browse causes' },
@@ -22,18 +22,19 @@ export function MobileMenuOverlay() {
   const { isMenuOpen: isOpen, closeMenu } = useMenuStore();
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const { theme, toggleTheme } = useTheme();
-  const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
 
   useEffect(() => {
     apiGet<{ donationsEnabled: boolean }>('/settings/system')
       .then((s) => setDonationsEnabled(s.donationsEnabled))
       .catch(() => setDonationsEnabled(true));
-  }, [token]);
+  }, [isAuthenticated]);
 
   function signOut() {
-    setToken(null);
+    void apiPost('/auth/logout', {}).catch(() => {});
+    setSession(null);
     closeMenu();
     router.push('/');
   }
@@ -89,7 +90,7 @@ export function MobileMenuOverlay() {
           Civic Pulse
         </Link>
 
-        {token && (
+        {isAuthenticated && (
           <>
             <Link
               href="/messages"
@@ -132,7 +133,7 @@ export function MobileMenuOverlay() {
 
       {/* Footer — auth actions + theme toggle */}
       <div className="border-t border-zinc-100 px-4 py-4 space-y-2 dark:border-neutral-800 safe-bottom">
-        {token ? (
+        {isAuthenticated ? (
           <button
             onClick={signOut}
             className="flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-base font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"

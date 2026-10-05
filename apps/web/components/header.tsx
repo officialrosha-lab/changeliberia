@@ -5,15 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
-import { apiGet } from '../lib/api';
+import { apiGet, apiPost } from '../lib/api';
 import { ThemeToggle } from './theme-toggle';
 import { MobileNav } from './mobile-nav';
 import { NotificationDropdown } from './notification-dropdown';
 import { JoinMovementButton } from './join-movement-button';
 
 export function Header() {
-  const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
   const [donationsEnabled, setDonationsEnabled] = useState(true);
 
@@ -30,10 +30,11 @@ export function Header() {
       }
     }
     loadDonationSettings();
-  }, [token]);
+  }, [isAuthenticated]);
 
   function signOut() {
-    setToken(null);
+    void apiPost('/auth/logout', {}).catch(() => {});
+    setSession(null);
     router.push('/');
   }
 
@@ -64,7 +65,7 @@ export function Header() {
             </span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-zinc-600 dark:text-neutral-300 xl:flex">
-            {token && (
+            {isAuthenticated && (
               <Link href="/messages" className="font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 rounded px-2 py-1">
                 Messages
               </Link>
@@ -97,10 +98,10 @@ export function Header() {
             <ThemeToggle />
           </div>
 
-          {token && <NotificationDropdown />}
+          {isAuthenticated && <NotificationDropdown />}
           
           <div className="hidden items-center gap-2 xl:flex xl:gap-3">
-            {token ? (
+            {isAuthenticated ? (
               <>
                 <Link
                   href="/dashboard"

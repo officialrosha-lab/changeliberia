@@ -51,7 +51,7 @@ interface Subscription {
 }
 
 export function AdminStripeSubscriptions() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const toast = useToast();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,21 +59,21 @@ export function AdminStripeSubscriptions() {
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const fetchSubscriptions = useCallback(async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       setError('Not authenticated');
       setLoading(false);
       return;
     }
 
     try {
-      const result = await apiGet<{ subscriptions: Subscription[] }>('/admin/stripe/subscriptions', token);
+      const result = await apiGet<{ subscriptions: Subscription[] }>('/admin/stripe/subscriptions');
       setSubscriptions(result.subscriptions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -81,14 +81,13 @@ export function AdminStripeSubscriptions() {
 
   const handleCancel = async (subscriptionId: string) => {
     if (!confirm('Cancel this subscription?')) return;
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     setCancelling(subscriptionId);
     try {
       await apiPatch(
         `/admin/stripe/subscriptions/${subscriptionId}/cancel`,
         {},
-        token
       );
       await fetchSubscriptions();
     } catch (err) {

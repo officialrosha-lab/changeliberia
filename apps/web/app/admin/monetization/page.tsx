@@ -30,7 +30,7 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 export default function AdminMonetizationPage() {
-  const { phase, token } = useAdminGuard();
+  const { phase, isAuthenticated } = useAdminGuard();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   if (phase === 'loading') {
@@ -48,7 +48,7 @@ export default function AdminMonetizationPage() {
           <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
           <p className="mt-3 text-red-600 dark:text-red-400">
             This page requires an Admin account.{' '}
-            {!token && (
+            {!isAuthenticated && (
               <Link href="/auth/login" className="font-semibold underline">
                 Sign in
               </Link>

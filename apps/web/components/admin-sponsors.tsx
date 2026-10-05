@@ -25,7 +25,7 @@ const EMPTY_FORM = {
 };
 
 export function AdminSponsors() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,25 +35,25 @@ export function AdminSponsors() {
   const [editForm, setEditForm] = useState<Partial<Sponsor>>({});
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const data = await apiGet<Sponsor[]>('/admin/sponsors', token);
+      const data = await apiGet<Sponsor[]>('/admin/sponsors');
       setSponsors(data);
     } catch {
       setError('Failed to load sponsors');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     void load();
-  }, [token, load]);
+  }, [isAuthenticated, load]);
 
   async function create() {
-    if (!token || !form.name || !form.logoUrl) return;
+    if (!isAuthenticated || !form.name || !form.logoUrl) return;
     setSaving(true);
     setError(null);
     try {
@@ -61,7 +61,7 @@ export function AdminSponsors() {
         ...form,
         websiteUrl: form.websiteUrl || undefined,
         displayOrder: Number(form.displayOrder),
-      }, token);
+      });
       setForm(EMPTY_FORM);
       await load();
     } catch {
@@ -72,7 +72,7 @@ export function AdminSponsors() {
   }
 
   async function saveEdit(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setSaving(true);
     setError(null);
     try {
@@ -80,7 +80,7 @@ export function AdminSponsors() {
         ...editForm,
         websiteUrl: editForm.websiteUrl || undefined,
         displayOrder: editForm.displayOrder !== undefined ? Number(editForm.displayOrder) : undefined,
-      }, token);
+      });
       setEditingId(null);
       setEditForm({});
       await load();
@@ -92,10 +92,10 @@ export function AdminSponsors() {
   }
 
   async function remove(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!confirm('Delete this sponsor?')) return;
     try {
-      await apiDelete(`/admin/sponsors/${id}`, token);
+      await apiDelete(`/admin/sponsors/${id}`);
       setSponsors((prev) => prev.filter((s) => s.id !== id));
     } catch {
       setError('Failed to delete sponsor');

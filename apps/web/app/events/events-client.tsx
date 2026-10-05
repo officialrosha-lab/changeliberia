@@ -51,7 +51,7 @@ function formatPrice(event: EventItem): string {
 }
 
 export function EventsClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const searchParams = useSearchParams();
   const checkoutResult = searchParams.get('checkout');
@@ -67,7 +67,7 @@ export function EventsClient() {
       setLoading(true);
       const [eventsData, registrationsData] = await Promise.all([
         apiGet<EventItem[]>('/events'),
-        token ? apiGet<EventRegistration[]>('/events/me', token) : Promise.resolve([]),
+        isAuthenticated ? apiGet<EventRegistration[]>('/events/me') : Promise.resolve([]),
       ]);
       setEvents(eventsData);
       setRegistrations(registrationsData);
@@ -77,7 +77,7 @@ export function EventsClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -87,7 +87,7 @@ export function EventsClient() {
   const registrationByEventId = new Map(registrations.map((r) => [r.eventId, r]));
 
   async function handleRegister(event: EventItem) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingKey(event.key);
     try {
@@ -98,7 +98,6 @@ export function EventsClient() {
         isPaid
           ? { successUrl: `${origin}/events?checkout=success`, cancelUrl: `${origin}/events?checkout=cancelled` }
           : {},
-        token,
       );
       if (res.checkoutUrl) {
         window.location.href = res.checkoutUrl;
@@ -113,11 +112,11 @@ export function EventsClient() {
   }
 
   async function handleCancel(event: EventItem) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingKey(event.key);
     try {
-      await apiPost(`/events/${event.key}/cancel`, {}, token);
+      await apiPost(`/events/${event.key}/cancel`, {});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel registration');
@@ -210,7 +209,7 @@ export function EventsClient() {
                         <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
                           Payment processing…
                         </p>
-                      ) : !token ? (
+                      ) : !isAuthenticated ? (
                         <Link
                           href={`/auth/login?next=${encodeURIComponent('/events')}`}
                           className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"

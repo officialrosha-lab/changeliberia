@@ -16,7 +16,7 @@ interface ImportStats {
 }
 
 export function CSVImporter() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ImportStats | null>(null);
@@ -26,7 +26,7 @@ export function CSVImporter() {
   async function handleDownloadTemplate() {
     try {
       const response = await fetch(`${getApiBase()}/admin/directory/import/template`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${isAuthenticated}` },
       });
       const csv = await response.text();
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -42,7 +42,7 @@ export function CSVImporter() {
   }
 
   async function handleFileSelect(file: File) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setUploading(true);
       setError(null);
@@ -53,7 +53,7 @@ export function CSVImporter() {
 
       const response = await fetch(`${getApiBase()}/admin/directory/import/upload`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${isAuthenticated}` },
         body: formData,
       });
 

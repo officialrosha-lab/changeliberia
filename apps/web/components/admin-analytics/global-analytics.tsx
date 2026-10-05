@@ -35,7 +35,7 @@ interface FraudStats {
 }
 
 export function GlobalAnalytics() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [daily, setDaily] = useState<DailyMetric[]>([]);
   const [categories, setCategories] = useState<CategoryStats[]>([]);
@@ -48,10 +48,10 @@ export function GlobalAnalytics() {
     try {
       setLoading(true);
       const [s, d, c, f] = await Promise.all([
-        apiGet<PlatformStats>(`/analytics/platform-stats?days=${period}`, token!),
-        apiGet<DailyMetric[]>(`/analytics/daily-metrics?days=${period}`, token!),
-        apiGet<CategoryStats[]>(`/analytics/category-stats?days=${period}`, token!),
-        apiGet<FraudStats>(`/analytics/fraud-stats?days=${period}`, token!),
+        apiGet<PlatformStats>(`/analytics/platform-stats?days=${period}`),
+        apiGet<DailyMetric[]>(`/analytics/daily-metrics?days=${period}`),
+        apiGet<CategoryStats[]>(`/analytics/category-stats?days=${period}`),
+        apiGet<FraudStats>(`/analytics/fraud-stats?days=${period}`),
       ]);
       setStats(s);
       setDaily(d);
@@ -63,12 +63,12 @@ export function GlobalAnalytics() {
     } finally {
       setLoading(false);
     }
-  }, [period, token]);
+  }, [period]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadAnalytics();
-  }, [token, period, loadAnalytics]);
+  }, [isAuthenticated, period, loadAnalytics]);
 
   if (loading) {
     return <div className="text-center py-8 text-zinc-500 dark:text-neutral-400">Loading analytics...</div>;

@@ -40,15 +40,15 @@ interface FeedItem {
 }
 
 export function OfficialPetitionFeed() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState<string | null>(null);
 
   const load = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<{ data: FeedItem[] }>('/officials/me/feed', token);
+      const result = await apiGet<{ data: FeedItem[] }>('/officials/me/feed');
       setItems(result.data);
     } finally {
       setLoading(false);
@@ -58,17 +58,17 @@ export function OfficialPetitionFeed() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function advance(responseId: string, currentStage: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     const currentIndex = STAGES.indexOf(currentStage as (typeof STAGES)[number]);
     const nextStage = STAGES[currentIndex + 1];
     if (!nextStage) return;
 
     setAdvancing(responseId);
     try {
-      await apiPost(`/officials/responses/${responseId}/advance`, { stage: nextStage }, token);
+      await apiPost(`/officials/responses/${responseId}/advance`, { stage: nextStage });
       await load();
     } finally {
       setAdvancing(null);

@@ -40,21 +40,21 @@ interface AnalyticsData {
 }
 
 export function AdminStripeAnalytics() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      if (!token) {
+      if (!isAuthenticated) {
         setError('Not authenticated');
         setLoading(false);
         return;
       }
 
       try {
-        const result = await apiGet<AnalyticsData>('/admin/stripe/analytics', token);
+        const result = await apiGet<AnalyticsData>('/admin/stripe/analytics');
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -64,7 +64,7 @@ export function AdminStripeAnalytics() {
     };
 
     fetchAnalytics();
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return (

@@ -26,20 +26,19 @@ const PERIODS: { key: Period; label: string }[] = [
 ];
 
 export function OfficialIssueTrendsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [period, setPeriod] = useState<Period>('month');
   const [result, setResult] = useState<IssueTrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     setLoading(true);
     void (async () => {
       try {
         const data = await apiGet<IssueTrendsResponse>(
           `/officials/me/constituency/issues?period=${period}`,
-          token,
         );
         if (!cancelled) setResult(data);
       } catch {
@@ -51,7 +50,7 @@ export function OfficialIssueTrendsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token, period]);
+  }, [isAuthenticated, period]);
 
   const maxCount = result?.categories.reduce((m, c) => Math.max(m, c.petitionCount), 0) ?? 0;
 

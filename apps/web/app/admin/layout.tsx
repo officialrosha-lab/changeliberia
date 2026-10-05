@@ -7,17 +7,17 @@ import { AdminGuard } from '../../components/admin-guard';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token, hydrated } = useAuthStore();
+  const { isAuthenticated, hydrated } = useAuthStore();
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
+    if (!isAuthenticated) {
       router.replace('/auth/login?next=/admin');
     }
-  }, [hydrated, token, router]);
+  }, [hydrated, isAuthenticated, router]);
 
   // Don't flash admin content before hydration check completes
-  if (!hydrated || !token) return null;
+  if (!hydrated || !isAuthenticated) return null;
 
   // Role check (UI defense-in-depth; backend guards remain authoritative)
   return <AdminGuard>{children}</AdminGuard>;

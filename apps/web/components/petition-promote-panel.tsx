@@ -16,7 +16,7 @@ const PLACEMENTS: { key: Placement; label: string; description: string }[] = [
 ];
 
 export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [pending, setPending] = useState<Placement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [promotionsEnabled, setPromotionsEnabled] = useState(false);
@@ -39,7 +39,7 @@ export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
   }, []);
 
   async function handlePromote(placement: Placement) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPending(placement);
     try {
@@ -51,7 +51,6 @@ export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
           successUrl: `${origin}/petitions/${petitionId}?checkout=success`,
           cancelUrl: `${origin}/petitions/${petitionId}?checkout=cancelled`,
         },
-        token,
       );
       window.location.assign(res.checkoutUrl);
     } catch (err) {
@@ -84,7 +83,7 @@ export function PetitionPromotePanel({ petitionId }: { petitionId: string }) {
               <p className="font-semibold text-zinc-900 dark:text-neutral-100">{p.label}</p>
               <p className="text-sm text-zinc-500 dark:text-neutral-400">{p.description}</p>
             </div>
-            {!token ? (
+            {!isAuthenticated ? (
               <Link
                 href={`/auth/login?next=${encodeURIComponent(`/petitions/${petitionId}`)}`}
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"

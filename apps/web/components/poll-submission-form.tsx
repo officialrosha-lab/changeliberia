@@ -37,7 +37,7 @@ type PollOption = { text: string; imageUrl?: string };
 export function PollSubmissionForm({ onSuccess }: { onSuccess?: () => void }) {
   const { counties: countyOptions } = useCounties();
   const COUNTIES = countyOptions.map((c) => c.name);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -92,7 +92,7 @@ export function PollSubmissionForm({ onSuccess }: { onSuccess?: () => void }) {
 
       if (!formData.expiresAt) throw new Error('Expiration date is required');
       if (new Date(formData.expiresAt) <= new Date()) throw new Error('Expiration date must be in the future');
-      if (!token) throw new Error('Authentication required');
+      if (!isAuthenticated) throw new Error('Authentication required');
 
       await apiPost(
         '/polls/submit',
@@ -104,7 +104,6 @@ export function PollSubmissionForm({ onSuccess }: { onSuccess?: () => void }) {
           expiresAt: formData.expiresAt,
           options: validOptions.map((o) => ({ text: o.text.trim(), imageUrl: o.imageUrl })),
         },
-        token,
       );
 
       setFormData({ title: '', description: '', category: 'Infrastructure', county: '', expiresAt: '' });

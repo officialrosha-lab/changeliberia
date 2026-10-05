@@ -36,18 +36,17 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function OfficialCivicPulsePanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [result, setResult] = useState<PollFeedResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const data = await apiGet<PollFeedResponse>(
           '/officials/me/constituency/polls',
-          token,
         );
         if (!cancelled) setResult(data);
       } catch {
@@ -59,7 +58,7 @@ export function OfficialCivicPulsePanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading Civic Pulse activity…</p>;

@@ -12,17 +12,17 @@ type Props = {
 };
 
 export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
-  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
+  const phase = !hydrated ? 'loading' : !isAuthenticated ? 'denied' : asyncPhase;
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated || !isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
-        const me = await apiGet<{ role: string }>('/users/me', token);
+        const me = await apiGet<{ role: string }>('/users/me');
         if (cancelled) return;
         setAsyncPhase(roles.includes(me.role) ? 'ok' : 'denied');
       } catch {
@@ -30,7 +30,7 @@ export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
       }
     })();
     return () => { cancelled = true; };
-  }, [token, roles, hydrated]);
+  }, [isAuthenticated, roles, hydrated]);
 
   if (phase === 'loading') {
     return (
@@ -46,7 +46,7 @@ export function AdminGuard({ children, roles = ['ADMIN'] }: Props) {
         <div className="rounded-3xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950">
           <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
           <p className="mt-3 text-red-600 dark:text-red-400">
-            {!token ? (
+            {!isAuthenticated ? (
               <>
                 You must{' '}
                 <Link href="/auth/login" className="font-semibold underline">

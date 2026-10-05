@@ -30,7 +30,7 @@ function sortPolls(polls: PollSummary[], sort: SortValue): PollSummary[] {
 }
 
 export default function CivicPulsePage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [polls, setPolls] = useState<PollSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
@@ -95,7 +95,7 @@ export default function CivicPulsePage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {token ? (
+            {isAuthenticated ? (
               <button
                 onClick={() => setShowSubmissionForm(!showSubmissionForm)}
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
@@ -115,7 +115,7 @@ export default function CivicPulsePage() {
       </div>
 
       {/* Submission form */}
-      {showSubmissionForm && token && (
+      {showSubmissionForm && isAuthenticated && (
         <div className="mb-8 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
           <h2 className="mb-4 text-2xl font-bold text-zinc-900 dark:text-white">Submit a Poll Idea</h2>
           <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">

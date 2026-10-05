@@ -69,7 +69,7 @@ interface SocialMediaDashboard {
 }
 
 export function AdminSocialMediaDashboard() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [data, setData] = useState<SocialMediaDashboard | null>(null);
   const [campaignStats, setCampaignStats] = useState<CampaignStats | null>(null);
   const [socialMediaConfig, setSocialMediaConfig] = useState<SocialMediaSettings | null>(null);
@@ -81,7 +81,7 @@ export function AdminSocialMediaDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'facebook' | 'whatsapp' | 'configuration'>('overview');
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const fetchData = async () => {
       try {
@@ -89,9 +89,9 @@ export function AdminSocialMediaDashboard() {
         setError(null);
         setConfigLoading(true);
         const [dashboard, campaigns, settings] = await Promise.all([
-          apiGet<SocialMediaDashboard>('/admin/social-media/dashboard', token),
-          apiGet<CampaignStats>('/admin/social-media/whatsapp/campaign-stats', token),
-          apiGet<SocialMediaSettings>('/admin/settings/social-media', token),
+          apiGet<SocialMediaDashboard>('/admin/social-media/dashboard'),
+          apiGet<CampaignStats>('/admin/social-media/whatsapp/campaign-stats'),
+          apiGet<SocialMediaSettings>('/admin/settings/social-media'),
         ]);
         setData(dashboard);
         setCampaignStats(campaigns);
@@ -108,7 +108,7 @@ export function AdminSocialMediaDashboard() {
     fetchData();
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [token]);
+  }, [isAuthenticated]);
 
   const { show: showToast } = useToast();
 
@@ -439,15 +439,15 @@ export function AdminSocialMediaDashboard() {
                   <button
                     type="button"
                     onClick={async () => {
-                      if (!token || !socialMediaConfig) return;
+                      if (!isAuthenticated || !socialMediaConfig) return;
                       setSavingConfig(true);
                       setError(null);
                       setConfigMessage(null);
                       try {
-                        await apiPatch('/admin/settings/social-media', socialMediaConfig, token);
+                        await apiPatch('/admin/settings/social-media', socialMediaConfig);
                         setConfigMessage('Social media settings saved successfully.');
                         showToast('Social media settings saved successfully.', 'success');
-                        const refreshedSettings = await apiGet<SocialMediaSettings>('/admin/settings/social-media', token);
+                        const refreshedSettings = await apiGet<SocialMediaSettings>('/admin/settings/social-media');
                         setSocialMediaConfig(refreshedSettings);
                       } catch (err) {
                         const msg = err instanceof Error ? err.message : 'Failed to save social media settings';

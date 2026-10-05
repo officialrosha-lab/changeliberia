@@ -96,7 +96,7 @@ interface BroadcastAnalyticsResponse {
 const CHART_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
 
 export function GlobalAnalytics() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [period, setPeriod] = useState<Period>('week');
   const [messageAnalytics, setMessageAnalytics] = useState<MessageAnalyticsResponse | null>(null);
   const [broadcastAnalytics, setBroadcastAnalytics] = useState<BroadcastAnalyticsResponse | null>(null);
@@ -114,7 +114,7 @@ export function GlobalAnalytics() {
   ]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const loadAnalytics = async () => {
       try {
@@ -122,8 +122,8 @@ export function GlobalAnalytics() {
         setError(null);
 
         const [msgRes, bcRes] = await Promise.all([
-          apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
-          apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
+          apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`),
+          apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`),
         ]);
 
         setMessageAnalytics(msgRes.data);
@@ -137,11 +137,11 @@ export function GlobalAnalytics() {
     };
 
     void loadAnalytics();
-  }, [token, period]);
+  }, [isAuthenticated, period]);
 
   // Auto-refresh analytics when real-time updates arrive
   useEffect(() => {
-    if (!token || !connected) return;
+    if (!isAuthenticated || !connected) return;
 
     // Trigger refresh if message or broadcast updates arrive
     const hasUpdate =
@@ -155,8 +155,8 @@ export function GlobalAnalytics() {
       const timer = setTimeout(async () => {
         try {
           const [msgRes, bcRes] = await Promise.all([
-            apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`, token),
-            apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`, token),
+            apiGet<{ success: boolean; data: MessageAnalyticsResponse }>(`/analytics/messages?period=${period}`),
+            apiGet<{ success: boolean; data: BroadcastAnalyticsResponse }>(`/analytics/broadcasts?period=${period}`),
           ]);
 
           setMessageAnalytics(msgRes.data);
@@ -169,7 +169,7 @@ export function GlobalAnalytics() {
 
       return () => clearTimeout(timer);
     }
-  }, [updates, token, period, connected]);
+  }, [updates, isAuthenticated, period, connected]);
 
   if (loading) {
     return (

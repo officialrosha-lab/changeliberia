@@ -34,7 +34,7 @@ interface ClaimableInstitution {
 }
 
 export default function OfficialApplyPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [mode, setMode] = useState<'create' | 'claim'>('create');
   const [form, setForm] = useState({
     name: '',
@@ -74,7 +74,7 @@ export default function OfficialApplyPage() {
 
   // Debounced directory search for claim mode
   useEffect(() => {
-    if (mode !== 'claim' || !token || selected) return;
+    if (mode !== 'claim' || !isAuthenticated || selected) return;
     const term = searchQuery.trim();
     if (term.length < 2) {
       setSearchResults([]);
@@ -86,7 +86,6 @@ export default function OfficialApplyPage() {
       try {
         const results = await apiGet<ClaimableInstitution[]>(
           `/officials/claimable?search=${encodeURIComponent(term)}`,
-          token,
         );
         setSearchResults(results);
         setSearched(true);
@@ -98,18 +97,18 @@ export default function OfficialApplyPage() {
       }
     }, 350);
     return () => clearTimeout(handle);
-  }, [searchQuery, mode, token, selected]);
+  }, [searchQuery, mode, isAuthenticated, selected]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) {
+    if (!isAuthenticated) {
       setError('You must sign in to apply for an official account.');
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      await apiPost('/officials/apply', form, token);
+      await apiPost('/officials/apply', form);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Application failed');
@@ -120,7 +119,7 @@ export default function OfficialApplyPage() {
 
   async function handleClaimSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !selected) return;
+    if (!isAuthenticated || !selected) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -129,7 +128,7 @@ export default function OfficialApplyPage() {
       for (const [key, value] of Object.entries(claimForm)) {
         if (value.trim()) body[key] = value.trim();
       }
-      await apiPost('/officials/claim', body, token);
+      await apiPost('/officials/claim', body);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Claim failed');
@@ -138,7 +137,7 @@ export default function OfficialApplyPage() {
     }
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Sign in required</h1>

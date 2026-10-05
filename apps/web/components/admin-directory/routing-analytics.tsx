@@ -25,7 +25,7 @@ interface RoutingEvent {
 }
 
 export function RoutingAnalytics() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [stats, setStats] = useState<RoutingStats | null>(null);
   const [events, setEvents] = useState<RoutingEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +36,8 @@ export function RoutingAnalytics() {
     try {
       setLoading(true);
       const [s, e] = await Promise.all([
-        apiGet<RoutingStats>(`/admin/directory/routing/stats?days=${days}`, token!),
-        apiGet<RoutingEvent[]>(`/admin/directory/routing/events?limit=50`, token!),
+        apiGet<RoutingStats>(`/admin/directory/routing/stats?days=${days}`),
+        apiGet<RoutingEvent[]>(`/admin/directory/routing/events?limit=50`),
       ]);
       setStats(s);
       setEvents(e);
@@ -47,12 +47,12 @@ export function RoutingAnalytics() {
     } finally {
       setLoading(false);
     }
-  }, [days, token]);
+  }, [days]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadAnalytics();
-  }, [token, days, loadAnalytics]);
+  }, [isAuthenticated, days, loadAnalytics]);
 
   if (loading) {
     return <div className="text-center py-8 dark:text-neutral-300">Loading analytics...</div>;

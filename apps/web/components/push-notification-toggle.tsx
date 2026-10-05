@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../lib/api';
-import { useAuthStore } from '../lib/store';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -12,7 +11,6 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function PushNotificationToggle() {
-  const token = useAuthStore((s) => s.token);
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -55,7 +53,7 @@ export function PushNotificationToggle() {
         applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
 
-      await apiPost('/push/subscribe', subscription.toJSON(), token ?? undefined);
+      await apiPost('/push/subscribe', subscription.toJSON());
       setSubscribed(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to enable notifications');
@@ -71,7 +69,7 @@ export function PushNotificationToggle() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
-        await apiPost('/push/unsubscribe', { endpoint: subscription.endpoint }, token ?? undefined);
+        await apiPost('/push/unsubscribe', { endpoint: subscription.endpoint });
         await subscription.unsubscribe();
       }
       setSubscribed(false);

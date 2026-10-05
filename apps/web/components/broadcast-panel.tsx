@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAuthStore } from '../lib/store';
 import { apiGet, apiPost } from '../lib/api';
 import { Send, Users, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -20,7 +19,6 @@ interface BroadcastResult {
 }
 
 export function BroadcastPanel({ petitionId }: { petitionId: string }) {
-  const { token } = useAuthStore();
   const [groups, setGroups] = useState<StakeholderGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -38,7 +36,6 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
     try {
       const data = await apiGet<{ groups: StakeholderGroup[] }>(
         `/admin/stakeholder-groups/petition/${petitionId}`,
-        token!,
       );
 
       setGroups(data.groups || []);
@@ -47,7 +44,7 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [petitionId, token]);
+  }, [petitionId]);
 
   // Load stakeholder groups
   useEffect(() => {
@@ -84,7 +81,6 @@ export function BroadcastPanel({ petitionId }: { petitionId: string }) {
           content,
           category,
         },
-        token!,
       );
 
       if (result.success || result.successCount > 0) {

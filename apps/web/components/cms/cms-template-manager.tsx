@@ -18,7 +18,7 @@ interface CMSTemplate {
 }
 
 export function CMSTemplateManager() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [templates, setTemplates] = useState<CMSTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function CMSTemplateManager() {
   const loadTemplates = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<CMSTemplate[]>('/cms/templates', token!);
+      const data = await apiGet<CMSTemplate[]>('/cms/templates');
       setTemplates(data as CMSTemplate[]);
       setError(null);
     } catch (err) {
@@ -48,25 +48,25 @@ export function CMSTemplateManager() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadTemplates();
-  }, [token, loadTemplates]);
+  }, [isAuthenticated, loadTemplates]);
 
   async function handleSave() {
-    if (!token || !formData.name.trim() || !formData.category.trim()) {
+    if (!isAuthenticated || !formData.name.trim() || !formData.category.trim()) {
       setError('Name and category are required');
       return;
     }
 
     try {
       if (editingId) {
-        const updated = await apiPatch<CMSTemplate>(`/cms/templates/${editingId}`, formData, token);
+        const updated = await apiPatch<CMSTemplate>(`/cms/templates/${editingId}`, formData);
         setTemplates(templates.map((t) => (t.id === editingId ? updated as CMSTemplate : t)));
       } else {
-        const created = await apiPost<CMSTemplate>('/cms/templates', formData, token);
+        const created = await apiPost<CMSTemplate>('/cms/templates', formData);
         setTemplates([created as CMSTemplate, ...templates]);
       }
       resetForm();
@@ -76,9 +76,9 @@ export function CMSTemplateManager() {
   }
 
   async function handleDelete(templateId: string) {
-    if (!token || !confirm('Delete this template?')) return;
+    if (!isAuthenticated || !confirm('Delete this template?')) return;
     try {
-      await apiDelete(`/cms/templates/${templateId}`, token);
+      await apiDelete(`/cms/templates/${templateId}`);
       setTemplates(templates.filter((t) => t.id !== templateId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete template');
@@ -86,9 +86,9 @@ export function CMSTemplateManager() {
   }
 
   async function handleToggleActive(templateId: string, active: boolean) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const updated = await apiPatch<CMSTemplate>(`/cms/templates/${templateId}`, { active }, token);
+      const updated = await apiPatch<CMSTemplate>(`/cms/templates/${templateId}`, { active });
       setTemplates(templates.map((t) => (t.id === templateId ? updated as CMSTemplate : t)));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update template');

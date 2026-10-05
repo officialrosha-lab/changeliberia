@@ -21,7 +21,7 @@ interface ModeratorScope {
 }
 
 export function ModeratorPendingPetitions() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [petitions, setPetitions] = useState<Petition[]>([]);
   const [scope, setScope] = useState<ModeratorScope | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,8 +34,8 @@ export function ModeratorPendingPetitions() {
     try {
       setLoading(true);
       const [p, s] = await Promise.all([
-        apiGet<Petition[]>(`/moderator/petitions?status=${statusFilter === 'all' ? '' : statusFilter}`, token!),
-        apiGet<ModeratorScope>('/moderator/scope', token!),
+        apiGet<Petition[]>(`/moderator/petitions?status=${statusFilter === 'all' ? '' : statusFilter}`),
+        apiGet<ModeratorScope>('/moderator/scope'),
       ]);
       setPetitions(p);
       setScope(s);
@@ -45,21 +45,20 @@ export function ModeratorPendingPetitions() {
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadData();
-  }, [token, statusFilter, loadData]);
+  }, [isAuthenticated, statusFilter, loadData]);
 
   async function handleApprove(petitionId: string, feedback?: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setActionInProgress(true);
       await apiPost(
         `/moderator/petitions/${petitionId}/approve`,
         { feedback },
-        token
       );
       setPetitions((prev) => prev.filter((p) => p.id !== petitionId));
       setSelectedPetitionId(null);
@@ -71,7 +70,7 @@ export function ModeratorPendingPetitions() {
   }
 
   async function handleReject(petitionId: string, reason: string) {
-    if (!token || !reason.trim()) {
+    if (!isAuthenticated || !reason.trim()) {
       setError('Rejection reason is required');
       return;
     }
@@ -80,7 +79,6 @@ export function ModeratorPendingPetitions() {
       await apiPost(
         `/moderator/petitions/${petitionId}/reject`,
         { reason },
-        token
       );
       setPetitions((prev) => prev.filter((p) => p.id !== petitionId));
       setSelectedPetitionId(null);

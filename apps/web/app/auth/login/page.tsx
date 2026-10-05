@@ -8,12 +8,12 @@ import { Card } from '../../../components/ui/card';
 import { useAuthStore } from '../../../lib/store';
 
 export default function LoginPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const router = useRouter();
 
   useEffect(() => {
-    if (token) router.replace('/dashboard');
-  }, [token, router]);
+    if (isAuthenticated) router.replace('/dashboard');
+  }, [isAuthenticated, router]);
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-neutral-950 px-4 py-12 md:py-16">

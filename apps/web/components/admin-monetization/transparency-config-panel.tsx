@@ -6,15 +6,15 @@ import { apiGet, apiPatch } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 export function TransparencyConfigPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
-    apiGet<{ enabled: boolean }>('/admin/monetization/transparency-settings', token)
+    apiGet<{ enabled: boolean }>('/admin/monetization/transparency-settings')
       .then((data) => {
         if (!cancelled) setEnabled(data.enabled);
       })
@@ -24,13 +24,13 @@ export function TransparencyConfigPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function toggle() {
-    if (!token || enabled === null) return;
+    if (!isAuthenticated || enabled === null) return;
     try {
       setSaving(true);
-      await apiPatch('/admin/monetization/transparency-settings', { enabled: !enabled }, token);
+      await apiPatch('/admin/monetization/transparency-settings', { enabled: !enabled });
       setEnabled(!enabled);
       setError(null);
     } catch (err) {

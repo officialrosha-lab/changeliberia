@@ -33,7 +33,7 @@ function formatPrice(product: ResearchProduct): string {
 }
 
 export function ResearchClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const searchParams = useSearchParams();
   const checkoutResult = searchParams.get('checkout');
@@ -50,7 +50,7 @@ export function ResearchClient() {
       setLoading(true);
       const [productsData, purchasesData] = await Promise.all([
         apiGet<ResearchProduct[]>('/research-products'),
-        token ? apiGet<ResearchProductPurchase[]>('/research-products/me', token) : Promise.resolve([]),
+        isAuthenticated ? apiGet<ResearchProductPurchase[]>('/research-products/me') : Promise.resolve([]),
       ]);
       setProducts(productsData);
       setPurchases(purchasesData);
@@ -60,7 +60,7 @@ export function ResearchClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -70,7 +70,7 @@ export function ResearchClient() {
   const purchaseByProductId = new Map(purchases.map((p) => [p.productId, p]));
 
   async function handlePurchase(productKey: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingKey(productKey);
     try {
@@ -82,7 +82,6 @@ export function ResearchClient() {
           successUrl: `${origin}/research?checkout=success`,
           cancelUrl: `${origin}/research?checkout=cancelled`,
         },
-        token,
       );
       window.location.href = res.checkoutUrl;
     } catch (err) {
@@ -92,11 +91,11 @@ export function ResearchClient() {
   }
 
   async function handleDownload(productId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setDownloadingId(productId);
     try {
-      const res = await apiGet<{ url: string }>(`/research-products/${productId}/download`, token);
+      const res = await apiGet<{ url: string }>(`/research-products/${productId}/download`);
       window.open(res.url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get download link');
@@ -172,7 +171,7 @@ export function ResearchClient() {
                         <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
                           Payment processing…
                         </p>
-                      ) : !token ? (
+                      ) : !isAuthenticated ? (
                         <Link
                           href={`/auth/login?next=${encodeURIComponent('/research')}`}
                           className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"

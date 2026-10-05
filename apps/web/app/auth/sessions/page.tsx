@@ -1,20 +1,32 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiPost } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 export default function SessionsPage() {
-  const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
-  function signOutEverywhere() {
-    setToken(null);
-    router.push('/');
+  async function signOutEverywhere() {
+    setSigningOut(true);
+    try {
+      await apiPost('/auth/logout-all', {});
+    } catch {
+      // Even if the request fails, clear local state so the UI doesn't
+      // claim the user is still signed in on this device.
+    } finally {
+      setSession(null);
+      setSigningOut(false);
+      router.push('/');
+    }
   }
 
-  const signedIn = !!token;
+  const signedIn = isAuthenticated;
 
   return (
     <main className="mx-auto max-w-md px-4 py-12">
@@ -57,9 +69,10 @@ export default function SessionsPage() {
           </p>
           <button
             onClick={signOutEverywhere}
-            className="mt-4 rounded-full border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:bg-neutral-800 dark:text-red-400 dark:hover:bg-red-950/30"
+            disabled={signingOut}
+            className="mt-4 rounded-full border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-800 dark:bg-neutral-800 dark:text-red-400 dark:hover:bg-red-950/30"
           >
-            Sign out everywhere
+            {signingOut ? 'Signing out…' : 'Sign out everywhere'}
           </button>
         </div>
       </div>

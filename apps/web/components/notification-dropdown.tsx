@@ -26,17 +26,17 @@ export function NotificationDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { show: showToast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setIsLoading(true);
       const data = await apiGet<{
         notifications: Notification[];
         total: number;
-      }>('/notifications?limit=10&unreadOnly=false', token);
+      }>('/notifications?limit=10&unreadOnly=false');
 
       if (data) {
         setNotifications(data.notifications);
@@ -49,20 +49,20 @@ export function NotificationDropdown() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const data = await apiGet<{ unreadCount: number }>('/notifications/unread-count', token);
+      const data = await apiGet<{ unreadCount: number }>('/notifications/unread-count');
       if (data) {
         setUnreadCount(data.unreadCount);
       }
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   // Handle new notification via WebSocket
   const handleNewNotification = (notification: Notification) => {
@@ -108,9 +108,9 @@ export function NotificationDropdown() {
 
   // Mark notification as read
   const handleMarkAsRead = async (notificationId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPatch(`/notifications/${notificationId}/read`, {}, token);
+      await apiPatch(`/notifications/${notificationId}/read`, {});
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === notificationId ? { ...n, status: 'READ' as const } : n,
@@ -124,9 +124,9 @@ export function NotificationDropdown() {
 
   // Archive notification
   const handleArchive = async (notificationId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPatch(`/notifications/${notificationId}/archive`, {}, token);
+      await apiPatch(`/notifications/${notificationId}/archive`, {});
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       showToast('Notification archived', 'info');
     } catch {
@@ -136,9 +136,9 @@ export function NotificationDropdown() {
 
   // Mark all as read
   const handleMarkAllAsRead = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPost('/notifications/mark-all-read', {}, token);
+      await apiPost('/notifications/mark-all-read', {});
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, status: 'READ' as const })),
       );
@@ -154,7 +154,7 @@ export function NotificationDropdown() {
     if (isOpen) {
       fetchNotifications();
     }
-  }, [isOpen, token, fetchNotifications]);
+  }, [isOpen, isAuthenticated, fetchNotifications]);
 
   // Fetch unread count on mount and set up polling as fallback
   useEffect(() => {
@@ -172,7 +172,7 @@ export function NotificationDropdown() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [isConnected, token, fetchUnreadCount]);
+  }, [isConnected, isAuthenticated, fetchUnreadCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

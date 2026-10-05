@@ -29,14 +29,14 @@ type SubmissionsResponse = {
 type Phase = 'loading' | 'denied' | 'ok';
 
 export default function GovernmentSubmissionsPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [phase, setPhase] = useState<Phase>('loading');
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       setPhase('denied');
       setLoading(false);
       return;
@@ -48,7 +48,7 @@ export default function GovernmentSubmissionsPage() {
       setLoading(true);
       setError(null);
       try {
-        const me = await apiGet<{ role: string }>('/users/me', token);
+        const me = await apiGet<{ role: string }>('/users/me');
         if (cancelled) return;
         if (me.role !== 'ADMIN') {
           setPhase('denied');
@@ -56,7 +56,7 @@ export default function GovernmentSubmissionsPage() {
           return;
         }
         setPhase('ok');
-        const response = await apiGet<SubmissionsResponse>('/government/submissions', token);
+        const response = await apiGet<SubmissionsResponse>('/government/submissions');
         if (!cancelled) {
           setSubmissions(response.submissions || []);
         }
@@ -76,7 +76,7 @@ export default function GovernmentSubmissionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (phase === 'loading') {
     return (
@@ -93,7 +93,7 @@ export default function GovernmentSubmissionsPage() {
           <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
           <p className="mt-3 text-red-600 dark:text-red-400">
             This page requires an Admin account.{' '}
-            {!token && (
+            {!isAuthenticated && (
               <Link href="/auth/login" className="font-semibold underline">
                 Sign in
               </Link>

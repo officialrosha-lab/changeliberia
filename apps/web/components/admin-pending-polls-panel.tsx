@@ -18,7 +18,7 @@ type PollSummary = {
 };
 
 export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState(initial);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -27,10 +27,10 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
   const toast = useToast();
 
   async function approvePoll(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setApprovingId(id);
     try {
-      await apiPost(`/polls/${id}/approve`, {}, token);
+      await apiPost(`/polls/${id}/approve`, {});
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -41,10 +41,10 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
   }
 
   async function rejectPoll(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setRejectingId(id);
     try {
-      await apiPost(`/polls/${id}/reject`, {}, token);
+      await apiPost(`/polls/${id}/reject`, {});
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -55,14 +55,14 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
   }
 
   async function deletePoll(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!window.confirm('Delete this poll submission? This action cannot be undone.')) {
       return;
     }
 
     setDeletingId(id);
     try {
-      await apiDelete(`/admin/polls/${id}`, token);
+      await apiDelete(`/admin/polls/${id}`);
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -191,7 +191,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                       <button
                         type="button"
                         onClick={() => approvePoll(poll.id)}
-                        disabled={!token || approvingId === poll.id}
+                        disabled={!isAuthenticated || approvingId === poll.id}
                         className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                       >
                         {approvingId === poll.id ? 'Approving…' : 'Approve'}
@@ -199,7 +199,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                       <button
                         type="button"
                         onClick={() => rejectPoll(poll.id)}
-                        disabled={!token || rejectingId === poll.id}
+                        disabled={!isAuthenticated || rejectingId === poll.id}
                         className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                       >
                         {rejectingId === poll.id ? 'Rejecting…' : 'Reject'}
@@ -207,7 +207,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                       <button
                         type="button"
                         onClick={() => deletePoll(poll.id)}
-                        disabled={!token || deletingId === poll.id}
+                        disabled={!isAuthenticated || deletingId === poll.id}
                         className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
                       >
                         {deletingId === poll.id ? 'Deleting…' : 'Delete'}
@@ -229,7 +229,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                     <button
                       type="button"
                       onClick={() => approvePoll(poll.id)}
-                      disabled={!token || approvingId === poll.id}
+                      disabled={!isAuthenticated || approvingId === poll.id}
                       className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                     >
                       {approvingId === poll.id ? 'Approving…' : 'Approve'}
@@ -237,7 +237,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                     <button
                       type="button"
                       onClick={() => rejectPoll(poll.id)}
-                      disabled={!token || rejectingId === poll.id}
+                      disabled={!isAuthenticated || rejectingId === poll.id}
                       className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                     >
                       {rejectingId === poll.id ? 'Rejecting…' : 'Reject'}
@@ -245,7 +245,7 @@ export function AdminPendingPollsPanel({ initial }: { initial: PollSummary[] }) 
                     <button
                       type="button"
                       onClick={() => deletePoll(poll.id)}
-                      disabled={!token || deletingId === poll.id}
+                      disabled={!isAuthenticated || deletingId === poll.id}
                       className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
                     >
                       {deletingId === poll.id ? 'Deleting…' : 'Delete'}

@@ -76,21 +76,21 @@ const DAY_RANGES = [
 ] as const;
 
 export function AdminGeographicInsights() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [days, setDays] = useState('30');
   const [data, setData] = useState<GeographicInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     // Intentional: flips the loading indicator back on synchronously so
     // stale data isn't shown while the new day-range fetch runs.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    apiGet<GeographicInsights>(`/analytics/geographic-insights?days=${days}`, token)
+    apiGet<GeographicInsights>(`/analytics/geographic-insights?days=${days}`)
       .then((result) => {
         if (!cancelled) setData(result);
       })
@@ -103,7 +103,7 @@ export function AdminGeographicInsights() {
     return () => {
       cancelled = true;
     };
-  }, [token, days]);
+  }, [isAuthenticated, days]);
 
   return (
     <div className="space-y-6">

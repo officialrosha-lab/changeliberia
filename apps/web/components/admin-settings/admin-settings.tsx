@@ -33,7 +33,7 @@ interface SystemSettings {
 }
 
 export function AdminSettings() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [scopes, setScopes] = useState<ModeratorScope[]>([]);
   const [templates, setTemplates] = useState<PermissionTemplate[]>([]);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
@@ -48,9 +48,9 @@ export function AdminSettings() {
     try {
       setLoading(true);
       const [s, t, st] = await Promise.all([
-        apiGet<ModeratorScope[]>('/admin/settings/moderator-scopes', token!),
-        apiGet<PermissionTemplate[]>('/admin/settings/permission-templates', token!),
-        apiGet<SystemSettings>('/admin/settings/system', token!),
+        apiGet<ModeratorScope[]>('/admin/settings/moderator-scopes'),
+        apiGet<PermissionTemplate[]>('/admin/settings/permission-templates'),
+        apiGet<SystemSettings>('/admin/settings/system'),
       ]);
       setScopes(s);
       setTemplates(t);
@@ -61,17 +61,17 @@ export function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadData();
-  }, [token, loadData]);
+  }, [isAuthenticated, loadData]);
 
   async function handleSaveScope(scope: ModeratorScope) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPost(`/admin/settings/moderator-scopes/${scope.moderatorId}`, scope, token);
+      await apiPost(`/admin/settings/moderator-scopes/${scope.moderatorId}`, scope);
       setEditingScope(null);
       await loadData();
     } catch (err) {
@@ -80,12 +80,11 @@ export function AdminSettings() {
   }
 
   async function handleCreateTemplate() {
-    if (!token || !newTemplateName.trim()) return;
+    if (!isAuthenticated || !newTemplateName.trim()) return;
     try {
       await apiPost(
         '/admin/settings/permission-templates',
         { name: newTemplateName, permissions: newTemplatePerms },
-        token
       );
       setNewTemplateName('');
       setNewTemplatePerms([]);
@@ -96,9 +95,9 @@ export function AdminSettings() {
   }
 
   async function handleDeleteTemplate(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiDelete(`/admin/settings/permission-templates/${id}`, token);
+      await apiDelete(`/admin/settings/permission-templates/${id}`);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete template');
@@ -106,9 +105,9 @@ export function AdminSettings() {
   }
 
   async function handleSaveSettings(newSettings: SystemSettings) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPatch('/admin/settings/system', newSettings, token);
+      await apiPatch('/admin/settings/system', newSettings);
       setSettings(newSettings);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
