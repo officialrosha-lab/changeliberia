@@ -239,7 +239,7 @@ export default async function PetitionPage({
         <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8 lg:gap-10">
 
           {/* LEFT — main content */}
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
 
             {checkoutResult === 'success' && (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
@@ -480,7 +480,7 @@ export default async function PetitionPage({
           </div>
 
           {/* RIGHT — sign form (sticky) */}
-          <aside className="space-y-4 md:sticky md:top-20 md:self-start">
+          <aside className="min-w-0 space-y-4 md:sticky md:top-20 md:self-start">
             <SignForm
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}
