@@ -19,7 +19,7 @@ interface UseAnalyticsRealtimeOptions {
  */
 export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) {
   const { types = ['message_count', 'broadcast_count'], autoConnect = true } = options;
-  const token = useAuthStore((s: AuthState) => s.token);
+  const isAuthenticated = useAuthStore((s: AuthState) => s.isAuthenticated);
   const [connected, setConnected] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [update, setUpdate] = useState<AnalyticsUpdate | null>(null);
@@ -35,7 +35,7 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
   }, []);
 
   const connect = useCallback(async () => {
-    if (!token || socketRef.current?.connected) {
+    if (!isAuthenticated || socketRef.current?.connected) {
       return;
     }
 
@@ -43,7 +43,7 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
       setError(null);
       const socket = io(`${getApiBase()}/analytics`, {
         auth: {
-          token,
+          isAuthenticated,
         },
         reconnection: true,
         reconnectionDelay: 1000,
@@ -95,7 +95,7 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
       console.error('[Analytics] Connection failed:', message);
       setError(message);
     }
-  }, [token, types, getApiBase]);
+  }, [isAuthenticated, types, getApiBase]);
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -107,9 +107,9 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
     }
   }, []);
 
-  // Auto-connect on mount if enabled and token available
+  // Auto-connect on mount if enabled and isAuthenticated available
   useEffect(() => {
-    if (autoConnect && token && !socketRef.current?.connected) {
+    if (autoConnect && isAuthenticated && !socketRef.current?.connected) {
       // Intentional: `connect` synchronously resets the error state and
       // opens the socket as part of establishing the external connection
       // when auth/auto-connect settings change.
@@ -121,7 +121,7 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
       // Keep connection alive on unmount for shared hook usage
       // Individual components should call disconnect() if needed
     };
-  }, [token, autoConnect, connect]);
+  }, [isAuthenticated, autoConnect, connect]);
 
   // Cleanup on unmount
   useEffect(() => {

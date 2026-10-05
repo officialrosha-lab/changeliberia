@@ -64,7 +64,7 @@ function formatPrice(plan: WorkspacePlan): string {
 }
 
 export function OrganizationDetailClient({ organizationId }: { organizationId: string }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,21 +88,20 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
+    if (!isAuthenticated) {
       router.replace(`/auth/login?next=${encodeURIComponent(`/organizations/${organizationId}`)}`);
     }
-  }, [hydrated, token, router, organizationId]);
+  }, [hydrated, isAuthenticated, router, organizationId]);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const [me, orgData, subData, plansData] = await Promise.all([
-        apiGet<{ id: string }>('/users/me', token),
-        apiGet<OrganizationDetail>(`/organizations/${organizationId}`, token),
+        apiGet<{ id: string }>('/users/me'),
+        apiGet<OrganizationDetail>(`/organizations/${organizationId}`),
         apiGet<{ subscription: OrgSubscription | null }>(
           `/organizations/${organizationId}/subscription`,
-          token,
         ),
         apiGet<WorkspacePlan[]>('/workspace-plans?scope=ORGANIZATION'),
       ]);
@@ -116,12 +115,12 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
     } finally {
       setLoading(false);
     }
-  }, [token, organizationId]);
+  }, [isAuthenticated, organizationId]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     void load();
-  }, [token, load]);
+  }, [isAuthenticated, load]);
 
   const myMembership = org?.memberships.find((m) => m.userId === myUserId) ?? null;
   const canManage = myMembership ? MANAGE_ROLES.includes(myMembership.role) : false;
@@ -134,14 +133,13 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
   const memberCount = org?.memberships.length ?? 0;
 
   async function handleInvite() {
-    if (!token || !inviteEmail.trim()) return;
+    if (!isAuthenticated || !inviteEmail.trim()) return;
     setError(null);
     setInviting(true);
     try {
       await apiPost(
         `/organizations/${organizationId}/members`,
         { email: inviteEmail.trim(), role: inviteRole },
-        token,
       );
       setInviteEmail('');
       await load();
@@ -153,11 +151,11 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
   }
 
   async function handleRemove(targetUserId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setMemberActionUserId(targetUserId);
     try {
-      await apiDelete(`/organizations/${organizationId}/members/${targetUserId}`, token);
+      await apiDelete(`/organizations/${organizationId}/members/${targetUserId}`);
       if (targetUserId === myUserId) {
         router.push('/organizations');
         return;
@@ -171,11 +169,11 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
   }
 
   async function handleRoleChange(targetUserId: string, role: OrgRole) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setMemberActionUserId(targetUserId);
     try {
-      await apiPatch(`/organizations/${organizationId}/members/${targetUserId}`, { role }, token);
+      await apiPatch(`/organizations/${organizationId}/members/${targetUserId}`, { role });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change role');
@@ -185,7 +183,7 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
   }
 
   async function handleSubscribe(planKey: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingPlanKey(planKey);
     try {
@@ -197,7 +195,6 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
           successUrl: `${origin}/organizations/${organizationId}?checkout=success`,
           cancelUrl: `${origin}/organizations/${organizationId}?checkout=cancelled`,
         },
-        token,
       );
       window.location.href = res.checkoutUrl;
     } catch (err) {
@@ -207,11 +204,11 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
   }
 
   async function handleCancel() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setCancelling(true);
     try {
-      await apiPost(`/organizations/${organizationId}/cancel`, {}, token);
+      await apiPost(`/organizations/${organizationId}/cancel`, {});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
@@ -220,7 +217,7 @@ export function OrganizationDetailClient({ organizationId }: { organizationId: s
     }
   }
 
-  if (!hydrated || !token || (loading && !org)) {
+  if (!hydrated || !isAuthenticated || (loading && !org)) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-16 text-center text-sm text-zinc-500 dark:text-neutral-400">
         Loading…

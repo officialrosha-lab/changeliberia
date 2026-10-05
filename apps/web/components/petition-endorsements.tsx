@@ -23,7 +23,7 @@ interface Endorsement {
 }
 
 export function PetitionEndorsements({ petitionId }: { petitionId: string }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [endorserName, setEndorserName] = useState('');
@@ -46,7 +46,7 @@ export function PetitionEndorsements({ petitionId }: { petitionId: string }) {
   }, [petitionId]);
 
   async function submit() {
-    if (!token || !endorserName.trim()) return;
+    if (!isAuthenticated || !endorserName.trim()) return;
     setSubmitting(true);
     setStatus(null);
     try {
@@ -59,7 +59,6 @@ export function PetitionEndorsements({ petitionId }: { petitionId: string }) {
           organization: organization.trim() || undefined,
           statement: statement.trim() || undefined,
         },
-        token,
       );
       setStatus('Thank you — your endorsement has been submitted for review.');
       setEndorserName('');
@@ -83,7 +82,7 @@ export function PetitionEndorsements({ petitionId }: { petitionId: string }) {
             Traditional, religious, civic, and business leaders publicly backing this petition.
           </p>
         </div>
-        {token && (
+        {isAuthenticated && (
           <button
             type="button"
             onClick={() => setShowForm((v) => !v)}

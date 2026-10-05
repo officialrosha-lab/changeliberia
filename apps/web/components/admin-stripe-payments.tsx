@@ -49,7 +49,7 @@ interface Payment {
 }
 
 export function AdminStripePayments() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export function AdminStripePayments() {
 
   useEffect(() => {
     const fetchPayments = async () => {
-      if (!token) {
+      if (!isAuthenticated) {
         setError('Not authenticated');
         setLoading(false);
         return;
@@ -65,7 +65,7 @@ export function AdminStripePayments() {
 
       try {
         const result = await apiGet<{ payments: Payment[] }>
-          (`/admin/stripe/payments?days=${dateFilter}`, token);
+          (`/admin/stripe/payments?days=${dateFilter}`);
         setPayments(result.payments || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -75,7 +75,7 @@ export function AdminStripePayments() {
     };
 
     fetchPayments();
-  }, [dateFilter, token]);
+  }, [dateFilter, isAuthenticated]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

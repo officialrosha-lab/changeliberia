@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { Eye, EyeOff, Mail } from 'lucide-react';
 import { apiPost } from '../../../lib/api';
-import { useAuthStore } from '../../../lib/store';
+import { useAuthStore, type AuthUser } from '../../../lib/store';
 
 export function EmailLoginForm() {
-  const setToken = useAuthStore((s) => s.setToken);
+  const setSession = useAuthStore((s) => s.setSession);
   const setAuthMethod = useAuthStore((s) => s.setAuthMethod);
   const setUserEmail = useAuthStore((s) => s.setUserEmail);
   const router = useRouter();
@@ -33,12 +33,12 @@ export function EmailLoginForm() {
     try {
       const password = String(form.get('password'));
 
-      const data = await apiPost<{ accessToken: string }>('/auth/login/email', {
+      const data = await apiPost<{ user: AuthUser }>('/auth/login/email', {
         email,
         password,
       });
 
-      setToken(data.accessToken);
+      setSession(data.user);
       setAuthMethod('email');
       setUserEmail(email);
       const next = searchParams.get('next') || '/dashboard';

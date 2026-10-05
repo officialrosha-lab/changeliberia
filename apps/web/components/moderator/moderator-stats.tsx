@@ -15,7 +15,7 @@ interface ModeratorStats {
 }
 
 export function ModeratorStats() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [stats, setStats] = useState<ModeratorStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,6 @@ export function ModeratorStats() {
       setLoading(true);
       const data = await apiGet<ModeratorStats>(
         `/moderator/stats?days=${period}`,
-        token!
       );
       setStats(data);
       setError(null);
@@ -35,12 +34,12 @@ export function ModeratorStats() {
     } finally {
       setLoading(false);
     }
-  }, [token, period]);
+  }, [period]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadStats();
-  }, [token, period, loadStats]);
+  }, [isAuthenticated, period, loadStats]);
 
   if (loading) {
     return <div className="text-center py-8">Loading stats...</div>;

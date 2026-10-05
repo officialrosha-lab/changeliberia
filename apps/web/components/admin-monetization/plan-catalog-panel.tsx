@@ -162,7 +162,7 @@ export function PlanCatalogPanel({
   columns,
   formatCell,
 }: PlanCatalogPanelProps) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState<PlanRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,10 +172,10 @@ export function PlanCatalogPanel({
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<PlanRow[]>(listPath, token);
+      const data = await apiGet<PlanRow[]>(listPath);
       setRows(data);
       setError(null);
     } catch (err) {
@@ -183,16 +183,16 @@ export function PlanCatalogPanel({
     } finally {
       setLoading(false);
     }
-  }, [token, listPath]);
+  }, [isAuthenticated, listPath]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleCreate() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPost(createPath, buildApiPayload(createFields, createValues), token);
+      await apiPost(createPath, buildApiPayload(createFields, createValues));
       setCreateValues({});
       setShowCreate(false);
       await load();
@@ -212,9 +212,9 @@ export function PlanCatalogPanel({
   }
 
   async function handleSaveEdit(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPatch(updatePath(id), buildApiPayload(updateFields, editValues), token);
+      await apiPatch(updatePath(id), buildApiPayload(updateFields, editValues));
       setEditingId(null);
       await load();
     } catch (err) {
@@ -223,9 +223,9 @@ export function PlanCatalogPanel({
   }
 
   async function handleToggleActive(row: PlanRow) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPatch(updatePath(row.id), { active: !row.active }, token);
+      await apiPatch(updatePath(row.id), { active: !row.active });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update');

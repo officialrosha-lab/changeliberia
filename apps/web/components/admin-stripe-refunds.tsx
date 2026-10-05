@@ -52,7 +52,7 @@ interface Refund {
 }
 
 export function AdminStripeRefunds() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const toast = useToast();
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,21 +62,21 @@ export function AdminStripeRefunds() {
   const [creating, setCreating] = useState(false);
 
   const fetchRefunds = useCallback(async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       setError('Not authenticated');
       setLoading(false);
       return;
     }
 
     try {
-      const result = await apiGet<{ refunds: Refund[] }>('/admin/stripe/refunds', token);
+      const result = await apiGet<{ refunds: Refund[] }>('/admin/stripe/refunds');
       setRefunds(result.refunds || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchRefunds();
@@ -87,7 +87,7 @@ export function AdminStripeRefunds() {
       toast.show('Please fill all fields', 'error');
       return;
     }
-    if (!token) {
+    if (!isAuthenticated) {
       toast.show('Not authenticated', 'error');
       return;
     }
@@ -101,7 +101,6 @@ export function AdminStripeRefunds() {
           amount: parseFloat(formData.amount),
           reason: formData.reason,
         },
-        token
       );
       await fetchRefunds();
       setFormData({ paymentId: '', amount: '', reason: '' });

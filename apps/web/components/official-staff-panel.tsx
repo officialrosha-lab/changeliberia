@@ -35,7 +35,7 @@ interface StaffMember {
 }
 
 export function OfficialStaffPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +53,11 @@ export function OfficialStaffPanel() {
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   const load = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<StaffMember[]>('/officials/staff', token);
+      const data = await apiGet<StaffMember[]>('/officials/staff');
       setStaff(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load staff');
@@ -69,14 +69,14 @@ export function OfficialStaffPanel() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function invite() {
-    if (!token || !phone.trim()) return;
+    if (!isAuthenticated || !phone.trim()) return;
     setInviting(true);
     setInviteError(null);
     try {
-      await apiPost('/officials/staff/invite', { phone: phone.trim(), role, ...permissions }, token);
+      await apiPost('/officials/staff/invite', { phone: phone.trim(), role, ...permissions });
       setPhone('');
       setPermissions({ canDraft: false, canRespond: false, canManageInbox: false, canGenerateReports: false });
       await load();
@@ -88,10 +88,10 @@ export function OfficialStaffPanel() {
   }
 
   async function togglePermission(member: StaffMember, key: PermissionKey) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(member.id);
     try {
-      await apiPatch(`/officials/staff/${member.id}`, { [key]: !member[key] }, token);
+      await apiPatch(`/officials/staff/${member.id}`, { [key]: !member[key] });
       await load();
     } finally {
       setBusyId(null);
@@ -99,10 +99,10 @@ export function OfficialStaffPanel() {
   }
 
   async function revoke(member: StaffMember) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(member.id);
     try {
-      await apiPost(`/officials/staff/${member.id}/revoke`, {}, token);
+      await apiPost(`/officials/staff/${member.id}/revoke`, {});
       await load();
     } finally {
       setBusyId(null);

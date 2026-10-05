@@ -42,7 +42,7 @@ const STATUS_LABEL: Record<SponsorshipPurchase['status'], string> = {
 };
 
 export function SponsorshipsClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const searchParams = useSearchParams();
   const checkoutResult = searchParams.get('checkout');
@@ -58,7 +58,7 @@ export function SponsorshipsClient() {
       setLoading(true);
       const [packagesData, purchasesData] = await Promise.all([
         apiGet<SponsorshipPackage[]>('/sponsorships/packages'),
-        token ? apiGet<SponsorshipPurchase[]>('/sponsorships/me', token) : Promise.resolve([]),
+        isAuthenticated ? apiGet<SponsorshipPurchase[]>('/sponsorships/me') : Promise.resolve([]),
       ]);
       setPackages(packagesData);
       setPurchases(purchasesData);
@@ -68,7 +68,7 @@ export function SponsorshipsClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -76,7 +76,7 @@ export function SponsorshipsClient() {
   }, [hydrated, load]);
 
   async function handlePurchase(packageKey: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingKey(packageKey);
     try {
@@ -88,7 +88,6 @@ export function SponsorshipsClient() {
           successUrl: `${origin}/sponsorships?checkout=success`,
           cancelUrl: `${origin}/sponsorships?checkout=cancelled`,
         },
-        token,
       );
       window.location.href = res.checkoutUrl;
     } catch (err) {
@@ -178,7 +177,7 @@ export function SponsorshipsClient() {
                     )}
                     <p className="text-lg font-semibold text-zinc-900 dark:text-white">{formatPrice(pkg)}</p>
                     <p className="text-xs text-zinc-500 dark:text-neutral-400">{pkg.durationDays} days</p>
-                    {!token ? (
+                    {!isAuthenticated ? (
                       <Link
                         href={`/auth/login?next=${encodeURIComponent('/sponsorships')}`}
                         className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"

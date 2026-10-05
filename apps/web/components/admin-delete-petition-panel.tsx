@@ -5,7 +5,7 @@ import { apiDelete } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 
 export function AdminDeletePetitionPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [petitionId, setPetitionId] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -13,7 +13,7 @@ export function AdminDeletePetitionPanel() {
 
   async function handleDelete() {
     const trimmedId = petitionId.trim();
-    if (!token || !trimmedId) return;
+    if (!isAuthenticated || !trimmedId) return;
     if (!window.confirm('Delete this petition from the platform? This action cannot be undone.')) {
       return;
     }
@@ -23,7 +23,7 @@ export function AdminDeletePetitionPanel() {
     setIsDeleting(true);
 
     try {
-      await apiDelete(`/admin/petitions/${trimmedId}`, token);
+      await apiDelete(`/admin/petitions/${trimmedId}`);
       setStatusMessage(`Petition ${trimmedId} was deleted successfully.`);
       setPetitionId('');
     } catch (error) {
@@ -54,7 +54,7 @@ export function AdminDeletePetitionPanel() {
         <button
           type="button"
           onClick={handleDelete}
-          disabled={!token || !petitionId.trim() || isDeleting}
+          disabled={!isAuthenticated || !petitionId.trim() || isDeleting}
           className="w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
         >
           {isDeleting ? 'Deleting…' : 'Delete petition'}

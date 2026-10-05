@@ -32,7 +32,7 @@ const PRIORITY_OPTIONS = [
 ];
 
 export function ContactsManager() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -54,7 +54,7 @@ export function ContactsManager() {
   const loadInstitutions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<Institution[]>('/admin/directory/institutions', token!);
+      const data = await apiGet<Institution[]>('/admin/directory/institutions');
       setInstitutions(data);
       setError(null);
     } catch (err) {
@@ -62,18 +62,17 @@ export function ContactsManager() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     void loadInstitutions();
-  }, [token, loadInstitutions]);
+  }, [isAuthenticated, loadInstitutions]);
 
   async function loadContacts(institutionId: string) {
     try {
       const data = await apiGet<ContactEntry[]>(
         `/admin/directory/institutions/${institutionId}/contacts`,
-        token!,
       );
       setContacts(data || []);
     } catch (err) {
@@ -85,7 +84,6 @@ export function ContactsManager() {
     try {
       const data = await apiGet<Department[]>(
         `/admin/directory/institutions/${institutionId}/departments`,
-        token!,
       );
       setDepartments(data || []);
     } catch (err) {
@@ -116,7 +114,7 @@ export function ContactsManager() {
   }
 
   async function handleSubmitContact() {
-    if (!token || !selectedInstitutionId) return;
+    if (!isAuthenticated || !selectedInstitutionId) return;
     setError(null);
 
     const body = {
@@ -137,13 +135,11 @@ export function ContactsManager() {
         await apiPatch(
           `/admin/directory/contacts/${editContactId}`,
           body,
-          token,
         );
       } else {
         await apiPost(
           `/admin/directory/institutions/${selectedInstitutionId}/contacts`,
           body,
-          token,
         );
       }
       await loadContacts(selectedInstitutionId);
@@ -178,11 +174,11 @@ export function ContactsManager() {
   }
 
   async function handleDeleteContact(contactId: string) {
-    if (!token || !selectedInstitutionId) return;
+    if (!isAuthenticated || !selectedInstitutionId) return;
     if (!confirm('Delete this contact? This cannot be undone.')) return;
 
     try {
-      await apiDelete(`/admin/directory/contacts/${contactId}`, token);
+      await apiDelete(`/admin/directory/contacts/${contactId}`);
       await loadContacts(selectedInstitutionId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete contact');

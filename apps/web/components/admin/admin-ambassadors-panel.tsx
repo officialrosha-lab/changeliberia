@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAuthStore } from '../../lib/store';
 import { apiPatch } from '../../lib/api';
 
 type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -27,7 +26,6 @@ interface AdminAmbassadorsPanelProps {
 }
 
 export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsPanelProps) {
-  const { token } = useAuthStore();
   const [applications, setApplications] = useState<Ambassador[]>(initialApplications);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -51,7 +49,7 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
       await apiPatch(`/ambassadors/admin/${id}`, {
         status: newStatus,
         notes: updateNotes || undefined,
-      }, token as string | undefined);
+      });
 
       setApplications((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: newStatus, notes: updateNotes || a.notes } : a))

@@ -59,14 +59,14 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
 }
 
 export function OverviewPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
-    apiGet<DashboardSummary>('/admin/monetization/dashboard', token)
+    apiGet<DashboardSummary>('/admin/monetization/dashboard')
       .then((data) => {
         if (!cancelled) setSummary(data);
       })
@@ -76,7 +76,7 @@ export function OverviewPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (error) {
     return (

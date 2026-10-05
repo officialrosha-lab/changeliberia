@@ -9,12 +9,12 @@ import { Card } from '../../../components/ui/card';
 import { useAuthStore } from '../../../lib/store';
 
 export default function SignupPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const router = useRouter();
 
   useEffect(() => {
-    if (token) router.replace('/dashboard');
-  }, [token, router]);
+    if (isAuthenticated) router.replace('/dashboard');
+  }, [isAuthenticated, router]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 md:py-14">

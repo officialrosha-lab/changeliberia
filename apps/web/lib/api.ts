@@ -239,12 +239,15 @@ export async function apiGetBlob(path: string, token?: string): Promise<Blob> {
 export async function apiPostFormData<T>(
   path: string,
   formData: FormData,
-  token: string,
+  token?: string,
 ): Promise<T> {
   const base = getApiBase();
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { ...csrfHeader(), Authorization: `Bearer ${token}` },
+    headers: {
+      ...csrfHeader(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
   if (!res.ok) {

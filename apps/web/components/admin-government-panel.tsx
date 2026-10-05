@@ -45,7 +45,7 @@ const STATUS_OPTIONS: SubmissionStatus[] = [
 ];
 
 export function AdminGovernmentPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [petitionId, setPetitionId] = useState('');
   const [statusResponse, setStatusResponse] = useState<StatusResponse | null>(null);
@@ -57,13 +57,13 @@ export function AdminGovernmentPanel() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     setLoadingStats(true);
 
     void (async () => {
       try {
-        const response = await apiGet<StatsResponse>('/government/stats', token);
+        const response = await apiGet<StatsResponse>('/government/stats');
         if (!cancelled) setStats(response);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load government stats');
@@ -75,10 +75,10 @@ export function AdminGovernmentPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function loadStatus() {
-    if (!token || !petitionId.trim()) {
+    if (!isAuthenticated || !petitionId.trim()) {
       setError('Enter a petition ID first.');
       return;
     }
@@ -87,7 +87,7 @@ export function AdminGovernmentPanel() {
     setMessage(null);
 
     try {
-      const response = await apiGet<StatusResponse>(`/government/status/${petitionId.trim()}`, token);
+      const response = await apiGet<StatusResponse>(`/government/status/${petitionId.trim()}`);
       setStatusResponse(response);
       setSelectedStatus(response.status === 'NOT_SUBMITTED' ? 'SUBMITTED' : response.status);
     } catch (err) {
@@ -99,7 +99,7 @@ export function AdminGovernmentPanel() {
   }
 
   async function updateStatus() {
-    if (!token || !petitionId.trim()) {
+    if (!isAuthenticated || !petitionId.trim()) {
       setError('Enter a petition ID before saving status.');
       return;
     }
@@ -111,7 +111,6 @@ export function AdminGovernmentPanel() {
       const response = await apiPost<{ success: boolean; message: string }>(
         `/government/status/${petitionId.trim()}`,
         { status: selectedStatus },
-        token,
       );
       setMessage(response.message || 'Submission status updated successfully.');
       await loadStatus();

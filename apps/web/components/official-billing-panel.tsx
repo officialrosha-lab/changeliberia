@@ -44,7 +44,7 @@ function formatPrice(plan: WorkspacePlan): string {
 }
 
 export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: string | null }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [isOfficeholder, setIsOfficeholder] = useState(false);
@@ -56,12 +56,12 @@ export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: stri
   const [cancelling, setCancelling] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const [me, myUser] = await Promise.all([
-        apiGet<InstitutionMe>('/officials/me', token),
-        apiGet<{ id: string }>('/users/me', token),
+        apiGet<InstitutionMe>('/officials/me'),
+        apiGet<{ id: string }>('/users/me'),
       ]);
       setInstitutionId(me.id);
       setIsOfficeholder(me.holderUserId === myUser.id);
@@ -69,7 +69,6 @@ export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: stri
       const [subData, plansData] = await Promise.all([
         apiGet<{ subscription: InstitutionSubscription | null }>(
           `/institutions/${me.id}/subscription`,
-          token,
         ),
         apiGet<WorkspacePlan[]>('/workspace-plans?scope=INSTITUTION'),
       ]);
@@ -81,14 +80,14 @@ export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: stri
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleSubscribe(planKey: string) {
-    if (!token || !institutionId) return;
+    if (!isAuthenticated || !institutionId) return;
     setError(null);
     setPendingPlanKey(planKey);
     try {
@@ -100,7 +99,6 @@ export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: stri
           successUrl: `${origin}/official/dashboard?tab=billing&checkout=success`,
           cancelUrl: `${origin}/official/dashboard?tab=billing&checkout=cancelled`,
         },
-        token,
       );
       window.location.assign(res.checkoutUrl);
     } catch (err) {
@@ -110,11 +108,11 @@ export function OfficialBillingPanel({ checkoutResult }: { checkoutResult?: stri
   }
 
   async function handleCancel() {
-    if (!token || !institutionId) return;
+    if (!isAuthenticated || !institutionId) return;
     setError(null);
     setCancelling(true);
     try {
-      await apiPost(`/institutions/${institutionId}/cancel`, {}, token);
+      await apiPost(`/institutions/${institutionId}/cancel`, {});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel subscription');

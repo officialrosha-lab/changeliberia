@@ -52,16 +52,16 @@ interface BadgesResponse {
 }
 
 export function AdminFacebookSocialFeatures() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [badges, setBadges] = useState<BadgeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
 
   const fetchBadges = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<BadgesResponse>('/admin/facebook/badges', token);
+      const result = await apiGet<BadgesResponse>('/admin/facebook/badges');
       const badgeData = Object.entries(result.summary).map(([type, count]) => ({
         badgeType: type,
         totalUnlocks: count,
@@ -75,14 +75,14 @@ export function AdminFacebookSocialFeatures() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const handleBadgeSelect = useCallback(
     async (badgeType: string) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       setSelectedBadge(badgeType);
       try {
-        const result = await apiGet<BadgeData>(`/admin/facebook/badges/${badgeType}/stats`, token);
+        const result = await apiGet<BadgeData>(`/admin/facebook/badges/${badgeType}/stats`);
         setBadges((prev) =>
           prev.map((b) =>
             b.badgeType === badgeType ? { ...b, recentUnlocks: result.recentUnlocks } : b,
@@ -92,7 +92,7 @@ export function AdminFacebookSocialFeatures() {
         console.error('Error fetching badge stats:', err);
       }
     },
-    [token],
+    [isAuthenticated],
   );
 
   useEffect(() => {

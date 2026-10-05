@@ -4,8 +4,10 @@ import { FormEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiPost } from '../../../lib/api';
+import { useAuthStore, type AuthUser } from '../../../lib/store';
 
 export default function VerifyEmailPage() {
+  const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') || '');
@@ -25,9 +27,13 @@ export default function VerifyEmailPage() {
     setStatus('verifying');
 
     try {
-      await apiPost('/auth/verify-email', { email, code });
+      const data = await apiPost<{ user: AuthUser }>('/auth/verify-email', {
+        email,
+        code,
+      });
+      setSession(data.user);
       setStatus('success');
-      setTimeout(() => router.push('/auth/login'), 2000);
+      setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err) {
       setStatus('idle');
       setError(err instanceof Error ? err.message : 'An error occurred during verification');
@@ -75,7 +81,7 @@ export default function VerifyEmailPage() {
                 </svg>
               </div>
               <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                Email verified successfully! Redirecting to login...
+                Email verified successfully! Taking you to your dashboard...
               </p>
             </div>
           ) : (

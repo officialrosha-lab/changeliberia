@@ -7,7 +7,7 @@ import { DonationWidget } from './donation-widget';
 import { FadeInOnScroll } from './scroll-animations';
 
 export function HomeDonationSection() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const [platformDonationsEnabled, setPlatformDonationsEnabled] = useState(true);
@@ -31,15 +31,14 @@ export function HomeDonationSection() {
       }
     }
     loadSettings();
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function pollMoMoStatus(referenceId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const response = await apiGet<{ success: boolean; data: { status: string } }>(
         `/payments/status/${referenceId}`,
-        token,
       );
 
       const status = response.data.status;
@@ -75,7 +74,7 @@ export function HomeDonationSection() {
     phoneNumber?: string,
   ) {
     setPaymentStatusMessage(null);
-    if (!token) {
+    if (!isAuthenticated) {
       window.location.href = '/auth/login?next=%2F%23donate';
       return;
     }
@@ -94,7 +93,6 @@ export function HomeDonationSection() {
           phoneNumber,
           description: 'Change Liberia platform support',
         },
-        token,
       );
 
       setPaymentStatusMessage(
@@ -113,7 +111,6 @@ export function HomeDonationSection() {
         description: 'Change Liberia platform support',
         recurringInterval: frequency === 'monthly' ? 'monthly' : undefined,
       },
-      token,
     );
     window.location.href = res.data.url;
   }

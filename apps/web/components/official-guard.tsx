@@ -13,17 +13,17 @@ type Props = { children: React.ReactNode };
  * Institution via GET /officials/me.
  */
 export function OfficialGuard({ children }: Props) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [asyncPhase, setAsyncPhase] = useState<'loading' | 'denied' | 'pending' | 'ok'>('loading');
-  const phase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
+  const phase = !hydrated ? 'loading' : !isAuthenticated ? 'denied' : asyncPhase;
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated || !isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
-        const me = await apiGet<{ officialStatus: string }>('/officials/me', token);
+        const me = await apiGet<{ officialStatus: string }>('/officials/me');
         if (cancelled) return;
         if (me.officialStatus === 'VERIFIED') setAsyncPhase('ok');
         else setAsyncPhase('pending');
@@ -34,7 +34,7 @@ export function OfficialGuard({ children }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [token, hydrated]);
+  }, [isAuthenticated, hydrated]);
 
   if (phase === 'loading') {
     return (
@@ -70,7 +70,7 @@ export function OfficialGuard({ children }: Props) {
         <div className="rounded-3xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950/30">
           <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
           <p className="mt-3 text-red-600 dark:text-red-400">
-            {!token ? (
+            {!isAuthenticated ? (
               <>
                 You must{' '}
                 <Link href="/auth/login" className="font-semibold underline">

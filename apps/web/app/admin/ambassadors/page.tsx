@@ -6,17 +6,17 @@ import { apiGet } from '../../../lib/api';
 import { AdminAmbassadorsPanel, Ambassador } from '../../../components/admin/admin-ambassadors-panel';
 
 export default function AdminAmbassadorsPage() {
-  const { token } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const fetchAmbassadors = async () => {
       try {
-        const data = await apiGet<Ambassador[]>('/ambassadors/admin', token);
+        const data = await apiGet<Ambassador[]>('/ambassadors/admin');
         setAmbassadors(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load ambassadors');
@@ -26,7 +26,7 @@ export default function AdminAmbassadorsPage() {
     };
 
     fetchAmbassadors();
-  }, [token]);
+  }, [isAuthenticated]);
 
   return (
     <div className="space-y-6">

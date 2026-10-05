@@ -30,7 +30,7 @@ interface UserRole {
 }
 
 export function AdminUserManager() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [userRoles, setUserRoles] = useState<Map<string, UserRole[]>>(new Map());
@@ -45,8 +45,8 @@ export function AdminUserManager() {
     try {
       setLoading(true);
       const [u, r] = await Promise.all([
-        apiGet<User[]>(`/admin/users?page=${page}&limit=${pageSize}`, token!),
-        apiGet<Role[]>('/rbac/roles', token!),
+        apiGet<User[]>(`/admin/users?page=${page}&limit=${pageSize}`),
+        apiGet<Role[]>('/rbac/roles'),
       ]);
       setUsers(u);
       setRoles(r);
@@ -56,16 +56,16 @@ export function AdminUserManager() {
     } finally {
       setLoading(false);
     }
-  }, [token, page]);
+  }, [page]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadData();
-  }, [token, page, loadData]);
+  }, [isAuthenticated, page, loadData]);
 
   async function loadUserRoles(userId: string) {
     try {
-      const data = await apiGet<UserRole[]>(`/rbac/users/${userId}/roles`, token!);
+      const data = await apiGet<UserRole[]>(`/rbac/users/${userId}/roles`);
       setUserRoles((prev) => new Map(prev).set(userId, data));
     } catch (err) {
       console.error('Failed to load user roles:', err);
@@ -73,10 +73,10 @@ export function AdminUserManager() {
   }
 
   async function handleAssignRole(userId: string, roleId: string, expiryDays?: number) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       const expiresAt = expiryDays ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString() : null;
-      await apiPost(`/rbac/users/${userId}/roles/${roleId}`, { expiresAt }, token);
+      await apiPost(`/rbac/users/${userId}/roles/${roleId}`, { expiresAt });
       await loadUserRoles(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign role');
@@ -84,9 +84,9 @@ export function AdminUserManager() {
   }
 
   async function handleRemoveRole(userId: string, roleId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiDelete(`/rbac/users/${userId}/roles/${roleId}`, token);
+      await apiDelete(`/rbac/users/${userId}/roles/${roleId}`);
       await loadUserRoles(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove role');

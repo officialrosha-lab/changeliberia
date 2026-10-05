@@ -45,7 +45,7 @@ interface CMSPageEnhanced extends CMSPage {
 }
 
 export function CMSPageEditorEnhanced() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [selectedPage, setSelectedPage] = useState<CMSPageEnhanced | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showScheduling, setShowScheduling] = useState(false);
@@ -59,9 +59,9 @@ export function CMSPageEditorEnhanced() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const loadVersionHistory = async (pageId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const data = await apiGet<PageVersion[]>(`/cms/pages/${pageId}/versions`, token);
+      const data = await apiGet<PageVersion[]>(`/cms/pages/${pageId}/versions`);
       setVersions(data);
     } catch (err) {
       console.error('Failed to load versions:', err);
@@ -69,9 +69,9 @@ export function CMSPageEditorEnhanced() {
   };
 
   const loadSchedules = async (pageId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const data = await apiGet<ScheduledAction[]>(`/cms/pages/${pageId}/schedules`, token);
+      const data = await apiGet<ScheduledAction[]>(`/cms/pages/${pageId}/schedules`);
       setSchedules(data);
     } catch (err) {
       console.error('Failed to load schedules:', err);
@@ -79,7 +79,7 @@ export function CMSPageEditorEnhanced() {
   };
 
   const handleToggleDraft = async (pageId: string) => {
-    if (!selectedPage || !token) return;
+    if (!selectedPage || !isAuthenticated) return;
 
     try {
       setIsSaving(true);
@@ -89,7 +89,6 @@ export function CMSPageEditorEnhanced() {
       const updated = await apiPatch<CMSPageEnhanced>(
         `/cms/pages/${pageId}/draft`,
         { isDraft: newIsDraft },
-        token,
       );
 
       setSelectedPage(updated);
@@ -104,7 +103,7 @@ export function CMSPageEditorEnhanced() {
   };
 
   const handlePublish = async (pageId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     try {
       setIsSaving(true);
@@ -113,7 +112,6 @@ export function CMSPageEditorEnhanced() {
       const updated = await apiPost<CMSPageEnhanced>(
         `/cms/pages/${pageId}/publish`,
         {},
-        token,
       );
 
       setSelectedPage(updated);
@@ -128,7 +126,7 @@ export function CMSPageEditorEnhanced() {
   };
 
   const handleSchedule = async (pageId: string) => {
-    if (!token || !scheduledFor) return;
+    if (!isAuthenticated || !scheduledFor) return;
 
     try {
       const newSchedule = await apiPost<ScheduledAction>(
@@ -137,7 +135,6 @@ export function CMSPageEditorEnhanced() {
           action: scheduleAction,
           scheduledFor: new Date(scheduledFor).toISOString(),
         },
-        token,
       );
 
       setSchedules([...schedules, newSchedule]);
@@ -149,10 +146,10 @@ export function CMSPageEditorEnhanced() {
   };
 
   const handleCancelSchedule = async (scheduleId: string) => {
-    if (!token || !confirm('Cancel this scheduled action?')) return;
+    if (!isAuthenticated || !confirm('Cancel this scheduled action?')) return;
 
     try {
-      await apiDelete(`/cms/schedules/${scheduleId}`, token);
+      await apiDelete(`/cms/schedules/${scheduleId}`);
       setSchedules(schedules.filter((s) => s.id !== scheduleId));
     } catch (err) {
       console.error('Failed to cancel schedule:', err);
@@ -160,13 +157,13 @@ export function CMSPageEditorEnhanced() {
   };
 
   const handleRestoreVersion = async (versionId: string) => {
-    if (!selectedPage || !token || !confirm('Restore to this version?')) return;
+    if (!selectedPage || !isAuthenticated || !confirm('Restore to this version?')) return;
 
     try {
-      await apiPost(`/cms/versions/${versionId}/restore`, {}, token);
+      await apiPost(`/cms/versions/${versionId}/restore`, {});
       await loadVersionHistory(selectedPage.id);
       // Reload page
-      const updated = await apiGet<CMSPageEnhanced>(`/cms/pages/${selectedPage.id}`, token);
+      const updated = await apiGet<CMSPageEnhanced>(`/cms/pages/${selectedPage.id}`);
       setSelectedPage(updated);
     } catch (err) {
       console.error('Failed to restore version:', err);

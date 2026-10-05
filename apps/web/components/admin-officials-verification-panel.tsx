@@ -17,7 +17,7 @@ interface PendingOfficial {
 }
 
 export function AdminOfficialsVerificationPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState<PendingOfficial[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -26,11 +26,11 @@ export function AdminOfficialsVerificationPanel() {
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const load = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await apiGet<PendingOfficial[]>('/admin/officials/pending', token);
+      const data = await apiGet<PendingOfficial[]>('/admin/officials/pending');
       setRows(data);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Failed to load pending applications');
@@ -42,14 +42,14 @@ export function AdminOfficialsVerificationPanel() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function approve(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(id);
     setActionError(null);
     try {
-      await apiPatch(`/admin/officials/${id}/approve`, {}, token);
+      await apiPatch(`/admin/officials/${id}/approve`, {});
       setRows((r) => r.filter((row) => row.id !== id));
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to approve application');
@@ -59,11 +59,11 @@ export function AdminOfficialsVerificationPanel() {
   }
 
   async function reject(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(id);
     setActionError(null);
     try {
-      await apiPatch(`/admin/officials/${id}/reject`, { notes: notes[id] }, token);
+      await apiPatch(`/admin/officials/${id}/reject`, { notes: notes[id] });
       setRows((r) => r.filter((row) => row.id !== id));
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to reject application');

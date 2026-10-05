@@ -17,7 +17,7 @@ interface CMSPage {
 }
 
 export function CMSPageManager() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [pages, setPages] = useState<CMSPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function CMSPageManager() {
   const loadPages = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<CMSPage[]>('/cms/pages', token!);
+      const data = await apiGet<CMSPage[]>('/cms/pages');
       setPages(data as CMSPage[]);
       setError(null);
     } catch (err) {
@@ -38,15 +38,15 @@ export function CMSPageManager() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadPages();
-  }, [token, loadPages]);
+  }, [isAuthenticated, loadPages]);
 
   async function handleCreatePage() {
-    if (!token || !newPageTitle.trim() || !newPageSlug.trim()) {
+    if (!isAuthenticated || !newPageTitle.trim() || !newPageSlug.trim()) {
       setError('Title and slug are required');
       return;
     }
@@ -55,7 +55,6 @@ export function CMSPageManager() {
       const newPage = await apiPost<CMSPage>(
         '/cms/pages',
         { title: newPageTitle, slug: newPageSlug, content: '' },
-        token
       );
       setPages([newPage as CMSPage, ...pages]);
       setNewPageTitle('');
@@ -67,12 +66,11 @@ export function CMSPageManager() {
   }
 
   async function handlePublish(pageId: string, published: boolean) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       const updated = await apiPatch<CMSPage>(
         `/cms/pages/${pageId}`,
         { published },
-        token
       );
       setPages(pages.map((p) => (p.id === pageId ? updated as CMSPage : p)));
     } catch (err) {
@@ -81,9 +79,9 @@ export function CMSPageManager() {
   }
 
   async function handleDelete(pageId: string) {
-    if (!token || !confirm('Are you sure you want to delete this page?')) return;
+    if (!isAuthenticated || !confirm('Are you sure you want to delete this page?')) return;
     try {
-      await apiDelete(`/cms/pages/${pageId}`, token);
+      await apiDelete(`/cms/pages/${pageId}`);
       setPages(pages.filter((p) => p.id !== pageId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete page');

@@ -64,7 +64,7 @@ type PendingIdDoc = {
 };
 
 export function AdminPageClient() {
-  const { phase: guardPhase, token } = useAdminGuard();
+  const { phase: guardPhase, isAuthenticated } = useAdminGuard();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'monetization' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [dataLoaded, setDataLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -80,17 +80,17 @@ export function AdminPageClient() {
   });
 
   useEffect(() => {
-    if (guardPhase !== 'ok' || !token) return;
+    if (guardPhase !== 'ok' || !isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const [p, polls, ids, f, r, a] = await Promise.all([
-          apiGet<{ id: string; title: string; category?: string | null; summary: string }[]>('/admin/petitions/pending', token),
-          apiGet<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>('/admin/polls/pending', token),
-          apiGet<PendingIdDoc[]>('/admin/id-documents/pending', token),
-          apiGet<FraudEvent[]>('/admin/fraud/flags', token),
-          apiGet<FraudRule[]>('/fraud/rules', token),
-          apiGet<FraudAnalytics>('/fraud/analytics', token),
+          apiGet<{ id: string; title: string; category?: string | null; summary: string }[]>('/admin/petitions/pending'),
+          apiGet<{ id: string; slug: string; title: string; description?: string | null; category: string; county?: string | null; createdAt: string; creator: { fullName: string; email: string } }[]>('/admin/polls/pending'),
+          apiGet<PendingIdDoc[]>('/admin/id-documents/pending'),
+          apiGet<FraudEvent[]>('/admin/fraud/flags'),
+          apiGet<FraudRule[]>('/fraud/rules'),
+          apiGet<FraudAnalytics>('/fraud/analytics'),
         ]);
         if (cancelled) return;
         setPending(p);
@@ -111,9 +111,9 @@ export function AdminPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [token, guardPhase]);
+  }, [isAuthenticated, guardPhase]);
 
-  if (guardPhase === 'loading' && !token) {
+  if (guardPhase === 'loading' && !isAuthenticated) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Admin Panel</h1>
@@ -122,7 +122,7 @@ export function AdminPageClient() {
     );
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Admin Panel</h1>
@@ -353,7 +353,7 @@ export function AdminPageClient() {
       {/* Ambassadors Tab */}
       {activeTab === 'ambassadors' && (
         <Card className="p-6">
-          {token && (
+          {isAuthenticated && (
             <Link href="/admin/ambassadors" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400">
               Go to Ambassadors Management →
             </Link>

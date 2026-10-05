@@ -51,7 +51,7 @@ interface ChallengeDetails extends Challenge {
 }
 
 export function AdminFacebookEngagement() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,28 +59,28 @@ export function AdminFacebookEngagement() {
   const toast = useToast();
 
   const fetchChallenges = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<{ challenges: Challenge[] }>('/admin/facebook/challenges', token);
+      const result = await apiGet<{ challenges: Challenge[] }>('/admin/facebook/challenges');
       setChallenges(result.challenges || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const handleChallengeSelect = useCallback(
     async (challengeId: string) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       try {
-        const result = await apiGet<ChallengeDetails>(`/admin/facebook/challenges/${challengeId}`, token);
+        const result = await apiGet<ChallengeDetails>(`/admin/facebook/challenges/${challengeId}`);
         setSelectedChallenge(result);
       } catch (err) {
         toast.show(err instanceof Error ? err.message : 'Error loading challenge details', 'error');
       }
     },
-    [token, toast],
+    [isAuthenticated, toast],
   );
 
   useEffect(() => {

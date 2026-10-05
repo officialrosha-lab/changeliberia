@@ -29,7 +29,7 @@ interface Department {
 }
 
 export function InstitutionsManager() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function InstitutionsManager() {
   const loadInstitutions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<Institution[]>('/admin/directory/institutions', token!);
+      const data = await apiGet<Institution[]>('/admin/directory/institutions');
       setInstitutions(data);
       setError(null);
     } catch (err) {
@@ -56,18 +56,17 @@ export function InstitutionsManager() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadInstitutions();
-  }, [token, loadInstitutions]);
+  }, [isAuthenticated, loadInstitutions]);
 
   async function loadDepartments(institutionId: string) {
     try {
       const data = await apiGet<Department[]>(
         `/admin/directory/institutions/${institutionId}/departments`,
-        token!
       );
       setDepartments(data);
     } catch (err) {
@@ -81,9 +80,9 @@ export function InstitutionsManager() {
   }
 
   async function handleCreateInstitution() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPost('/admin/directory/institutions', formData, token);
+      await apiPost('/admin/directory/institutions', formData);
       setFormData({
         name: '',
         type: 'GOVERNMENT',
@@ -100,9 +99,9 @@ export function InstitutionsManager() {
   }
 
   async function handleVerify(institutionId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      await apiPost(`/admin/directory/institutions/${institutionId}/verify`, {}, token);
+      await apiPost(`/admin/directory/institutions/${institutionId}/verify`, {});
       await loadInstitutions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify institution');
