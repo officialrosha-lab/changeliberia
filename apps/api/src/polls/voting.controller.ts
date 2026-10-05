@@ -6,6 +6,7 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { VotingService } from './voting.service';
@@ -26,6 +27,7 @@ export class VotingController {
    * Cast a vote on a poll option.
    * Dedup: authenticated users are deduped by userId; anonymous by IP fingerprint.
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   async castVote(
     @Param('pollId') pollId: string,
