@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { FormEvent, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { apiGet, apiGetBlob, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
+import { ApiError, apiGet, apiGetBlob, apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 type User = {
@@ -46,8 +46,11 @@ function formatStatus(value: string): string {
 
 export function DashboardClient() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [petitions, setPetitions] = useState<MyPetition[]>([]);
   const [message, setMessage] = useState('');
@@ -75,8 +78,13 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<{ petitionId: string; message: string } | null>(null);
 
   useEffect(() => {
+    // Wait for the initial session check (AuthSessionBootstrap) to resolve
+    // before deciding anything — isAuthenticated still reads its false
+    // default during that brief window, and redirecting on it would bounce
+    // a genuinely logged-in user straight back out on a page load/refresh.
+    if (!hydrated) return;
     if (!isAuthenticated) { router.replace('/'); return; }
-  }, [isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, router]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -92,18 +100,25 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
           setUser(me);
           setPetitions(mine);
           setCompleted(steps);
+          setLoadError(false);
         }
-      } catch {
-        if (!cancelled) {
+      } catch (err) {
+        if (cancelled) return;
+        // Only a real 401 means the session is actually gone — anything
+        // else (a network blip, a 500, a timeout) is transient and
+        // shouldn't sign the user out and bounce them to the homepage.
+        if (err instanceof ApiError && err.status === 401) {
           setSession(null);
           setMessage('Session expired. Sign in again.');
+        } else {
+          setLoadError(true);
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, setSession]);
+  }, [isAuthenticated, setSession, retryKey]);
 
   useEffect(() => {
     if (!isAuthenticated || petitions.length === 0) return;
@@ -352,6 +367,21 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
           <p className={`mt-4 text-sm font-medium ${message.startsWith('Could not') ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
             {message}
           </p>
+        ) : null}
+
+        {loadError && !user ? (
+          <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-center dark:border-neutral-700 dark:bg-neutral-800">
+            <p className="text-sm text-zinc-600 dark:text-neutral-400">
+              Couldn&apos;t load your dashboard right now.
+            </p>
+            <button
+              type="button"
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-2 text-sm font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+            >
+              Try again
+            </button>
+          </div>
         ) : null}
 
         {user ? (
