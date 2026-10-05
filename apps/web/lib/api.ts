@@ -16,6 +16,19 @@ function csrfHeader(): Record<string, string> {
   return token ? { 'X-CSRF-Token': token } : {};
 }
 
+// Carries the HTTP status alongside the message so callers can distinguish
+// "genuinely not authenticated" (401) from a transient failure (network
+// blip, 500, timeout) — conflating the two is what causes a flaky request
+// to log a real session out.
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 export function getApiBase(): string {
   // Browser requests always go through this app's own same-origin
   // /api/v1 proxy (apps/web/middleware.ts), which forwards to the Railway
@@ -62,7 +75,7 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
         // ignore parse errors
       }
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
 
   return res.json() as Promise<T>;
