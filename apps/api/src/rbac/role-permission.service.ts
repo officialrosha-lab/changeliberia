@@ -494,11 +494,14 @@ export class RolePermissionService implements OnModuleInit {
     resource: PermissionResource,
     action: PermissionAction,
   ): boolean {
-    // Users can only read and create petitions, not approve/manage
+    // Users can only read and create petitions, not approve/manage.
+    // CONTENT:READ is deliberately NOT granted here — it would let any
+    // signed-up user read the CMS admin surface (draft pages, file
+    // manager, version history, analytics). Public content is served
+    // separately and unauthenticated via GET /cms/public/pages/:slug.
     const userPermissions: Array<[PermissionResource, PermissionAction]> = [
       [PermissionResource.PETITION, PermissionAction.CREATE],
       [PermissionResource.PETITION, PermissionAction.READ],
-      [PermissionResource.CONTENT, PermissionAction.READ],
     ];
 
     return userPermissions.some(
@@ -512,11 +515,7 @@ export class RolePermissionService implements OnModuleInit {
   private async getUserPermissions_DefaultUser(): Promise<Permission[]> {
     return this.prisma.permission.findMany({
       where: {
-        OR: [
-          { key: 'petition:read' },
-          { key: 'petition:create' },
-          { key: 'content:read' },
-        ],
+        OR: [{ key: 'petition:read' }, { key: 'petition:create' }],
       },
     });
   }

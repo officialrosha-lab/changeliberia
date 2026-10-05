@@ -146,7 +146,7 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'POST', path: '/auth/reset-password', controller: 'AuthController', category: 'guard-only-write' },
   { method: 'POST', path: '/auth/google/callback', controller: 'AuthController', category: 'guard-only-write' },
   { method: 'POST', path: '/auth/refresh', controller: 'AuthController', category: 'guard-only-write' },
-  { method: 'POST', path: '/auth/logout', controller: 'AuthController', category: 'guard-only-write' },
+  { method: 'POST', path: '/auth/logout', controller: 'AuthController', category: 'public-write-safe', note: 'intentionally idempotent — succeeds even with no session, so cookies can always be cleared' },
   { method: 'POST', path: '/auth/logout-all', controller: 'AuthController', category: 'guard-only-write', note: 'requires a valid access token' },
 
   // broadcast/broadcast.controller.ts

@@ -1,6 +1,8 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
+  NotFoundException,
   Post,
   Param,
   Body,
@@ -64,7 +66,7 @@ export class ModeratorController {
       'APPROVE',
     );
     if (!can) {
-      throw new Error('No permission to review petitions');
+      throw new ForbiddenException('No permission to review petitions');
     }
 
     const statusFilter = status as PetitionStatus | undefined;
@@ -116,7 +118,7 @@ export class ModeratorController {
       'APPROVE',
     );
     if (!can) {
-      throw new Error('No permission to approve petitions');
+      throw new ForbiddenException('No permission to approve petitions');
     }
 
     const petition = await this.prisma.petition.findUnique({
@@ -124,7 +126,7 @@ export class ModeratorController {
     });
 
     if (!petition) {
-      throw new Error('Petition not found');
+      throw new NotFoundException('Petition not found');
     }
 
     // Update petition status
@@ -165,7 +167,7 @@ export class ModeratorController {
       'REJECT',
     );
     if (!can) {
-      throw new Error('No permission to reject petitions');
+      throw new ForbiddenException('No permission to reject petitions');
     }
 
     const petition = await this.prisma.petition.findUnique({
@@ -173,7 +175,7 @@ export class ModeratorController {
     });
 
     if (!petition) {
-      throw new Error('Petition not found');
+      throw new NotFoundException('Petition not found');
     }
 
     // Update petition status
@@ -245,7 +247,7 @@ export class ModeratorController {
       'APPROVE',
     );
     if (!can) {
-      throw new Error('No permission to review fraud flags');
+      throw new ForbiddenException('No permission to review fraud flags');
     }
 
     // Placeholder: return empty array until FraudLog model is added to schema
@@ -285,7 +287,7 @@ export class ModeratorController {
       'APPROVE',
     );
     if (!can) {
-      throw new Error('No permission to resolve fraud flags');
+      throw new ForbiddenException('No permission to resolve fraud flags');
     }
 
     // Implementation would depend on FraudLog model
