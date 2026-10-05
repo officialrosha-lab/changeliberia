@@ -45,8 +45,16 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Req() req: { user: { userId: string } }) {
-    return this.prisma.user.findUnique({ where: { id: req.user.userId } });
+  async me(@Req() req: { user: { userId: string } }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+    if (!user) return null;
+    // Strip the password hash before returning — this codebase's Prisma
+    // version predates the `omit` query option, so filter in JS instead.
+    const safeUser: Partial<typeof user> = { ...user };
+    delete safeUser.passwordHash;
+    return safeUser;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -85,10 +93,13 @@ export class UsersController {
       };
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: req.user.userId },
       data: { ...body, ...geography },
     });
+    const safeUser: Partial<typeof updated> = { ...updated };
+    delete safeUser.passwordHash;
+    return safeUser;
   }
 
   @Throttle({ default: { limit: 5, ttl: 3600000 } })
