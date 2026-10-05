@@ -15,7 +15,7 @@ export class UpdatePetitionDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;
   @IsOptional() @IsString() @MaxLength(500) summary?: string;
   @IsOptional() @IsString() @MaxLength(20000) description?: string;
-  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
   @IsOptional() @IsInt() @Min(100) goal?: number;
   @IsOptional() @IsString() petitionType?: string;
   @IsOptional() @IsString() category?: string;
@@ -35,7 +35,7 @@ export class UpdatePetitionDto {
 
 export class CreatePetitionDto {
   @IsString() @MaxLength(200) title!: string;
-  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
   @IsString() @MaxLength(500) summary!: string;
   @IsString() @MaxLength(20000) description!: string;
   @IsOptional() @IsString() category?: string;

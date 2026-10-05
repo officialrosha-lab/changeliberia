@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { IsString, IsOptional } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -271,7 +272,22 @@ export class CMSController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission(PermissionResource.CONTENT, PermissionAction.CREATE)
   @Post('files/upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'application/pdf',
+        ];
+        cb(null, allowed.includes(file.mimetype));
+      },
+    }),
+  )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: { id: string; email: string },
@@ -283,8 +299,10 @@ export class CMSController {
   /**
    * Serve a previously uploaded file's bytes by its stored filename.
    * Public (images/docs referenced in published pages need to load for
-   * anonymous visitors) — the filename itself is an unguessable,
-   * timestamp-suffixed name, not a sequential ID.
+   * anonymous visitors) — the filename itself is an unguessable, random
+   * name, not a sequential ID. Content-Type is restricted to the same
+   * allowlist enforced on upload and served with Content-Disposition so a
+   * browser never renders an uploaded file as HTML/script in this origin.
    */
   @Get('files/:filename')
   async serveFile(@Param('filename') filename: string, @Res() res: Response) {
@@ -293,10 +311,19 @@ export class CMSController {
     }
     const obj = await this.fileUploadService.getFileBuffer(filename);
     if (!obj) throw new NotFoundException('File not found');
-    res.setHeader(
-      'Content-Type',
-      obj.contentType ?? 'application/octet-stream',
-    );
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+    ];
+    const contentType = allowed.includes(obj.contentType ?? '')
+      ? obj.contentType!
+      : 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(obj.buffer);
   }

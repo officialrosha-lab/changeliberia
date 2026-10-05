@@ -447,7 +447,6 @@ export const ROUTE_INVENTORY: RouteEntry[] = [
   { method: 'POST', path: '/verification/device', controller: 'VerificationController', category: 'guard-only-write' },
   { method: 'GET', path: '/verification/id-documents/:id/file', controller: 'VerificationController', category: 'auth-read', paramFallback: 'fake' },
   { method: 'POST', path: '/verification/id-document', controller: 'VerificationController', category: 'guard-only-write' },
-  { method: 'POST', path: '/verification/id', controller: 'VerificationController', category: 'guard-only-write' },
 
   // petitions/petitions.controller.ts
   { method: 'GET', path: '/petitions', controller: 'PetitionsController', category: 'public-read' },

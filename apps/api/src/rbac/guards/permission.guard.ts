@@ -24,8 +24,10 @@ export class PermissionGuard implements CanActivate {
     }>(PERMISSION_KEY, context.getHandler());
 
     if (!permission) {
-      // No permission required
-      return true;
+      // Fail closed: a route guarded by PermissionGuard with no
+      // @Permission() decorator is a configuration bug, not an
+      // "any authenticated user" route — deny rather than silently allow.
+      return false;
     }
 
     const request = context.switchToHttp().getRequest<{ user?: RequestUser }>();

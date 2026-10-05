@@ -6,6 +6,7 @@ import {
   SubscriptionData,
   RefundData,
 } from './email.types';
+import { escapeHtml } from '../common/utils/escape-html';
 
 /**
  * Email Template Generator
@@ -219,6 +220,9 @@ export class EmailTemplateService {
     transactionId: string,
     date: string,
   ): string {
+    name = escapeHtml(name);
+    petitionTitle = petitionTitle ? escapeHtml(petitionTitle) : petitionTitle;
+    transactionId = escapeHtml(transactionId);
     return `
 <!DOCTYPE html>
 <html>
@@ -302,6 +306,8 @@ If you have any questions, please contact us at support@liberianvoices.org
     reason: string,
     retryUrl?: string,
   ): string {
+    name = escapeHtml(name);
+    reason = escapeHtml(reason);
     return `
 <!DOCTYPE html>
 <html>
@@ -387,6 +393,8 @@ If you have any questions, please contact us at support@liberianvoices.org
     nextBillingDate: string | undefined,
     petitionTitle?: string,
   ): string {
+    name = escapeHtml(name);
+    petitionTitle = petitionTitle ? escapeHtml(petitionTitle) : petitionTitle;
     return `
 <!DOCTYPE html>
 <html>
@@ -464,6 +472,8 @@ If you have any questions, please contact us at support@liberianvoices.org
     interval: string,
     petitionTitle?: string,
   ): string {
+    name = escapeHtml(name);
+    petitionTitle = petitionTitle ? escapeHtml(petitionTitle) : petitionTitle;
     return `
 <!DOCTYPE html>
 <html>
@@ -541,6 +551,7 @@ If you have any questions, please contact us at support@liberianvoices.org
     amount: string,
     interval: string,
   ): string {
+    name = escapeHtml(name);
     return `
 <!DOCTYPE html>
 <html>
@@ -614,6 +625,9 @@ If you have any questions, please contact us at support@liberianvoices.org
     reason: string,
     transactionId: string,
   ): string {
+    name = escapeHtml(name);
+    reason = escapeHtml(reason);
+    transactionId = escapeHtml(transactionId);
     return `
 <!DOCTYPE html>
 <html>

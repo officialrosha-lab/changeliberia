@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface BroadcastMetrics {
@@ -288,6 +287,7 @@ export class BroadcastAnalyticsService {
     endDate: Date,
     limit: number = 5,
   ): Promise<Array<{ category: string; count: number }>> {
+    const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit) || 5));
     const results = await this.prisma.$queryRaw<
       Array<{ category: string; count: bigint }>
     >`
@@ -296,7 +296,7 @@ export class BroadcastAnalyticsService {
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY category
       ORDER BY COUNT(*) DESC
-      LIMIT ${Prisma.raw(String(limit))}
+      LIMIT ${safeLimit}
     `;
 
     return results.map((r) => ({

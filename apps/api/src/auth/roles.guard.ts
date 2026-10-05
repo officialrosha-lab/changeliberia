@@ -14,7 +14,10 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!roles?.length) return true;
+    // Fail closed: a route guarded by RolesGuard with no @Roles() decorator
+    // is a configuration bug, not an "any authenticated user" route — deny
+    // rather than silently allow.
+    if (!roles?.length) return false;
     const req = context.switchToHttp().getRequest<{ user?: RequestUser }>();
     const user = req.user;
     return !!user?.role && roles.includes(user.role);

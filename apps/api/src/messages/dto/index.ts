@@ -1,13 +1,21 @@
-import { IsString, IsOptional, IsBoolean, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateMessageDto {
   @IsString()
   recipientId!: string;
 
   @IsString()
+  @MaxLength(200)
   subject!: string;
 
   @IsString()
+  @MaxLength(10000)
   content!: string;
 
   @IsOptional()
