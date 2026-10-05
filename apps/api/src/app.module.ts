@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
+import { CsrfGuard } from './auth/csrf.guard';
 import { UsersModule } from './users/users.module';
 import { PetitionsModule } from './petitions/petitions.module';
 import { SignaturesModule } from './signatures/signatures.module';
@@ -94,6 +95,9 @@ import { ChangeLiberiaGraphQLModule } from './graphql/graphql.module';
     PushModule, // Web push notifications
     ChangeLiberiaGraphQLModule, // Read-only GraphQL API for research/civil-society consumers
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: CsrfGuard },
+  ],
 })
 export class AppModule {}

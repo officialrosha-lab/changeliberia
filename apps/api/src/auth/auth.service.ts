@@ -34,6 +34,31 @@ export class AuthService {
     return createHash('sha256').update(token).digest('hex');
   }
 
+  /** Non-sensitive user fields safe to return in a login/signup response body. */
+  private publicUser(user: {
+    id: string;
+    email: string | null;
+    fullName: string;
+    role: string;
+  }) {
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+    };
+  }
+
+  private async withUser<
+    T extends { accessToken: string; refreshToken: string },
+  >(
+    pairPromise: Promise<T>,
+    user: { id: string; email: string | null; fullName: string; role: string },
+  ) {
+    const pair = await pairPromise;
+    return { ...pair, user: this.publicUser(user) };
+  }
+
   /**
    * Issue a fresh access/refresh pair for a user, starting a new rotation
    * family. Persists a RefreshToken row holding only the token's hash.
@@ -237,7 +262,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.issueTokenPair(user.id, user.phone, meta);
+    return this.withUser(this.issueTokenPair(user.id, user.phone, meta), user);
   }
 
   /**
@@ -252,7 +277,10 @@ export class AuthService {
 
     if (user) {
       // User already has Google linked
-      return this.issueTokenPair(user.id, user.phone, meta);
+      return this.withUser(
+        this.issueTokenPair(user.id, user.phone, meta),
+        user,
+      );
     }
 
     // Try to find user by Google email
@@ -270,7 +298,10 @@ export class AuthService {
           avatarUrl: dto.avatarUrl || user.avatarUrl,
         },
       });
-      return this.issueTokenPair(user.id, user.phone, meta);
+      return this.withUser(
+        this.issueTokenPair(user.id, user.phone, meta),
+        user,
+      );
     }
 
     // Create new user from Google profile
@@ -299,7 +330,10 @@ export class AuthService {
       });
     }
 
-    return this.issueTokenPair(newUser.id, newUser.phone, meta);
+    return this.withUser(
+      this.issueTokenPair(newUser.id, newUser.phone, meta),
+      newUser,
+    );
   }
 
   /**
@@ -370,7 +404,7 @@ export class AuthService {
     });
 
     // Return JWT token for immediate login
-    return this.issueTokenPair(user.id, user.phone, meta);
+    return this.withUser(this.issueTokenPair(user.id, user.phone, meta), user);
   }
 
   /**

@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 import { CastVoteDto } from './dto/vote.dto';
+import { extractJwtFromRequest } from '../auth/cookie.util';
 
 @Controller('polls/:pollId/vote')
 export class VotingController {
@@ -39,7 +40,7 @@ export class VotingController {
     const userAgent = this.fingerprintService.extractUserAgent(req);
 
     let userId: string | undefined;
-    const rawToken = req.headers.authorization?.replace('Bearer ', '');
+    const rawToken = extractJwtFromRequest(req);
     if (rawToken) {
       try {
         const payload = this.jwtService.verify<{ sub: string }>(rawToken);
