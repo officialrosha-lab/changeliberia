@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { apiGet } from '../../lib/api';
 import { PollCard, type PollSummary } from '../../components/poll-card';
 
@@ -13,11 +15,14 @@ const SORT_OPTIONS = [
 type SortValue = typeof SORT_OPTIONS[number]['value'];
 
 export default function PollsPage() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category');
   const [sort, setSort] = useState<SortValue>('recent');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [polls, setPolls] = useState<PollSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search input
@@ -32,13 +37,18 @@ export default function PollsPage() {
     // list doesn't show stale results while the new sort/search fetch runs.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    setLoadError(false);
     const params = new URLSearchParams({ status: 'ACTIVE', sort });
     if (debouncedSearch) params.set('search', debouncedSearch);
+    if (category) params.set('category', category);
     apiGet<PollSummary[]>(`/polls?${params}`)
       .then(setPolls)
-      .catch(() => setPolls([]))
+      .catch(() => {
+        setPolls([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
-  }, [sort, debouncedSearch]);
+  }, [sort, debouncedSearch, category]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -49,6 +59,16 @@ export default function PollsPage() {
         <p className="mt-3 max-w-2xl text-base text-zinc-600 dark:text-zinc-300">
           Browse public sentiment polls and see what Liberians are voting on in real time.
         </p>
+        {category && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              Category: {category}
+            </span>
+            <Link href="/polls" className="text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+              Clear
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -94,6 +114,12 @@ export default function PollsPage() {
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-52 animate-pulse rounded-3xl border border-zinc-100 bg-zinc-50 dark:border-neutral-800 dark:bg-neutral-900" />
           ))
+        ) : loadError ? (
+          <div className="col-span-full rounded-3xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-950">
+            <p className="text-sm text-red-700 dark:text-red-400">
+              Couldn&apos;t load polls right now. Please try again in a moment.
+            </p>
+          </div>
         ) : polls.length === 0 ? (
           <div className="col-span-full rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
             <p className="text-zinc-500 dark:text-zinc-400">

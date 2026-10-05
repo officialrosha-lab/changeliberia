@@ -65,6 +65,8 @@ export function OfficialConstituencyPanel() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [data, setData] = useState<ConstituencyData | null>(null);
   const [feed, setFeed] = useState<PetitionFeedResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -78,12 +80,14 @@ export function OfficialConstituencyPanel() {
         if (!cancelled) {
           setData(result);
           setFeed(feedResult);
+          setError(null);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setData(null);
-          setFeed(null);
+          setError(err instanceof Error ? err.message : 'Failed to load constituency data');
         }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
@@ -91,7 +95,17 @@ export function OfficialConstituencyPanel() {
     };
   }, [isAuthenticated]);
 
-  if (!data) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading constituency data…</p>;
+  if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading constituency data…</p>;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+        {error}
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="space-y-6">

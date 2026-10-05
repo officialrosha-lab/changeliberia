@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiPatch, apiPost } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { useToast } from '../lib/toast-context';
 import { Card } from './ui/card';
 
 type FraudRule = {
@@ -32,20 +33,29 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
   const [rules, setRules] = useState(initialRules);
   const [running, setRunning] = useState(false);
   const [jobMessage, setJobMessage] = useState('');
+  const toast = useToast();
 
   async function updateRule(key: string, field: 'threshold' | 'penalty', value: number) {
     if (!isAuthenticated) return;
-    const updated = await apiPatch<FraudRule>(
-      `/fraud/rules/${key}`,
-      { [field]: value },
-    );
-    setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
+    try {
+      const updated = await apiPatch<FraudRule>(
+        `/fraud/rules/${key}`,
+        { [field]: value },
+      );
+      setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to update rule', 'error');
+    }
   }
 
   async function toggleRule(key: string, enabled: boolean) {
     if (!isAuthenticated) return;
-    const updated = await apiPatch<FraudRule>(`/fraud/rules/${key}`, { enabled });
-    setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
+    try {
+      const updated = await apiPatch<FraudRule>(`/fraud/rules/${key}`, { enabled });
+      setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to toggle rule', 'error');
+    }
   }
 
   async function runAnomalyJob() {
@@ -57,6 +67,8 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
         {},
       );
       setJobMessage(`Anomaly job completed. Suspicious IP clusters: ${result.suspiciousIpCount}`);
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : 'Failed to run anomaly job', 'error');
     } finally {
       setRunning(false);
     }

@@ -43,6 +43,7 @@ export function OfficialPetitionFeed() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [advancing, setAdvancing] = useState<string | null>(null);
 
   const load = async () => {
@@ -50,6 +51,9 @@ export function OfficialPetitionFeed() {
     try {
       const result = await apiGet<{ data: FeedItem[] }>('/officials/me/feed');
       setItems(result.data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load assigned petitions');
     } finally {
       setLoading(false);
     }
@@ -76,6 +80,14 @@ export function OfficialPetitionFeed() {
   }
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading assigned petitions…</p>;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -111,7 +123,7 @@ export function OfficialPetitionFeed() {
                     type="button"
                     disabled={advancing === item.id}
                     onClick={() => advance(item.id, item.currentStage)}
-                    className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-50"
+                    className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
                     {advancing === item.id ? 'Updating…' : `Advance to ${nextStage.replaceAll('_', ' ')}`}
                   </button>

@@ -140,30 +140,34 @@ export default function PrivacyPolicyPage() {
 
         {/* 5 */}
         <section>
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-neutral-50 mb-4">5. Cookies</h2>
-          <p className="text-sm">We use the following types of cookies:</p>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-neutral-50 mb-4">5. Cookies and Local Storage</h2>
+          <p className="text-sm">We use the following cookies and browser local storage:</p>
           <div className="mt-4 overflow-x-auto">
             <table className="text-sm w-full border-collapse">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-neutral-700">
-                  <th className="text-left py-2 pr-4 font-semibold text-zinc-900 dark:text-neutral-100">Cookie</th>
+                  <th className="text-left py-2 pr-4 font-semibold text-zinc-900 dark:text-neutral-100">Name</th>
+                  <th className="text-left py-2 pr-4 font-semibold text-zinc-900 dark:text-neutral-100">Type</th>
                   <th className="text-left py-2 pr-4 font-semibold text-zinc-900 dark:text-neutral-100">Purpose</th>
                   <th className="text-left py-2 font-semibold text-zinc-900 dark:text-neutral-100">Duration</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-neutral-800">
                 <tr>
-                  <td className="py-2 pr-4 font-mono text-xs">auth_token</td>
+                  <td className="py-2 pr-4 font-mono text-xs">vlv-auth-storage</td>
+                  <td className="py-2 pr-4">Local storage</td>
                   <td className="py-2 pr-4">Keeps you logged in</td>
-                  <td className="py-2">7 days</td>
+                  <td className="py-2">Until you log out or clear browser data</td>
                 </tr>
                 <tr>
                   <td className="py-2 pr-4 font-mono text-xs">theme</td>
+                  <td className="py-2 pr-4">Local storage</td>
                   <td className="py-2 pr-4">Remembers light/dark preference</td>
-                  <td className="py-2">1 year</td>
+                  <td className="py-2">Until you clear browser data</td>
                 </tr>
                 <tr>
                   <td className="py-2 pr-4 font-mono text-xs">_fbp</td>
+                  <td className="py-2 pr-4">Cookie</td>
                   <td className="py-2 pr-4">Facebook pixel analytics</td>
                   <td className="py-2">90 days</td>
                 </tr>
@@ -171,8 +175,8 @@ export default function PrivacyPolicyPage() {
             </table>
           </div>
           <p className="mt-4 text-sm">
-            You can disable cookies in your browser settings, although some features (such as staying logged in) will
-            not work without essential cookies.
+            You can clear local storage and disable cookies in your browser settings, although some features (such as
+            staying logged in) will not work without them.
           </p>
         </section>
 

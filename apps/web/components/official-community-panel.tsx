@@ -50,6 +50,7 @@ export function OfficialCommunityPanel() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [result, setResult] = useState<CommunityInsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -60,9 +61,14 @@ export function OfficialCommunityPanel() {
         const data = await apiGet<CommunityInsightsResponse>(
           '/officials/me/constituency/community',
         );
-        if (!cancelled) setResult(data);
-      } catch {
-        if (!cancelled) setResult(null);
+        if (!cancelled) {
+          setResult(data);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load community insights');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -88,7 +94,13 @@ export function OfficialCommunityPanel() {
 
       {loading && <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading…</p>}
 
-      {!loading && (!result || !result.scope) && (
+      {!loading && error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && (!result || !result.scope) && (
         <p className="text-sm text-zinc-500 dark:text-neutral-400">
           Community insights will appear here once your office has a county/district on file.
         </p>

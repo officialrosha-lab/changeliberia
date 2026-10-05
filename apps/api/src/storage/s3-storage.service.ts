@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   GetObjectCommand,
   NoSuchKey,
@@ -17,14 +17,20 @@ export type StoredObject = {
  * media, ID verification documents, CMS files, constituency reports) uses
  * this under its own key prefix instead of writing to the container's
  * local disk, which is wiped on every deploy/restart.
+ *
+ * Configuration happens in the constructor (not an OnModuleInit hook):
+ * dependents (e.g. IdDocumentStorageService) check isConfigured() from
+ * their own constructors, and Nest runs every provider's constructor
+ * before any onModuleInit hooks fire app-wide — an onModuleInit here
+ * would always look unconfigured to them.
  */
 @Injectable()
-export class S3StorageService implements OnModuleInit {
+export class S3StorageService {
   private client: S3Client | null = null;
   private bucket = '';
   private configured = false;
 
-  onModuleInit() {
+  constructor() {
     const endpoint = process.env.MEDIA_BUCKET_ENDPOINT;
     const bucket = process.env.MEDIA_BUCKET_NAME;
     const region = process.env.MEDIA_BUCKET_REGION || 'auto';

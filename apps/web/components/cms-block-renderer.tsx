@@ -16,7 +16,7 @@ interface CMSBlockRendererProps {
  */
 async function trackBlockView(pageId: string, blockId: string, blockType: string) {
   try {
-    await apiPost(`/api/v1/cms/blocks/${blockId}/track-view`, {
+    await apiPost(`/cms/blocks/${blockId}/track-view`, {
       pageId,
       blockType,
     });
@@ -31,7 +31,7 @@ async function trackBlockView(pageId: string, blockId: string, blockType: string
  */
 async function trackBlockClick(pageId: string, blockId: string, blockType: string) {
   try {
-    await apiPost(`/api/v1/cms/blocks/${blockId}/track-click`, {
+    await apiPost(`/cms/blocks/${blockId}/track-click`, {
       pageId,
       blockType,
     });
@@ -43,33 +43,39 @@ async function trackBlockClick(pageId: string, blockId: string, blockType: strin
 
 export function CMSBlockRenderer({ block, pageId }: CMSBlockRendererProps) {
   const { id, type, props } = block;
+  // Each block already carries its own pageId from the API — callers (the
+  // public CMS pages) never passed one explicitly, which meant view/click
+  // tracking only ever fired from the admin editor's preview, never on an
+  // actual page view. Fall back to the block's own pageId so it works
+  // without requiring every caller to thread it through.
+  const resolvedPageId = pageId ?? block.pageId;
 
   // Track view on mount
   useEffect(() => {
-    if (pageId && id) {
-      trackBlockView(pageId, id, type);
+    if (resolvedPageId && id) {
+      trackBlockView(resolvedPageId, id, type);
     }
-  }, [pageId, id, type]);
+  }, [resolvedPageId, id, type]);
 
   switch (type) {
     case 'hero':
-      return <HeroBlock {...(props as unknown as HeroBlockProps)} blockId={id} pageId={pageId} />;
+      return <HeroBlock {...(props as unknown as HeroBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'text':
-      return <TextBlock {...(props as unknown as TextBlockProps)} blockId={id} pageId={pageId} />;
+      return <TextBlock {...(props as unknown as TextBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'image':
-      return <ImageBlock {...(props as unknown as ImageBlockProps)} blockId={id} pageId={pageId} />;
+      return <ImageBlock {...(props as unknown as ImageBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'grid':
-      return <GridBlock {...(props as unknown as GridBlockProps)} blockId={id} pageId={pageId} />;
+      return <GridBlock {...(props as unknown as GridBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'cta':
-      return <CTABlock {...(props as unknown as CTABlockProps)} blockId={id} pageId={pageId} />;
+      return <CTABlock {...(props as unknown as CTABlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'testimonial':
-      return <TestimonialBlock {...(props as unknown as TestimonialBlockProps)} blockId={id} pageId={pageId} />;
+      return <TestimonialBlock {...(props as unknown as TestimonialBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'divider':
-      return <DividerBlock {...(props as unknown as DividerBlockProps)} blockId={id} pageId={pageId} />;
+      return <DividerBlock {...(props as unknown as DividerBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'faq':
-      return <FAQBlock {...(props as unknown as FAQBlockProps)} blockId={id} pageId={pageId} />;
+      return <FAQBlock {...(props as unknown as FAQBlockProps)} blockId={id} pageId={resolvedPageId} />;
     case 'features':
-      return <FeaturesBlock {...(props as unknown as FeaturesBlockProps)} blockId={id} pageId={pageId} />;
+      return <FeaturesBlock {...(props as unknown as FeaturesBlockProps)} blockId={id} pageId={resolvedPageId} />;
     default:
       return null;
   }

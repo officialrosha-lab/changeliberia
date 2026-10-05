@@ -169,7 +169,7 @@ export function ModeratorFraudReview() {
                       <div
                         className="h-full bg-red-600"
                         style={{
-                          width: `${(flag.suspiciousSignatures / flag.totalSignatures) * 100}%`,
+                          width: `${flag.totalSignatures > 0 ? (flag.suspiciousSignatures / flag.totalSignatures) * 100 : 0}%`,
                         }}
                       />
                     </div>

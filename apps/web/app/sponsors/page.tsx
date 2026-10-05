@@ -20,12 +20,17 @@ export const metadata = {
 
 export default async function SponsorsPage() {
   let sponsors: Sponsor[] = [];
+  let loadError = false;
   try {
     const base = getApiBase();
     const res = await fetch(`${base}/sponsors`, { cache: 'no-store' });
-    if (res.ok) sponsors = (await res.json()) as Sponsor[];
+    if (res.ok) {
+      sponsors = (await res.json()) as Sponsor[];
+    } else {
+      loadError = true;
+    }
   } catch {
-    // silently skip if API is unreachable
+    loadError = true;
   }
 
   const sponsorList = sponsors.filter((s) => s.type === 'sponsor');
@@ -49,7 +54,13 @@ export default async function SponsorsPage() {
         </section>
 
         <div className="mx-auto max-w-5xl px-4 py-12">
-          {sponsors.length === 0 ? (
+          {loadError ? (
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-950">
+              <p className="text-sm text-red-700 dark:text-red-400">
+                Couldn&apos;t load sponsors right now. Please refresh the page in a moment.
+              </p>
+            </div>
+          ) : sponsors.length === 0 ? (
             <p className="text-center text-zinc-500 dark:text-neutral-500">
               We&apos;re building our list of sponsors and partners — reach out below if you&apos;d like to be one of the first.
             </p>

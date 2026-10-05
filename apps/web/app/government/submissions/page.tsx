@@ -48,13 +48,6 @@ export default function GovernmentSubmissionsPage() {
       setLoading(true);
       setError(null);
       try {
-        const me = await apiGet<{ role: string }>('/users/me');
-        if (cancelled) return;
-        if (me.role !== 'ADMIN') {
-          setPhase('denied');
-          setLoading(false);
-          return;
-        }
         setPhase('ok');
         const response = await apiGet<SubmissionsResponse>('/government/submissions');
         if (!cancelled) {
@@ -90,18 +83,18 @@ export default function GovernmentSubmissionsPage() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12">
         <div className="rounded-3xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950">
-          <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Access denied</h1>
+          <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Sign in required</h1>
           <p className="mt-3 text-red-600 dark:text-red-400">
-            This page requires an Admin account.{' '}
-            {!isAuthenticated && (
-              <Link href="/auth/login" className="font-semibold underline">
-                Sign in
-              </Link>
-            )}
+            Sign in to view the petitions you&apos;ve submitted to government or NGO contacts.
           </p>
-          <Link href="/dashboard" className="mt-5 inline-flex rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700">
-            Back to dashboard
-          </Link>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/auth/login" className="inline-flex rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+              Sign in
+            </Link>
+            <Link href="/dashboard" className="inline-flex rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700">
+              Back to dashboard
+            </Link>
+          </div>
         </div>
       </main>
     );
