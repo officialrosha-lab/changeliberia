@@ -36,21 +36,21 @@ interface DashboardData {
 }
 
 export function AdminFacebookDashboard() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
-      if (!token) {
+      if (!isAuthenticated) {
         setError('Not authenticated');
         setLoading(false);
         return;
       }
 
       try {
-        const result = await apiGet<DashboardData>('/admin/facebook/dashboard', token);
+        const result = await apiGet<DashboardData>('/admin/facebook/dashboard');
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -60,7 +60,7 @@ export function AdminFacebookDashboard() {
     };
 
     fetchDashboard();
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return (

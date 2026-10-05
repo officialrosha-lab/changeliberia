@@ -16,7 +16,7 @@ interface PendingEndorsement {
 }
 
 export function AdminEndorsementsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState<PendingEndorsement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +25,11 @@ export function AdminEndorsementsPanel() {
   const toast = useToast();
 
   const load = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<PendingEndorsement[]>('/admin/endorsements/pending', token);
+      const data = await apiGet<PendingEndorsement[]>('/admin/endorsements/pending');
       setRows(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pending endorsements');
@@ -41,13 +41,13 @@ export function AdminEndorsementsPanel() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function approve(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(id);
     try {
-      await apiPatch(`/admin/endorsements/${id}/approve`, {}, token);
+      await apiPatch(`/admin/endorsements/${id}/approve`, {});
       setRows((r) => r.filter((row) => row.id !== id));
     } catch (error) {
       toast.show(error instanceof Error ? error.message : 'Failed to approve endorsement', 'error');
@@ -57,10 +57,10 @@ export function AdminEndorsementsPanel() {
   }
 
   async function reject(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusyId(id);
     try {
-      await apiPatch(`/admin/endorsements/${id}/reject`, { notes: notes[id] }, token);
+      await apiPatch(`/admin/endorsements/${id}/reject`, { notes: notes[id] });
       setRows((r) => r.filter((row) => row.id !== id));
     } catch (error) {
       toast.show(error instanceof Error ? error.message : 'Failed to reject endorsement', 'error');

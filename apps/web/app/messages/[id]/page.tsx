@@ -42,7 +42,7 @@ interface CurrentUser {
 export default function MessageThreadPage() {
   const params = useParams();
   const router = useRouter();
-  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [threadData, setThreadData] = useState<ThreadResponse | null>(null);
   const [replyContent, setReplyContent] = useState('');
@@ -54,7 +54,7 @@ export default function MessageThreadPage() {
   const messageId = params?.id as string | undefined;
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       router.replace('/auth/login');
       return;
     }
@@ -71,8 +71,8 @@ export default function MessageThreadPage() {
 
       try {
         const [user, thread] = await Promise.all([
-          apiGet<CurrentUser>('/users/me', token),
-          apiGet<ThreadResponse>(`/messages/${messageId}/thread`, token),
+          apiGet<CurrentUser>('/users/me'),
+          apiGet<ThreadResponse>(`/messages/${messageId}/thread`),
         ]);
 
         if (cancelled) return;
@@ -92,7 +92,7 @@ export default function MessageThreadPage() {
     return () => {
       cancelled = true;
     };
-  }, [messageId, router, token]);
+  }, [messageId, router, isAuthenticated]);
 
   const threadRoot = threadData?.root;
   const otherParticipant = (() => {
@@ -110,7 +110,7 @@ export default function MessageThreadPage() {
     : '';
 
   const handleReply = async () => {
-    if (!token || !threadRoot || !otherParticipant) return;
+    if (!isAuthenticated || !threadRoot || !otherParticipant) return;
     if (!replyContent.trim()) {
       show('Reply cannot be empty', 'warning');
       return;
@@ -123,11 +123,11 @@ export default function MessageThreadPage() {
         subject: replySubject,
         content: replyContent.trim(),
         replyToId: threadRoot.id,
-      }, token);
+      });
 
       setReplyContent('');
       show('Reply sent successfully', 'success');
-      const updatedThread = await apiGet<ThreadResponse>(`/messages/${messageId}/thread`, token);
+      const updatedThread = await apiGet<ThreadResponse>(`/messages/${messageId}/thread`);
       setThreadData(updatedThread);
     } catch (err) {
       show(err instanceof Error ? err.message : 'Failed to send reply', 'error');

@@ -31,22 +31,21 @@ interface IssueTrendsResponse {
  * stats with a year-scale category breakdown.
  */
 export function OfficialAnalyticsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [overview, setOverview] = useState<ConstituencyData | null>(null);
   const [trends, setTrends] = useState<IssueTrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const [overviewData, trendsData] = await Promise.all([
-          apiGet<ConstituencyData>('/officials/me/constituency', token),
+          apiGet<ConstituencyData>('/officials/me/constituency'),
           apiGet<IssueTrendsResponse>(
             '/officials/me/constituency/issues?period=year',
-            token,
           ),
         ]);
         if (!cancelled) {
@@ -65,7 +64,7 @@ export function OfficialAnalyticsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading analytics…</p>;
 

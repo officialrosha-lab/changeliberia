@@ -1,19 +1,42 @@
+/**
+ * Reads the csrf_token cookie (deliberately not httpOnly, so client JS can
+ * echo it back) for the double-submit CSRF check the API enforces on every
+ * non-GET request. Returns '' when absent — e.g. a Bearer-token session
+ * that never received the cookie, which the API's CsrfGuard treats as
+ * exempt from the check.
+ */
+function getCsrfToken(): string {
+  if (typeof document === 'undefined') return '';
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function csrfHeader(): Record<string, string> {
+  const token = getCsrfToken();
+  return token ? { 'X-CSRF-Token': token } : {};
+}
+
 export function getApiBase(): string {
-  // For Vercel production environment, use hardcoded API URL
-  // This is needed because NEXT_PUBLIC_API_URL may not be available during SSR
+  // Browser requests always go through this app's own same-origin
+  // /api/v1 proxy (apps/web/middleware.ts), which forwards to the Railway
+  // API server-side. This is what makes the auth cookies the API sets
+  // ordinary same-origin cookies from the browser's point of view —
+  // SameSite=Lax, no cross-site cookie restrictions — rather than needing
+  // true cross-site (SameSite=None) cookies for a direct Railway call.
+  if (typeof window !== 'undefined') {
+    return '/api/v1';
+  }
+
+  // Server-side (SSR/RSC): call Railway directly. This leg is
+  // server-to-server and isn't subject to CORS or the browser's cookie
+  // jar, so it skips the proxy entirely.
   const isProduction = process.env.NODE_ENV === 'production';
-  
-  if (isProduction && typeof window === 'undefined') {
-    // Server-side rendering in production - use hardcoded URL
+  if (isProduction) {
     return 'https://api-production-8873.up.railway.app/api/v1';
   }
-  
-  // Use NEXT_PUBLIC_API_URL if available
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
-  // Fallback for development
   return 'http://localhost:4000/api/v1';
 }
 
@@ -55,6 +78,7 @@ export async function apiPost<T>(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...csrfHeader(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
@@ -91,6 +115,7 @@ export async function apiPatch<T>(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
+      ...csrfHeader(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
@@ -128,6 +153,7 @@ export async function apiPut<T>(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      ...csrfHeader(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
@@ -162,7 +188,10 @@ export async function apiDelete<T = unknown>(
   const base = getApiBase();
   const res = await fetch(`${base}${path}`, {
     method: 'DELETE',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...csrfHeader(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
   if (!res.ok) {
     let message = `Request failed (${res.status} ${res.statusText})`;
@@ -210,12 +239,15 @@ export async function apiGetBlob(path: string, token?: string): Promise<Blob> {
 export async function apiPostFormData<T>(
   path: string,
   formData: FormData,
-  token: string,
+  token?: string,
 ): Promise<T> {
   const base = getApiBase();
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      ...csrfHeader(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
   if (!res.ok) {

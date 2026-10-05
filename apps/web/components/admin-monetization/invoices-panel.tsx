@@ -35,17 +35,17 @@ function billedTo(invoice: Invoice): string {
 }
 
 export function InvoicesPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<Invoice[]>('/admin/invoices', token);
+      const data = await apiGet<Invoice[]>('/admin/invoices');
       setInvoices(data);
       setError(null);
     } catch (err) {
@@ -53,17 +53,17 @@ export function InvoicesPanel() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function runAction(id: string, action: 'issue' | 'mark-paid' | 'void') {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setBusyId(id);
-      await apiPost(`/admin/invoices/${id}/${action}`, {}, token);
+      await apiPost(`/admin/invoices/${id}/${action}`, {});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${action.replace('-', ' ')} invoice`);

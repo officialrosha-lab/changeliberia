@@ -38,7 +38,7 @@ const STATUS_STYLES: Record<PlacementStatus, string> = {
 };
 
 export function PetitionPromotionsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [pricing, setPricing] = useState<Record<Placement, number> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,12 +46,12 @@ export function PetitionPromotionsPanel() {
   const [savingPricing, setSavingPricing] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const [promotionsData, pricingData] = await Promise.all([
-        apiGet<Promotion[]>('/admin/petition-promotions', token),
-        apiGet<Record<Placement, number>>('/admin/petition-promotions/pricing', token),
+        apiGet<Promotion[]>('/admin/petition-promotions'),
+        apiGet<Record<Placement, number>>('/admin/petition-promotions/pricing'),
       ]);
       setPromotions(promotionsData);
       setPricing(pricingData);
@@ -61,18 +61,18 @@ export function PetitionPromotionsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleSavePricing() {
-    if (!token || !pricing) return;
+    if (!isAuthenticated || !pricing) return;
     setSavingPricing(true);
     setError(null);
     try {
-      await apiPatch('/admin/petition-promotions/pricing', pricing, token);
+      await apiPatch('/admin/petition-promotions/pricing', pricing);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save pricing');
     } finally {

@@ -6,11 +6,13 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { VotingService } from './voting.service';
 import { SessionFingerprintService } from './session-fingerprint.service';
 import { CastVoteDto } from './dto/vote.dto';
+import { extractJwtFromRequest } from '../auth/cookie.util';
 
 @Controller('polls/:pollId/vote')
 export class VotingController {
@@ -25,6 +27,7 @@ export class VotingController {
    * Cast a vote on a poll option.
    * Dedup: authenticated users are deduped by userId; anonymous by IP fingerprint.
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   async castVote(
     @Param('pollId') pollId: string,
@@ -39,7 +42,7 @@ export class VotingController {
     const userAgent = this.fingerprintService.extractUserAgent(req);
 
     let userId: string | undefined;
-    const rawToken = req.headers.authorization?.replace('Bearer ', '');
+    const rawToken = extractJwtFromRequest(req);
     if (rawToken) {
       try {
         const payload = this.jwtService.verify<{ sub: string }>(rawToken);

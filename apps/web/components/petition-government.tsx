@@ -89,7 +89,7 @@ export function PetitionGovernmentPanel({
   const type = petitionType ?? 'government';
   const isSubmissionType = type === 'government' || type === 'ngo';
   const copy = type === 'ngo' ? COPY.ngo : COPY.government;
-  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hydrated = useAuthStore((state) => state.hydrated);
   const [readiness, setReadiness] = useState<GovernmentReadiness | null>(null);
   const [contacts, setContacts] = useState<GovernmentContact[]>([]);
@@ -125,7 +125,7 @@ export function PetitionGovernmentPanel({
     setDownloadingPdf(true);
     setDownloadError(null);
     try {
-      const blob = await apiGetBlob(`/government/report/${petitionId}`, token ?? undefined);
+      const blob = await apiGetBlob(`/government/report/${petitionId}`);
       triggerDownload(blob, `petition-${petitionId}-${date}.pdf`);
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF report');
@@ -138,7 +138,7 @@ export function PetitionGovernmentPanel({
     setDownloadingCsv(true);
     setDownloadError(null);
     try {
-      const blob = await apiGetBlob(`/government/report/${petitionId}/csv`, token ?? undefined);
+      const blob = await apiGetBlob(`/government/report/${petitionId}/csv`);
       triggerDownload(blob, `signatures-${petitionId}-${date}.csv`);
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Failed to export CSV');
@@ -157,7 +157,6 @@ export function PetitionGovernmentPanel({
       try {
         const result = await apiGet<{ isCreator: boolean }>(
           `/petitions/${petitionId}/is-creator`,
-          token ?? undefined,
         );
         if (!cancelled) setIsCreator(result.isCreator);
       } catch (err) {
@@ -176,7 +175,7 @@ export function PetitionGovernmentPanel({
     return () => {
       cancelled = true;
     };
-  }, [petitionId, token, isSubmissionType, hydrated, ownerCheckRetryKey]);
+  }, [petitionId, isAuthenticated, isSubmissionType, hydrated, ownerCheckRetryKey]);
 
   useEffect(() => {
     if (isSubmissionType && isCreator !== true) return;
@@ -194,7 +193,7 @@ export function PetitionGovernmentPanel({
           apiGet<{ success: boolean; count: number; contacts: GovernmentContact[] }>(
             '/government/contacts',
           ),
-          apiGet<GovernmentStatus>(`/government/status/${petitionId}`, token ?? undefined),
+          apiGet<GovernmentStatus>(`/government/status/${petitionId}`),
         ]);
 
         if (cancelled) return;
@@ -215,14 +214,14 @@ export function PetitionGovernmentPanel({
     return () => {
       cancelled = true;
     };
-  }, [petitionId, token, isSubmissionType, isCreator]);
+  }, [petitionId, isAuthenticated, isSubmissionType, isCreator]);
 
   const chosenEmail = useMemo(() => {
     const contact = contacts.find((item) => item.id === selectedContactId);
     return contact?.email || customEmail;
   }, [contacts, selectedContactId, customEmail]);
 
-  const canSubmit = !!token && readiness?.isGovernmentReady && !!chosenEmail;
+  const canSubmit = !!isAuthenticated && readiness?.isGovernmentReady && !!chosenEmail;
 
   async function handleSubmit() {
     if (!canSubmit) {
@@ -242,7 +241,6 @@ export function PetitionGovernmentPanel({
           governmentEmail: chosenEmail,
           notes,
         },
-        token,
       );
 
       setMessage(response.message || 'Government submission queued successfully.');
@@ -490,7 +488,7 @@ export function PetitionGovernmentPanel({
             <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-semibold text-zinc-900 dark:text-white">{copy.recipientLabel}</p>
-                {!token ? (
+                {!isAuthenticated ? (
                   <Link href="/auth/login" className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                     Sign in to submit
                   </Link>

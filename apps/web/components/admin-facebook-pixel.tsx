@@ -48,7 +48,7 @@ interface PixelConfig {
 }
 
 export function AdminFacebookPixel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [config, setConfig] = useState<PixelConfig | null>(null);
   const [editedPixelId, setEditedPixelId] = useState('');
@@ -61,19 +61,19 @@ export function AdminFacebookPixel() {
   const { show: showToast } = useToast();
 
   const fetchEvents = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<{ events: PixelEvent[] }>('/admin/facebook/pixel-events', token);
+      const result = await apiGet<{ events: PixelEvent[] }>('/admin/facebook/pixel-events');
       setEvents(result.events?.slice(0, 10) || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const fetchConfig = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const result = await apiGet<PixelConfig>('/admin/facebook/pixel-config', token);
+      const result = await apiGet<PixelConfig>('/admin/facebook/pixel-config');
       setConfig(result);
       setEditedPixelId(result.pixelId === 'NOT_SET' ? '' : result.pixelId);
       setEditedApiVersion(result.apiVersion || '18.0');
@@ -82,17 +82,17 @@ export function AdminFacebookPixel() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const handleSaveConfig = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setSavingConfig(true);
     setConfigMessage(null);
     try {
       await apiPatch('/admin/facebook/pixel-config', {
         pixelId: editedPixelId,
         apiVersion: editedApiVersion,
-      }, token);
+      });
       setConfigMessage('Pixel settings saved successfully.');
       showToast('Pixel settings saved successfully.', 'success');
       await fetchConfig();
@@ -110,10 +110,10 @@ export function AdminFacebookPixel() {
   }, [fetchEvents, fetchConfig]);
 
   const handleTestEvent = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setSendingTest(true);
     try {
-      await apiPost('/admin/facebook/pixel/test-event', {}, token);
+      await apiPost('/admin/facebook/pixel/test-event', {});
       await fetchEvents();
       showToast('Test event sent successfully', 'success');
     } catch (err) {

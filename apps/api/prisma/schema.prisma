@@ -150,6 +150,7 @@ model User {
 
   // Auth token relations
   passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
   memberships         Membership[]
   emailLogs           EmailLog[] // Email system relation
 
@@ -2644,6 +2645,29 @@ model PasswordResetToken {
 
   @@index([userId, expiresAt])
   @@index([token])
+}
+
+// Opaque, rotating refresh tokens backing the JWT access-token lifecycle.
+// Only a hash of the token is ever stored. `familyId` is generated once at
+// login and carried through every rotation in that device's chain, so reuse
+// of an already-rotated token (replay/theft) can be detected and the whole
+// family revoked — see AuthService.refreshToken().
+model RefreshToken {
+  id                  String    @id @default(cuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash           String    @unique
+  familyId            String
+  issuedAt            DateTime  @default(now())
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  replacedByTokenHash String?
+  userAgent           String?
+  ipAddress           String?
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
 }
 
 model Sponsor {

@@ -49,7 +49,7 @@ function formatPrice(plan: ApiPlan): string {
 }
 
 export function DevelopersClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const searchParams = useSearchParams();
   const checkoutResult = searchParams.get('checkout');
@@ -70,10 +70,10 @@ export function DevelopersClient() {
       setLoading(true);
       const [plansData, meData, keysData] = await Promise.all([
         apiGet<ApiPlan[]>('/api-billing/plans'),
-        token
-          ? apiGet<{ subscription: ApiSubscription | null }>('/api-billing/me', token)
+        isAuthenticated
+          ? apiGet<{ subscription: ApiSubscription | null }>('/api-billing/me')
           : Promise.resolve({ subscription: null }),
-        token ? apiGet<ApiKey[]>('/api-billing/keys', token) : Promise.resolve([]),
+        isAuthenticated ? apiGet<ApiKey[]>('/api-billing/keys') : Promise.resolve([]),
       ]);
       setPlans(plansData);
       setSubscription(meData.subscription);
@@ -84,7 +84,7 @@ export function DevelopersClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -92,7 +92,7 @@ export function DevelopersClient() {
   }, [hydrated, load]);
 
   async function handleSubscribe(planKey: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setPendingKey(planKey);
     try {
@@ -104,7 +104,6 @@ export function DevelopersClient() {
           successUrl: `${origin}/developers?checkout=success`,
           cancelUrl: `${origin}/developers?checkout=cancelled`,
         },
-        token,
       );
       window.location.href = res.checkoutUrl;
     } catch (err) {
@@ -114,11 +113,11 @@ export function DevelopersClient() {
   }
 
   async function handleCancel() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setCancelling(true);
     try {
-      await apiPost('/api-billing/cancel', {}, token);
+      await apiPost('/api-billing/cancel', {});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
@@ -128,14 +127,13 @@ export function DevelopersClient() {
   }
 
   async function handleCreateKey() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setCreatingKey(true);
     try {
       const res = await apiPost<{ id: string; keyPrefix: string; rawKey: string }>(
         '/api-billing/keys',
         {},
-        token,
       );
       setNewRawKey(res.rawKey);
       await load();
@@ -159,11 +157,11 @@ export function DevelopersClient() {
   }
 
   async function handleRevokeKey(keyId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setRevokingKeyId(keyId);
     try {
-      await apiDelete(`/api-billing/keys/${keyId}`, token);
+      await apiDelete(`/api-billing/keys/${keyId}`);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke key');
@@ -312,7 +310,7 @@ export function DevelopersClient() {
                         <p className="text-xs text-zinc-500 dark:text-neutral-400">
                           {plan.requestsPerDay.toLocaleString()} requests/day
                         </p>
-                        {!token ? (
+                        {!isAuthenticated ? (
                           <Link
                             href={`/auth/login?next=${encodeURIComponent('/developers')}`}
                             className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"

@@ -376,7 +376,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
   const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const { onPollUpdate } = usePollSocket({ pollId: initialPoll.id });
 
@@ -407,14 +407,14 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
 
   async function handleVote(optionId: string) {
     if (votedOptionId || !isActive) return;
-    if (!token) {
+    if (!isAuthenticated) {
       setShowAuthModal(true);
       return;
     }
     setError(null);
     setSubmitting(true);
     try {
-      await apiPost(`/polls/${poll.id}/vote`, { optionId }, token);
+      await apiPost(`/polls/${poll.id}/vote`, { optionId });
       setVotedOptionId(optionId);
       // Analytics is best-effort — must not surface as "Vote failed"
       try {
@@ -523,7 +523,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
         </div>
 
         {/* Voting hint / success */}
-        {isActive && !votedOptionId && !token && (
+        {isActive && !votedOptionId && !isAuthenticated && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               <span className="font-semibold text-zinc-700 dark:text-zinc-200">Sign in to vote.</span>{' '}
@@ -537,7 +537,7 @@ export default function PollDetailClient({ initialPoll }: { initialPoll: PollDet
             </Link>
           </div>
         )}
-        {isActive && !votedOptionId && token && (
+        {isActive && !votedOptionId && isAuthenticated && (
           <p className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
             Select an option below to cast your vote
           </p>

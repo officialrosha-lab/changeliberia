@@ -34,7 +34,7 @@ const STATUS_LABEL: Record<Promotion['status'], string> = {
 };
 
 export function PromotionsClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const router = useRouter();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -42,10 +42,10 @@ export function PromotionsClient() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<Promotion[]>('/petition-promotions/me', token);
+      const data = await apiGet<Promotion[]>('/petition-promotions/me');
       setPromotions(data);
       setError(null);
     } catch (err) {
@@ -53,18 +53,18 @@ export function PromotionsClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
+    if (!isAuthenticated) {
       router.replace(`/auth/login?next=${encodeURIComponent('/promotions')}`);
       return;
     }
     void load();
-  }, [hydrated, token, router, load]);
+  }, [hydrated, isAuthenticated, router, load]);
 
-  if (!hydrated || !token) {
+  if (!hydrated || !isAuthenticated) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 text-center text-sm text-zinc-500 dark:text-neutral-400">
         Loading…

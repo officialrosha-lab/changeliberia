@@ -33,7 +33,7 @@ export function NotificationsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const { show: showToast } = useToast();
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
 
   const PAGE_SIZE = 20;
@@ -41,7 +41,7 @@ export function NotificationsPage() {
   // Fetch notifications
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
+    if (!isAuthenticated) {
       setIsLoading(false);
       return;
     }
@@ -60,7 +60,7 @@ export function NotificationsPage() {
         const data = await apiGet<{
           notifications: Notification[];
           total: number;
-        }>(`/notifications?${params.toString()}`, token);
+        }>(`/notifications?${params.toString()}`);
 
         if (data) {
           setNotifications(data.notifications);
@@ -74,7 +74,7 @@ export function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, [filter, page, token, hydrated, showToast]);
+  }, [filter, page, isAuthenticated, hydrated, showToast]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     setNotifications((prev) =>
@@ -82,9 +82,9 @@ export function NotificationsPage() {
         n.id === notificationId ? { ...n, status: 'READ' as const } : n,
       ),
     );
-    if (token) {
+    if (isAuthenticated) {
       try {
-        await apiPatch(`/notifications/${notificationId}/read`, {}, token);
+        await apiPatch(`/notifications/${notificationId}/read`, {});
       } catch {
         showToast('Failed to update notification', 'error');
       }
@@ -93,9 +93,9 @@ export function NotificationsPage() {
 
   const handleArchive = async (notificationId: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-    if (token) {
+    if (isAuthenticated) {
       try {
-        await apiPatch(`/notifications/${notificationId}/archive`, {}, token);
+        await apiPatch(`/notifications/${notificationId}/archive`, {});
       } catch {
         showToast('Failed to archive notification', 'error');
       }

@@ -38,7 +38,7 @@ function formatPrice(plan: MembershipPlan): string {
 }
 
 export default function MembershipPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const searchParams = useSearchParams();
   const checkoutResult = searchParams.get('checkout');
@@ -56,8 +56,8 @@ export default function MembershipPage() {
       setError(null);
       const [plansData, subscriptionData] = await Promise.all([
         apiGet<MembershipPlan[]>('/memberships/plans'),
-        token
-          ? apiGet<{ subscription: MembershipSubscription | null }>('/memberships/me', token)
+        isAuthenticated
+          ? apiGet<{ subscription: MembershipSubscription | null }>('/memberships/me')
           : Promise.resolve({ subscription: null }),
       ]);
       setPlans(plansData);
@@ -67,7 +67,7 @@ export default function MembershipPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -75,7 +75,7 @@ export default function MembershipPage() {
   }, [hydrated, loadData]);
 
   async function handleSubscribe(planKey: string) {
-    if (!token) {
+    if (!isAuthenticated) {
       window.location.href = '/auth/login?next=%2Fmembership';
       return;
     }
@@ -90,7 +90,6 @@ export default function MembershipPage() {
           successUrl: `${origin}/membership?checkout=success`,
           cancelUrl: `${origin}/membership?checkout=cancelled`,
         },
-        token,
       );
       window.location.href = res.checkoutUrl;
     } catch (err) {
@@ -100,11 +99,11 @@ export default function MembershipPage() {
   }
 
   async function handleCancel() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setError(null);
     setCancelling(true);
     try {
-      await apiPost('/memberships/cancel', {}, token);
+      await apiPost('/memberships/cancel', {});
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel membership');

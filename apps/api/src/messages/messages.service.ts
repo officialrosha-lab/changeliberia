@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto, SearchMessagesDto } from './dto';
@@ -128,11 +132,11 @@ export class MessagesService {
     });
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     if (message.recipientId !== userId) {
-      throw new Error('Unauthorized');
+      throw new ForbiddenException('Unauthorized');
     }
 
     return this.prisma.message.update({
@@ -163,11 +167,11 @@ export class MessagesService {
     });
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     if (message.recipientId !== userId) {
-      throw new Error('Unauthorized');
+      throw new ForbiddenException('Unauthorized');
     }
 
     return this.prisma.message.update({
@@ -185,11 +189,11 @@ export class MessagesService {
     });
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     if (message.recipientId !== userId && message.senderId !== userId) {
-      throw new Error('Unauthorized');
+      throw new ForbiddenException('Unauthorized');
     }
 
     return this.prisma.message.delete({
@@ -375,12 +379,12 @@ export class MessagesService {
     });
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     // Check authorization
     if (message.recipientId !== userId && message.senderId !== userId) {
-      throw new Error('Unauthorized');
+      throw new ForbiddenException('Unauthorized');
     }
 
     return message;
@@ -427,11 +431,11 @@ export class MessagesService {
     });
 
     if (!rootMessage) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     if (rootMessage.recipientId !== userId && rootMessage.senderId !== userId) {
-      throw new Error('Unauthorized');
+      throw new ForbiddenException('Unauthorized');
     }
 
     const threadMessages = await this.prisma.message.findMany({

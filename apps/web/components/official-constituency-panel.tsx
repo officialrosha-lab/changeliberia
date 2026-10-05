@@ -62,20 +62,20 @@ const INDICATOR_LABELS: Array<{ key: keyof PetitionFeedIndicators; label: string
 ];
 
 export function OfficialConstituencyPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [data, setData] = useState<ConstituencyData | null>(null);
   const [feed, setFeed] = useState<PetitionFeedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const [result, feedResult] = await Promise.all([
-          apiGet<ConstituencyData>('/officials/me/constituency', token),
-          apiGet<PetitionFeedResponse>('/officials/me/constituency/petitions', token),
+          apiGet<ConstituencyData>('/officials/me/constituency'),
+          apiGet<PetitionFeedResponse>('/officials/me/constituency/petitions'),
         ]);
         if (!cancelled) {
           setData(result);
@@ -93,7 +93,7 @@ export function OfficialConstituencyPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading constituency data…</p>;
 

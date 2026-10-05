@@ -24,7 +24,7 @@ interface VerificationStatus {
 }
 
 export function ProfileSettings() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [user, setUser] = useState<User | null>(null);
   const [verification, setVerification] = useState<VerificationStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,8 +37,8 @@ export function ProfileSettings() {
     try {
       setLoading(true);
       const [u, v] = await Promise.all([
-        apiGet<User>('/users/me', token!),
-        apiGet<VerificationStatus>('/verification/completed', token!),
+        apiGet<User>('/users/me'),
+        apiGet<VerificationStatus>('/verification/completed'),
       ]);
       setUser(u);
       setVerification(v);
@@ -49,17 +49,17 @@ export function ProfileSettings() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadProfile();
-  }, [token, loadProfile]);
+  }, [isAuthenticated, loadProfile]);
 
   async function handleSaveProfile() {
-    if (!token || !user) return;
+    if (!isAuthenticated || !user) return;
     try {
-      await apiPatch(`/users/${user.id}`, formData, token);
+      await apiPatch(`/users/${user.id}`, formData);
       setSuccess('Profile updated successfully!');
       setEditing(false);
       setTimeout(() => setSuccess(null), 3000);

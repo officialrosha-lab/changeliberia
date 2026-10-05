@@ -25,7 +25,7 @@ const ROLE_LABEL: Record<MyOrganization['myRole'], string> = {
 };
 
 export function OrganizationsClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const router = useRouter();
 
@@ -38,16 +38,16 @@ export function OrganizationsClient() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
+    if (!isAuthenticated) {
       router.replace('/auth/login?next=%2Forganizations');
     }
-  }, [hydrated, token, router]);
+  }, [hydrated, isAuthenticated, router]);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<MyOrganization[]>('/organizations/me', token);
+      const data = await apiGet<MyOrganization[]>('/organizations/me');
       setOrganizations(data);
       setError(null);
     } catch (err) {
@@ -55,18 +55,18 @@ export function OrganizationsClient() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleCreate() {
-    if (!token || !name.trim()) return;
+    if (!isAuthenticated || !name.trim()) return;
     setError(null);
     setCreating(true);
     try {
-      const org = await apiPost<{ id: string }>('/organizations', { name: name.trim() }, token);
+      const org = await apiPost<{ id: string }>('/organizations', { name: name.trim() });
       router.push(`/organizations/${org.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create organization');
@@ -74,7 +74,7 @@ export function OrganizationsClient() {
     }
   }
 
-  if (!hydrated || !token) {
+  if (!hydrated || !isAuthenticated) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-16 text-center text-sm text-zinc-500 dark:text-neutral-400">
         Loading…

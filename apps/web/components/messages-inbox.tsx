@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useAuthStore } from '../lib/store';
 import { apiGet, apiPut, apiDelete } from '../lib/api';
 import {
   Mail,
@@ -39,7 +38,6 @@ interface InboxResponse {
 }
 
 export function MessagesInbox() {
-  const { token } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,23 +75,23 @@ export function MessagesInbox() {
         }),
       });
 
-      const data = await apiGet<InboxResponse>(`/messages/inbox?${params}`, token!);
+      const data = await apiGet<InboxResponse>(`/messages/inbox?${params}`);
       setMessages(data.messages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load messages');
     } finally {
       setLoading(false);
     }
-  }, [token, page, pageSize, filters]);
+  }, [page, pageSize, filters]);
 
   const loadUnreadCount = useCallback(async () => {
     try {
-      const data = await apiGet<{ unreadCount: number }>('/messages/unread-count', token!);
+      const data = await apiGet<{ unreadCount: number }>('/messages/unread-count');
       setUnreadCount(data.unreadCount);
     } catch (err) {
       console.error('Failed to load unread count:', err);
     }
-  }, [token]);
+  }, []);
 
   // Load messages
   useEffect(() => {
@@ -129,7 +127,7 @@ export function MessagesInbox() {
         pageSize: pageSize.toString(),
       });
 
-      const data = await apiGet<InboxResponse>(`/messages/search/query?${params}`, token!);
+      const data = await apiGet<InboxResponse>(`/messages/search/query?${params}`);
       setMessages(data.messages);
       setPage(1);
     } catch (err) {
@@ -141,7 +139,7 @@ export function MessagesInbox() {
 
   const markAsRead = async (messageId: string) => {
     try {
-      await apiPut(`/messages/${messageId}/read`, {}, token!);
+      await apiPut(`/messages/${messageId}/read`, {});
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === messageId ? { ...msg, isRead: true } : msg,
@@ -156,7 +154,7 @@ export function MessagesInbox() {
 
   const archiveMessage = async (messageId: string) => {
     try {
-      await apiPut(`/messages/${messageId}/archive`, {}, token!);
+      await apiPut(`/messages/${messageId}/archive`, {});
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
     } catch (err) {
       console.error('Failed to archive message:', err);
@@ -167,7 +165,7 @@ export function MessagesInbox() {
   const deleteMessage = async (messageId: string) => {
     if (!confirm('Are you sure you want to delete this message?')) return;
     try {
-      await apiDelete(`/messages/${messageId}`, token!);
+      await apiDelete(`/messages/${messageId}`);
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
       setExpandedMessageId(null);
       showNotification('Message deleted');
@@ -183,7 +181,7 @@ export function MessagesInbox() {
     try {
       await Promise.all(
         Array.from(selectedMessages).map((id) =>
-          apiPut(`/messages/${id}/archive`, {}, token!),
+          apiPut(`/messages/${id}/archive`, {}),
         ),
       );
 
@@ -210,7 +208,7 @@ export function MessagesInbox() {
     try {
       await Promise.all(
         Array.from(selectedMessages).map((id) =>
-          apiDelete(`/messages/${id}`, token!),
+          apiDelete(`/messages/${id}`),
         ),
       );
 
@@ -237,7 +235,6 @@ export function MessagesInbox() {
       await apiPut(
         '/messages/mark-read/bulk',
         { messageIds: Array.from(selectedMessages) },
-        token!,
       );
 
       setMessages((prev) =>

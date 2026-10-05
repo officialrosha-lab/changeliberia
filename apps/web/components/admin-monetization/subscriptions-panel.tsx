@@ -33,16 +33,16 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function SubscriptionsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState<UnifiedSubscriptionRow[]>([]);
   const [productFilter, setProductFilter] = useState<SubscriptionProductType | 'ALL'>('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
-    apiGet<UnifiedSubscriptionRow[]>('/admin/monetization/subscriptions', token)
+    apiGet<UnifiedSubscriptionRow[]>('/admin/monetization/subscriptions')
       .then((data) => {
         if (!cancelled) setRows(data);
       })
@@ -55,7 +55,7 @@ export function SubscriptionsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return <div className="py-8 text-center dark:text-neutral-300">Loading subscriptions…</div>;

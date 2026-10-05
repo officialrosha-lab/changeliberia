@@ -45,8 +45,8 @@ function formatStatus(value: string): string {
 }
 
 export function DashboardClient() {
-  const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [petitions, setPetitions] = useState<MyPetition[]>([]);
@@ -75,18 +75,18 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<{ petitionId: string; message: string } | null>(null);
 
   useEffect(() => {
-    if (!token) { router.replace('/'); return; }
-  }, [token, router]);
+    if (!isAuthenticated) { router.replace('/'); return; }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const [me, mine, steps] = await Promise.all([
-          apiGet<User>('/users/me', token),
-          apiGet<MyPetition[]>('/users/me/petitions', token),
-          apiGet<CompletedSteps>('/verification/completed', token),
+          apiGet<User>('/users/me'),
+          apiGet<MyPetition[]>('/users/me/petitions'),
+          apiGet<CompletedSteps>('/verification/completed'),
         ]);
         if (!cancelled) {
           setUser(me);
@@ -95,7 +95,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
         }
       } catch {
         if (!cancelled) {
-          setToken(null);
+          setSession(null);
           setMessage('Session expired. Sign in again.');
         }
       }
@@ -103,15 +103,15 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     return () => {
       cancelled = true;
     };
-  }, [token, setToken]);
+  }, [isAuthenticated, setSession]);
 
   useEffect(() => {
-    if (!token || petitions.length === 0) return;
+    if (!isAuthenticated || petitions.length === 0) return;
     let cancelled = false;
 
     void (async () => {
       const govResults = await Promise.allSettled(
-        petitions.map((p) => apiGet<GovernmentStatus>(`/government/status/${p.id}`, token)),
+        petitions.map((p) => apiGet<GovernmentStatus>(`/government/status/${p.id}`)),
       );
 
       if (cancelled) return;
@@ -126,7 +126,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
     return () => {
       cancelled = true;
     };
-  }, [token, petitions]);
+  }, [isAuthenticated, petitions]);
 
   async function copyLink(url: string) {
     await navigator.clipboard.writeText(url);
@@ -135,21 +135,21 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   }
 
   async function refreshTrust() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     const [me, steps] = await Promise.all([
-      apiGet<User>('/users/me', token),
-      apiGet<CompletedSteps>('/verification/completed', token),
+      apiGet<User>('/users/me'),
+      apiGet<CompletedSteps>('/verification/completed'),
     ]);
     setUser(me);
     setCompleted(steps);
   }
 
   async function runGeoVerification() {
-    if (!token || verifying) return;
+    if (!isAuthenticated || verifying) return;
     setVerifying('geo');
     setMessage('');
     try {
-      const result = await apiPost<{ verificationStatus: string }>('/verification/geo', {}, token);
+      const result = await apiPost<{ verificationStatus: string }>('/verification/geo', {});
       await refreshTrust();
       const isLiberia = result?.verificationStatus === 'VERIFIED_LIBERIAN' || result?.verificationStatus === 'HIGH_TRUST';
       setMessage(
@@ -165,7 +165,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   }
 
   async function runDeviceVerification() {
-    if (!token || verifying) return;
+    if (!isAuthenticated || verifying) return;
     setVerifying('device');
     setMessage('');
     try {
@@ -184,7 +184,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
         hash |= 0;
       }
       const fingerprint = Math.abs(hash).toString(16);
-      await apiPost('/verification/device', { fingerprint }, token);
+      await apiPost('/verification/device', { fingerprint });
       await refreshTrust();
       setMessage('Device linked. Your trust score has been updated.');
     } catch {
@@ -196,7 +196,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
 
   async function submitId(e: FormEvent) {
     e.preventDefault();
-    if (!token || idSubmitting) return;
+    if (!isAuthenticated || idSubmitting) return;
     if (!idFile && !idUrl.trim()) return;
     setIdSubmitting(true);
     try {
@@ -204,13 +204,12 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
         const fd = new FormData();
         fd.append('type', idType);
         fd.append('file', idFile);
-        await apiPostFormData('/verification/id-document', fd, token);
+        await apiPostFormData('/verification/id-document', fd);
         setIdFile(null);
       } else {
         await apiPost(
           '/verification/id-document',
           { type: idType, fileUrl: idUrl.trim() },
-          token,
         );
         setIdUrl('');
       }
@@ -223,7 +222,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   }
 
   async function handlePetitionDownload(petitionId: string, format: 'pdf' | 'csv') {
-    if (!token) return;
+    if (!isAuthenticated) return;
     const key = `${petitionId}-${format}`;
     setDownloadingId(key);
     setDownloadError(null);
@@ -232,7 +231,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
         ? `/government/report/${petitionId}`
         : `/government/report/${petitionId}/csv`;
       const date = new Date().toISOString().slice(0, 10);
-      const blob = await apiGetBlob(path, token);
+      const blob = await apiGetBlob(path);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -260,12 +259,12 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   }
 
   async function uploadMedia(file: File, kind: 'cover' | 'embed') {
-    if (!token || !editPetitionId) return;
+    if (!isAuthenticated || !editPetitionId) return;
     setMediaUploading(true);
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const result = await apiPostFormData(`/petitions/${editPetitionId}/media`, fd, token) as { url: string };
+      const result = await apiPostFormData(`/petitions/${editPetitionId}/media`, fd) as { url: string };
       if (kind === 'cover') {
         setEditImageUrl(result.url);
       } else {
@@ -280,7 +279,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
 
   async function submitEdit(e: FormEvent) {
     e.preventDefault();
-    if (!token || !editPetitionId) return;
+    if (!isAuthenticated || !editPetitionId) return;
     setEditSubmitting(true);
     try {
       await apiPatch(
@@ -291,7 +290,6 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
           description: editDescription,
           imageUrl: editImageUrl || undefined,
         },
-        token,
       );
       setPetitions((prev) =>
         prev.map((p) =>
@@ -311,7 +309,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
 
   async function submitUpdate(e: FormEvent) {
     e.preventDefault();
-    if (!token || !updatePetitionId || !updateTitle.trim() || !updateBody.trim() || updateSubmitting) {
+    if (!isAuthenticated || !updatePetitionId || !updateTitle.trim() || !updateBody.trim() || updateSubmitting) {
       return;
     }
     setUpdateSubmitting(true);
@@ -319,7 +317,6 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
       await apiPost(
         `/petitions/${updatePetitionId}/updates`,
         { title: updateTitle.trim(), body: updateBody.trim() },
-        token,
       );
       setUpdatePetitionId(null);
       setUpdateTitle('');
@@ -334,7 +331,7 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
 
   const allVerified = completed.geo && completed.device && completed.idDocument;
 
-  if (!token) {
+  if (!isAuthenticated) {
     return null;
   }
 

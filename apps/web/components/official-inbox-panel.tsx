@@ -16,17 +16,17 @@ interface InboxItem {
 }
 
 export function OfficialInboxPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
-        const result = await apiGet<{ data: InboxItem[] }>('/officials/me/inbox', token);
+        const result = await apiGet<{ data: InboxItem[] }>('/officials/me/inbox');
         if (!cancelled) {
           setItems(result.data);
           setError(null);
@@ -42,7 +42,7 @@ export function OfficialInboxPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading inbox…</p>;
 

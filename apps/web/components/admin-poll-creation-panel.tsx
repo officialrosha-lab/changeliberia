@@ -36,7 +36,7 @@ type PollOption = { text: string; imageUrl?: string };
 export function AdminPollCreationPanel() {
   const { counties: countyOptions } = useCounties();
   const COUNTIES = countyOptions.map((c) => c.name);
-  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Infrastructure');
@@ -80,7 +80,7 @@ export function AdminPollCreationPanel() {
       setFeedback({ type: 'error', message: 'Please provide a title and at least two options.' });
       return;
     }
-    if (!token) {
+    if (!isAuthenticated) {
       setFeedback({ type: 'error', message: 'Admin authentication is required.' });
       return;
     }
@@ -97,7 +97,6 @@ export function AdminPollCreationPanel() {
           expiresAt: new Date(expiresAt).toISOString(),
           options: validOptions.map((o) => ({ text: o.text.trim(), imageUrl: o.imageUrl })),
         },
-        token,
       );
       setFeedback({ type: 'success', message: 'Poll created and published successfully.' });
       setTitle('');

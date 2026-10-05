@@ -13,6 +13,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { PermissionGuard } from '../rbac/guards/permission.guard';
@@ -346,7 +347,12 @@ export class AdminDirectoryController {
 
   @Post('import/upload')
   @Permission(PermissionResource.DIRECTORY, PermissionAction.CREATE)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   async importFromCSV(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: AuthUser,
@@ -355,11 +361,10 @@ export class AdminDirectoryController {
       throw new BadRequestException('No file provided');
     }
 
-    if (
-      !file.mimetype.includes('csv') &&
-      !file.mimetype.includes('spreadsheet')
-    ) {
-      throw new BadRequestException('File must be CSV format');
+    const allowedMimeTypes = ['text/csv', 'application/vnd.ms-excel'];
+    const hasCsvExtension = file.originalname.toLowerCase().endsWith('.csv');
+    if (!allowedMimeTypes.includes(file.mimetype) || !hasCsvExtension) {
+      throw new BadRequestException('File must be a .csv file');
     }
 
     const result = await this.bulkImportService.importFromCSV(file.buffer);

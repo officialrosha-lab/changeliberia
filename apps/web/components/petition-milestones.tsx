@@ -26,7 +26,7 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreatorOrAdmin, setIsCreatorOrAdmin] = useState(false);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const milestoneThresholds = [10, 50, 100, 500, 1000, 5000];
 
   useEffect(() => {
@@ -51,14 +51,14 @@ export const PetitionMilestones: React.FC<PetitionMilestonesProps> = ({
   }, [petitionId]);
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       setIsCreatorOrAdmin(false);
       return;
     }
-    apiGet<{ isCreator: boolean }>(`/petitions/${petitionId}/is-creator`, token)
+    apiGet<{ isCreator: boolean }>(`/petitions/${petitionId}/is-creator`)
       .then((res) => setIsCreatorOrAdmin(res.isCreator))
       .catch(() => setIsCreatorOrAdmin(false));
-  }, [petitionId, token]);
+  }, [petitionId, isAuthenticated]);
 
   const getNextMilestone = () => {
     for (const threshold of milestoneThresholds) {

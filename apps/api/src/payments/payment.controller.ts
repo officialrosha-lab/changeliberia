@@ -12,6 +12,7 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import Stripe from 'stripe';
 import {
@@ -44,6 +45,7 @@ export class PaymentController {
   /**
    * Create a payment intent for one-time donation
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('intent')
   async createPaymentIntent(@Body() dto: CreatePaymentIntentDto) {
@@ -58,6 +60,7 @@ export class PaymentController {
   /**
    * Confirm payment after client-side token generation
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('confirm/:intentId')
   async confirmPayment(
@@ -78,6 +81,7 @@ export class PaymentController {
   /**
    * Create a Stripe Checkout session
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
   async createCheckoutSession(
@@ -108,6 +112,7 @@ export class PaymentController {
   /**
    * Create recurring subscription
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('subscription')
   async createSubscription(@Body() dto: CreateSubscriptionDto) {
@@ -178,6 +183,7 @@ export class PaymentController {
   /**
    * Refund a payment (admin only)
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('refund/:paymentId')
@@ -200,6 +206,7 @@ export class PaymentController {
   /**
    * Create a payment (unified endpoint for Stripe and MoMo)
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('create')
   async createPayment(@Body() dto: CreatePaymentIntentDto) {
@@ -214,6 +221,7 @@ export class PaymentController {
   /**
    * Create recurring subscription (unified for Stripe and MoMo)
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('subscription/create')
   async createUnifiedSubscription(@Body() dto: CreateSubscriptionDto) {

@@ -8,6 +8,7 @@ import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
 import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
 import { MobileMenuOverlay } from '../components/mobile-menu-overlay';
+import { AuthSessionBootstrap } from '../components/auth-session-bootstrap';
 import { LayoutProvider } from './layout-provider';
 
 function BottomNavContent() {
@@ -28,6 +29,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
 
   return (
     <LayoutProvider>
+      <AuthSessionBootstrap />
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>

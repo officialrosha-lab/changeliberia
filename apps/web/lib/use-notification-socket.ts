@@ -48,7 +48,7 @@ export function useNotificationSocket({
   onAllNotificationsRead,
   onNotificationArchived,
 }: UseNotificationSocketProps) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -78,9 +78,9 @@ export function useNotificationSocket({
   }, []);
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       // Intentional: tears down the live socket connection synchronously
-      // when the auth token disappears (e.g. logout) rather than leaving
+      // when the auth isAuthenticated disappears (e.g. logout) rather than leaving
       // a stale connection open until some later render.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       disconnect();
@@ -92,7 +92,7 @@ export function useNotificationSocket({
     const connect = async () => {
       let userId: string | undefined;
       try {
-        const me = await apiGet<{ id: string }>('/users/me', token);
+        const me = await apiGet<{ id: string }>('/users/me');
         userId = me?.id;
       } catch {
         console.log('[NotificationSocket] Could not resolve user id, skipping connection');
@@ -146,7 +146,7 @@ export function useNotificationSocket({
       cancelled = true;
       disconnect();
     };
-  }, [token, disconnect]);
+  }, [isAuthenticated, disconnect]);
 
   return {
     isConnected,

@@ -6,11 +6,19 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OAuth2Client } from 'google-auth-library';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailSignupDto, EmailLoginDto, GoogleAuthCallbackDto } from './dto';
 import { PasswordProvider } from './password.provider';
 import { EmailVerificationService } from './email-verification.service';
+
+const ACCESS_TOKEN_TTL = '20m';
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export interface RequestMeta {
+  userAgent?: string;
+  ipAddress?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -22,10 +30,139 @@ export class AuthService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  private issueToken(sub: string, phone: string) {
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  /** Non-sensitive user fields safe to return in a login/signup response body. */
+  private publicUser(user: {
+    id: string;
+    email: string | null;
+    fullName: string;
+    role: string;
+  }) {
     return {
-      accessToken: this.jwt.sign({ sub, phone }),
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
     };
+  }
+
+  private async withUser<
+    T extends { accessToken: string; refreshToken: string },
+  >(
+    pairPromise: Promise<T>,
+    user: { id: string; email: string | null; fullName: string; role: string },
+  ) {
+    const pair = await pairPromise;
+    return { ...pair, user: this.publicUser(user) };
+  }
+
+  /**
+   * Issue a fresh access/refresh pair for a user, starting a new rotation
+   * family. Persists a RefreshToken row holding only the token's hash.
+   */
+  private async issueTokenPair(
+    sub: string,
+    phone: string,
+    meta: RequestMeta = {},
+    familyId: string = randomBytes(16).toString('hex'),
+  ) {
+    const accessToken = this.jwt.sign(
+      { sub, phone },
+      { expiresIn: ACCESS_TOKEN_TTL },
+    );
+    const refreshToken = randomBytes(32).toString('hex');
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: sub,
+        tokenHash: this.hashToken(refreshToken),
+        familyId,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        userAgent: meta.userAgent,
+        ipAddress: meta.ipAddress,
+      },
+    });
+    return { accessToken, refreshToken };
+  }
+
+  /**
+   * Exchange a refresh token for a new access/refresh pair, rotating the
+   * refresh token on every use. If the presented token has already been
+   * rotated away (i.e. someone replayed an old token — theft/reuse), the
+   * entire rotation family is revoked as a theft-detection response.
+   */
+  async refreshToken(presentedToken: string, meta: RequestMeta = {}) {
+    const tokenHash = this.hashToken(presentedToken);
+    const row = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!row) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (row.revokedAt) {
+      // Reuse of an already-rotated (or already-logged-out) token — revoke
+      // the whole family in case this is a stolen token being replayed.
+      await this.prisma.refreshToken.updateMany({
+        where: { familyId: row.familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException(
+        'Refresh token reuse detected — session revoked',
+      );
+    }
+
+    if (row.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: row.userId },
+    });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const pair = await this.issueTokenPair(
+      user.id,
+      user.phone,
+      meta,
+      row.familyId,
+    );
+
+    await this.prisma.refreshToken.update({
+      where: { id: row.id },
+      data: {
+        revokedAt: new Date(),
+        replacedByTokenHash: this.hashToken(pair.refreshToken),
+      },
+    });
+
+    return pair;
+  }
+
+  /** Revoke the rotation family the presented refresh token belongs to. */
+  async logout(presentedToken: string): Promise<void> {
+    const tokenHash = this.hashToken(presentedToken);
+    const row = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
+    if (!row) return;
+    await this.prisma.refreshToken.updateMany({
+      where: { familyId: row.familyId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  /** Revoke every active refresh token family for a user — all devices. */
+  async logoutAll(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   /**
@@ -101,7 +238,7 @@ export class AuthService {
   /**
    * Log in with email and password
    */
-  async loginWithEmail(dto: EmailLoginDto) {
+  async loginWithEmail(dto: EmailLoginDto, meta: RequestMeta = {}) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -125,14 +262,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.issueToken(user.id, user.phone);
+    return this.withUser(this.issueTokenPair(user.id, user.phone, meta), user);
   }
 
   /**
    * Handle Google OAuth callback
    * Creates user if doesn't exist, or links Google account to existing user
    */
-  async loginWithGoogle(dto: GoogleAuthCallbackDto) {
+  async loginWithGoogle(dto: GoogleAuthCallbackDto, meta: RequestMeta = {}) {
     // Try to find user by Google ID first
     let user = await this.prisma.user.findUnique({
       where: { googleId: dto.googleId },
@@ -140,7 +277,10 @@ export class AuthService {
 
     if (user) {
       // User already has Google linked
-      return this.issueToken(user.id, user.phone);
+      return this.withUser(
+        this.issueTokenPair(user.id, user.phone, meta),
+        user,
+      );
     }
 
     // Try to find user by Google email
@@ -158,7 +298,10 @@ export class AuthService {
           avatarUrl: dto.avatarUrl || user.avatarUrl,
         },
       });
-      return this.issueToken(user.id, user.phone);
+      return this.withUser(
+        this.issueTokenPair(user.id, user.phone, meta),
+        user,
+      );
     }
 
     // Create new user from Google profile
@@ -187,14 +330,17 @@ export class AuthService {
       });
     }
 
-    return this.issueToken(newUser.id, newUser.phone);
+    return this.withUser(
+      this.issueTokenPair(newUser.id, newUser.phone, meta),
+      newUser,
+    );
   }
 
   /**
    * Verify a Google ID token (from @react-oauth/google One-Tap) and log the user in.
    * Called by POST /auth/google/callback with { token: <id_token> }.
    */
-  async verifyGoogleToken(idToken: string) {
+  async verifyGoogleToken(idToken: string, meta: RequestMeta = {}) {
     const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
     if (!clientId) {
       throw new UnauthorizedException(
@@ -223,19 +369,22 @@ export class AuthService {
     }
     if (!payload) throw new UnauthorizedException('Invalid Google token');
 
-    return this.loginWithGoogle({
-      googleId: payload.sub,
-      googleEmail: payload.email ?? '',
-      fullName: payload.name ?? payload.email ?? 'Google User',
-      avatarUrl: payload.picture,
-    });
+    return this.loginWithGoogle(
+      {
+        googleId: payload.sub,
+        googleEmail: payload.email ?? '',
+        fullName: payload.name ?? payload.email ?? 'Google User',
+        avatarUrl: payload.picture,
+      },
+      meta,
+    );
   }
 
   /**
    * Verify email token and mark email as confirmed
    * Returns JWT token if successful
    */
-  async verifyEmailToken(email: string, code: string) {
+  async verifyEmailToken(email: string, code: string, meta: RequestMeta = {}) {
     // Verify the code with email verification service
     await this.emailVerificationService.verifyEmail(email, code);
 
@@ -255,7 +404,7 @@ export class AuthService {
     });
 
     // Return JWT token for immediate login
-    return this.issueToken(user.id, user.phone);
+    return this.withUser(this.issueTokenPair(user.id, user.phone, meta), user);
   }
 
   /**

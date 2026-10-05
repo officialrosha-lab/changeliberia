@@ -29,19 +29,18 @@ type Props = {
 };
 
 export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rules, setRules] = useState(initialRules);
   const [running, setRunning] = useState(false);
   const [jobMessage, setJobMessage] = useState('');
   const toast = useToast();
 
   async function updateRule(key: string, field: 'threshold' | 'penalty', value: number) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       const updated = await apiPatch<FraudRule>(
         `/fraud/rules/${key}`,
         { [field]: value },
-        token,
       );
       setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
     } catch (error) {
@@ -50,9 +49,9 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
   }
 
   async function toggleRule(key: string, enabled: boolean) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const updated = await apiPatch<FraudRule>(`/fraud/rules/${key}`, { enabled }, token);
+      const updated = await apiPatch<FraudRule>(`/fraud/rules/${key}`, { enabled });
       setRules((prev) => prev.map((rule) => (rule.key === key ? updated : rule)));
     } catch (error) {
       toast.show(error instanceof Error ? error.message : 'Failed to toggle rule', 'error');
@@ -60,13 +59,12 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
   }
 
   async function runAnomalyJob() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setRunning(true);
     try {
       const result = await apiPost<{ suspiciousIpCount: number }>(
         '/fraud/jobs/anomaly-scan',
         {},
-        token,
       );
       setJobMessage(`Anomaly job completed. Suspicious IP clusters: ${result.suspiciousIpCount}`);
     } catch (error) {
@@ -82,7 +80,7 @@ export function AdminFraudPanel({ initialRules, latestSnapshots }: Props) {
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-neutral-50">Fraud analytics and tuning</h2>
         <button
           onClick={runAnomalyJob}
-          disabled={running || !token}
+          disabled={running || !isAuthenticated}
           className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-neutral-700 dark:hover:bg-neutral-600"
         >
           {running ? 'Running...' : 'Run anomaly job'}

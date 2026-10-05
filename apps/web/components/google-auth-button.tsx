@@ -4,18 +4,18 @@ import { CredentialResponse, GoogleLogin, GoogleOAuthProvider } from '@react-oau
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiPost } from '../lib/api';
-import { useAuthStore } from '../lib/store';
+import { useAuthStore, type AuthUser } from '../lib/store';
 
 export function GoogleAuthButton() {
-  const token = useAuthStore((s) => s.token);
-  const setToken = useAuthStore((s) => s.setToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setSession = useAuthStore((s) => s.setSession);
   const setAuthMethod = useAuthStore((s) => s.setAuthMethod);
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
 
   // Already logged in — don't render
-  if (token) return null;
+  if (isAuthenticated) return null;
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -23,12 +23,12 @@ export function GoogleAuthButton() {
         throw new Error('No credential received from Google');
       }
 
-      const response = await apiPost<{ accessToken: string }>(
+      const response = await apiPost<{ user: AuthUser }>(
         '/auth/google/callback',
         { token: credentialResponse.credential },
       );
 
-      setToken(response.accessToken);
+      setSession(response.user);
       setAuthMethod('google');
       router.push('/dashboard');
     } catch (error: unknown) {

@@ -53,7 +53,7 @@ const MenuIcon = () => (
 
 export function BottomNav() {
   const pathname = usePathname();
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { openMenu } = useMenuStore();
 
   if (pathname?.includes('/admin') || pathname?.includes('/auth')) {
@@ -61,7 +61,7 @@ export function BottomNav() {
   }
 
   // Always show: Home, Browse, Create, Dashboard (when logged in), Menu
-  const displayItems = token ? NAV_ITEMS : [NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[2]];
+  const displayItems = isAuthenticated ? NAV_ITEMS : [NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[2]];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 safe-bottom">

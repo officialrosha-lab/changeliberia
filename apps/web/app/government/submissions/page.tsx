@@ -29,14 +29,14 @@ type SubmissionsResponse = {
 type Phase = 'loading' | 'denied' | 'ok';
 
 export default function GovernmentSubmissionsPage() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [phase, setPhase] = useState<Phase>('loading');
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       setPhase('denied');
       setLoading(false);
       return;
@@ -49,7 +49,7 @@ export default function GovernmentSubmissionsPage() {
       setError(null);
       try {
         setPhase('ok');
-        const response = await apiGet<SubmissionsResponse>('/government/submissions', token);
+        const response = await apiGet<SubmissionsResponse>('/government/submissions');
         if (!cancelled) {
           setSubmissions(response.submissions || []);
         }
@@ -69,7 +69,7 @@ export default function GovernmentSubmissionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   if (phase === 'loading') {
     return (

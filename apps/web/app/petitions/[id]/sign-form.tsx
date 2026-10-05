@@ -87,7 +87,7 @@ export function SignForm({
   district?: string | null;
   community?: string | null;
 }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const toast = useToast();
   const [name, setName] = useState('');
   const [count, setCount] = useState(signatureCount);
@@ -119,14 +119,14 @@ export function SignForm({
 
   useEffect(() => {
     if (!needsLocationFlow) return;
-    if (token) {
-      apiGet<{ county?: string; district?: string; community?: string }>('/users/me', token)
+    if (isAuthenticated) {
+      apiGet<{ county?: string; district?: string; community?: string }>('/users/me')
         .then((profile) => setKnownLocation({ county: profile.county, district: profile.district, community: profile.community }))
         .catch(() => setKnownLocation(loadSavedLocation()));
     } else {
       setKnownLocation(loadSavedLocation());
     }
-  }, [needsLocationFlow, token]);
+  }, [needsLocationFlow, isAuthenticated]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -146,9 +146,9 @@ export function SignForm({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (token) {
+    if (isAuthenticated) {
       let cancelled = false;
-      apiGet<{ signed: boolean }>(`/signatures/${petitionId}/has-signed`, token)
+      apiGet<{ signed: boolean }>(`/signatures/${petitionId}/has-signed`)
         .then(({ signed }) => {
           if (cancelled) return;
           setHasSigned(signed);
@@ -164,14 +164,14 @@ export function SignForm({
     }
 
     setHasSigned(localStorage.getItem(localKey(petitionId)) !== null);
-  }, [petitionId, token]);
+  }, [petitionId, isAuthenticated]);
 
   useEffect(() => {
-    if (!token) return;
-    apiGet<{ following: boolean }>(`/petitions/${petitionId}/follow`, token)
+    if (!isAuthenticated) return;
+    apiGet<{ following: boolean }>(`/petitions/${petitionId}/follow`)
       .then(({ following: f }) => setFollowing(f))
       .catch(() => {});
-  }, [petitionId, token]);
+  }, [petitionId, isAuthenticated]);
 
   // Live signature counter — the same Socket.IO channel live-petition-stats.tsx
   // uses, rather than a separate SSE connection that only sent a bare "something
@@ -280,7 +280,7 @@ export function SignForm({
         confirmedDistrict: usingConfirmedLocation ? confirmedDistrict || undefined : undefined,
         confirmedCommunity: usingConfirmedLocation ? confirmedCommunity || undefined : undefined,
         locationSource: usingConfirmedLocation ? 'user_confirmed' : undefined,
-      }, token ?? undefined);
+      });
 
       if (response.captchaRequired && !response.signature) {
         setCaptchaRequired(true);
@@ -329,14 +329,14 @@ export function SignForm({
   }
 
   async function toggleFollow() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setFollowLoading(true);
     try {
       if (following) {
-        await apiDelete(`/petitions/${petitionId}/follow`, token);
+        await apiDelete(`/petitions/${petitionId}/follow`);
         setFollowing(false);
       } else {
-        await apiPost(`/petitions/${petitionId}/follow`, {}, token);
+        await apiPost(`/petitions/${petitionId}/follow`, {});
         setFollowing(true);
       }
     } catch {
@@ -400,7 +400,7 @@ export function SignForm({
               >
                 Share this petition
               </button>
-              {token && (
+              {isAuthenticated && (
                 <button
                   type="button"
                   disabled={followLoading}
@@ -724,7 +724,7 @@ export function SignForm({
               Get notified when there are major updates, milestones, or news about this petition.
             </p>
 
-            {token ? (
+            {isAuthenticated ? (
               <div className="mt-5 flex flex-col gap-2">
                 <button
                   type="button"

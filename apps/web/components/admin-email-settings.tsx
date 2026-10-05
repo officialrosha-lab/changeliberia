@@ -43,7 +43,7 @@ interface HealthStatus {
 }
 
 export function AdminEmailSettings() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [activeTab, setActiveTab] = useState<'configuration' | 'queue' | 'analytics'>('configuration');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +66,9 @@ export function AdminEmailSettings() {
       const [s, q, h] = await Promise.all([
         apiGet<EmailStats>(
           `/admin/email/stats?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-          token!
         ),
-        apiGet<QueueStats>('/admin/email/queue-stats', token!),
-        apiGet<HealthStatus>('/admin/email/health', token!),
+        apiGet<QueueStats>('/admin/email/queue-stats'),
+        apiGet<HealthStatus>('/admin/email/health'),
       ]);
       setStats(s);
       setQueueStats(q);
@@ -80,20 +79,20 @@ export function AdminEmailSettings() {
     } finally {
       setLoading(false);
     }
-  }, [token, dateRange]);
+  }, [dateRange]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadData();
     const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [token, dateRange, loadData]);
+  }, [isAuthenticated, dateRange, loadData]);
 
   async function handleVerifyDomain(domain: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setVerifying(true);
-      const result = await apiPost<DomainStatus>('/admin/email/verify-domain', { domain }, token);
+      const result = await apiPost<DomainStatus>('/admin/email/verify-domain', { domain });
       setDomainStatus(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify domain');

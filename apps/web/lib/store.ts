@@ -5,13 +5,28 @@ import { persist } from 'zustand/middleware';
 
 export type AuthMethod = 'phone' | 'email' | 'google';
 
+export type AuthUser = {
+  id: string;
+  email: string | null;
+  fullName: string;
+  role: string;
+};
+
 export type AuthState = {
-  token: string | null;
-  setToken: (token: string | null) => void;
+  // Derived from a server-side session check (GET /users/me, authenticated
+  // via the httpOnly access_token cookie) rather than a client-readable
+  // token — there's no longer a JWT this code can inspect directly.
+  isAuthenticated: boolean;
+  user: AuthUser | null;
+  setSession: (user: AuthUser | null) => void;
   authMethod: AuthMethod;
   setAuthMethod: (method: AuthMethod) => void;
   userEmail: string | null;
   setUserEmail: (email: string | null) => void;
+  // True once the initial session check above has resolved (either way).
+  // Callers should wait for this before rendering auth-gated UI, the same
+  // role `hydrated` played when auth state was read synchronously from
+  // persisted storage.
   hydrated: boolean;
   setHydrated: (hydrated: boolean) => void;
 };
@@ -30,29 +45,17 @@ export const useMenuStore = create<MenuState>()((set) => ({
   toggleMenu: () => set((s) => ({ isMenuOpen: !s.isMenuOpen })),
 }));
 
-function isTokenExpired(token: string): boolean {
-  try {
-    // JWT segments use base64url — pad and replace chars before decoding
-    const segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = segment + '='.repeat((4 - (segment.length % 4)) % 4);
-    const payload = JSON.parse(atob(padded));
-    return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
-}
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
-      setToken: (token) => {
-        if (token && isTokenExpired(token)) {
-          set({ token: null });
-          return;
-        }
-        set({ token });
-      },
+      isAuthenticated: false,
+      user: null,
+      setSession: (user) =>
+        set({
+          isAuthenticated: !!user,
+          user,
+          userEmail: user?.email ?? null,
+        }),
       authMethod: 'phone',
       setAuthMethod: (method) => set({ authMethod: method }),
       userEmail: null,
@@ -62,14 +65,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'vlv-auth-storage',
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          const expiredToken = state.token && isTokenExpired(state.token);
-          // Use the store's own setters so Zustand tracks the update properly
-          if (expiredToken) state.setToken(null);
-          state.setHydrated(true);
-        }
-      },
+      // Auth state is never trusted from localStorage — it's re-derived
+      // from the server on every load (see components/auth-session-bootstrap.tsx)
+      // since the real credential lives in an httpOnly cookie this code
+      // can't read. Only the last-used login method is worth remembering
+      // across visits.
+      partialize: (state) => ({ authMethod: state.authMethod }),
     },
   ),
 );

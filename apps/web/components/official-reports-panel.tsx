@@ -60,7 +60,7 @@ function formatDate(iso: string) {
 }
 
 export function OfficialReportsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [reports, setReports] = useState<ReportsResponse | null>(null);
   const [preferences, setPreferences] = useState<ReportPreferences | null>(null);
   const [generating, setGenerating] = useState<ReportPeriod | null>(null);
@@ -69,9 +69,9 @@ export function OfficialReportsPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function loadReports() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const data = await apiGet<ReportsResponse>('/officials/me/reports', token);
+      const data = await apiGet<ReportsResponse>('/officials/me/reports');
       setReports(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load reports');
@@ -79,13 +79,13 @@ export function OfficialReportsPanel() {
   }
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
         const [reportsData, prefsData] = await Promise.all([
-          apiGet<ReportsResponse>('/officials/me/reports', token),
-          apiGet<ReportPreferences>('/officials/me/reports/preferences', token),
+          apiGet<ReportsResponse>('/officials/me/reports'),
+          apiGet<ReportPreferences>('/officials/me/reports/preferences'),
         ]);
         if (!cancelled) {
           setReports(reportsData);
@@ -98,14 +98,14 @@ export function OfficialReportsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function handleGenerate(period: ReportPeriod) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setGenerating(period);
     setError(null);
     try {
-      await apiPost('/officials/me/reports/generate', { period }, token);
+      await apiPost('/officials/me/reports/generate', { period });
       await loadReports();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to queue report');
@@ -115,13 +115,12 @@ export function OfficialReportsPanel() {
   }
 
   async function handleDownload(report: ConstituencyReport, format: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     const key = `${report.id}-${format}`;
     setDownloading(key);
     try {
       const blob = await apiGetBlob(
         `/officials/me/reports/${report.id}/download/${format}`,
-        token,
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -139,12 +138,12 @@ export function OfficialReportsPanel() {
   }
 
   async function togglePreference(key: keyof ReportPreferences) {
-    if (!token || !preferences) return;
+    if (!isAuthenticated || !preferences) return;
     const next = { ...preferences, [key]: !preferences[key] };
     setPreferences(next);
     setSavingPrefs(true);
     try {
-      await apiPatch<ReportPreferences>('/officials/me/reports/preferences', next, token);
+      await apiPatch<ReportPreferences>('/officials/me/reports/preferences', next);
     } catch (err) {
       setPreferences(preferences);
       setError(err instanceof Error ? err.message : 'Failed to update preferences');

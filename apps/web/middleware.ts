@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Forces the Node.js middleware runtime rather than Edge. This proxy relies
+// on Node's fetch/Headers implementation correctly preserving multiple
+// distinct Set-Cookie response headers (verified directly: Node's
+// `Headers` iterates one entry per Set-Cookie value, which is how
+// NextResponse serializes them back onto the wire) — the three auth
+// cookies set on login must arrive at the browser as three separate
+// Set-Cookie lines, not collapsed into one comma-joined value.
+export const runtime = 'nodejs';
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -53,6 +62,20 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
     response.headers.set('Content-Security-Policy', "frame-ancestors 'self'");
   }
+
+  // General-purpose security headers, unrelated to framing — applied to
+  // every page including the embed route.
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=63072000; includeSubDomains; preload',
+  );
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=()',
+  );
+
   return response;
 }
 

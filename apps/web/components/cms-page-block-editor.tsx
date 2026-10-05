@@ -27,7 +27,7 @@ interface PageWithBlocks extends CMSPage {
 }
 
 export function CMSPageBlockEditor() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [pages, setPages] = useState<PageWithBlocks[]>([]);
   const [selectedPage, setSelectedPage] = useState<PageWithBlocks | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export function CMSPageBlockEditor() {
   const loadPages = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<PageWithBlocks[]>('/cms/pages', token!);
+      const data = await apiGet<PageWithBlocks[]>('/cms/pages');
       setPages(data);
       setError(null);
     } catch (err) {
@@ -50,16 +50,16 @@ export function CMSPageBlockEditor() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadPages();
-  }, [token, loadPages]);
+  }, [isAuthenticated, loadPages]);
 
   async function loadPageWithBlocks(pageId: string) {
     try {
-      const data = await apiGet<PageWithBlocks>(`/cms/pages/${pageId}`, token!);
+      const data = await apiGet<PageWithBlocks>(`/cms/pages/${pageId}`);
       setSelectedPage(data);
       setError(null);
     } catch (err) {
@@ -68,13 +68,12 @@ export function CMSPageBlockEditor() {
   }
 
   async function handleAddBlock() {
-    if (!selectedPage || !token) return;
+    if (!selectedPage || !isAuthenticated) return;
     try {
       const order = (selectedPage.blocks?.length ?? 0) + 1;
       const newBlock = await apiPost<CMSBlock>(
         `/cms/pages/${selectedPage.id}/blocks`,
         { type: blockType, props: blockProps, order },
-        token
       );
       setSelectedPage({
         ...selectedPage,
@@ -89,12 +88,11 @@ export function CMSPageBlockEditor() {
   }
 
   async function handleUpdateBlock(blockId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       const updated = await apiPatch<CMSBlock>(
         `/cms/blocks/${blockId}`,
         { props: blockProps },
-        token
       );
       setSelectedPage({
         ...selectedPage!,
@@ -109,9 +107,9 @@ export function CMSPageBlockEditor() {
   }
 
   async function handleDeleteBlock(blockId: string) {
-    if (!token || !confirm('Delete this block?')) return;
+    if (!isAuthenticated || !confirm('Delete this block?')) return;
     try {
-      await apiDelete(`/cms/blocks/${blockId}`, token);
+      await apiDelete(`/cms/blocks/${blockId}`);
       setSelectedPage({
         ...selectedPage!,
         blocks: (selectedPage!.blocks || []).filter((b) => b.id !== blockId),
@@ -123,13 +121,12 @@ export function CMSPageBlockEditor() {
   }
 
   async function handleDuplicateBlock(block: CMSBlock) {
-    if (!selectedPage || !token) return;
+    if (!selectedPage || !isAuthenticated) return;
     try {
       const order = (selectedPage.blocks?.length ?? 0) + 1;
       const newBlock = await apiPost<CMSBlock>(
         `/cms/pages/${selectedPage.id}/blocks`,
         { type: block.type, props: block.props, order },
-        token
       );
       setSelectedPage({
         ...selectedPage,
@@ -147,13 +144,12 @@ export function CMSPageBlockEditor() {
   }
 
   async function handlePasteBlock() {
-    if (!selectedPage || !token || !copiedBlock) return;
+    if (!selectedPage || !isAuthenticated || !copiedBlock) return;
     try {
       const order = (selectedPage.blocks?.length ?? 0) + 1;
       const newBlock = await apiPost<CMSBlock>(
         `/cms/pages/${selectedPage.id}/blocks`,
         { type: copiedBlock.type, props: copiedBlock.props, order },
-        token
       );
       setSelectedPage({
         ...selectedPage,
@@ -166,7 +162,7 @@ export function CMSPageBlockEditor() {
   }
 
   async function handleReorderBlocks(sourceIndex: number, destIndex: number) {
-    if (!selectedPage || !token) return;
+    if (!selectedPage || !isAuthenticated) return;
     const blocks = [...(selectedPage.blocks || [])];
     const [movedBlock] = blocks.splice(sourceIndex, 1);
     blocks.splice(destIndex, 0, movedBlock);
@@ -180,7 +176,7 @@ export function CMSPageBlockEditor() {
     // Update order in database for all affected blocks
     try {
       const updates = blocks.map((block, idx) =>
-        apiPatch(`/cms/blocks/${block.id}`, { order: idx + 1 }, token!)
+        apiPatch(`/cms/blocks/${block.id}`, { order: idx + 1 })
       );
       await Promise.all(updates);
       setError(null);
@@ -192,12 +188,11 @@ export function CMSPageBlockEditor() {
   }
 
   async function handlePublishPage() {
-    if (!selectedPage || !token) return;
+    if (!selectedPage || !isAuthenticated) return;
     try {
       const updated = await apiPatch<PageWithBlocks>(
         `/cms/pages/${selectedPage.id}`,
         { published: !selectedPage.published },
-        token
       );
       setSelectedPage(updated);
       setPages(pages.map((p) => (p.id === selectedPage.id ? updated : p)));

@@ -26,7 +26,7 @@ const CATEGORIES = [
 ];
 
 export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [rows, setRows] = useState(initial);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Record<string, string | null>>({});
@@ -40,11 +40,11 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   };
 
   async function approve(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     const category = selectedCategory[id] ?? rows.find((p) => p.id === id)?.category ?? null;
     setApprovingId(id);
     try {
-      await apiPatch(`/petitions/${id}/approve`, { category: category || undefined }, token);
+      await apiPatch(`/petitions/${id}/approve`, { category: category || undefined });
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -55,10 +55,10 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   }
 
   async function rejectPetition(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setRejectingId(id);
     try {
-      await apiPatch(`/petitions/${id}/reject`, {}, token);
+      await apiPatch(`/petitions/${id}/reject`, {});
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -69,14 +69,14 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
   }
 
   async function deletePetition(id: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!window.confirm('Delete this petition from the platform? This action cannot be undone.')) {
       return;
     }
 
     setDeletingId(id);
     try {
-      await apiDelete(`/admin/petitions/${id}`, token);
+      await apiDelete(`/admin/petitions/${id}`);
       setRows((r) => r.filter((p) => p.id !== id));
       setExpandedId(null);
     } catch (error) {
@@ -174,7 +174,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       <button
                         type="button"
                         onClick={() => approve(p.id)}
-                        disabled={!token || approvingId === p.id}
+                        disabled={!isAuthenticated || approvingId === p.id}
                         className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                       >
                         {approvingId === p.id ? 'Approving…' : 'Approve'}
@@ -182,7 +182,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       <button
                         type="button"
                         onClick={() => rejectPetition(p.id)}
-                        disabled={!token || rejectingId === p.id}
+                        disabled={!isAuthenticated || rejectingId === p.id}
                         className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                       >
                         {rejectingId === p.id ? 'Rejecting…' : 'Reject'}
@@ -190,7 +190,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                       <button
                         type="button"
                         onClick={() => deletePetition(p.id)}
-                        disabled={!token || deletingId === p.id}
+                        disabled={!isAuthenticated || deletingId === p.id}
                         className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
                       >
                         {deletingId === p.id ? 'Deleting…' : 'Delete'}
@@ -212,7 +212,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                     <button
                       type="button"
                       onClick={() => approve(p.id)}
-                      disabled={!token || approvingId === p.id}
+                      disabled={!isAuthenticated || approvingId === p.id}
                       className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                     >
                       {approvingId === p.id ? 'Approving…' : 'Approve'}
@@ -220,7 +220,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                     <button
                       type="button"
                       onClick={() => rejectPetition(p.id)}
-                      disabled={!token || rejectingId === p.id}
+                      disabled={!isAuthenticated || rejectingId === p.id}
                       className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                     >
                       {rejectingId === p.id ? 'Rejecting…' : 'Reject'}
@@ -228,7 +228,7 @@ export function AdminPendingPetitionsPanel({ initial }: { initial: Petition[] })
                     <button
                       type="button"
                       onClick={() => deletePetition(p.id)}
-                      disabled={!token || deletingId === p.id}
+                      disabled={!isAuthenticated || deletingId === p.id}
                       className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
                     >
                       {deletingId === p.id ? 'Deleting…' : 'Delete'}

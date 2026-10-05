@@ -30,7 +30,7 @@ export function CMSEditor() {
   const router = useRouter();
   const params = useParams();
   const pageId = params?.id as string;
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [page, setPage] = useState<CMSPage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export function CMSEditor() {
   const loadPage = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiGet<CMSPage>(`/cms/pages/${pageId}`, token!);
+      const data = await apiGet<CMSPage>(`/cms/pages/${pageId}`);
       setPage(data as CMSPage);
       setError(null);
     } catch (err) {
@@ -51,18 +51,18 @@ export function CMSEditor() {
     } finally {
       setLoading(false);
     }
-  }, [token, pageId]);
+  }, [pageId]);
 
   useEffect(() => {
-    if (!token || !pageId) return;
+    if (!isAuthenticated || !pageId) return;
     loadPage();
-  }, [token, pageId, loadPage]);
+  }, [isAuthenticated, pageId, loadPage]);
 
   async function handleSave() {
-    if (!token || !page) return;
+    if (!isAuthenticated || !page) return;
     try {
       setSaving(true);
-      const updated = await apiPatch<CMSPage>(`/cms/pages/${pageId}`, page, token);
+      const updated = await apiPatch<CMSPage>(`/cms/pages/${pageId}`, page);
       setPage(updated as CMSPage);
       setSuccess('Page saved successfully');
       setTimeout(() => setSuccess(null), 3000);
@@ -74,13 +74,12 @@ export function CMSEditor() {
   }
 
   async function handleToggleDraft() {
-    if (!token || !page) return;
+    if (!isAuthenticated || !page) return;
     try {
       setSaving(true);
       const updated = await apiPatch<CMSPage>(
         `/cms/pages/${pageId}/draft`,
         { isDraft: !page.isDraft },
-        token
       );
       setPage(updated as CMSPage);
       setSuccess(`Page marked as ${updated.isDraft ? 'draft' : 'ready for publishing'}`);
@@ -93,13 +92,12 @@ export function CMSEditor() {
   }
 
   async function handlePublish() {
-    if (!token || !page) return;
+    if (!isAuthenticated || !page) return;
     try {
       setSaving(true);
       const updated = await apiPost(
         `/cms/pages/${pageId}/publish`,
         {},
-        token
       );
       setPage(updated as CMSPage);
       setSuccess('Page published successfully');
@@ -112,9 +110,9 @@ export function CMSEditor() {
   }
 
   async function loadVersionHistory() {
-    if (!token || !pageId) return;
+    if (!isAuthenticated || !pageId) return;
     try {
-      const data = await apiGet<PageVersion[]>(`/cms/pages/${pageId}/versions`, token);
+      const data = await apiGet<PageVersion[]>(`/cms/pages/${pageId}/versions`);
       setVersions(data || []);
     } catch {
       setError('Failed to load version history');

@@ -25,7 +25,7 @@ interface FraudFlag {
 }
 
 export function ModeratorFraudReview() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [flags, setFlags] = useState<FraudFlag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,6 @@ export function ModeratorFraudReview() {
       setLoading(true);
       const data = await apiGet<FraudFlag[]>(
         `/moderator/fraud-flags?status=${statusFilter === 'all' ? '' : statusFilter}`,
-        token!
       );
       setFlags(data);
       setError(null);
@@ -47,21 +46,20 @@ export function ModeratorFraudReview() {
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     loadFlags();
-  }, [token, statusFilter, loadFlags]);
+  }, [isAuthenticated, statusFilter, loadFlags]);
 
   async function handleResolveFlag(flagId: string, action: 'approve' | 'ban' | 'dismiss', notes?: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setActionInProgress(true);
       await apiPost(
         `/moderator/fraud-flags/${flagId}/resolve`,
         { action, notes },
-        token
       );
       setFlags((prev) => prev.filter((f) => f.id !== flagId));
       setSelectedFlagId(null);

@@ -82,11 +82,11 @@ export function PetitionClientPage({ id }: { id: string }) {
       <main className="min-h-screen bg-zinc-50 dark:bg-neutral-950">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="grid gap-6 md:grid-cols-[1fr_340px]">
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5">
               <div className="h-64 animate-pulse rounded-3xl bg-zinc-200 dark:bg-neutral-800" />
               <div className="h-48 animate-pulse rounded-3xl bg-zinc-200 dark:bg-neutral-800" />
             </div>
-            <div className="h-64 animate-pulse rounded-3xl bg-zinc-200 dark:bg-neutral-800" />
+            <div className="min-w-0 h-64 animate-pulse rounded-3xl bg-zinc-200 dark:bg-neutral-800" />
           </div>
         </div>
       </main>
@@ -139,7 +139,7 @@ export function PetitionClientPage({ id }: { id: string }) {
       <div className="mx-auto max-w-6xl px-4 py-6 md:py-10">
         <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8 lg:gap-10">
 
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
             {checkoutResult === 'success' && (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
                 Thanks! Your payment is processing — the promotion will activate once it&apos;s confirmed.
@@ -244,7 +244,7 @@ export function PetitionClientPage({ id }: { id: string }) {
             <CommentForm petitionId={petition.id} initialComments={comments} />
           </div>
 
-          <aside className="md:sticky md:top-20 md:self-start">
+          <aside className="min-w-0 md:sticky md:top-20 md:self-start">
             <SignForm
               petitionId={petition.id}
               signatureCount={petition.signaturesCount}

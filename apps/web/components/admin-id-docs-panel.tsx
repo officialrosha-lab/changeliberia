@@ -25,16 +25,16 @@ function formatDocType(type: string): string {
 }
 
 export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] }) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [docs, setDocs] = useState(initialDocs);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const toast = useToast();
 
   async function review(id: string, status: 'APPROVED' | 'REJECTED') {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setReviewingId(id);
     try {
-      await apiPatch(`/admin/id-documents/${id}`, { status }, token);
+      await apiPatch(`/admin/id-documents/${id}`, { status });
       setDocs((prev) => prev.filter((d) => d.id !== id));
     } catch (error) {
       toast.show(error instanceof Error ? error.message : 'Failed to review document', 'error');
@@ -48,14 +48,14 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
   }
 
   async function openFile(d: PendingDoc) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!isLocallyStoredUpload(d.fileUrl)) {
       window.open(d.fileUrl, '_blank', 'noopener,noreferrer');
       return;
     }
     const base = getApiBase();
     const res = await fetch(`${base}/verification/id-documents/${d.id}/file`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
       redirect: 'manual',
     });
     if (res.status >= 300 && res.status < 400) {
@@ -99,7 +99,7 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
               <button
                 type="button"
                 onClick={() => review(d.id, 'APPROVED')}
-                disabled={!token || reviewingId === d.id}
+                disabled={!isAuthenticated || reviewingId === d.id}
                 className="rounded-lg bg-emerald-600 px-3 py-1 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 {reviewingId === d.id ? 'Saving…' : 'Approve'}
@@ -107,7 +107,7 @@ export function AdminIdDocsPanel({ initialDocs }: { initialDocs: PendingDoc[] })
               <button
                 type="button"
                 onClick={() => review(d.id, 'REJECTED')}
-                disabled={!token || reviewingId === d.id}
+                disabled={!isAuthenticated || reviewingId === d.id}
                 className="rounded-lg border border-zinc-300 px-3 py-1 text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 {reviewingId === d.id ? 'Saving…' : 'Reject'}

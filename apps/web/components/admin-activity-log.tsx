@@ -45,8 +45,7 @@ interface PaginationInfo {
 }
 
 export function AdminActivityLog() {
-  const token = useAuthStore((s) => s.token);
-  const authToken = token ?? undefined;
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [activeTab, setActiveTab] = useState<'global' | 'user' | 'stats'>('global');
   
   // Global timeline state
@@ -80,7 +79,7 @@ export function AdminActivityLog() {
 
   // Fetch global activity logs
   useEffect(() => {
-    if (!token || activeTab !== 'global') return;
+    if (!isAuthenticated || activeTab !== 'global') return;
     
     const fetchLogs = async () => {
       try {
@@ -100,7 +99,7 @@ export function AdminActivityLog() {
         const result = await apiGet<{
           data: ActivityLogEntry[];
           pagination: PaginationInfo;
-        }>(`/admin/activity-logs?${query}`, authToken);
+        }>(`/admin/activity-logs?${query}`);
         
         setLogs(result.data);
         setPagination(result.pagination);
@@ -112,16 +111,16 @@ export function AdminActivityLog() {
     };
     
     fetchLogs();
-  }, [token, activeTab, pagination.page, pagination.limit, filters, authToken]);
+  }, [isAuthenticated, activeTab, pagination.page, pagination.limit, filters]);
 
   // Fetch stats
   useEffect(() => {
-    if (!token || activeTab !== 'stats') return;
+    if (!isAuthenticated || activeTab !== 'stats') return;
     
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const result = await apiGet<ActivityStats>('/admin/activity-logs/stats?days=30', authToken);
+        const result = await apiGet<ActivityStats>('/admin/activity-logs/stats?days=30');
         setStats(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load stats');
@@ -131,7 +130,7 @@ export function AdminActivityLog() {
     };
     
     fetchStats();
-  }, [token, activeTab, authToken]);
+  }, [isAuthenticated, activeTab]);
 
   // Search user activities
   const handleUserSearch = async (e: React.FormEvent) => {
@@ -143,7 +142,6 @@ export function AdminActivityLog() {
       setError(null);
       const result = await apiGet<ActivityLogEntry[]>(
         `/admin/activity-logs/user/${searchUserId}?limit=100`,
-        authToken,
       );
       setUserLogs(result);
     } catch (err) {
@@ -165,7 +163,8 @@ export function AdminActivityLog() {
         ...(filters.endDate && { endDate: filters.endDate }),
       });
       
-      window.location.href = `/api/v1/admin/activity-logs/export?${query}&Authorization=Bearer%20${token}`;
+      // Cookie-based auth travels automatically with this same-origin navigation.
+      window.location.href = `/api/v1/admin/activity-logs/export?${query}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed');
     }

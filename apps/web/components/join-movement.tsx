@@ -9,7 +9,7 @@ import { Card } from './ui/card';
 type MemberStatus = { id: string; role: string; joinedAt: string } | null;
 
 export function JoinMovement() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const toast = useToast();
   const [count, setCount] = useState<number | null>(null);
   const [status, setStatus] = useState<MemberStatus>(null);
@@ -20,15 +20,15 @@ export function JoinMovement() {
       .then((d) => setCount(d.count))
       .catch(() => null);
 
-    if (token) {
-      void apiGet<MemberStatus>('/membership/me', token)
+    if (isAuthenticated) {
+      void apiGet<MemberStatus>('/membership/me')
         .then((d) => setStatus(d))
         .catch(() => null);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   async function join() {
-    if (!token) {
+    if (!isAuthenticated) {
       window.location.href = '/auth/login';
       return;
     }
@@ -37,7 +37,6 @@ export function JoinMovement() {
       const m = await apiPost<{ id: string; role: string; joinedAt: string }>(
         '/membership/join',
         { role: 'supporter' },
-        token,
       );
       setStatus(m);
       setCount((c) => (c ?? 0) + 1);
@@ -50,10 +49,10 @@ export function JoinMovement() {
   }
 
   async function leave() {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
-      await apiDelete('/membership/leave', token);
+      await apiDelete('/membership/leave');
       setStatus(null);
       setCount((c) => Math.max((c ?? 1) - 1, 0));
       toast.show('You\'ve left the movement.', 'info');

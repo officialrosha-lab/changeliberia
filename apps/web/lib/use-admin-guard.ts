@@ -17,21 +17,21 @@ interface Me {
  * (admin/monetization) doesn't copy it a third time.
  *
  * Waits for the auth store to hydrate before deciding anything (a
- * server-rendered first paint can't know the token yet), then resolves to
- * 'denied' with no token, or checks GET /users/me and resolves to 'ok'
+ * server-rendered first paint can't know the session yet), then resolves to
+ * 'denied' if not signed in, or checks GET /users/me and resolves to 'ok'
  * only for role === 'ADMIN'. Any request failure (network, 401, ...)
  * resolves to 'denied' — never lets a broken check fall open to 'ok'.
  */
-export function useAdminGuard(): { phase: AdminGuardPhase; token: string | null } {
-  const token = useAuthStore((s) => s.token);
+export function useAdminGuard(): { phase: AdminGuardPhase; isAuthenticated: boolean } {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [asyncPhase, setAsyncPhase] = useState<AdminGuardPhase>('loading');
-  const phase: AdminGuardPhase = !hydrated ? 'loading' : !token ? 'denied' : asyncPhase;
+  const phase: AdminGuardPhase = !hydrated ? 'loading' : !isAuthenticated ? 'denied' : asyncPhase;
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated || !isAuthenticated) return;
     let cancelled = false;
-    apiGet<Me>('/users/me', token)
+    apiGet<Me>('/users/me')
       .then((me) => {
         if (cancelled) return;
         setAsyncPhase(me.role === 'ADMIN' ? 'ok' : 'denied');
@@ -42,7 +42,7 @@ export function useAdminGuard(): { phase: AdminGuardPhase; token: string | null 
     return () => {
       cancelled = true;
     };
-  }, [token, hydrated]);
+  }, [isAuthenticated, hydrated]);
 
-  return { phase, token };
+  return { phase, isAuthenticated };
 }

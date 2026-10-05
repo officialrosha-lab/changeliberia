@@ -14,7 +14,7 @@ export function PetitionDonationSection({
   petitionId,
   petitionTitle,
 }: PetitionDonationSectionProps) {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [donationsEnabled, setDonationsEnabled] = useState(true);
   const [petitionDonationsEnabled, setPetitionDonationsEnabled] = useState(true);
@@ -46,16 +46,15 @@ export function PetitionDonationSection({
     }
     loadSettings();
     return () => { cancelled = true; };
-  }, [token, retryKey]);
+  }, [isAuthenticated, retryKey]);
 
   async function pollMoMoStatus(referenceId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     try {
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const response = await apiGet<{ success: boolean; data: { status: string } }>(
           `/payments/status/${referenceId}`,
-          token,
         );
 
         const status = response.data.status;
@@ -101,7 +100,7 @@ export function PetitionDonationSection({
     phoneNumber?: string,
   ) {
     setPaymentStatusMessage(null);
-    if (!token) {
+    if (!isAuthenticated) {
       window.location.href = `/auth/login?next=/petitions/${petitionId}`;
       return;
     }
@@ -122,7 +121,6 @@ export function PetitionDonationSection({
             phoneNumber,
             description: `Donation to petition ${petitionTitle}`,
           },
-          token,
         );
 
         setPaymentStatusMessage(
@@ -142,7 +140,6 @@ export function PetitionDonationSection({
           description: `Donation to petition ${petitionTitle}`,
           recurringInterval: frequency === 'monthly' ? 'monthly' : undefined,
         },
-        token,
       );
       window.location.href = res.data.url;
     } catch (err) {

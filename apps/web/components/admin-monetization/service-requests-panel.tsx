@@ -57,7 +57,7 @@ const ALLOWED_TRANSITIONS: Record<ServiceRequestStatus, ServiceRequestStatus[]> 
 };
 
 export function ServiceRequestsPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,10 +68,10 @@ export function ServiceRequestsPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
-      const data = await apiGet<ServiceRequest[]>('/admin/service-requests', token);
+      const data = await apiGet<ServiceRequest[]>('/admin/service-requests');
       setRequests(data);
       setError(null);
     } catch (err) {
@@ -79,7 +79,7 @@ export function ServiceRequestsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
@@ -93,7 +93,7 @@ export function ServiceRequestsPanel() {
   }
 
   async function handleAdvance(requestId: string) {
-    if (!token || !toStatus) return;
+    if (!isAuthenticated || !toStatus) return;
     if (toStatus === 'QUOTED' && !quotedAmount.trim()) {
       setError('A quoted amount is required when moving to Quoted');
       return;
@@ -108,7 +108,6 @@ export function ServiceRequestsPanel() {
           note: note.trim() || undefined,
           quotedAmount: toStatus === 'QUOTED' ? Number(quotedAmount) : undefined,
         },
-        token,
       );
       setAdvancingId(null);
       await load();

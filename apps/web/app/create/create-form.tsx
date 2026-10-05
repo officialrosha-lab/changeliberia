@@ -5,7 +5,7 @@ import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiPost, apiPostFormData } from '../../lib/api';
 import { useCounties } from '../../lib/use-counties';
-import { useAuthStore } from '../../lib/store';
+import { useAuthStore, type AuthUser } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
 import { Card } from '../../components/ui/card';
 
@@ -114,9 +114,9 @@ const inputCls =
   'mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:ring-emerald-800';
 
 export function CreatePetitionForm() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
-  const setToken = useAuthStore((s) => s.setToken);
+  const setSession = useAuthStore((s) => s.setSession);
   const searchParams = useSearchParams();
   const router = useRouter();
   const toast = useToast();
@@ -401,14 +401,14 @@ export function CreatePetitionForm() {
     setVideoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  async function attachAdditionalMedia(petitionId: string, authToken: string) {
+  async function attachAdditionalMedia(petitionId: string) {
     let failures = 0;
 
     for (const { file } of additionalImages) {
       try {
         const fd = new FormData();
         fd.append('file', file);
-        await apiPostFormData(`/petitions/${petitionId}/media`, fd, authToken);
+        await apiPostFormData(`/petitions/${petitionId}/media`, fd);
       } catch {
         failures += 1;
       }
@@ -416,7 +416,7 @@ export function CreatePetitionForm() {
 
     for (const url of videoUrls) {
       try {
-        await apiPost(`/petitions/${petitionId}/media/link`, { url, type: 'VIDEO' }, authToken);
+        await apiPost(`/petitions/${petitionId}/media/link`, { url, type: 'VIDEO' });
       } catch {
         failures += 1;
       }
@@ -430,14 +430,14 @@ export function CreatePetitionForm() {
     }
   }
 
-  async function doSubmitPetition(payload: PetitionPayload, authToken: string) {
+  async function doSubmitPetition(payload: PetitionPayload) {
     setSubmitting(true);
     setStatus('');
     try {
-      const created = await apiPost<CreatedPetition>('/petitions', payload, authToken);
+      const created = await apiPost<CreatedPetition>('/petitions', payload);
       if (additionalImages.length || videoUrls.length) {
         setStatus('Attaching photos and videos…');
-        await attachAdditionalMedia(created.id, authToken);
+        await attachAdditionalMedia(created.id);
       }
       clearDraft();
       toast.show('Petition submitted for review.', 'success');
@@ -512,12 +512,12 @@ export function CreatePetitionForm() {
       counties: impactScope === 'MULTI_COUNTY' ? selectedCounties : undefined,
     };
 
-    if (!token) {
+    if (!isAuthenticated) {
       pendingPayload.current = payload;
       setShowAuthModal(true);
       return;
     }
-    await doSubmitPetition(payload, token);
+    await doSubmitPetition(payload);
   }
 
   async function handleAuthSubmit(e: FormEvent) {
@@ -527,20 +527,28 @@ export function CreatePetitionForm() {
     setAuthSubmitting(true);
     try {
       if (authTab === 'login') {
-        const data = await apiPost<{ accessToken: string }>('/auth/login/email', { email: authEmail, password: authPassword });
-        setToken(data.accessToken);
+        const data = await apiPost<{ user: AuthUser }>('/auth/login/email', {
+          email: authEmail,
+          password: authPassword,
+        });
+        setSession(data.user);
         setShowAuthModal(false);
         if (pendingPayload.current) {
-          await doSubmitPetition(pendingPayload.current, data.accessToken);
+          await doSubmitPetition(pendingPayload.current);
           pendingPayload.current = null;
         }
       } else {
         // Signup creates an unverified account and emails a verification
-        // code — it never returns an access token, so there's nothing to
-        // log in with yet. Switch to the login tab instead of closing the
-        // modal; the pending petition payload stays queued until the user
+        // code — it never returns a session, so there's nothing to log in
+        // with yet. Switch to the login tab instead of closing the modal;
+        // the pending petition payload stays queued until the user
         // verifies and signs in here.
-        await apiPost('/auth/signup/email', { fullName: authFullName, phone: authPhone, email: authEmail, password: authPassword });
+        await apiPost('/auth/signup/email', {
+          fullName: authFullName,
+          phone: authPhone,
+          email: authEmail,
+          password: authPassword,
+        });
         setAuthTab('login');
         setAuthPassword('');
         setAuthNotice('Account created! Check your email for a verification code, then sign in here to finish submitting your petition.');

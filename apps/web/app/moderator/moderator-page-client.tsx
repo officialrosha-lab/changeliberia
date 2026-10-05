@@ -9,17 +9,17 @@ import { useAuthStore } from '../../lib/store';
 type UserRole = { role: string };
 
 export function ModeratorPageClient() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [activeTab, setActiveTab] = useState<'pending' | 'fraud' | 'stats'>('pending');
   const [phase, setPhase] = useState<'loading' | 'denied' | 'ok'>('loading');
 
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated || !isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
-        const me = await apiGet<UserRole>('/users/me', token);
+        const me = await apiGet<UserRole>('/users/me');
         if (cancelled) return;
         if (me.role !== 'MODERATOR' && me.role !== 'ADMIN') {
           setPhase('denied');
@@ -33,7 +33,7 @@ export function ModeratorPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [token, hydrated]);
+  }, [isAuthenticated, hydrated]);
 
   if (!hydrated) {
     return (
@@ -44,7 +44,7 @@ export function ModeratorPageClient() {
     );
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="text-3xl font-bold">Moderator Dashboard</h1>

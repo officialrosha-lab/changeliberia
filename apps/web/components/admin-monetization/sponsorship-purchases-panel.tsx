@@ -29,7 +29,7 @@ const STATUS_STYLES: Record<PlacementStatus, string> = {
 };
 
 export function SponsorshipPurchasesPanel() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +42,12 @@ export function SponsorshipPurchasesPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const [purchasesData, sponsorsData] = await Promise.all([
-        apiGet<Purchase[]>('/admin/sponsorships/purchases', token),
-        apiGet<Sponsor[]>('/admin/sponsors', token),
+        apiGet<Purchase[]>('/admin/sponsorships/purchases'),
+        apiGet<Sponsor[]>('/admin/sponsors'),
       ]);
       setPurchases(purchasesData);
       setSponsors(sponsorsData);
@@ -57,7 +57,7 @@ export function SponsorshipPurchasesPanel() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     void load();
@@ -72,7 +72,7 @@ export function SponsorshipPurchasesPanel() {
   }
 
   async function handleFulfill(purchaseId: string) {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setBusy(true);
     setError(null);
     try {
@@ -86,7 +86,6 @@ export function SponsorshipPurchasesPanel() {
         const sponsor = await apiPost<Sponsor>(
           '/admin/sponsors',
           { name: newSponsorName.trim(), logoUrl: newSponsorLogoUrl.trim(), type: 'sponsor' },
-          token,
         );
         sponsorId = sponsor.id;
       }
@@ -95,7 +94,7 @@ export function SponsorshipPurchasesPanel() {
         setBusy(false);
         return;
       }
-      await apiPost(`/admin/sponsorships/purchases/${purchaseId}/fulfill`, { sponsorId }, token);
+      await apiPost(`/admin/sponsorships/purchases/${purchaseId}/fulfill`, { sponsorId });
       setFulfillingId(null);
       await load();
     } catch (err) {

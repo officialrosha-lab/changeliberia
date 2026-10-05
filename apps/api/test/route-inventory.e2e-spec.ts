@@ -57,11 +57,16 @@ async function httpFetch(
   method: string,
   urlPath: string,
   opts: { token?: string; body?: unknown } = {},
-): Promise<{ status: number; body: any }> {
+): Promise<{ status: number; body: any; setCookies: string[] }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    // Auth is carried over a Bearer header, not a cookie jar — extractJwtFromRequest
+    // on the server accepts either, and the httpOnly access-token cookie's value
+    // (pulled from Set-Cookie in buildContext) works fine as a Bearer token for a
+    // non-browser client. Since no cookie is ever sent on these requests, the
+    // double-submit CsrfGuard never engages, so no X-CSRF-Token handling is needed.
     if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
     const res = await fetch(`${BASE_URL}${urlPath}`, {
       method,
@@ -76,10 +81,23 @@ async function httpFetch(
     } catch {
       body = text;
     }
-    return { status: res.status, body };
+    const setCookies =
+      typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];
+    return { status: res.status, body, setCookies };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** Pulls a single cookie's value out of a list of raw Set-Cookie header strings. */
+function extractSetCookie(setCookies: string[] | undefined, name: string): string | undefined {
+  for (const raw of setCookies || []) {
+    const [pair] = raw.split(';');
+    const eq = pair.indexOf('=');
+    if (eq === -1) continue;
+    if (pair.slice(0, eq).trim() === name) return pair.slice(eq + 1).trim();
+  }
+  return undefined;
 }
 
 /** Best-effort recursive search for the first object with an `id`/`slug` field. */
@@ -144,15 +162,18 @@ async function buildContext(): Promise<Ctx> {
   }
 
   // Throwaway test account — signup, falling back to login if it already exists.
+  // Auth cookies (access_token etc.) are set via Set-Cookie, not returned in the
+  // response body — pull the access token out of there and use it as a Bearer
+  // token for the rest of this run (see extractSetCookie/httpFetch above).
   const signup = await httpFetch('POST', '/auth/signup/email', {
     body: { email: TEST_EMAIL, password: TEST_PASSWORD, fullName: 'Smoke Test', phone: '+231779999999' },
   }).catch(() => null);
-  let token = signup?.body?.accessToken || signup?.body?.access_token || signup?.body?.token;
+  let token = extractSetCookie(signup?.setCookies, 'access_token');
   if (!token) {
     const login = await httpFetch('POST', '/auth/login/email', {
       body: { email: TEST_EMAIL, password: TEST_PASSWORD },
     }).catch(() => null);
-    token = login?.body?.accessToken || login?.body?.access_token || login?.body?.token;
+    token = extractSetCookie(login?.setCookies, 'access_token');
   }
   ctx.userToken = token;
   if (token) {
