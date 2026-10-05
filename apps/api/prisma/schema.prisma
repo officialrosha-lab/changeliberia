@@ -748,6 +748,7 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   CANCELLED
+  REFUNDED
 }
 
 enum PaymentMethod {

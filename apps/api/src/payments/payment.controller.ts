@@ -100,8 +100,14 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('status/:intentId')
-  async getPaymentStatus(@Param('intentId') intentId: string) {
-    const payment = await this.paymentService.getPaymentStatus(intentId);
+  async getPaymentStatus(
+    @Param('intentId') intentId: string,
+    @Req() req: Request & { user: { userId: string; role: string } },
+  ) {
+    const payment = await this.paymentService.getPaymentStatus(intentId, {
+      userId: req.user.userId,
+      role: req.user.role,
+    });
 
     return {
       success: true,
@@ -131,11 +137,13 @@ export class PaymentController {
   @Put('subscription/:subscriptionId')
   async updateSubscription(
     @Param('subscriptionId') subscriptionId: string,
-    @Body('amount') amount?: number,
+    @Body('amount') amount: number | undefined,
+    @Req() req: Request & { user: { userId: string; role: string } },
   ) {
     const subscription = await this.paymentService.updateSubscription(
       subscriptionId,
       amount,
+      { userId: req.user.userId, role: req.user.role },
     );
 
     return {
@@ -149,9 +157,14 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete('subscription/:subscriptionId')
-  async cancelSubscription(@Param('subscriptionId') subscriptionId: string) {
-    const subscription =
-      await this.paymentService.cancelSubscription(subscriptionId);
+  async cancelSubscription(
+    @Param('subscriptionId') subscriptionId: string,
+    @Req() req: Request & { user: { userId: string; role: string } },
+  ) {
+    const subscription = await this.paymentService.cancelSubscription(
+      subscriptionId,
+      { userId: req.user.userId, role: req.user.role },
+    );
 
     return {
       success: true,

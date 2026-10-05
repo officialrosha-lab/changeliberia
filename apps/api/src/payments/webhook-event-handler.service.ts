@@ -1024,7 +1024,7 @@ export class WebhookEventHandlerService {
       await this.prisma.payment.update({
         where: { id: payment.id },
         data: {
-          status: PaymentStatus.COMPLETED,
+          status: PaymentStatus.REFUNDED,
           lastWebhookEventId: eventId,
         },
       });

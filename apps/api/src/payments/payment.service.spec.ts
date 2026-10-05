@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MoMoService } from './providers/momo.service';
@@ -432,7 +432,10 @@ describe('PaymentService', () => {
         amount: 75,
       } as any);
 
-      const result = await service.updateSubscription('sub-1', 75);
+      const result = await service.updateSubscription('sub-1', 75, {
+        userId: 'user-1',
+        role: 'ADMIN',
+      });
 
       expect(result.amount).toBe(75);
     });
@@ -453,7 +456,10 @@ describe('PaymentService', () => {
 
       prisma.subscription.findUnique.mockResolvedValue(stored as any);
 
-      const result = await service.updateSubscription('sub-1', 50);
+      const result = await service.updateSubscription('sub-1', 50, {
+        userId: 'user-1',
+        role: 'ADMIN',
+      });
 
       expect(stripe.products.create).not.toHaveBeenCalled();
       expect(result.amount).toBe(50);
@@ -473,7 +479,10 @@ describe('PaymentService', () => {
         canceledAt: new Date(),
       } as any);
 
-      const result = await service.cancelSubscription('sub-1');
+      const result = await service.cancelSubscription('sub-1', {
+        userId: 'user-1',
+        role: 'ADMIN',
+      });
 
       expect(result.status).toBe('canceled');
       expect(stripe.subscriptions.cancel).toHaveBeenCalledWith('sub_test123');
@@ -484,6 +493,7 @@ describe('PaymentService', () => {
     it('should retrieve payment status', async () => {
       const paymentRecord = {
         id: 'payment-1',
+        userId: 'user-1',
         stripePaymentIntentId: 'pi_test123',
         paymentMethod: 'CARD',
         amount: 50,
@@ -496,7 +506,10 @@ describe('PaymentService', () => {
       prisma.payment.findUnique.mockResolvedValue(paymentRecord as any);
       prisma.payment.findFirst.mockResolvedValue(null);
 
-      const result = await service.getPaymentStatus('pi_test123');
+      const result = await service.getPaymentStatus('pi_test123', {
+        userId: 'user-1',
+        role: 'USER',
+      });
 
       expect(result?.paymentId).toBe('payment-1');
       expect(result?.amount).toBe(50);
@@ -506,9 +519,28 @@ describe('PaymentService', () => {
       prisma.payment.findUnique.mockResolvedValue(null);
       prisma.payment.findFirst.mockResolvedValue(null);
 
-      await expect(service.getPaymentStatus('invalid')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.getPaymentStatus('invalid', {
+          userId: 'user-1',
+          role: 'USER',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException when accessing another user’s payment', async () => {
+      prisma.payment.findUnique.mockResolvedValue({
+        id: 'payment-1',
+        userId: 'user-1',
+        status: 'COMPLETED',
+      } as any);
+      prisma.payment.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getPaymentStatus('payment-1', {
+          userId: 'user-2',
+          role: 'USER',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 

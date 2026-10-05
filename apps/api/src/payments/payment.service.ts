@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Stripe from 'stripe';
 import {
@@ -436,7 +441,10 @@ export class PaymentService {
   /**
    * Get payment status
    */
-  async getPaymentStatus(paymentId: string): Promise<PaymentHistoryResponse> {
+  async getPaymentStatus(
+    paymentId: string,
+    actor: { userId: string; role: string },
+  ): Promise<PaymentHistoryResponse> {
     try {
       let payment = await this.prisma.payment.findUnique({
         where: { id: paymentId },
@@ -450,6 +458,10 @@ export class PaymentService {
 
       if (!payment) {
         throw new BadRequestException('Payment not found');
+      }
+
+      if (payment.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException("Cannot access another user's payment");
       }
 
       if (
@@ -701,7 +713,8 @@ export class PaymentService {
    */
   async updateSubscription(
     subscriptionId: string,
-    amount?: number,
+    amount: number | undefined,
+    actor: { userId: string; role: string },
   ): Promise<SubscriptionResponse> {
     try {
       const stored = await this.prisma.subscription.findUnique({
@@ -710,6 +723,12 @@ export class PaymentService {
 
       if (!stored) {
         throw new BadRequestException('Subscription not found');
+      }
+
+      if (stored.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          "Cannot modify another user's subscription",
+        );
       }
 
       let updated = stored;
@@ -769,6 +788,7 @@ export class PaymentService {
    */
   async cancelSubscription(
     subscriptionId: string,
+    actor: { userId: string; role: string },
   ): Promise<SubscriptionResponse> {
     try {
       const stored = await this.prisma.subscription.findUnique({
@@ -777,6 +797,12 @@ export class PaymentService {
 
       if (!stored) {
         throw new BadRequestException('Subscription not found');
+      }
+
+      if (stored.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          "Cannot modify another user's subscription",
+        );
       }
 
       if (stored.stripeSubscriptionId) {
@@ -881,7 +907,7 @@ export class PaymentService {
       // Update payment status
       await this.prisma.payment.update({
         where: { id: paymentId },
-        data: { status: 'CANCELLED' as PaymentStatus },
+        data: { status: PaymentStatus.REFUNDED },
       });
 
       return {
