@@ -25,7 +25,9 @@ import {
 
 export interface CreatePaymentIntentDto {
   petitionId?: string;
-  userId?: string;
+  // Always set by the controller from the authenticated session
+  // (req.user.userId) — never trust a client-supplied value here.
+  userId: string;
   amount: number;
   currency: string;
   donorName?: string;
@@ -869,56 +871,78 @@ export class PaymentService {
         throw new BadRequestException('Cannot refund this payment');
       }
 
-      // Retrieve the charge from the payment intent
-      const intent = await this.getStripe().paymentIntents.retrieve(
-        payment.stripePaymentIntentId,
-      );
-
-      const latestCharge = intent.latest_charge;
-      const chargeId =
-        typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
-      if (!chargeId) {
-        throw new BadRequestException('No charge found for this payment');
-      }
-
-      // Create refund
-      const refund = await this.getStripe().refunds.create({
-        charge: chargeId,
-        reason: reason as 'duplicate' | 'fraudulent' | 'requested_by_customer',
-      });
-
-      // Store refund in database
-      const stored = await this.prisma.refund.create({
-        data: {
-          paymentId,
-          amount: payment.amount,
-          // Prefer the payment's own already-backfilled Decimal value when
-          // present, so a refund never reconstructs a Decimal from a Float
-          // that itself may already be stale relative to its sibling.
-          amountDecimal:
-            payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
-          currency: payment.currency,
-          reason,
-          stripeRefundId: refund.id,
-          status: refund.status || 'pending',
-        },
-      });
-
-      // Update payment status
-      await this.prisma.payment.update({
-        where: { id: paymentId },
+      // Atomically claim the payment for refunding: only flips when it's
+      // still COMPLETED, and only one of two concurrent/retried refund
+      // calls can win the flip. This closes the double-refund race where
+      // two simultaneous requests both pass a plain status read-then-write.
+      const claim = await this.prisma.payment.updateMany({
+        where: { id: paymentId, status: PaymentStatus.COMPLETED },
         data: { status: PaymentStatus.REFUNDED },
       });
+      if (claim.count === 0) {
+        throw new BadRequestException(
+          'Payment is not eligible for refund (already refunded, cancelled, or not completed)',
+        );
+      }
 
-      return {
-        refundId: stored.id,
-        paymentId: stored.paymentId,
-        amount: this.resolveAmount(stored.amount, stored.amountDecimal),
-        currency: stored.currency,
-        reason: stored.reason,
-        status: stored.status,
-        createdAt: stored.createdAt,
-      };
+      try {
+        // Retrieve the charge from the payment intent
+        const intent = await this.getStripe().paymentIntents.retrieve(
+          payment.stripePaymentIntentId,
+        );
+
+        const latestCharge = intent.latest_charge;
+        const chargeId =
+          typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        if (!chargeId) {
+          throw new BadRequestException('No charge found for this payment');
+        }
+
+        // Create refund
+        const refund = await this.getStripe().refunds.create({
+          charge: chargeId,
+          reason: reason as
+            | 'duplicate'
+            | 'fraudulent'
+            | 'requested_by_customer',
+        });
+
+        // Store refund in database
+        const stored = await this.prisma.refund.create({
+          data: {
+            paymentId,
+            amount: payment.amount,
+            // Prefer the payment's own already-backfilled Decimal value when
+            // present, so a refund never reconstructs a Decimal from a Float
+            // that itself may already be stale relative to its sibling.
+            amountDecimal:
+              payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
+            currency: payment.currency,
+            reason,
+            stripeRefundId: refund.id,
+            status: refund.status || 'pending',
+          },
+        });
+
+        return {
+          refundId: stored.id,
+          paymentId: stored.paymentId,
+          amount: this.resolveAmount(stored.amount, stored.amountDecimal),
+          currency: stored.currency,
+          reason: stored.reason,
+          status: stored.status,
+          createdAt: stored.createdAt,
+        };
+      } catch (innerError) {
+        // The Stripe refund (or recording it) failed after we'd already
+        // claimed the payment — put it back to COMPLETED so it isn't left
+        // showing as refunded when no money actually moved.
+        await this.prisma.payment.update({
+          where: { id: paymentId },
+          data: { status: PaymentStatus.COMPLETED },
+        });
+        throw innerError;
+      }
     } catch (error) {
       this.logger.error('Failed to refund payment', error);
       throw error;

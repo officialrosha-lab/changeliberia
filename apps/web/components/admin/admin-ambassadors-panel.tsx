@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { apiPatch } from '../../lib/api';
+import { useFocusTrap } from '../../lib/use-focus-trap';
 
 type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -40,6 +41,9 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
   }, [applications, statusFilter]);
 
   const selectedApplication = selectedId ? applications.find((app) => app.id === selectedId) : null;
+  const dialogRef = useFocusTrap<HTMLDivElement>(!!selectedApplication, () =>
+    setSelectedId(null),
+  );
 
   const handleStatusUpdate = async (id: string, newStatus: ApplicationStatus) => {
     setUpdatingId(id);
@@ -172,9 +176,16 @@ export function AdminAmbassadorsPanel({ initialApplications }: AdminAmbassadorsP
       {/* Details Modal */}
       {selectedApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ambassador-application-modal-title"
+            tabIndex={-1}
+            className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900"
+          >
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Application Details</h2>
+              <h2 id="ambassador-application-modal-title" className="text-xl font-bold text-zinc-900 dark:text-white">Application Details</h2>
               <button
                 onClick={() => setSelectedId(null)}
                 className="text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200"

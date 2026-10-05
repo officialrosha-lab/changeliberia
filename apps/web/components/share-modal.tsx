@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FacebookShareDialog } from './facebook-share-dialog';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 type Props = { 
   petitionUrl: string; 
@@ -28,6 +29,7 @@ export function ShareModal({
 }: Props) {
   const [showFacebookDialog, setShowFacebookDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const dialogRef = useFocusTrap<HTMLDivElement>(true, onClose);
 
   const wa = `https://wa.me/?text=${encodeURIComponent(`I just signed this petition: ${petitionUrl}`)}`;
 
@@ -43,8 +45,15 @@ export function ShareModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-5 dark:bg-neutral-900">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Share this petition now</h3>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-modal-title"
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-3xl bg-white p-5 dark:bg-neutral-900"
+      >
+        <h3 id="share-modal-title" className="text-lg font-semibold text-zinc-900 dark:text-white">Share this petition now</h3>
         <p className="mt-1 text-sm text-zinc-600 dark:text-neutral-400">Your share brings more verified voices.</p>
         
         {/* Reach estimate badge */}

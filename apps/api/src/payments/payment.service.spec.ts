@@ -615,11 +615,13 @@ describe('PaymentService', () => {
       const payment = {
         id: 'payment-1',
         stripePaymentIntentId: 'pi_test123',
+        status: 'COMPLETED',
         amount: 50,
         currency: 'USD',
       };
 
       prisma.payment.findUnique.mockResolvedValue(payment as any);
+      prisma.payment.updateMany.mockResolvedValue({ count: 1 } as any);
       prisma.refund.create.mockResolvedValue({
         id: 'refund-1',
         paymentId: 'payment-1',
@@ -647,11 +649,13 @@ describe('PaymentService', () => {
       const payment = {
         id: 'payment-1',
         stripePaymentIntentId: 'pi_test123',
+        status: 'COMPLETED',
         amount: 999,
         currency: 'USD',
       };
 
       prisma.payment.findUnique.mockResolvedValue(payment as any);
+      prisma.payment.updateMany.mockResolvedValue({ count: 1 } as any);
       prisma.refund.create.mockResolvedValue({
         id: 'refund-1',
         paymentId: 'payment-1',
@@ -677,6 +681,27 @@ describe('PaymentService', () => {
       await expect(
         service.refundPayment('invalid', 'requested_by_customer'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a second refund attempt on the same payment (double-refund race)', async () => {
+      const payment = {
+        id: 'payment-1',
+        stripePaymentIntentId: 'pi_test123',
+        status: 'REFUNDED',
+        amount: 50,
+        currency: 'USD',
+      };
+
+      prisma.payment.findUnique.mockResolvedValue(payment as any);
+      // The atomic claim only matches rows still in COMPLETED, so a payment
+      // that's already been refunded (or two concurrent callers racing for
+      // the same one) gets count: 0 here.
+      prisma.payment.updateMany.mockResolvedValue({ count: 0 } as any);
+
+      await expect(
+        service.refundPayment('payment-1', 'requested_by_customer'),
+      ).rejects.toThrow(BadRequestException);
+      expect(stripe.refunds.create).not.toHaveBeenCalled();
     });
   });
 

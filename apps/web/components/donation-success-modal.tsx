@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 interface DonationSuccessModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function DonationSuccessModal({
   onShare,
 }: DonationSuccessModalProps) {
   const [copied, setCopied] = useState(false);
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 
   const handleCopyTransactionId = () => {
     navigator.clipboard.writeText(transactionId);
@@ -57,6 +59,11 @@ export function DonationSuccessModal({
           className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 p-4"
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="donation-success-modal-title"
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -85,7 +92,7 @@ export function DonationSuccessModal({
                 </motion.div>
               </div>
 
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+              <h2 id="donation-success-modal-title" className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
                 Thank You!
               </h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
