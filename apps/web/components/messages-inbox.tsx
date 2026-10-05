@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { apiGet, apiPut, apiDelete } from '../lib/api';
 import {
   Mail,
@@ -148,6 +148,7 @@ export function MessagesInbox() {
       loadUnreadCount();
     } catch (err) {
       console.error('Failed to mark as read:', err);
+      showNotification('Failed to mark message as read');
     }
   };
 
@@ -157,6 +158,7 @@ export function MessagesInbox() {
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
     } catch (err) {
       console.error('Failed to archive message:', err);
+      showNotification('Failed to archive message');
     }
   };
 
@@ -244,6 +246,7 @@ export function MessagesInbox() {
       loadUnreadCount();
     } catch (err) {
       console.error('Failed to mark multiple as read:', err);
+      showNotification('Failed to mark messages as read');
     }
   };
 
@@ -256,6 +259,15 @@ export function MessagesInbox() {
     }
     setSelectedMessages(newSelected);
   };
+
+  // The backend doesn't support a sort param on /messages/inbox, so "Sort By"
+  // is applied client-side to whatever page of results is already loaded.
+  const sortedMessages = useMemo(() => {
+    const sorted = [...messages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    return sortBy === 'newest' ? sorted.reverse() : sorted;
+  }, [messages, sortBy]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -460,7 +472,7 @@ export function MessagesInbox() {
         </div>
       ) : (
         <div className="space-y-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          {messages.map((message) => (
+          {sortedMessages.map((message) => (
             <div key={message.id}>
               <div
                 className={`flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition ${

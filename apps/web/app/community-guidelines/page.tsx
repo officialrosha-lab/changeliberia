@@ -165,7 +165,7 @@ export default function CommunityGuidelinesPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Stay safe</p>
             <h2 className="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-neutral-50">Report abuse</h2>
             <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-neutral-400">
-              If you see a petition or comment that violates these guidelines, report it immediately. Use the report button on the content, or contact us directly. All reports are reviewed within 24 hours. Reporters remain anonymous.
+              If you see a petition or comment that violates these guidelines, email us directly and we&apos;ll review it. Your identity is never shared with the petition or comment you report.
             </p>
             <div className="mt-6 space-y-2 text-sm font-medium text-zinc-700 dark:text-neutral-300">
               <p>

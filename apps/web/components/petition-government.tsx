@@ -105,6 +105,8 @@ export function PetitionGovernmentPanel({
   const [error, setError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isCreator, setIsCreator] = useState<boolean | null>(isSubmissionType ? null : true);
+  const [ownerCheckFailed, setOwnerCheckFailed] = useState(false);
+  const [ownerCheckRetryKey, setOwnerCheckRetryKey] = useState(0);
 
   const date = new Date().toISOString().slice(0, 10);
 
@@ -151,6 +153,7 @@ export function PetitionGovernmentPanel({
     let cancelled = false;
 
     const loadOwnerStatus = async () => {
+      setOwnerCheckFailed(false);
       try {
         const result = await apiGet<{ isCreator: boolean }>(
           `/petitions/${petitionId}/is-creator`,
@@ -158,7 +161,10 @@ export function PetitionGovernmentPanel({
         if (!cancelled) setIsCreator(result.isCreator);
       } catch (err) {
         if (!cancelled) {
-          setIsCreator(false);
+          // Don't conflate "couldn't check" with "confirmed not the creator" —
+          // the latter hides the panel entirely, which would wrongly hide it
+          // from the actual creator on a transient network error.
+          setOwnerCheckFailed(true);
           setError(err instanceof Error ? err.message : 'Unable to verify petition ownership');
         }
       }
@@ -169,7 +175,7 @@ export function PetitionGovernmentPanel({
     return () => {
       cancelled = true;
     };
-  }, [petitionId, isAuthenticated, isSubmissionType, hydrated]);
+  }, [petitionId, isAuthenticated, isSubmissionType, hydrated, ownerCheckRetryKey]);
 
   useEffect(() => {
     if (isSubmissionType && isCreator !== true) return;
@@ -261,6 +267,23 @@ export function PetitionGovernmentPanel({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (isSubmissionType && ownerCheckFailed) {
+    return (
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm dark:border-red-900 dark:bg-red-950">
+        <p className="text-sm text-red-700 dark:text-red-400">
+          {error || "Couldn't verify your access to this panel."}
+        </p>
+        <button
+          type="button"
+          onClick={() => setOwnerCheckRetryKey((k) => k + 1)}
+          className="mt-3 text-sm font-semibold text-red-700 underline hover:text-red-900 dark:text-red-400"
+        >
+          Try again
+        </button>
+      </div>
+    );
   }
 
   if (isSubmissionType && isCreator === false) {

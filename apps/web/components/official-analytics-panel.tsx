@@ -35,6 +35,7 @@ export function OfficialAnalyticsPanel() {
   const [overview, setOverview] = useState<ConstituencyData | null>(null);
   const [trends, setTrends] = useState<IssueTrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -50,11 +51,11 @@ export function OfficialAnalyticsPanel() {
         if (!cancelled) {
           setOverview(overviewData);
           setTrends(trendsData);
+          setError(null);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setOverview(null);
-          setTrends(null);
+          setError(err instanceof Error ? err.message : 'Failed to load analytics');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,6 +67,14 @@ export function OfficialAnalyticsPanel() {
   }, [isAuthenticated]);
 
   if (loading) return <p className="text-sm text-zinc-500 dark:text-neutral-400">Loading analytics…</p>;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+        {error}
+      </div>
+    );
+  }
 
   const participationRate =
     overview && overview.petitionsCount > 0

@@ -33,6 +33,7 @@ export default function CivicPulsePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [polls, setPolls] = useState<PollSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [sort, setSort] = useState<SortValue>('recent');
   const [search, setSearch] = useState('');
@@ -47,8 +48,14 @@ export default function CivicPulsePage() {
   }, [search]);
 
   async function fetchPolls() {
-    const data = await apiGet<PollSummary[]>('/polls?status=ACTIVE&sort=recent&limit=200').catch(() => []);
-    setPolls(data);
+    try {
+      const data = await apiGet<PollSummary[]>('/polls?status=ACTIVE&sort=recent&limit=200');
+      setPolls(data);
+      setLoadError(false);
+    } catch {
+      setPolls([]);
+      setLoadError(true);
+    }
   }
 
   useEffect(() => {
@@ -166,6 +173,12 @@ export default function CivicPulsePage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-52 animate-pulse rounded-3xl border border-zinc-100 bg-zinc-50 dark:border-neutral-800 dark:bg-neutral-900" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-950">
+          <p className="text-sm text-red-700 dark:text-red-400">
+            Couldn&apos;t load polls right now. Please try again in a moment.
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-950">

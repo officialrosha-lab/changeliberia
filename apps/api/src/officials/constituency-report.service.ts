@@ -160,8 +160,13 @@ export class ConstituencyReportService {
 
   /**
    * Same ownership check as getReportFile, but looked up by the stored
-   * filename instead of a reportId+format pair — used by the
-   * CONSTITUENCY_REPORT_READY email's direct download link.
+   * filename instead of a reportId+format pair. Backs
+   * GET /officials/me/reports/files/:filename, an authenticated
+   * (Bearer-token) direct-download route — not linked from the
+   * CONSTITUENCY_REPORT_READY email, since a bare click from an email
+   * client carries no Authorization header. That email links to the
+   * dashboard's Reports tab instead, where the normal logged-in download
+   * flow (official-reports-panel.tsx) applies.
    */
   async getReportFileByFilename(institutionId: string, filename: string) {
     const file = await this.prisma.constituencyReportFile.findFirst({
@@ -274,7 +279,7 @@ export class ConstituencyReportService {
         report.id,
         report.institution,
         report.period,
-        pdfSaved.publicUrl,
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/official/dashboard?tab=reports`,
       );
 
       const completed = await this.prisma.constituencyReport.update({
