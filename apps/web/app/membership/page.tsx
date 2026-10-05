@@ -131,12 +131,6 @@ export default function MembershipPage() {
         changes what&apos;s free.
       </p>
 
-      <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
-        Creating, signing, and following petitions is free forever — so is Civic Pulse, and a
-        verified lawmaker&apos;s basic constituency access. Membership only unlocks optional
-        extras; it never affects signature counts, poll results, or a petition&apos;s legitimacy.
-      </div>
-
       {checkoutResult === 'success' && (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
           Thanks! Your payment is processing — this page will update once it&apos;s confirmed.

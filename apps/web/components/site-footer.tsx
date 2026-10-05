@@ -46,7 +46,6 @@ const COLS = [
       { href: '/', label: 'Home' },
       { href: '/about', label: 'About us' },
       { href: '/dashboard', label: 'Dashboard' },
-      { href: '/transparency', label: 'Transparency' },
     ],
   },
   {
