@@ -44,10 +44,24 @@ export function middleware(request: NextRequest) {
       // The backend already sets its own CORS headers, scoped to the
       // configured CORS_ORIGIN allowlist — pass them through as-is rather
       // than overwriting them with a wildcard here.
+      const responseHeaders = new Headers(response.headers);
+
+      // Node's fetch() transparently decompresses a gzip/br response body
+      // before handing it back as `response.body` — but it leaves the
+      // original Content-Encoding (and the now-stale Content-Length)
+      // headers untouched. Forwarding those verbatim tells the browser the
+      // body is still compressed when it's actually plain JSON, so it
+      // fails to decode it (net::ERR_CONTENT_DECODING_FAILED) once a
+      // response is large enough for the backend's compression middleware
+      // to kick in. Strip both so the browser treats the body as what it
+      // actually is.
+      responseHeaders.delete('content-encoding');
+      responseHeaders.delete('content-length');
+
       const newResponse = new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
-        headers: new Headers(response.headers),
+        headers: responseHeaders,
       });
 
       return newResponse;
