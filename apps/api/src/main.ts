@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { Application } from 'express';
 import * as express from 'express';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { validateEnvOrThrow } from './config/env-validation';
@@ -366,6 +367,7 @@ async function bootstrap() {
   // JSON body parser with generous limit to accommodate base64 poll option images (up to 6 × ~150 KB).
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
+  app.use(cookieParser());
 
   app.use(
     helmet({
