@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Stripe from 'stripe';
 import {
@@ -20,7 +25,9 @@ import {
 
 export interface CreatePaymentIntentDto {
   petitionId?: string;
-  userId?: string;
+  // Always set by the controller from the authenticated session
+  // (req.user.userId) — never trust a client-supplied value here.
+  userId: string;
   amount: number;
   currency: string;
   donorName?: string;
@@ -436,7 +443,10 @@ export class PaymentService {
   /**
    * Get payment status
    */
-  async getPaymentStatus(paymentId: string): Promise<PaymentHistoryResponse> {
+  async getPaymentStatus(
+    paymentId: string,
+    actor: { userId: string; role: string },
+  ): Promise<PaymentHistoryResponse> {
     try {
       let payment = await this.prisma.payment.findUnique({
         where: { id: paymentId },
@@ -450,6 +460,10 @@ export class PaymentService {
 
       if (!payment) {
         throw new BadRequestException('Payment not found');
+      }
+
+      if (payment.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException("Cannot access another user's payment");
       }
 
       if (
@@ -701,7 +715,8 @@ export class PaymentService {
    */
   async updateSubscription(
     subscriptionId: string,
-    amount?: number,
+    amount: number | undefined,
+    actor: { userId: string; role: string },
   ): Promise<SubscriptionResponse> {
     try {
       const stored = await this.prisma.subscription.findUnique({
@@ -710,6 +725,12 @@ export class PaymentService {
 
       if (!stored) {
         throw new BadRequestException('Subscription not found');
+      }
+
+      if (stored.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          "Cannot modify another user's subscription",
+        );
       }
 
       let updated = stored;
@@ -769,6 +790,7 @@ export class PaymentService {
    */
   async cancelSubscription(
     subscriptionId: string,
+    actor: { userId: string; role: string },
   ): Promise<SubscriptionResponse> {
     try {
       const stored = await this.prisma.subscription.findUnique({
@@ -777,6 +799,12 @@ export class PaymentService {
 
       if (!stored) {
         throw new BadRequestException('Subscription not found');
+      }
+
+      if (stored.userId !== actor.userId && actor.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          "Cannot modify another user's subscription",
+        );
       }
 
       if (stored.stripeSubscriptionId) {
@@ -843,56 +871,78 @@ export class PaymentService {
         throw new BadRequestException('Cannot refund this payment');
       }
 
-      // Retrieve the charge from the payment intent
-      const intent = await this.getStripe().paymentIntents.retrieve(
-        payment.stripePaymentIntentId,
-      );
-
-      const latestCharge = intent.latest_charge;
-      const chargeId =
-        typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
-      if (!chargeId) {
-        throw new BadRequestException('No charge found for this payment');
+      // Atomically claim the payment for refunding: only flips when it's
+      // still COMPLETED, and only one of two concurrent/retried refund
+      // calls can win the flip. This closes the double-refund race where
+      // two simultaneous requests both pass a plain status read-then-write.
+      const claim = await this.prisma.payment.updateMany({
+        where: { id: paymentId, status: PaymentStatus.COMPLETED },
+        data: { status: PaymentStatus.REFUNDED },
+      });
+      if (claim.count === 0) {
+        throw new BadRequestException(
+          'Payment is not eligible for refund (already refunded, cancelled, or not completed)',
+        );
       }
 
-      // Create refund
-      const refund = await this.getStripe().refunds.create({
-        charge: chargeId,
-        reason: reason as 'duplicate' | 'fraudulent' | 'requested_by_customer',
-      });
+      try {
+        // Retrieve the charge from the payment intent
+        const intent = await this.getStripe().paymentIntents.retrieve(
+          payment.stripePaymentIntentId,
+        );
 
-      // Store refund in database
-      const stored = await this.prisma.refund.create({
-        data: {
-          paymentId,
-          amount: payment.amount,
-          // Prefer the payment's own already-backfilled Decimal value when
-          // present, so a refund never reconstructs a Decimal from a Float
-          // that itself may already be stale relative to its sibling.
-          amountDecimal:
-            payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
-          currency: payment.currency,
-          reason,
-          stripeRefundId: refund.id,
-          status: refund.status || 'pending',
-        },
-      });
+        const latestCharge = intent.latest_charge;
+        const chargeId =
+          typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        if (!chargeId) {
+          throw new BadRequestException('No charge found for this payment');
+        }
 
-      // Update payment status
-      await this.prisma.payment.update({
-        where: { id: paymentId },
-        data: { status: 'CANCELLED' as PaymentStatus },
-      });
+        // Create refund
+        const refund = await this.getStripe().refunds.create({
+          charge: chargeId,
+          reason: reason as
+            | 'duplicate'
+            | 'fraudulent'
+            | 'requested_by_customer',
+        });
 
-      return {
-        refundId: stored.id,
-        paymentId: stored.paymentId,
-        amount: this.resolveAmount(stored.amount, stored.amountDecimal),
-        currency: stored.currency,
-        reason: stored.reason,
-        status: stored.status,
-        createdAt: stored.createdAt,
-      };
+        // Store refund in database
+        const stored = await this.prisma.refund.create({
+          data: {
+            paymentId,
+            amount: payment.amount,
+            // Prefer the payment's own already-backfilled Decimal value when
+            // present, so a refund never reconstructs a Decimal from a Float
+            // that itself may already be stale relative to its sibling.
+            amountDecimal:
+              payment.amountDecimal ?? new Prisma.Decimal(payment.amount),
+            currency: payment.currency,
+            reason,
+            stripeRefundId: refund.id,
+            status: refund.status || 'pending',
+          },
+        });
+
+        return {
+          refundId: stored.id,
+          paymentId: stored.paymentId,
+          amount: this.resolveAmount(stored.amount, stored.amountDecimal),
+          currency: stored.currency,
+          reason: stored.reason,
+          status: stored.status,
+          createdAt: stored.createdAt,
+        };
+      } catch (innerError) {
+        // The Stripe refund (or recording it) failed after we'd already
+        // claimed the payment — put it back to COMPLETED so it isn't left
+        // showing as refunded when no money actually moved.
+        await this.prisma.payment.update({
+          where: { id: paymentId },
+          data: { status: PaymentStatus.COMPLETED },
+        });
+        throw innerError;
+      }
     } catch (error) {
       this.logger.error('Failed to refund payment', error);
       throw error;

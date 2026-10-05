@@ -382,7 +382,7 @@ async function main() {
       metaDescription:
         'Learn about Change Liberia — our mission, values, and how we empower Liberians to drive civic change.',
       metaKeywords: 'about us, civic petitions, Liberia, democracy',
-      ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+      ogImage: '/illustrations/petition-voice-banner.jpg',
       ogTitle: 'About Change Liberia',
       ogDescription:
         'Empowering Liberians to drive civic change through verifiable petitions.',
@@ -401,8 +401,7 @@ async function main() {
           subtitle: "Built so a complaint doesn't just disappear",
           description:
             'We got tired of watching real problems — bad roads, clinics with no supplies, unpaid teachers — get raised once and then go nowhere. Change Liberia gives any Liberian, at home or abroad, a way to put an issue on the record, gather signatures that are actually verified, and send it to the government office responsible for it.',
-          backgroundImage:
-            'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          backgroundImage: '/illustrations/petition-voice-banner.jpg',
           ctaText: 'Start a Petition',
           ctaUrl: '/create',
         }),
@@ -494,7 +493,7 @@ async function main() {
       metaDescription:
         'A step-by-step guide to creating a petition, building support, and reaching decision-makers on Change Liberia.',
       metaKeywords: 'how to create petition, how it works, civic engagement',
-      ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+      ogImage: '/illustrations/petition-voice-banner.jpg',
       ogTitle: 'How Change Liberia Works',
       ogDescription: 'Simple steps to start a petition and drive civic change.',
     },
@@ -512,8 +511,7 @@ async function main() {
           subtitle: 'From complaint to a real response, in four steps',
           description:
             "Here's exactly what happens after you hit submit — no guesswork, no black box.",
-          backgroundImage:
-            'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          backgroundImage: '/illustrations/petition-voice-banner.jpg',
           ctaText: 'Start Now',
           ctaUrl: '/create',
         }),
@@ -635,7 +633,7 @@ async function main() {
       metaDescription:
         'Find answers to common questions about creating petitions, signing, verification, and using Change Liberia.',
       metaKeywords: 'help, faq, support, troubleshooting',
-      ogImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
+      ogImage: '/illustrations/petition-voice-banner.jpg',
       ogTitle: 'Help Center — Change Liberia',
       ogDescription: 'Get help with petitions, accounts, and more.',
     },
@@ -653,8 +651,7 @@ async function main() {
           subtitle: 'Straight answers to the questions people actually ask',
           description:
             'Not finding what you need? Email support@changeliberia.org and a real person will get back to you within a day.',
-          backgroundImage:
-            'https://images.unsplash.com/photo-1552664730-d307ca884978',
+          backgroundImage: '/illustrations/petition-voice-banner.jpg',
         }),
       },
       {

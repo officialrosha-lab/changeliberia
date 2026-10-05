@@ -15,11 +15,8 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import Stripe from 'stripe';
-import {
-  PaymentService,
-  CreatePaymentIntentDto,
-  CreateSubscriptionDto,
-} from './payment.service';
+import { PaymentService } from './payment.service';
+import { CreatePaymentRequestDto } from './dto';
 import { PaymentWebhookService } from './payment-webhook.service';
 import { MoMoWebhookService, MoMoWebhookPayload } from './momo-webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -48,8 +45,14 @@ export class PaymentController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('intent')
-  async createPaymentIntent(@Body() dto: CreatePaymentIntentDto) {
-    const intent = await this.paymentService.createPaymentIntent(dto);
+  async createPaymentIntent(
+    @Body() dto: CreatePaymentRequestDto,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const intent = await this.paymentService.createPaymentIntent({
+      ...dto,
+      userId: req.user.userId,
+    });
 
     return {
       success: true,
@@ -85,9 +88,13 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
   async createCheckoutSession(
-    @Body() dto: CreatePaymentIntentDto & { recurringInterval?: string },
+    @Body() dto: CreatePaymentRequestDto,
+    @Req() req: Request & { user: { userId: string } },
   ) {
-    const session = await this.paymentService.createCheckoutSession(dto);
+    const session = await this.paymentService.createCheckoutSession({
+      ...dto,
+      userId: req.user.userId,
+    });
 
     return {
       success: true,
@@ -100,8 +107,14 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('status/:intentId')
-  async getPaymentStatus(@Param('intentId') intentId: string) {
-    const payment = await this.paymentService.getPaymentStatus(intentId);
+  async getPaymentStatus(
+    @Param('intentId') intentId: string,
+    @Req() req: Request & { user: { userId: string; role: string } },
+  ) {
+    const payment = await this.paymentService.getPaymentStatus(intentId, {
+      userId: req.user.userId,
+      role: req.user.role,
+    });
 
     return {
       success: true,
@@ -115,8 +128,14 @@ export class PaymentController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('subscription')
-  async createSubscription(@Body() dto: CreateSubscriptionDto) {
-    const subscription = await this.paymentService.createSubscription(dto);
+  async createSubscription(
+    @Body() dto: CreatePaymentRequestDto,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const subscription = await this.paymentService.createSubscription({
+      ...dto,
+      userId: req.user.userId,
+    });
 
     return {
       success: true,
@@ -131,11 +150,13 @@ export class PaymentController {
   @Put('subscription/:subscriptionId')
   async updateSubscription(
     @Param('subscriptionId') subscriptionId: string,
-    @Body('amount') amount?: number,
+    @Body('amount') amount: number | undefined,
+    @Req() req: Request & { user: { userId: string; role: string } },
   ) {
     const subscription = await this.paymentService.updateSubscription(
       subscriptionId,
       amount,
+      { userId: req.user.userId, role: req.user.role },
     );
 
     return {
@@ -149,9 +170,14 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete('subscription/:subscriptionId')
-  async cancelSubscription(@Param('subscriptionId') subscriptionId: string) {
-    const subscription =
-      await this.paymentService.cancelSubscription(subscriptionId);
+  async cancelSubscription(
+    @Param('subscriptionId') subscriptionId: string,
+    @Req() req: Request & { user: { userId: string; role: string } },
+  ) {
+    const subscription = await this.paymentService.cancelSubscription(
+      subscriptionId,
+      { userId: req.user.userId, role: req.user.role },
+    );
 
     return {
       success: true,
@@ -209,8 +235,14 @@ export class PaymentController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('create')
-  async createPayment(@Body() dto: CreatePaymentIntentDto) {
-    const result = await this.paymentService.createPayment(dto);
+  async createPayment(
+    @Body() dto: CreatePaymentRequestDto,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const result = await this.paymentService.createPayment({
+      ...dto,
+      userId: req.user.userId,
+    });
 
     return {
       success: true,
@@ -224,8 +256,14 @@ export class PaymentController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Post('subscription/create')
-  async createUnifiedSubscription(@Body() dto: CreateSubscriptionDto) {
-    const subscription = await this.paymentService.createSubscription(dto);
+  async createUnifiedSubscription(
+    @Body() dto: CreatePaymentRequestDto,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const subscription = await this.paymentService.createSubscription({
+      ...dto,
+      userId: req.user.userId,
+    });
 
     return {
       success: true,

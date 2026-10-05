@@ -478,6 +478,13 @@ function BlockPropsEditor({
             onChange={(e) => updateProp('subtitle', e.target.value)}
             className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           />
+          <input
+            type="url"
+            placeholder="Background Image URL (optional)"
+            value={propStr(props.backgroundImage)}
+            onChange={(e) => updateProp('backgroundImage', e.target.value)}
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
           <textarea
             placeholder="Description"
             value={propStr(props.description)}

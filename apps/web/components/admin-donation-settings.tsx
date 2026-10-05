@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useToast } from '../lib/toast-context';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 interface DonationCampaign {
   id: string;
@@ -41,8 +42,15 @@ export function AdminDonationSettings({
   onConnectStripe,
 }: AdminDonationSettingsProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const createFormDialogRef = useFocusTrap<HTMLDivElement>(showCreateForm, () =>
+    setShowCreateForm(false),
+  );
   const [selectedCampaign, setSelectedCampaign] = useState<DonationCampaign | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const deleteConfirmDialogRef = useFocusTrap<HTMLDivElement>(
+    !!showDeleteConfirm,
+    () => setShowDeleteConfirm(null),
+  );
   const [saving, setSaving] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const toast = useToast();
@@ -393,12 +401,17 @@ export function AdminDonationSettings({
           className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 p-4"
         >
           <motion.div
+            ref={createFormDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-campaign-modal-title"
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 border border-zinc-200 dark:border-zinc-800"
           >
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+            <h2 id="create-campaign-modal-title" className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
               Create Campaign
             </h2>
 
@@ -476,12 +489,17 @@ export function AdminDonationSettings({
           className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
         >
           <motion.div
+            ref={deleteConfirmDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-campaign-modal-title"
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className="bg-white dark:bg-zinc-900 rounded-lg p-6 border border-zinc-200 dark:border-zinc-800 max-w-sm"
           >
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+            <h3 id="delete-campaign-modal-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">
               Delete Campaign?
             </h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">

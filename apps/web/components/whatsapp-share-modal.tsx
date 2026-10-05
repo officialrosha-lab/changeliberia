@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Copy, MessageCircle, Share2, X } from 'lucide-react';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 interface WhatsAppShareModalProps {
   petitionId: string;
@@ -20,6 +21,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string>('');
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 
   const generateMessage = useCallback(async () => {
     try {
@@ -107,14 +109,21 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl max-w-md w-full animate-in fade-in zoom-in">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="whatsapp-share-modal-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl max-w-md w-full animate-in fade-in zoom-in"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b dark:border-neutral-700">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
               <MessageCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Share on WhatsApp 🇱🇷</h2>
+            <h2 id="whatsapp-share-modal-title" className="text-xl font-bold text-zinc-900 dark:text-white">Share on WhatsApp 🇱🇷</h2>
           </div>
           <button
             onClick={onClose}
