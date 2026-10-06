@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { getApiBase } from '../../lib/api';
+import { apiGetBlob, apiPostFormData } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface ImportStats {
@@ -25,11 +25,7 @@ export function CSVImporter() {
 
   async function handleDownloadTemplate() {
     try {
-      const response = await fetch(`${getApiBase()}/admin/directory/import/template`, {
-        headers: { Authorization: `Bearer ${isAuthenticated}` },
-      });
-      const csv = await response.text();
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = await apiGetBlob('/admin/directory/import/template');
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -51,28 +47,7 @@ export function CSVImporter() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${getApiBase()}/admin/directory/import/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${isAuthenticated}` },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let message = `Upload failed (${response.status})`;
-        try {
-          const body = await response.json();
-          if (typeof body?.message === 'string') {
-            message = body.message;
-          } else if (Array.isArray(body?.message)) {
-            message = body.message.join(', ');
-          }
-        } catch {
-          // response body wasn't JSON; fall back to the status-based message
-        }
-        throw new Error(message);
-      }
-
-      const data = await response.json();
+      const data = await apiPostFormData<ImportStats>('/admin/directory/import/upload', formData);
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import CSV');
