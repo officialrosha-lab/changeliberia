@@ -61,16 +61,16 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
   });
 
   if (!res.ok) {
-    let message = `Request failed (${res.status} ${res.statusText})`;
+    let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
       if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status} ${res.statusText})`;
+        message = data.message;
       }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = `${text} (${res.status} ${res.statusText})`;
+        if (text) message = text;
       } catch {
         // ignore parse errors
       }
@@ -97,18 +97,18 @@ export async function apiPost<T>(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = `Request failed (${res.status} ${res.statusText})`;
+    let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
       if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status} ${res.statusText})`;
+        message = data.message;
       } else if (typeof data === 'string' && data.length) {
-        message = `${data} (${res.status} ${res.statusText})`;
+        message = data;
       }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = `${text} (${res.status} ${res.statusText})`;
+        if (text) message = text;
       } catch {
         // ignore parse errors
       }
@@ -134,18 +134,18 @@ export async function apiPatch<T>(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = `Request failed (${res.status} ${res.statusText})`;
+    let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
       if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status} ${res.statusText})`;
+        message = data.message;
       } else if (typeof data === 'string' && data.length) {
-        message = `${data} (${res.status} ${res.statusText})`;
+        message = data;
       }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = `${text} (${res.status} ${res.statusText})`;
+        if (text) message = text;
       } catch {
         // ignore parse errors
       }
@@ -172,18 +172,18 @@ export async function apiPut<T>(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = `Request failed (${res.status} ${res.statusText})`;
+    let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
       if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status} ${res.statusText})`;
+        message = data.message;
       } else if (typeof data === 'string' && data.length) {
-        message = `${data} (${res.status} ${res.statusText})`;
+        message = data;
       }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = `${text} (${res.status} ${res.statusText})`;
+        if (text) message = text;
       } catch {
         // ignore parse errors
       }
@@ -207,16 +207,16 @@ export async function apiDelete<T = unknown>(
     },
   });
   if (!res.ok) {
-    let message = `Request failed (${res.status} ${res.statusText})`;
+    let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
       if (typeof data?.message === 'string') {
-        message = `${data.message} (${res.status} ${res.statusText})`;
+        message = data.message;
       }
     } catch {
       try {
         const text = await res.text();
-        if (text) message = `${text} (${res.status} ${res.statusText})`;
+        if (text) message = text;
       } catch {
         // ignore parse errors
       }
@@ -232,15 +232,15 @@ export async function apiGetBlob(path: string, token?: string): Promise<Blob> {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!res.ok) {
-    let message = `Download failed (${res.status} ${res.statusText})`;
+    let message = `Download failed (${res.status})`;
     try {
       const text = await res.text();
       if (text) {
         try {
           const data = JSON.parse(text);
-          if (typeof data?.message === 'string') message = `${data.message} (${res.status})`;
+          if (typeof data?.message === 'string') message = data.message;
         } catch {
-          message = `${text} (${res.status})`;
+          message = text;
         }
       }
     } catch { /* ignore */ }
@@ -264,21 +264,21 @@ export async function apiPostFormData<T>(
     body: formData,
   });
   if (!res.ok) {
-    let message = `Upload failed (${res.status} ${res.statusText})`;
+    let message = `Upload failed (${res.status})`;
     try {
       const text = await res.text();
       if (text) {
         try {
           const data = JSON.parse(text);
           if (typeof data?.message === 'string') {
-            message = `${data.message} (${res.status})`;
+            message = data.message;
           } else if (Array.isArray(data?.message)) {
-            message = `${(data.message as string[]).join(', ')} (${res.status})`;
+            message = (data.message as string[]).join(', ');
           } else {
-            message = `${text} (${res.status})`;
+            message = text;
           }
         } catch {
-          message = `${text} (${res.status})`;
+          message = text;
         }
       }
     } catch { /* ignore body read errors */ }
