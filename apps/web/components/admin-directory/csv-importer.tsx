@@ -58,7 +58,18 @@ export function CSVImporter() {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        let message = `Upload failed (${response.status})`;
+        try {
+          const body = await response.json();
+          if (typeof body?.message === 'string') {
+            message = body.message;
+          } else if (Array.isArray(body?.message)) {
+            message = body.message.join(', ');
+          }
+        } catch {
+          // response body wasn't JSON; fall back to the status-based message
+        }
+        throw new Error(message);
       }
 
       const data = await response.json();
