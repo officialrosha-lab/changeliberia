@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
@@ -19,6 +19,10 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const dynamic = 'force-dynamic';
+
+export const viewport: Viewport = {
+  themeColor: '#059669',
+};
 
 export const metadata: Metadata = {
   title: 'Change Liberia',
