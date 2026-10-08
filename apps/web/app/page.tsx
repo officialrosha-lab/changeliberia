@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { HomeContributeBanner } from '../components/home-contribute-banner';
 import { HomeDonationSection } from '../components/home-donation-section';
 import { HomeDiscoverGrid } from '../components/home-discover-grid';
@@ -49,14 +50,18 @@ export default async function Home() {
         <HomeHero />
       </div>
       <HomeSocialProof stats={stats} />
-      <HomePollsSection />
+      <Suspense fallback={<div className="mx-auto max-w-6xl px-4 py-12" />}>
+        <HomePollsSection />
+      </Suspense>
       {featured ? <HomeFeaturedStory petition={featured} /> : null}
       <HomeDiscoverGrid petitions={petitions} />
       <HomeHowItWorks />
       <HomeDonationSection />
       <HomeDraftCta />
       <HomeContributeBanner />
-      <SponsorsSection />
+      <Suspense fallback={null}>
+        <SponsorsSection />
+      </Suspense>
       <SiteFooter />
     </>
   );

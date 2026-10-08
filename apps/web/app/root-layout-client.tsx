@@ -1,17 +1,30 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
+import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
-import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
-import { InstallPrompt } from '../components/install-prompt';
 import { MobileMenuOverlay } from '../components/mobile-menu-overlay';
 import { AuthSessionBootstrap } from '../components/auth-session-bootstrap';
 import { ServiceWorkerRegistration } from '../components/service-worker-registration';
 import { LayoutProvider } from './layout-provider';
+
+// Both widgets render nothing until a user interacts (feedback button click,
+// beforeinstallprompt/iOS detection) and both pull framer-motion statically
+// — loading them with next/dynamic keeps framer-motion out of the shared
+// bundle every page pays for.
+const FloatingFeedbackWidget = dynamic(
+  () => import('../components/floating-feedback-widget').then((m) => m.FloatingFeedbackWidget),
+  { ssr: false },
+);
+const InstallPrompt = dynamic(
+  () => import('../components/install-prompt').then((m) => m.InstallPrompt),
+  { ssr: false },
+);
 
 function BottomNavContent() {
   return <BottomNav />;
@@ -31,6 +44,58 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
 
   return (
     <LayoutProvider>
+      {process.env.NEXT_PUBLIC_GA_ID && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { page_path: window.location.pathname });
+              `,
+            }}
+          />
+        </>
+      )}
+      {process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID && (
+        <>
+          <Script
+            id="facebook-pixel"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                !function(f,b,e,v,n,t,s)
+                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s)}(window, document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');
+                fbq('init', '${process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID}');
+                fbq('track', 'PageView');
+              `,
+            }}
+          />
+          <noscript>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              height="1"
+              width="1"
+              style={{ display: 'none' }}
+              src={`https://www.facebook.com/tr?id=${process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID}&ev=PageView&noscript=1`}
+              alt=""
+            />
+          </noscript>
+        </>
+      )}
       <AuthSessionBootstrap />
       <ServiceWorkerRegistration />
       <a href="#main-content" className="skip-link">

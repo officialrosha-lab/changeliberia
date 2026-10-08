@@ -12,7 +12,11 @@ export const runtime = 'nodejs';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Proxy /api/v1 requests to the backend
+  // Proxy /api/v1 requests to the backend. This is the sole proxy for this
+  // path — next.config.ts previously had a duplicate rewrites() entry for
+  // the same route, which this handler's matcher always intercepted first,
+  // making it unreachable; it was removed rather than left as dead code
+  // that could silently reactivate with different (and wrong) semantics.
   if (pathname.startsWith('/api/v1')) {
     // Get the backend URL from environment variable
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:4000/api/v1';
