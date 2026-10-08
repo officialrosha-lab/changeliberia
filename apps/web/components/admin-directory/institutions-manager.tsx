@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { apiGet, apiPost } from '../../lib/api';
+import { apiGet, apiPatch, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
 interface Institution {
@@ -40,6 +40,13 @@ export function InstitutionsManager() {
     name: '',
     type: 'GOVERNMENT',
     category: 'AGENCY',
+    officialEmail: '',
+    phone: '',
+    description: '',
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
     officialEmail: '',
     phone: '',
     description: '',
@@ -105,6 +112,32 @@ export function InstitutionsManager() {
       await loadInstitutions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify institution');
+    }
+  }
+
+  function handleStartEdit(inst: Institution) {
+    setEditingId(inst.id);
+    setEditFormData({
+      name: inst.name,
+      officialEmail: inst.officialEmail,
+      phone: inst.phone || '',
+      description: inst.description || '',
+    });
+  }
+
+  async function handleSaveEdit(institutionId: string) {
+    if (!isAuthenticated) return;
+    try {
+      await apiPatch(`/admin/directory/institutions/${institutionId}`, {
+        name: editFormData.name.trim(),
+        officialEmail: editFormData.officialEmail.trim(),
+        phone: editFormData.phone.trim() || undefined,
+        description: editFormData.description.trim() || undefined,
+      });
+      setEditingId(null);
+      await loadInstitutions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update institution');
     }
   }
 
@@ -197,47 +230,99 @@ export function InstitutionsManager() {
             </tr>
           </thead>
           <tbody>
-            {institutions.map((inst) => (
-              <tr key={inst.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
-                <td className="px-4 py-3 font-medium dark:text-neutral-100">{inst.name}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                    {inst.type}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-zinc-600 dark:text-neutral-300">{inst.officialEmail}</td>
-                <td className="px-4 py-3">
-                  {inst.verified ? (
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-emerald-900 dark:text-emerald-300">
-                      Verified
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-amber-950/30 dark:text-amber-400">
-                      Unverified
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 dark:text-neutral-300">
-                  {inst._count?.departments || 0} dept, {inst._count?.contacts || 0} contacts
-                </td>
-                <td className="px-4 py-3 space-x-2">
-                  <button
-                    onClick={() => handleSelectInstitution(inst.id)}
-                    className="text-emerald-600 hover:underline font-medium dark:text-emerald-400"
-                  >
-                    View
-                  </button>
-                  {!inst.verified && (
+            {institutions.map((inst) =>
+              editingId === inst.id ? (
+                <tr key={inst.id} className="border-b border-zinc-200 bg-zinc-50 dark:border-neutral-800 dark:bg-neutral-800">
+                  <td className="px-4 py-3">
+                    <input
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-zinc-500 dark:text-neutral-400">{inst.type}</td>
+                  <td className="px-4 py-3">
+                    <input
+                      type="email"
+                      value={editFormData.officialEmail}
+                      onChange={(e) => setEditFormData({ ...editFormData, officialEmail: e.target.value })}
+                      className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      placeholder="Phone"
+                      className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    />
+                  </td>
+                  <td className="px-4 py-3 dark:text-neutral-300">
+                    {inst._count?.departments || 0} dept, {inst._count?.contacts || 0} contacts
+                  </td>
+                  <td className="px-4 py-3 space-x-2 whitespace-nowrap">
                     <button
-                      onClick={() => handleVerify(inst.id)}
-                      className="text-blue-600 hover:underline font-medium dark:text-blue-400"
+                      onClick={() => handleSaveEdit(inst.id)}
+                      className="text-emerald-600 hover:underline font-medium dark:text-emerald-400"
                     >
-                      Verify
+                      Save
                     </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-zinc-500 hover:underline font-medium dark:text-neutral-400"
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={inst.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
+                  <td className="px-4 py-3 font-medium dark:text-neutral-100">{inst.name}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      {inst.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-zinc-600 dark:text-neutral-300">{inst.officialEmail}</td>
+                  <td className="px-4 py-3">
+                    {inst.verified ? (
+                      <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-emerald-900 dark:text-emerald-300">
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-amber-950/30 dark:text-amber-400">
+                        Unverified
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 dark:text-neutral-300">
+                    {inst._count?.departments || 0} dept, {inst._count?.contacts || 0} contacts
+                  </td>
+                  <td className="px-4 py-3 space-x-2 whitespace-nowrap">
+                    <button
+                      onClick={() => handleSelectInstitution(inst.id)}
+                      className="text-emerald-600 hover:underline font-medium dark:text-emerald-400"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleStartEdit(inst)}
+                      className="text-zinc-600 hover:underline font-medium dark:text-neutral-300"
+                    >
+                      Edit
+                    </button>
+                    {!inst.verified && (
+                      <button
+                        onClick={() => handleVerify(inst.id)}
+                        className="text-blue-600 hover:underline font-medium dark:text-blue-400"
+                      >
+                        Verify
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>
