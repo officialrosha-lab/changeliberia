@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, useRef, ChangeEvent, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { apiPost, apiPostFormData } from '../../lib/api';
+import { apiPatch, apiPost, apiPostFormData } from '../../lib/api';
 import { useCounties } from '../../lib/use-counties';
 import { useAuthStore, type AuthUser } from '../../lib/store';
 import { useToast } from '../../lib/toast-context';
@@ -435,6 +435,20 @@ export function CreatePetitionForm() {
     setStatus('');
     try {
       const created = await apiPost<CreatedPetition>('/petitions', payload);
+      if (uploadedImageFile) {
+        setStatus('Uploading cover photo…');
+        try {
+          const fd = new FormData();
+          fd.append('file', uploadedImageFile);
+          const media = await apiPostFormData<{ url: string }>(`/petitions/${created.id}/media`, fd);
+          await apiPatch(`/petitions/${created.id}`, { imageUrl: media.url });
+        } catch {
+          toast.show(
+            'Petition submitted, but the cover photo failed to upload. You can add one later from your dashboard.',
+            'error',
+          );
+        }
+      }
       if (additionalImages.length || videoUrls.length) {
         setStatus('Attaching photos and videos…');
         await attachAdditionalMedia(created.id);
@@ -470,21 +484,12 @@ export function CreatePetitionForm() {
       return;
     }
 
-    let finalImageUrl = String(form.get('imageUrl') ?? '').trim();
-
-    if (uploadedImageFile) {
-      try {
-        const reader = new FileReader();
-        finalImageUrl = await new Promise((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(uploadedImageFile);
-        });
-      } catch {
-        toast.show('Could not process the image file. Please try again.', 'error');
-        return;
-      }
-    }
+    // A directly uploaded cover file is attached after the petition is
+    // created (see doSubmitPetition) via the same multipart /media
+    // endpoint used for gallery images — it can't be sent inline here as a
+    // base64 data: URL, since the backend's CreatePetitionDto requires
+    // imageUrl to be a real http(s) URL.
+    const finalImageUrl = uploadedImageFile ? '' : String(form.get('imageUrl') ?? '').trim();
 
     const tagsRaw = String(form.get('tags') ?? '').trim();
     const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];

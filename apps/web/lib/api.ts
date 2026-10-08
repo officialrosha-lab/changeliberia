@@ -66,6 +66,8 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
       const data = await res.json();
       if (typeof data?.message === 'string') {
         message = data.message;
+      } else if (Array.isArray(data?.message)) {
+        message = (data.message as string[]).join(', ');
       }
     } catch {
       try {
@@ -102,6 +104,8 @@ export async function apiPost<T>(
       const data = await res.json();
       if (typeof data?.message === 'string') {
         message = data.message;
+      } else if (Array.isArray(data?.message)) {
+        message = (data.message as string[]).join(', ');
       } else if (typeof data === 'string' && data.length) {
         message = data;
       }
@@ -139,6 +143,8 @@ export async function apiPatch<T>(
       const data = await res.json();
       if (typeof data?.message === 'string') {
         message = data.message;
+      } else if (Array.isArray(data?.message)) {
+        message = (data.message as string[]).join(', ');
       } else if (typeof data === 'string' && data.length) {
         message = data;
       }
@@ -177,6 +183,8 @@ export async function apiPut<T>(
       const data = await res.json();
       if (typeof data?.message === 'string') {
         message = data.message;
+      } else if (Array.isArray(data?.message)) {
+        message = (data.message as string[]).join(', ');
       } else if (typeof data === 'string' && data.length) {
         message = data;
       }
@@ -212,6 +220,8 @@ export async function apiDelete<T = unknown>(
       const data = await res.json();
       if (typeof data?.message === 'string') {
         message = data.message;
+      } else if (Array.isArray(data?.message)) {
+        message = (data.message as string[]).join(', ');
       }
     } catch {
       try {
