@@ -109,7 +109,7 @@ export class EmailTemplateService {
 
     const footer = `
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
-            <p>© 2025 Change Liberia. All rights reserved.</p>
+            <p>© 2026 Change Liberia. All rights reserved.</p>
             <p><a href="${appUrl}" style="color: #059669; text-decoration: none;">Visit our website</a></p>
           </div>
         </div>
