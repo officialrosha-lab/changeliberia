@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
-import { apiGet, apiPost } from '../lib/api';
+import { apiPost } from '../lib/api';
+import { useSystemSettings } from '../lib/use-system-settings';
 import { ThemeToggle } from './theme-toggle';
 import { MobileNav } from './mobile-nav';
 import { NotificationDropdown } from './notification-dropdown';
@@ -15,22 +15,7 @@ export function Header() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
-  const [donationsEnabled, setDonationsEnabled] = useState(true);
-
-  useEffect(() => {
-    async function loadDonationSettings() {
-      try {
-        const settings = await apiGet<{
-          donationsEnabled: boolean;
-        }>('/settings/system');
-        setDonationsEnabled(settings.donationsEnabled);
-      } catch {
-        // If error, default to enabled
-        setDonationsEnabled(true);
-      }
-    }
-    loadDonationSettings();
-  }, [isAuthenticated]);
+  const { donationsEnabled } = useSystemSettings();
 
   function signOut() {
     void apiPost('/auth/logout', {}).catch(() => {});

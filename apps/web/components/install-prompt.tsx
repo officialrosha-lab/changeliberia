@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share } from 'lucide-react';
 
@@ -127,8 +128,7 @@ export function InstallPrompt() {
         >
           <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-192.png" alt="" className="w-10 h-10 rounded-lg" />
+              <Image src="/icon-192.png" alt="" width={40} height={40} className="w-10 h-10 rounded-lg" />
               <h3 className="text-base font-bold text-white">Install Change Liberia</h3>
             </div>
             <button

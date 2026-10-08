@@ -2,12 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useAuthStore, useMenuStore } from '../lib/store';
 import { useTheme } from '../lib/theme-context';
-import { apiGet, apiPost } from '../lib/api';
+import { apiPost } from '../lib/api';
+import { useSystemSettings } from '../lib/use-system-settings';
 
 const EXPLORE_ITEMS = [
   { href: '/petitions',     icon: '🔍', label: 'Browse causes' },
@@ -19,17 +19,13 @@ const EXPLORE_ITEMS = [
 
 export function MobileMenuOverlay() {
   const { isMenuOpen: isOpen, closeMenu } = useMenuStore();
-  const [donationsEnabled, setDonationsEnabled] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
-
-  useEffect(() => {
-    apiGet<{ donationsEnabled: boolean }>('/settings/system')
-      .then((s) => setDonationsEnabled(s.donationsEnabled))
-      .catch(() => setDonationsEnabled(true));
-  }, [isAuthenticated]);
+  // Fetch only once the menu is actually opened — most pageviews never
+  // open it, so there's no reason to fire this on every mount.
+  const { donationsEnabled } = useSystemSettings(isOpen);
 
   function signOut() {
     void apiPost('/auth/logout', {}).catch(() => {});
