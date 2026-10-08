@@ -10,6 +10,7 @@ import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
 import { InstallPrompt } from '../components/install-prompt';
 import { MobileMenuOverlay } from '../components/mobile-menu-overlay';
 import { AuthSessionBootstrap } from '../components/auth-session-bootstrap';
+import { ServiceWorkerRegistration } from '../components/service-worker-registration';
 import { LayoutProvider } from './layout-provider';
 
 function BottomNavContent() {
@@ -31,6 +32,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <LayoutProvider>
       <AuthSessionBootstrap />
+      <ServiceWorkerRegistration />
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
