@@ -7,6 +7,7 @@ import { Header } from '../components/header';
 import { BottomNav } from '../components/bottom-nav';
 import { TrendingTicker } from '../components/trending-ticker';
 import { FloatingFeedbackWidget } from '../components/floating-feedback-widget';
+import { InstallPrompt } from '../components/install-prompt';
 import { MobileMenuOverlay } from '../components/mobile-menu-overlay';
 import { AuthSessionBootstrap } from '../components/auth-session-bootstrap';
 import { LayoutProvider } from './layout-provider';
@@ -48,6 +49,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
       {/* Mounted outside the sticky z-50 wrapper to avoid stacking-context clipping */}
       <MobileMenuOverlay />
       <FloatingFeedbackWidget enabled={true} />
+      <InstallPrompt />
       <SpeedInsights />
     </LayoutProvider>
   );
