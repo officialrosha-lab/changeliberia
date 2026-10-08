@@ -22,7 +22,6 @@ export function PushNotificationToggle() {
     setSupported(isSupported);
     if (!isSupported) return;
 
-    navigator.serviceWorker.register('/sw.js').catch(() => {/* best-effort */});
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
       .then((sub) => setSubscribed(!!sub))
