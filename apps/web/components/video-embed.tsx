@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '../lib/use-focus-trap';
@@ -9,13 +9,14 @@ const YOUTUBE_RE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/
 const VIMEO_RE = /vimeo\.com\/(?:video\/)?(\d+)/;
 const DIRECT_FILE_RE = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i;
 const TIKTOK_RE = /tiktok\.com/i;
+const TIKTOK_VIDEO_ID_RE = /data-video-id="(\d+)"/;
 
 /**
  * Renders a gallery video link as whatever actually plays it:
  * - YouTube/Vimeo links embed directly as an iframe.
  * - Direct video file links (.mp4 etc.) use a native <video> player.
- * - TikTok links open an in-app popup player (via TikTok's oEmbed API)
- *   instead of sending the visitor away from the site.
+ * - TikTok links open an in-app popup player instead of sending the
+ *   visitor away from the site.
  * - Anything else we can't embed falls back to a "Watch video" link-out,
  *   since handing an arbitrary webpage URL to <video src> just renders a
  *   dead, undecodable player.
@@ -81,47 +82,49 @@ function WatchIcon() {
   );
 }
 
-type TikTokOEmbedResponse = { html?: string };
+function OpenOnTikTokLink({ url }: { url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-neutral-100 dark:text-neutral-900"
+    >
+      Open on TikTok ↗
+    </a>
+  );
+}
 
 function TikTokPopupPlayer({ url }: { url: string }) {
   const [open, setOpen] = useState(false);
-  const [html, setHtml] = useState<string | null>(null);
+  const [videoId, setVideoId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const dialogRef = useFocusTrap<HTMLDivElement>(open, () => setOpen(false));
 
   async function handleOpen() {
     setOpen(true);
-    if (html || loading) return;
+    if (videoId || loading) return;
     setLoading(true);
     setFailed(false);
     try {
+      // The oEmbed call resolves vt.tiktok.com short links to the
+      // canonical numeric video ID, which TikTok's own embed/v2 iframe
+      // endpoint plays directly — no embed.js script dependency, so
+      // there's nothing here for TikTok's embed-script rate limiter to
+      // trip on across repeated popup opens.
       const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`);
       if (!res.ok) throw new Error('oEmbed request failed');
-      const data = (await res.json()) as TikTokOEmbedResponse;
-      if (!data.html) throw new Error('oEmbed response missing html');
-      setHtml(data.html);
+      const data = (await res.json()) as { html?: string };
+      const idMatch = data.html?.match(TIKTOK_VIDEO_ID_RE);
+      if (!idMatch) throw new Error('Could not resolve TikTok video id');
+      setVideoId(idMatch[1]);
     } catch {
       setFailed(true);
     } finally {
       setLoading(false);
     }
   }
-
-  // TikTok's embed.js scans the page for <blockquote class="tiktok-embed">
-  // tags and hydrates them into the real player, then watches the DOM for
-  // more. Load it at most once per page — TikTok's own rate limiter
-  // ("overload-protect triggered") kicks in if it's injected and torn down
-  // on every popup open/close, which is what repeatedly opening different
-  // gallery videos did before.
-  useEffect(() => {
-    if (!html) return;
-    if (document.querySelector('script[src="https://www.tiktok.com/embed.js"]')) return;
-    const script = document.createElement('script');
-    script.src = 'https://www.tiktok.com/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-  }, [html]);
 
   return (
     <>
@@ -150,7 +153,7 @@ function TikTokPopupPlayer({ url }: { url: string }) {
               aria-label="Video player"
               tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-4 dark:bg-neutral-900"
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white dark:bg-neutral-900"
             >
               <button
                 type="button"
@@ -171,17 +174,17 @@ function TikTokPopupPlayer({ url }: { url: string }) {
                   <p className="text-sm text-zinc-600 dark:text-neutral-400">
                     Couldn&apos;t load the preview here.
                   </p>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-neutral-100 dark:text-neutral-900"
-                  >
-                    Open on TikTok ↗
-                  </a>
+                  <OpenOnTikTokLink url={url} />
                 </div>
               )}
-              {html && <div dangerouslySetInnerHTML={{ __html: html }} />}
+              {videoId && (
+                <iframe
+                  src={`https://www.tiktok.com/embed/v2/${videoId}`}
+                  className="h-[600px] max-h-[80vh] w-full"
+                  allow="autoplay; encrypted-media; fullscreen"
+                  title="TikTok video player"
+                />
+              )}
             </div>
           </div>,
           document.body,
