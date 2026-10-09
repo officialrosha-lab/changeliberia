@@ -5,10 +5,11 @@ import { apiGet } from './api';
 
 interface SystemSettings {
   donationsEnabled: boolean;
+  marketplaceEnabled: boolean;
 }
 
 const TTL_MS = 60_000;
-const DEFAULT_SETTINGS: SystemSettings = { donationsEnabled: true };
+const DEFAULT_SETTINGS: SystemSettings = { donationsEnabled: true, marketplaceEnabled: false };
 
 let cached: { value: SystemSettings; expiresAt: number } | null = null;
 let inFlight: Promise<SystemSettings> | null = null;

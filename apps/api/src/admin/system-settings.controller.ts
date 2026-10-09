@@ -24,6 +24,7 @@ function mapSystemSettings(toggles: FeatureToggle[]) {
     petitionDonationsEnabled:
       byName['petitionDonationsEnabled']?.enabled ?? true,
     promotionsEnabled: byName['promotionsEnabled']?.enabled ?? false,
+    marketplaceEnabled: byName['marketplaceEnabled']?.enabled ?? false,
   };
 }
 
