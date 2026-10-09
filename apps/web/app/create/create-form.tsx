@@ -140,8 +140,11 @@ export function CreatePetitionForm() {
   const [authFullName, setAuthFullName] = useState('');
   const [authPhone, setAuthPhone] = useState('');
   const [authError, setAuthError] = useState('');
-  const [authNotice, setAuthNotice] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [resendingCode, setResendingCode] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   // New fields — initialized from a saved draft when one exists
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => draft?.selectedCategories ?? []);
@@ -528,7 +531,6 @@ export function CreatePetitionForm() {
   async function handleAuthSubmit(e: FormEvent) {
     e.preventDefault();
     setAuthError('');
-    setAuthNotice('');
     setAuthSubmitting(true);
     try {
       if (authTab === 'login') {
@@ -545,18 +547,18 @@ export function CreatePetitionForm() {
       } else {
         // Signup creates an unverified account and emails a verification
         // code — it never returns a session, so there's nothing to log in
-        // with yet. Switch to the login tab instead of closing the modal;
-        // the pending petition payload stays queued until the user
-        // verifies and signs in here.
+        // with yet. Switch the modal to the code-entry view instead of
+        // closing it or navigating to a separate page; the component (and
+        // the pending petition payload, uploaded files, etc.) stays mounted
+        // the whole time.
         await apiPost('/auth/signup/email', {
           fullName: authFullName,
           phone: authPhone,
           email: authEmail,
           password: authPassword,
         });
-        setAuthTab('login');
         setAuthPassword('');
-        setAuthNotice('Account created! Check your email for a verification code, then sign in here to finish submitting your petition.');
+        setAwaitingVerification(true);
       }
     } catch (err) {
       let message = err instanceof Error ? err.message : 'Authentication failed. Please try again.';
@@ -566,6 +568,44 @@ export function CreatePetitionForm() {
       setAuthError(message);
     } finally {
       setAuthSubmitting(false);
+    }
+  }
+
+  async function handleVerifyCode(e: FormEvent) {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSubmitting(true);
+    try {
+      const data = await apiPost<{ user: AuthUser }>('/auth/verify-email', {
+        email: authEmail,
+        code: verifyCode,
+      });
+      setSession(data.user);
+      setShowAuthModal(false);
+      setAwaitingVerification(false);
+      setVerifyCode('');
+      if (pendingPayload.current) {
+        await doSubmitPetition(pendingPayload.current);
+        pendingPayload.current = null;
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  }
+
+  async function handleResendCode() {
+    setResendingCode(true);
+    setResendMessage('');
+    setAuthError('');
+    try {
+      await apiPost('/auth/resend-verification-email', { email: authEmail });
+      setResendMessage('A new code is on its way. Check your inbox.');
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Unable to resend the code. Please try again.');
+    } finally {
+      setResendingCode(false);
     }
   }
 
@@ -1043,73 +1083,117 @@ export function CreatePetitionForm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl dark:bg-neutral-900">
             <div className="flex items-center justify-between border-b border-zinc-100 p-5 dark:border-neutral-800">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white">Sign in to submit your petition</h2>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                {awaitingVerification ? 'Verify your email' : 'Sign in to submit your petition'}
+              </h2>
               <button type="button" onClick={() => setShowAuthModal(false)}
                 className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-neutral-800">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex border-b border-zinc-100 dark:border-neutral-800">
-              {(['login', 'signup'] as const).map((tab) => (
-                <button key={tab} type="button" onClick={() => { setAuthTab(tab); setAuthError(''); setAuthNotice(''); }}
-                  className={`flex-1 py-3 text-sm font-semibold transition ${authTab === tab ? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
-                  {tab === 'login' ? 'Log in' : 'Sign up'}
-                </button>
-              ))}
-            </div>
-            <form onSubmit={handleAuthSubmit} className="space-y-4 p-5">
-              {authTab === 'signup' && (
-                <>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Full name</label>
-                    <input type="text" required value={authFullName} onChange={(e) => setAuthFullName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Phone number</label>
-                    <input type="tel" required value={authPhone} onChange={(e) => setAuthPhone(e.target.value)}
-                      placeholder="+231 70 000 0000"
-                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
-                  </div>
-                </>
-              )}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Email</label>
-                <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Password</label>
-                <input type="password" required value={authPassword} onChange={(e) => setAuthPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
-              </div>
-              {authNotice && (
-                <p className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{authNotice}</p>
-              )}
-              {authError && (
-                <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">{authError}</p>
-              )}
-              <button type="submit" disabled={authSubmitting}
-                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 py-3 text-sm font-bold text-zinc-900 shadow-sm transition hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600">
-                {authSubmitting
-                  ? (authTab === 'login' ? 'Signing in…' : 'Creating account…')
-                  : (authTab === 'login' ? 'Sign in & submit petition' : 'Create account')}
-              </button>
-              <p className="text-center text-xs text-zinc-500 dark:text-neutral-400">
-                {authTab === 'login' ? (
-                  <>No account yet?{' '}
-                    <button type="button" onClick={() => setAuthTab('signup')} className="font-semibold text-amber-600 hover:underline">Sign up</button>
-                  </>
-                ) : (
-                  <>Already have an account?{' '}
-                    <button type="button" onClick={() => setAuthTab('login')} className="font-semibold text-amber-600 hover:underline">Log in</button>
-                  </>
+
+            {awaitingVerification ? (
+              <form onSubmit={handleVerifyCode} className="space-y-4 p-5">
+                <p className="text-sm text-zinc-600 dark:text-neutral-400">
+                  Enter the 6-digit code we sent to <strong>{authEmail}</strong>. Your petition is saved and ready — it submits the moment you verify.
+                </p>
+                <div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    required
+                    autoFocus
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.4em] text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                </div>
+                {resendMessage && (
+                  <p className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{resendMessage}</p>
                 )}
-              </p>
-            </form>
+                {authError && (
+                  <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">{authError}</p>
+                )}
+                <button type="submit" disabled={authSubmitting || verifyCode.length !== 6}
+                  className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 py-3 text-sm font-bold text-zinc-900 shadow-sm transition hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600">
+                  {authSubmitting ? 'Verifying…' : 'Verify & submit petition'}
+                </button>
+                <div className="flex items-center justify-between text-xs">
+                  <button type="button" onClick={() => { setAwaitingVerification(false); setVerifyCode(''); setAuthError(''); }}
+                    className="font-semibold text-zinc-500 hover:underline dark:text-neutral-400">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleResendCode} disabled={resendingCode}
+                    className="font-semibold text-amber-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60">
+                    {resendingCode ? 'Sending…' : "Didn't get a code? Resend it"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="flex border-b border-zinc-100 dark:border-neutral-800">
+                  {(['login', 'signup'] as const).map((tab) => (
+                    <button key={tab} type="button" onClick={() => { setAuthTab(tab); setAuthError(''); }}
+                      className={`flex-1 py-3 text-sm font-semibold transition ${authTab === tab ? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
+                      {tab === 'login' ? 'Log in' : 'Sign up'}
+                    </button>
+                  ))}
+                </div>
+                <form onSubmit={handleAuthSubmit} className="space-y-4 p-5">
+                  {authTab === 'signup' && (
+                    <>
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Full name</label>
+                        <input type="text" required value={authFullName} onChange={(e) => setAuthFullName(e.target.value)}
+                          placeholder="Your full name"
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Phone number</label>
+                        <input type="tel" required value={authPhone} onChange={(e) => setAuthPhone(e.target.value)}
+                          placeholder="+231 70 000 0000"
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Email</label>
+                    <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-neutral-300">Password</label>
+                    <input type="password" required value={authPassword} onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" />
+                  </div>
+                  {authError && (
+                    <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">{authError}</p>
+                  )}
+                  <button type="submit" disabled={authSubmitting}
+                    className="w-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 py-3 text-sm font-bold text-zinc-900 shadow-sm transition hover:from-amber-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 dark:from-amber-500 dark:to-amber-600">
+                    {authSubmitting
+                      ? (authTab === 'login' ? 'Signing in…' : 'Creating account…')
+                      : (authTab === 'login' ? 'Sign in & submit petition' : 'Create account')}
+                  </button>
+                  <p className="text-center text-xs text-zinc-500 dark:text-neutral-400">
+                    {authTab === 'login' ? (
+                      <>No account yet?{' '}
+                        <button type="button" onClick={() => setAuthTab('signup')} className="font-semibold text-amber-600 hover:underline">Sign up</button>
+                      </>
+                    ) : (
+                      <>Already have an account?{' '}
+                        <button type="button" onClick={() => setAuthTab('login')} className="font-semibold text-amber-600 hover:underline">Log in</button>
+                      </>
+                    )}
+                  </p>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
