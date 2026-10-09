@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getApiBase } from '../../lib/api';
 import { SiteFooter } from '../../components/site-footer';
 import { Card } from '../../components/ui/card';
@@ -51,9 +52,25 @@ const PRODUCTS = [
 ];
 
 export default async function MarketplacePage() {
+  const base = getApiBase();
+
+  // Default to hidden (404) unless the admin-controlled flag explicitly
+  // says the marketplace is ready — including if /settings/system is
+  // unreachable, rather than exposing a not-yet-launched feature.
+  let marketplaceEnabled = false;
+  try {
+    const settingsRes = await fetch(`${base}/settings/system`, { cache: 'no-store' });
+    if (settingsRes.ok) {
+      const settings = (await settingsRes.json()) as { marketplaceEnabled?: boolean };
+      marketplaceEnabled = settings.marketplaceEnabled ?? false;
+    }
+  } catch {
+    // leave marketplaceEnabled false
+  }
+  if (!marketplaceEnabled) notFound();
+
   let featured: FeaturedPetition[] = [];
   try {
-    const base = getApiBase();
     const res = await fetch(`${base}/petitions/featured`, { cache: 'no-store' });
     if (res.ok) featured = (await res.json()) as FeaturedPetition[];
   } catch {
