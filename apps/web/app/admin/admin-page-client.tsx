@@ -65,7 +65,7 @@ type PendingIdDoc = {
 
 export function AdminPageClient() {
   const { phase: guardPhase, isAuthenticated } = useAdminGuard();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'monetization' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'monetization' | 'users' | 'analytics' | 'government' | 'officials' | 'geography' | 'endorsements' | 'cms' | 'settings' | 'ambassadors' | 'supporters' | 'payments' | 'integrations' | 'email' | 'social-media' | 'activity-log' | 'polls'>('dashboard');
   const [dataLoaded, setDataLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const phase = guardPhase !== 'ok' ? guardPhase : dataLoaded ? 'ok' : 'loading';
@@ -200,6 +200,7 @@ export function AdminPageClient() {
               ['payments', 'Payments'],
               ['integrations', 'Integrations'],
               ['ambassadors', 'Ambassadors'],
+              ['supporters', 'Supporters'],
               ['social-media', 'Social Media'],
               ['activity-log', 'Activity Log'],
               ['cms', 'CMS'],
@@ -356,6 +357,17 @@ export function AdminPageClient() {
           {isAuthenticated && (
             <Link href="/admin/ambassadors" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400">
               Go to Ambassadors Management →
+            </Link>
+          )}
+        </Card>
+      )}
+
+      {/* Supporters Tab */}
+      {activeTab === 'supporters' && (
+        <Card className="p-6">
+          {isAuthenticated && (
+            <Link href="/admin/supporters" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400">
+              Go to Supporters Management →
             </Link>
           )}
         </Card>

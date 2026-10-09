@@ -2689,18 +2689,21 @@ model Sponsor {
 }
 
 model Supporter {
-  id        String   @id @default(cuid())
-  sessionId String   @unique
-  userId    String?
-  email     String?
-  phone     String?
-  ipAddress String? // used for deduplication — one join per IP
-  source    String   @default("navbar") // "navbar" | "campaign" | "petition"
-  joinedAt  DateTime @default(now())
+  id               String   @id @default(cuid())
+  sessionId        String   @unique
+  userId           String?
+  email            String?
+  phone            String?
+  ipAddress        String? // used for deduplication — one join per IP
+  source           String   @default("navbar") // "navbar" | "campaign" | "petition"
+  joinedAt         DateTime @default(now())
+  unsubscribed     Boolean  @default(false)
+  unsubscribeToken String   @unique @default(cuid())
 
   @@index([userId])
   @@index([joinedAt])
   @@index([ipAddress])
+  @@index([email])
 }
 
 model Membership {
