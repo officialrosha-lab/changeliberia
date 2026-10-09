@@ -11,6 +11,7 @@ import { PetitionTimeline } from '../../../components/petition-timeline';
 import { JoinMovement } from '../../../components/join-movement';
 import { PetitionDonationSection } from '../../../components/petition-donation-section';
 import { Card } from '../../../components/ui/card';
+import { PetitionVideoEmbed } from '../../../components/video-embed';
 import { CommentForm } from './comment-form';
 import { SignForm } from './sign-form';
 import { PetitionClientPage } from './petition-client-page';
@@ -97,66 +98,6 @@ function renderDescriptionLine(line: string, index: number) {
     );
   }
   return <span key={index}>{line}<br /></span>;
-}
-
-/** Embeds a YouTube/Vimeo link as an iframe player, or falls back to a native <video> tag for a direct file URL. */
-function renderVideoEmbed(url: string, key: string) {
-  const youtubeMatch = url.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
-  );
-  if (youtubeMatch) {
-    return (
-      <div key={key} className="aspect-video overflow-hidden rounded-2xl bg-black">
-        <iframe
-          src={`https://www.youtube.com/embed/${youtubeMatch[1]}`}
-          className="h-full w-full"
-          allowFullScreen
-          title={key}
-        />
-      </div>
-    );
-  }
-  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (vimeoMatch) {
-    return (
-      <div key={key} className="aspect-video overflow-hidden rounded-2xl bg-black">
-        <iframe
-          src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
-          className="h-full w-full"
-          allowFullScreen
-          title={key}
-        />
-      </div>
-    );
-  }
-  // A direct link to a video file plays inline. Anything else (TikTok,
-  // Facebook, Instagram, etc.) is a webpage, not a media file — handing
-  // its URL to <video src> just renders a dead, silent player, since the
-  // browser can't decode an HTML document as video. Those sites don't
-  // allow being embedded without resolving a platform-specific ID via a
-  // server call, so link out instead of showing a broken player.
-  if (/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(url)) {
-    return (
-      <video key={key} src={url} controls className="w-full rounded-2xl bg-black" />
-    );
-  }
-  return (
-    <a
-      key={key}
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30"
-    >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-neutral-700">
-        ▶
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-zinc-900 dark:text-neutral-100">Watch video</span>
-        <span className="block truncate text-xs text-zinc-500 dark:text-neutral-400">{url}</span>
-      </span>
-    </a>
-  );
 }
 
 export async function generateMetadata({
@@ -424,7 +365,9 @@ export default async function PetitionPage({
                   )}
                   {videos.length > 0 && (
                     <div className={`space-y-4 ${images.length > 0 ? 'mt-6' : 'mt-4'}`}>
-                      {videos.map((vid) => renderVideoEmbed(vid.url, vid.id))}
+                      {videos.map((vid) => (
+                        <PetitionVideoEmbed key={vid.id} url={vid.url} videoKey={vid.id} />
+                      ))}
                     </div>
                   )}
                 </Card>
