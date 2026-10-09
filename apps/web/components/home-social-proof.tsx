@@ -24,10 +24,6 @@ export function HomeSocialProof({ stats }: { stats: PetitionStats | null }) {
       label: 'Verified signatures',
     },
     {
-      value: stats ? (stats.campaignsWon > 0 ? `${stats.campaignsWon}+` : '0') : '—',
-      label: 'Campaigns won',
-    },
-    {
       value: stats ? `${stats.countiesReached}` : '15',
       label: 'Counties reached',
     },
@@ -37,7 +33,7 @@ export function HomeSocialProof({ stats }: { stats: PetitionStats | null }) {
     <FadeInOnScroll>
       <section className="border-y border-zinc-100 bg-zinc-50 dark:border-neutral-800 dark:bg-neutral-800/40 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-0 md:divide-x md:divide-zinc-200 dark:md:divide-neutral-700">
+          <div className="grid grid-cols-3 gap-6 md:gap-0 md:divide-x md:divide-zinc-200 dark:md:divide-neutral-700">
             {STATS.map((s) => (
               <div key={s.label} className="text-center md:px-8">
                 <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 sm:text-3xl md:text-4xl">
