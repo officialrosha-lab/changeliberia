@@ -109,17 +109,18 @@ function TikTokPopupPlayer({ url }: { url: string }) {
   }
 
   // TikTok's embed.js scans the page for <blockquote class="tiktok-embed">
-  // tags and hydrates them into the real player — it needs to (re)run
-  // after the blockquote markup from oEmbed lands in the DOM.
+  // tags and hydrates them into the real player, then watches the DOM for
+  // more. Load it at most once per page — TikTok's own rate limiter
+  // ("overload-protect triggered") kicks in if it's injected and torn down
+  // on every popup open/close, which is what repeatedly opening different
+  // gallery videos did before.
   useEffect(() => {
     if (!html) return;
+    if (document.querySelector('script[src="https://www.tiktok.com/embed.js"]')) return;
     const script = document.createElement('script');
     script.src = 'https://www.tiktok.com/embed.js';
     script.async = true;
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
   }, [html]);
 
   return (
