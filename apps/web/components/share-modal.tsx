@@ -98,11 +98,19 @@ export function ShareModal({
           </button>
 
           <button
-            onClick={handleCopyLink} 
+            onClick={handleCopyLink}
             className="rounded-xl border border-zinc-300 px-4 py-3 font-semibold hover:bg-zinc-50 transition dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             {copied ? '✓ Link copied!' : 'Copy link'}
           </button>
+
+          <a
+            href={`/share-card/${petitionId}`}
+            download
+            className="rounded-xl border border-zinc-300 px-4 py-3 text-center font-semibold hover:bg-zinc-50 transition dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Download share card
+          </a>
         </div>
 
         <button 

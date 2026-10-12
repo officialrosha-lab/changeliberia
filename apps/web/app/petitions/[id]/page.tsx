@@ -115,9 +115,7 @@ export async function generateMetadata({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://changeliberia.org';
   const pageUrl = `${siteUrl}/petitions/${id}`;
-  const image = petition.imageUrl
-    ? { url: petition.imageUrl, width: 1200, height: 630, alt: title }
-    : { url: `${siteUrl}/og-image.png`, width: 1200, height: 630, alt: 'Change Liberia' };
+  const image = { url: `${siteUrl}/share-card/${id}`, width: 1080, height: 1350, alt: title };
 
   return {
     title: `${title} — Change Liberia`,
@@ -132,7 +130,7 @@ export async function generateMetadata({
       images: [image],
     },
     twitter: {
-      card: petition.imageUrl ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
       images: [image.url],
