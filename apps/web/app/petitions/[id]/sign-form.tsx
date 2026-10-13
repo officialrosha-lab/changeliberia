@@ -92,6 +92,7 @@ export function SignForm({
   const [name, setName] = useState('');
   const [count, setCount] = useState(signatureCount);
   const [hasSigned, setHasSigned] = useState(false);
+  const [justSigned, setJustSigned] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showFollowPrompt, setShowFollowPrompt] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -313,8 +314,10 @@ export function SignForm({
 
       toast.show('Thank you for signing! Your voice has been added.', 'success');
 
-      // Show follow prompt first; share modal opens after
-      setShowFollowPrompt(true);
+      // Share prompt first, while they're most likely to share; follow
+      // prompt opens after the share modal closes (see ShareModal onClose).
+      setJustSigned(true);
+      setShowShare(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('already signed')) {
@@ -746,7 +749,6 @@ export function SignForm({
                   onClick={async () => {
                     if (!following) await toggleFollow();
                     setShowFollowPrompt(false);
-                    setShowShare(true);
                   }}
                   className="w-full rounded-full bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                 >
@@ -754,7 +756,7 @@ export function SignForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowFollowPrompt(false); setShowShare(true); }}
+                  onClick={() => setShowFollowPrompt(false)}
                   className="w-full rounded-full border border-zinc-200 bg-white py-2.5 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                 >
                   No thanks
@@ -770,7 +772,7 @@ export function SignForm({
                 </a>
                 <button
                   type="button"
-                  onClick={() => { setShowFollowPrompt(false); setShowShare(true); }}
+                  onClick={() => setShowFollowPrompt(false)}
                   className="w-full rounded-full border border-zinc-200 bg-white py-2.5 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                 >
                   Skip
@@ -789,7 +791,13 @@ export function SignForm({
           goal={goal}
           signatures={count}
           imageUrl={imageUrl}
-          onClose={() => setShowShare(false)}
+          onClose={() => {
+            setShowShare(false);
+            if (justSigned) {
+              setJustSigned(false);
+              setShowFollowPrompt(true);
+            }
+          }}
         />
       ) : null}
     </>
