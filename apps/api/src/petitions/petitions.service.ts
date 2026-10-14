@@ -141,6 +141,10 @@ export class PetitionsService {
     await this.prisma.petitionStatusLog.create({
       data: { petitionId: petition.id, status: 'submitted' },
     });
+    this.eventEmitter.emit('petition.created', {
+      petitionId: petition.id,
+      petitionTitle: petition.title,
+    });
     return petition;
   }
 

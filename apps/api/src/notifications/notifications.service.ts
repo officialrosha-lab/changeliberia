@@ -477,4 +477,27 @@ export class NotificationsService {
       ),
     );
   }
+
+  @OnEvent('petition.created')
+  async handlePetitionCreated(event: {
+    petitionId: string;
+    petitionTitle: string;
+  }) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+    await Promise.all(
+      admins.map((admin) =>
+        this.createNotification(admin.id, {
+          type: 'PETITION_PENDING_REVIEW',
+          title: 'New Petition Awaiting Review',
+          message: `A new petition "${event.petitionTitle}" has been submitted and needs your approval.`,
+          actionUrl: '/admin',
+          actionLabel: 'Review Petition',
+          metadata: { petitionId: event.petitionId },
+        }),
+      ),
+    );
+  }
 }

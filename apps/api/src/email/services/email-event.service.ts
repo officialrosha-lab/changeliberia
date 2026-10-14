@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailService } from './email.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { EmailType } from '@prisma/client';
 
 /**
@@ -39,6 +40,13 @@ interface PasswordChangedEvent {
 
 interface PetitionCreatedEvent {
   petitionId: string;
+  petitionTitle: string;
+}
+
+interface PollSubmittedEvent {
+  pollId: string;
+  pollTitle: string;
+  submittedBy: string;
 }
 
 interface PetitionApprovedEvent {
@@ -182,6 +190,7 @@ export class EmailEventService {
   constructor(
     private readonly emailService: EmailService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly prisma: PrismaService,
   ) {
     this.registerEventListeners();
   }
@@ -256,6 +265,10 @@ export class EmailEventService {
     this.eventEmitter.on(
       'poll.rejected',
       (event: PollRejectedEvent) => void this.onPollRejected(event),
+    );
+    this.eventEmitter.on(
+      'poll.submitted',
+      (event: PollSubmittedEvent) => void this.onPollSubmitted(event),
     );
 
     // Message and broadcast events
@@ -392,13 +405,62 @@ export class EmailEventService {
 
   // Petition event handlers
 
-  private onPetitionCreated(event: PetitionCreatedEvent): void {
+  private async onPetitionCreated(event: PetitionCreatedEvent): Promise<void> {
     try {
-      // Could send confirmation to creator that petition was created
-      this.logger.debug(`Petition created: ${event.petitionId}`);
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'ADMIN', email: { not: null } },
+        select: { id: true, email: true, fullName: true },
+      });
+      await Promise.all(
+        admins.map((admin) =>
+          this.emailService.sendNotification(
+            admin.id,
+            admin.email as string,
+            EmailType.PETITION_PENDING_REVIEW,
+            {
+              recipientName: admin.fullName,
+              petitionTitle: event.petitionTitle,
+              reviewUrl: '/admin',
+            },
+          ),
+        ),
+      );
+      this.logger.log(
+        `Petition pending-review email sent to ${admins.length} admin(s) for petition ${event.petitionId}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error handling petition.created event: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async onPollSubmitted(event: PollSubmittedEvent): Promise<void> {
+    try {
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'ADMIN', email: { not: null } },
+        select: { id: true, email: true, fullName: true },
+      });
+      await Promise.all(
+        admins.map((admin) =>
+          this.emailService.sendNotification(
+            admin.id,
+            admin.email as string,
+            EmailType.POLL_PENDING_REVIEW,
+            {
+              recipientName: admin.fullName,
+              pollTitle: event.pollTitle,
+              reviewUrl: '/admin',
+            },
+          ),
+        ),
+      );
+      this.logger.log(
+        `Poll pending-review email sent to ${admins.length} admin(s) for poll ${event.pollId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error handling poll.submitted event: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

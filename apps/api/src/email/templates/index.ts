@@ -30,7 +30,9 @@ export type EmailTemplateProps =
   | BroadcastNotificationProps
   | OfficialVerifiedProps
   | OfficialRejectedProps
-  | ConstituencyReportReadyProps;
+  | ConstituencyReportReadyProps
+  | PetitionPendingReviewProps
+  | PollPendingReviewProps;
 
 // Type mapping for email types to their props
 export type EmailTemplatePropsMap = {
@@ -56,6 +58,8 @@ export type EmailTemplatePropsMap = {
   [EmailType.OFFICIAL_VERIFIED]: OfficialVerifiedProps;
   [EmailType.OFFICIAL_REJECTED]: OfficialRejectedProps;
   [EmailType.CONSTITUENCY_REPORT_READY]: ConstituencyReportReadyProps;
+  [EmailType.PETITION_PENDING_REVIEW]: PetitionPendingReviewProps;
+  [EmailType.POLL_PENDING_REVIEW]: PollPendingReviewProps;
 };
 
 export interface OfficialVerifiedProps {
@@ -222,4 +226,16 @@ export interface PollRejectedProps {
   pollTitle: string;
   reason?: string;
   appUrl: string;
+}
+
+export interface PetitionPendingReviewProps {
+  recipientName: string;
+  petitionTitle: string;
+  reviewUrl: string;
+}
+
+export interface PollPendingReviewProps {
+  recipientName: string;
+  pollTitle: string;
+  reviewUrl: string;
 }

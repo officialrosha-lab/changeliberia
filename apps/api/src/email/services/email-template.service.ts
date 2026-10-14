@@ -16,6 +16,8 @@ import {
   OfficialVerifiedProps,
   OfficialRejectedProps,
   ConstituencyReportReadyProps,
+  PetitionPendingReviewProps,
+  PollPendingReviewProps,
 } from '../templates/index';
 
 export interface RenderedTemplate {
@@ -79,6 +81,9 @@ export class EmailTemplateService {
       [EmailType.OFFICIAL_REJECTED]: 'Your official account application',
       [EmailType.CONSTITUENCY_REPORT_READY]:
         'Your constituency report is ready',
+      [EmailType.PETITION_PENDING_REVIEW]:
+        'New petition awaiting your approval',
+      [EmailType.POLL_PENDING_REVIEW]: 'New poll awaiting your approval',
     };
     return subjects[templateType] || 'Notification from Change Liberia';
   }
@@ -276,6 +281,24 @@ export class EmailTemplateService {
           <p>Your ${escapeHtml(p.period?.toLowerCase() || 'constituency')} report for <strong>${escapeHtml(p.institutionName || 'your office')}</strong> is ready.</p>
           <p>Covering <strong>${p.periodStart} – ${p.periodEnd}</strong>: petitions, signatures, and issue trends for your constituency.</p>
           <p><a href="${p.reportUrl || appUrl}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Report</a></p>
+        `;
+        break;
+      }
+
+      case EmailType.PETITION_PENDING_REVIEW: {
+        const p = props as PetitionPendingReviewProps;
+        content = `
+          <p>A new petition <strong>"${escapeHtml(p.petitionTitle || 'Untitled petition')}"</strong> has been submitted and needs your review before it can go live.</p>
+          <p><a href="${appUrl}${p.reviewUrl || '/admin'}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Review Petition</a></p>
+        `;
+        break;
+      }
+
+      case EmailType.POLL_PENDING_REVIEW: {
+        const p = props as PollPendingReviewProps;
+        content = `
+          <p>A new poll idea <strong>"${escapeHtml(p.pollTitle || 'Untitled poll')}"</strong> has been submitted and needs your review before it can go live.</p>
+          <p><a href="${appUrl}${p.reviewUrl || '/admin'}" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Review Poll</a></p>
         `;
         break;
       }
