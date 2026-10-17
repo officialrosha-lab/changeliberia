@@ -400,3 +400,29 @@ export class PetitionRejectedEvent extends DomainEvent {
     };
   }
 }
+
+export class PetitionResubmittedEvent extends DomainEvent {
+  readonly eventType = 'PETITION_RESUBMITTED';
+  readonly entityType = 'petition';
+
+  constructor(
+    public readonly entityId: string,
+    public readonly creatorId: string,
+    public readonly title: string,
+    public readonly disputeMessage: string | null,
+    public readonly revisionCount: number,
+    public readonly rejectedBy: string | null,
+  ) {
+    super(entityId);
+  }
+
+  getPayload() {
+    return {
+      creatorId: this.creatorId,
+      title: this.title,
+      disputeMessage: this.disputeMessage,
+      revisionCount: this.revisionCount,
+      rejectedBy: this.rejectedBy,
+    };
+  }
+}

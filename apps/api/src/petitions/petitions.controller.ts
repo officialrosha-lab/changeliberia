@@ -31,6 +31,8 @@ import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
   CreatePetitionUpdateDto,
+  RejectPetitionDto,
+  ResubmitPetitionDto,
   UpdatePetitionDto,
 } from './dto';
 import { PetitionMediaType } from '@prisma/client';
@@ -224,6 +226,16 @@ export class PetitionsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/resubmit')
+  resubmit(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string } },
+    @Body() dto: ResubmitPetitionDto,
+  ) {
+    return this.service.resubmit(id, req.user.userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/follow')
   checkFollow(
     @Param('id') id: string,
@@ -344,12 +356,17 @@ export class PetitionsController {
   async reject(
     @Param('id') id: string,
     @Req() req: { user: { userId: string } },
-    @Body() body: { reason?: string },
+    @Body() body: RejectPetitionDto,
   ) {
     const petition = await this.service.getById(id);
     if (!petition) throw new NotFoundException('Petition not found');
 
-    const result = await this.service.reject(id, body.reason);
+    const result = await this.service.reject(
+      id,
+      body.reason,
+      req.user.userId,
+      'ADMIN',
+    );
 
     // Log the rejection action
     this.activityLogger.logAsync({

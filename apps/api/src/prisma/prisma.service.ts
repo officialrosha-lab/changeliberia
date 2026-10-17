@@ -31,6 +31,11 @@ export class PrismaService
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "isAnonymous" BOOLEAN NOT NULL DEFAULT false`,
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "displayName" TEXT`,
       `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "county" TEXT`,
+      // Petition rejection dispute/resubmission fields
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "rejectionReason" TEXT`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "disputeMessage" TEXT`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "revisionCount" INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "rejectedBy" TEXT`,
       `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "gender" TEXT`,
       `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "age" INTEGER`,
       `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "address" TEXT`,
@@ -58,6 +63,15 @@ export class PrismaService
       `ALTER TYPE "PermissionResource" ADD VALUE IF NOT EXISTS 'RESPONSE'`,
       `ALTER TYPE "EmailType" ADD VALUE IF NOT EXISTS 'OFFICIAL_VERIFIED'`,
       `ALTER TYPE "EmailType" ADD VALUE IF NOT EXISTS 'OFFICIAL_REJECTED'`,
+      // Petition rejection dispute/resubmission — DomainEventType never
+      // carried PETITION_APPROVED/PETITION_REJECTED despite both event
+      // classes existing and being published, so eventBus.publish() for
+      // either would fail against a real Postgres enum; fixed here
+      // alongside the new resubmission event.
+      `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_APPROVED'`,
+      `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_REJECTED'`,
+      `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_RESUBMITTED'`,
+      `ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'PETITION_RESUBMITTED'`,
     ];
     for (const sql of safeEnumValues) {
       try {

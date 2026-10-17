@@ -153,6 +153,9 @@ export class UsersController {
         signaturesCount: true,
         goal: true,
         createdAt: true,
+        rejectionReason: true,
+        disputeMessage: true,
+        revisionCount: true,
       },
     });
   }

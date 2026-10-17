@@ -15,9 +15,15 @@ import {
   CreatePetitionCommentDto,
   CreatePetitionDto,
   CreatePetitionUpdateDto,
+  ResubmitPetitionDto,
   UpdatePetitionDto,
 } from './dto';
-import { PetitionUpdatePublishedEvent } from '../events/domain-events';
+import {
+  PetitionRejectedEvent,
+  PetitionResubmittedEvent,
+  PetitionUpdatePublishedEvent,
+} from '../events/domain-events';
+import { EventBusService } from '../events/event-bus.service';
 
 @Injectable()
 export class PetitionsService {
@@ -28,7 +34,11 @@ export class PetitionsService {
     private readonly stakeholderGroupService: StakeholderGroupService,
     private readonly responseWorkflow: ResponseWorkflowService,
     private readonly geographyService: GeographyService,
+    private readonly eventBus: EventBusService,
   ) {}
+
+  /** Creator may resubmit a rejected petition at most this many times. */
+  private static readonly MAX_RESUBMISSIONS = 3;
 
   /**
    * Geography dual-write helper (Lawmaker Constituency Portal foundation):
@@ -429,7 +439,12 @@ export class PetitionsService {
     return approved;
   }
 
-  async reject(id: string, reason?: string) {
+  async reject(
+    id: string,
+    reason: string,
+    actorId: string,
+    actorRole: 'ADMIN' | 'MODERATOR',
+  ) {
     const petition = await this.prisma.petition.findUnique({
       where: { id },
       include: {
@@ -442,7 +457,14 @@ export class PetitionsService {
     }
     const rejected = await this.prisma.petition.update({
       where: { id },
-      data: { status: PetitionStatus.REJECTED },
+      data: {
+        status: PetitionStatus.REJECTED,
+        rejectionReason: reason,
+        rejectedBy: actorId,
+      },
+    });
+    await this.prisma.petitionStatusLog.create({
+      data: { petitionId: id, status: 'rejected', note: reason },
     });
 
     // Notify creator via email
@@ -452,11 +474,75 @@ export class PetitionsService {
       creatorId: petition.creator.id,
       creatorEmail: petition.creator.email,
       creatorName: petition.creator.fullName,
-      reason:
-        reason || 'Your petition did not meet our guidelines at this time.',
+      reason,
+      rejectedByRole: actorRole,
     });
 
+    // Notify creator in-app, regardless of which reviewer path rejected it
+    await this.eventBus.publish(
+      new PetitionRejectedEvent(
+        id,
+        petition.creator.id,
+        petition.title,
+        reason,
+        actorId,
+      ),
+    );
+
     return rejected;
+  }
+
+  async resubmit(petitionId: string, userId: string, dto: ResubmitPetitionDto) {
+    const petition = await this.prisma.petition.findUnique({
+      where: { id: petitionId },
+    });
+    if (!petition) throw new NotFoundException('Petition not found');
+    if (petition.creatorId !== userId) {
+      throw new ForbiddenException('Not your petition');
+    }
+    if (petition.status !== PetitionStatus.REJECTED) {
+      throw new BadRequestException(
+        'Only rejected petitions can be resubmitted',
+      );
+    }
+    if (petition.revisionCount >= PetitionsService.MAX_RESUBMISSIONS) {
+      throw new BadRequestException(
+        `This petition has already been resubmitted the maximum of ${PetitionsService.MAX_RESUBMISSIONS} times.`,
+      );
+    }
+
+    const { disputeMessage, ...fieldEdits } = dto;
+
+    const updated = await this.prisma.petition.update({
+      where: { id: petitionId },
+      data: {
+        ...fieldEdits,
+        status: PetitionStatus.PENDING,
+        disputeMessage: disputeMessage ?? null,
+        revisionCount: { increment: 1 },
+      },
+    });
+
+    await this.prisma.petitionStatusLog.create({
+      data: {
+        petitionId,
+        status: 'resubmitted',
+        note: disputeMessage ?? null,
+      },
+    });
+
+    await this.eventBus.publish(
+      new PetitionResubmittedEvent(
+        petitionId,
+        userId,
+        updated.title,
+        disputeMessage ?? null,
+        updated.revisionCount,
+        petition.rejectedBy,
+      ),
+    );
+
+    return updated;
   }
 
   async listUpdates(petitionId: string) {

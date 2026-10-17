@@ -8,6 +8,7 @@ import {
   IsUrl,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 import { ImpactScope, PetitionMediaType } from '@prisma/client';
 
@@ -78,4 +79,16 @@ export class CreatePetitionCommentDto {
 export class AddPetitionMediaLinkDto {
   @IsUrl({ require_protocol: true }) @MaxLength(2000) url!: string;
   @IsOptional() @IsEnum(PetitionMediaType) type?: PetitionMediaType;
+}
+
+export class RejectPetitionDto {
+  @IsString() @MinLength(1) @MaxLength(2000) reason!: string;
+}
+
+export class ResubmitPetitionDto {
+  @IsOptional() @IsString() @MaxLength(2000) disputeMessage?: string;
+  @IsOptional() @IsString() @MaxLength(200) title?: string;
+  @IsOptional() @IsString() @MaxLength(500) summary?: string;
+  @IsOptional() @IsString() @MaxLength(20000) description?: string;
+  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
 }

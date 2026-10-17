@@ -6,6 +6,7 @@ import { ActivityModule } from '../activity/activity.module';
 import { StakeholderGroupModule } from '../stakeholder-groups/stakeholder-group.module';
 import { OfficialsModule } from '../officials/officials.module';
 import { GeographyModule } from '../geography/geography.module';
+import { EventsModule } from '../events/events.module';
 import { PetitionsController } from './petitions.controller';
 import { PetitionsService } from './petitions.service';
 import { PetitionEmailService } from '../contact-directory/email/petition-email.service';
@@ -22,6 +23,7 @@ import { ImpactAreaReportService } from './impact-area-report.service';
     StakeholderGroupModule,
     OfficialsModule,
     GeographyModule,
+    EventsModule,
   ],
   controllers: [PetitionsController],
   providers: [
