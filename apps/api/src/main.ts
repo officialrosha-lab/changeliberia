@@ -115,6 +115,17 @@ async function ensureSchema(prisma: PrismaService) {
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationsEnabled" BOOLEAN NOT NULL DEFAULT false`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "donationGoal" DOUBLE PRECISION`,
     `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "totalDonations" DOUBLE PRECISION NOT NULL DEFAULT 0`,
+    // Petition rejection dispute/resubmission columns
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "rejectionReason" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "disputeMessage" TEXT`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "revisionCount" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Petition" ADD COLUMN IF NOT EXISTS "rejectedBy" TEXT`,
+    // Petition rejection dispute/resubmission enum values (see prisma.service.ts
+    // for the matching ALTER TYPE ... ADD VALUE statements, also run there)
+    `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_APPROVED'`,
+    `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_REJECTED'`,
+    `ALTER TYPE "DomainEventType" ADD VALUE IF NOT EXISTS 'PETITION_RESUBMITTED'`,
+    `ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'PETITION_RESUBMITTED'`,
     // UserRole enum + column (user_role_phase8) — JwtStrategy SELECTs role on every request
     // CREATE TYPE has no IF NOT EXISTS before PG16; catch{} handles duplicate_object silently
     `CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN')`,

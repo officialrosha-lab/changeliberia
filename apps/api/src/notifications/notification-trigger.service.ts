@@ -4,6 +4,7 @@ import {
   SignatureAddedEvent,
   PetitionApprovedEvent,
   PetitionRejectedEvent,
+  PetitionResubmittedEvent,
 } from '../events/domain-events';
 import { NotificationService } from './notification.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -43,6 +44,15 @@ export class NotificationTriggerService {
     this.eventEmitter.on(
       'PETITION_REJECTED',
       (event: PetitionRejectedEvent) => void this.handlePetitionRejected(event),
+    );
+
+    // Subscribe to petition resubmitted event
+    // When a creator disputes/resubmits a rejected petition, notify the
+    // reviewer who rejected it
+    this.eventEmitter.on(
+      'PETITION_RESUBMITTED',
+      (event: PetitionResubmittedEvent) =>
+        void this.handlePetitionResubmitted(event),
     );
   }
 
@@ -128,6 +138,34 @@ export class NotificationTriggerService {
       });
     } catch (error) {
       console.error('Error creating petition rejected notification:', error);
+    }
+  }
+
+  /**
+   * Handle petition resubmitted event
+   * Create PETITION_RESUBMITTED notification for the reviewer who rejected it
+   */
+  private async handlePetitionResubmitted(event: PetitionResubmittedEvent) {
+    try {
+      if (!event.rejectedBy) return;
+      await this.notificationService.create({
+        userId: event.rejectedBy,
+        type: 'PETITION_RESUBMITTED',
+        title: 'Petition Resubmitted',
+        message: `"${event.title}" was resubmitted for review (revision ${event.revisionCount}).${
+          event.disputeMessage ? ` Creator's note: ${event.disputeMessage}` : ''
+        }`,
+        relatedEntityId: event.entityId,
+        relatedEntityType: 'petition',
+        metadata: {
+          petitionId: event.entityId,
+          disputeMessage: event.disputeMessage,
+          revisionCount: event.revisionCount,
+          resubmittedBy: event.creatorId,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating petition resubmitted notification:', error);
     }
   }
 }

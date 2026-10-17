@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   ForbiddenException,
   Get,
@@ -16,10 +17,7 @@ import { RolePermissionService } from '../rbac/role-permission.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventBusService } from '../events/event-bus.service';
 import { PetitionStatus } from '@prisma/client';
-import {
-  PetitionApprovedEvent,
-  PetitionRejectedEvent,
-} from '../events/domain-events';
+import { PetitionApprovedEvent } from '../events/domain-events';
 
 @Controller('moderator')
 @UseGuards(JwtAuthGuard)
@@ -169,6 +167,9 @@ export class ModeratorController {
     if (!can) {
       throw new ForbiddenException('No permission to reject petitions');
     }
+    if (!reason?.trim()) {
+      throw new BadRequestException('Rejection reason is required');
+    }
 
     const petition = await this.prisma.petition.findUnique({
       where: { id: petitionId },
@@ -178,24 +179,11 @@ export class ModeratorController {
       throw new NotFoundException('Petition not found');
     }
 
-    // Update petition status
-    await this.prisma.petition.update({
-      where: { id: petitionId },
-      data: {
-        status: 'REJECTED' as PetitionStatus,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Publish domain event for notification trigger
-    await this.eventBus.publish(
-      new PetitionRejectedEvent(
-        petitionId,
-        petition.creatorId,
-        petition.title,
-        reason,
-        user.id,
-      ),
+    await this.petitionsService.reject(
+      petitionId,
+      reason,
+      user.id,
+      'MODERATOR',
     );
 
     return { success: true, message: 'Petition rejected', reason };

@@ -36,7 +36,15 @@ export class AdminController {
   pendingPetitions() {
     return this.prisma.petition.findMany({
       where: { status: 'PENDING' },
-      select: { id: true, title: true, category: true, summary: true },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        summary: true,
+        rejectionReason: true,
+        disputeMessage: true,
+        revisionCount: true,
+      },
       orderBy: { createdAt: 'asc' },
     });
   }

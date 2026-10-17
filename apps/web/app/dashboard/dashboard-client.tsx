@@ -31,7 +31,12 @@ type MyPetition = {
   status: string;
   signaturesCount: number;
   goal: number;
+  rejectionReason?: string | null;
+  disputeMessage?: string | null;
+  revisionCount?: number;
 };
+
+const MAX_PETITION_RESUBMISSIONS = 3;
 
 type GovernmentStatus = {
   petitionId: string;
@@ -75,6 +80,9 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
   const [editDescription, setEditDescription] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [resubmitPetitionId, setResubmitPetitionId] = useState<string | null>(null);
+  const [resubmitMessage, setResubmitMessage] = useState('');
+  const [resubmitSubmitting, setResubmitSubmitting] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<{ petitionId: string; message: string } | null>(null);
@@ -321,6 +329,52 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
       setMessage(err instanceof Error ? err.message : 'Could not save changes.');
     } finally {
       setEditSubmitting(false);
+    }
+  }
+
+  function openResubmit(p: MyPetition) {
+    setResubmitPetitionId(p.id);
+    setResubmitMessage('');
+    setEditTitle(p.title);
+    setEditSummary(p.summary ?? '');
+    setEditDescription(p.description ?? '');
+    setEditImageUrl(p.imageUrl ?? '');
+  }
+
+  async function submitResubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!isAuthenticated || !resubmitPetitionId) return;
+    setResubmitSubmitting(true);
+    try {
+      await apiPatch(`/petitions/${resubmitPetitionId}/resubmit`, {
+        disputeMessage: resubmitMessage.trim() || undefined,
+        title: editTitle,
+        summary: editSummary,
+        description: editDescription,
+        imageUrl: editImageUrl || undefined,
+      });
+      setPetitions((prev) =>
+        prev.map((p) =>
+          p.id === resubmitPetitionId
+            ? {
+                ...p,
+                status: 'PENDING',
+                title: editTitle,
+                summary: editSummary,
+                description: editDescription,
+                imageUrl: editImageUrl || p.imageUrl,
+                disputeMessage: resubmitMessage.trim() || null,
+                revisionCount: (p.revisionCount ?? 0) + 1,
+              }
+            : p,
+        ),
+      );
+      setResubmitPetitionId(null);
+      setMessage('Petition resubmitted for review.');
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : 'Could not resubmit petition.');
+    } finally {
+      setResubmitSubmitting(false);
     }
   }
 
@@ -681,6 +735,11 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                       </span>
                     ) : null}
                   </div>
+                  {p.status === 'REJECTED' && p.rejectionReason && (
+                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                      Reason: {p.rejectionReason}
+                    </p>
+                  )}
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-neutral-700">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
@@ -709,6 +768,18 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
                     >
                       Post update
                     </button>
+                    {p.status === 'REJECTED' && (
+                      <button
+                        type="button"
+                        onClick={() => openResubmit(p)}
+                        disabled={(p.revisionCount ?? 0) >= MAX_PETITION_RESUBMISSIONS}
+                        className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/70"
+                      >
+                        {(p.revisionCount ?? 0) >= MAX_PETITION_RESUBMISSIONS
+                          ? 'Maximum revisions reached'
+                          : 'Dispute & Resubmit'}
+                      </button>
+                    )}
                     <Link
                       href={`/petitions/${p.id}`}
                       className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
@@ -928,6 +999,96 @@ const [shareOpenId, setShareOpenId] = useState<string | null>(null);
               <button
                 type="button"
                 onClick={() => setEditPetitionId(null)}
+                className="rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {resubmitPetitionId && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16">
+          <form
+            onSubmit={submitResubmit}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl dark:bg-neutral-900"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Dispute & resubmit</h3>
+              <button
+                type="button"
+                onClick={() => setResubmitPetitionId(null)}
+                className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-neutral-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {(() => {
+              const p = petitions.find((pet) => pet.id === resubmitPetitionId);
+              return p?.rejectionReason ? (
+                <p className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-400">
+                  Reason for rejection: {p.rejectionReason}
+                </p>
+              ) : null;
+            })()}
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">
+                  Your note to the reviewer (optional)
+                </label>
+                <textarea
+                  value={resubmitMessage}
+                  onChange={(e) => setResubmitMessage(e.target.value)}
+                  placeholder="Explain why you believe this petition should be reconsidered, or what you've changed..."
+                  rows={3}
+                  maxLength={2000}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  maxLength={200}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Summary</label>
+                <input
+                  type="text"
+                  value={editSummary}
+                  onChange={(e) => setEditSummary(e.target.value)}
+                  maxLength={500}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-neutral-400">Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={8}
+                  maxLength={20000}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="submit"
+                disabled={resubmitSubmitting}
+                className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              >
+                {resubmitSubmitting ? 'Resubmitting…' : 'Resubmit for review'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setResubmitPetitionId(null)}
                 className="rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
               >
                 Cancel

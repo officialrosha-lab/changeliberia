@@ -14,6 +14,9 @@ interface Petition {
   status: string;
   createdAt: string;
   creator: { name: string; email: string };
+  rejectionReason?: string | null;
+  disputeMessage?: string | null;
+  revisionCount?: number;
 }
 
 interface ModeratorScope {
@@ -219,6 +222,19 @@ export function ModeratorPendingPetitions() {
               <div className="text-xs text-zinc-600 dark:text-neutral-300">
                 Created by {petition.creator.name} ({petition.creator.email})
               </div>
+
+              {/* Revision history banner */}
+              {(petition.revisionCount ?? 0) > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+                  <p className="font-semibold">Resubmission (revision {petition.revisionCount})</p>
+                  {petition.rejectionReason && (
+                    <p className="mt-1">Previous rejection reason: {petition.rejectionReason}</p>
+                  )}
+                  {petition.disputeMessage && (
+                    <p className="mt-1">Creator&rsquo;s note: {petition.disputeMessage}</p>
+                  )}
+                </div>
+              )}
 
               {/* Review Panel */}
               {selectedPetitionId === petition.id && (
